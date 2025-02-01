@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'MADE Tommy Soft Bold';
+  src: url('/fonts/MADETommySoft-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'MADE Tommy Soft Light';
+  src: url('/fonts/MADETommySoft-Light.otf') format('opentype');
+  font-weight: light;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --primary-yellow: 255, 243, 59;
+    --primary-orange: 253, 199, 12;
+    --primary-deep-orange: 243, 144, 63;
+    --primary-red: 233, 62, 58;
+    --neutral-white: 255, 255, 255;
+    --neutral-gray: 179, 181, 183;
+    --neutral-black: 35, 31, 32;
+  }
+
+  body {
+    @apply bg-white text-neutral-900 antialiased;
+    font-family: 'MADE Tommy Soft Light', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'MADE Tommy Soft Bold', sans-serif;
+  }
+}
+
+@layer utilities {
+  .gradient-text {
+    @apply bg-gradient-to-r from-[#F3903F] to-[#E93E3A] bg-clip-text text-transparent;
+  }
+}
+
+/* Custom animations */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(17, 24, 39);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(55, 65, 81);
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(75, 85, 99);
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(17, 24, 39, 0.3);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}

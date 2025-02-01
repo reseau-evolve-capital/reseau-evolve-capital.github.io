@@ -1,0 +1,25 @@
+#name: omniventus-gh-pages
+services:
+  web:
+    build:
+      context: .
+      target: builder
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+      - /app/out
+    environment:
+      - NODE_ENV=development
+    command: sh -c "npm run dev"
+
+  preview:
+    image: node:20-alpine
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./out:/app
+    working_dir: /app
+    command: npx serve -s . 
