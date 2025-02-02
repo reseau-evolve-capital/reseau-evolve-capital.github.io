@@ -1,6 +1,6 @@
 # Variables
 DOCKER_COMPOSE = docker-compose
-APP_NAME = omniventus-gh-pages
+APP_NAME = reseauevolvecapital-gh-pages
 
 .PHONY: help build up down restart logs clean install dev deploy-gh
 

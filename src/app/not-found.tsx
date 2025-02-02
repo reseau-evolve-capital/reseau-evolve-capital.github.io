@@ -3,22 +3,22 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FiCoffee, FiArrowLeft } from 'react-icons/fi';
+import { FiTrendingDown, FiArrowLeft, FiDollarSign } from 'react-icons/fi';
 import { siteConfig } from '@/config/site-config';
 
-const coffeeMessages = [
-    "Lost in the digital wilderness? ☕️",
-    "Found a secret path! Coffee time? ☕️",
-    "404: Coffee not found. Let's fix that! ☕️",
-    "You've discovered my coffee break spot! ☕️",
-    "This page is brewing... Want some coffee? ☕️"
+const stockMessages = [
+    "Oops! Looks like this page took a nosedive! 📉",
+    "404: This page is as elusive as a bull market! 🐂",
+    "Lost in the stock market shuffle? Let's get back on track! 📈",
+    "This page is under a bear attack! 🐻",
+    "Page not found! Time to diversify your clicks! 📊"
 ];
 
 export default function NotFound() {
-    const randomMessage = coffeeMessages[Math.floor(Math.random() * coffeeMessages.length)];
+    const randomMessage = stockMessages[Math.floor(Math.random() * stockMessages.length)];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white flex items-center justify-center">
+        <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-black text-white flex items-center justify-center">
             <div className="container max-w-2xl mx-auto px-4 py-20">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -32,8 +32,8 @@ export default function NotFound() {
                         className="relative w-32 h-32 mx-auto mb-8"
                     >
                         <Image
-                            src={siteConfig.author.avatar}
-                            alt={siteConfig.author.name}
+                            src={"/brand/logo.png"}
+                            alt={"logo"}
                             fill
                             className="rounded-full object-cover border-4 border-white/10"
                         />
@@ -42,7 +42,7 @@ export default function NotFound() {
                             transition={{ delay: 1, duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
                             className="absolute -right-2 -bottom-2 bg-yellow-500 rounded-full p-3"
                         >
-                            <FiCoffee size={24} className="text-gray-900" />
+                            <FiTrendingDown size={24} className="text-gray-900" />
                         </motion.div>
                     </motion.div>
 
@@ -61,7 +61,7 @@ export default function NotFound() {
                         transition={{ delay: 0.6 }}
                         className="text-gray-400 mb-8"
                     >
-                        If you enjoyed my work, consider buying me a coffee!
+                        Even the best investors hit a snag sometimes. Let&apos;s get you back on track!
                     </motion.p>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -76,8 +76,8 @@ export default function NotFound() {
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
-                            <FiCoffee size={20} />
-                            Buy me a coffee
+                            <FiDollarSign size={20} />
+                            Support Our Mission
                         </motion.a>
 
                         <motion.div

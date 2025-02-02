@@ -1,6 +1,6 @@
-# SwarmCrush Support Page
+# Reseau evolve capital website
 
-This repository contains the support page for the SwarmCrush mobile application. The website is built with Next.js and deployed on GitHub Pages.
+This repository contains the website for the Reseau Evolve Capital association.
 
 ## 🚀 Quick Start
 
@@ -14,8 +14,8 @@ This repository contains the support page for the SwarmCrush mobile application.
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/OMNIVENTUS/omniventus.github.io.git
-cd omniventus.github.io
+git clone https://github.com/reseau-evolve-capital/reseau-evolve-capital.github.io.git
+cd reseau-evolve-capital.github.io
 ```
 
 2. Install dependencies:
@@ -167,3 +167,42 @@ be creative
 
 
 
+create and implement the following pages.
+
+/[locale]/ - Home Page
+├── /[locale]/about - About Page
+├── /[locale]/clubs - Investment Clubs Page
+│   └── /[locale]/clubs/[clubId] - Individual Club Page
+├── /[locale]/events - Events Page
+│   └── /[locale]/events/[eventId] - Individual Event Page
+├── /[locale]/resources - Resources & Media Page
+│   └── /[locale]/resources/[type]/[slug] - Individual Resource Page
+├── /[locale]/membership - Membership Page
+│   └── /[locale]/membership/join - Join Form Page
+├── /[locale]/partnerships - Partnerships Page
+└── /[locale]/contact - Contact Page
+
+
+Clubs Page (/[locale]/clubs):
+Interactive map of all clubs
+Detailed list of clubs
+Search/filter functionality
+Club creation guide
+Individual club pages with:
+Club details
+Member profiles
+Performance metrics
+Join request form
+
+
+Resources Page (/[locale]/resources):
+Articles section
+Video library
+Podcast episodes
+Educational materials
+Search and filtering
+Individual resource pages with:
+Full content
+Related resources
+Download options
+Share functionality
