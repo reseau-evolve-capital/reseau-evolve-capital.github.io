@@ -1,5 +1,3 @@
-
-
 import { type Metadata } from "next"
 import "@/app/globals.css"
 
@@ -7,7 +5,7 @@ import { Navigation } from "@/components/navigation"
 import { siteConfig, type Locale } from "@/config/site-config"
 import { Analytics } from "@/components/Analytics"
 import { Footer } from '@/components/layout/Footer'
-
+import { notFound } from 'next/navigation'
 type Props = {
     children: React.ReactNode
     params: Promise<{ locale: Locale }>
@@ -23,9 +21,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             template: `%s | ${siteConfig.name[locale]}`,
         },
         description: siteConfig.description[locale],
-        icons: {
-            icon: "/favicon.ico",
-        },
+        // icons: {
+        //     icon: "/favicon.ico",
+        // },
         openGraph: {
             title: siteConfig.name[locale],
             description: siteConfig.description[locale],
@@ -50,6 +48,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function LocaleLayout({ children, params }: Props) {
     const { locale } = await params
+
+    // Add this to validate locale
+    const validLocales = ['fr', 'en'];
+    if (!validLocales.includes(locale)) {
+        notFound();
+    }
 
     return (
         <html lang={locale}>

@@ -52,7 +52,7 @@ export-static: ## Export static files to out directory
 	rm -rf out
 	npm run build
 	touch out/.nojekyll
-#	echo "reseauevolvecapital.com" > out/CNAME
+	echo "reseauevolvecapital.com" > out/CNAME
 
 ## GitHub Pages deployment
 deploy-gh: export-static ## Deploy to GitHub Pages

@@ -851,27 +851,49 @@ export const pageContent: PageContent = {
           },
           link: "https://youtu.be/aQcwW8q1IYE"
         },
+        // {
+        //   type: 'podcast',
+        //   title: {
+        //     fr: "Investir dans la Tech en 2024",
+        //     en: "Investing in Tech in 2024"
+        //   },
+        //   description: {
+        //     fr: "Discussion sur les opportunités et les risques du secteur technologique.",
+        //     en: "Discussion about opportunities and risks in the tech sector."
+        //   },
+        //   image: "/resources/podcast.png",
+        //   duration: {
+        //     fr: "45 min",
+        //     en: "45 min"
+        //   },
+        //   date: {
+        //     fr: "1 Mars 2024",
+        //     en: "March 1, 2024"
+        //   },
+        //   link: "/podcast"
+        // },
         {
-          type: 'podcast',
-          title: {
-            fr: "Investir dans la Tech en 2024",
-            en: "Investing in Tech in 2024"
+          "type": "podcast",
+          "title": {
+            "fr": "S'initier à la bourse grâce aux clubs d'investissement avec Edem AGBEHONOU",
+            "en": "Introduction to the Stock Market through Investment Clubs with Edem AGBEHONOU"
           },
-          description: {
-            fr: "Discussion sur les opportunités et les risques du secteur technologique.",
-            en: "Discussion about opportunities and risks in the tech sector."
+          "description": {
+            "fr": "Dans cet épisode, Edem AGBEHONOU discute de la manière dont les clubs d'investissement peuvent aider les débutants à comprendre et à s'engager sur le marché boursier.",
+            "en": "In this episode, Edem AGBEHONOU discusses how investment clubs can help beginners understand and engage in the stock market."
           },
-          image: "/resources/podcast.png",
-          duration: {
-            fr: "45 min",
-            en: "45 min"
+          "image": "/resources/podcast.png",
+          "duration": {
+            "fr": "Durée non spécifiée",
+            "en": "Duration not specified"
           },
-          date: {
-            fr: "1 Mars 2024",
-            en: "March 1, 2024"
+          "date": {
+            "fr": "Date non spécifiée",
+            "en": "Date not specified"
           },
-          link: "/podcast"
+          "link": "https://open.spotify.com/episode/13pVwKCs99xWNSuLHfmwaS?si=B8mOaBaQQ66PlK95QMFo8A"
         }
+        
       ],
       cta: {
         fr: "Voir Toutes les Ressources",
