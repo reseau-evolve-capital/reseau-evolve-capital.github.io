@@ -18,6 +18,9 @@ const candleColors = ['#FFF33B', '#FDC70C', '#F3903F', '#E93E3A'];
 
 export default function NotFound() {
     const randomMessage = stockMessages[Math.floor(Math.random() * stockMessages.length)];
+    if (typeof window === "undefined") {
+        return null;
+    }
 
     return (
         <html>
