@@ -45,8 +45,10 @@ export function ShareButton({ title }: { title: string }) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleShare = (option: ShareOption) => {
-        const url = window.location.href;
-        window.open(option.shareUrl(url, title), '_blank');
+        if (typeof window !== 'undefined') {
+            const url = window.location.href;
+            window.open(option.shareUrl(url, title), '_blank');
+        }
     };
 
     return (

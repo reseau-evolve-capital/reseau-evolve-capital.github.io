@@ -1,14 +1,31 @@
 'use client';
 
 import { motion } from "framer-motion";
-import Image from "next/image";
+//import Image from "next/image";
 import { type Locale } from "@/config/site-config";
 import { pageContent } from "@/config/site-config";
 //import { BackgroundPattern } from "@/components/BackgroundPattern";
 //import { ThreeBackground } from "@/components/hero/ThreeBackground";
 import { AnimatedBackground } from "@/components/hero/AnimatedBackground";
 import { FloatingElements } from "@/components/hero/FloatingElements";
+import { Introduction } from "@/components/sections/Introduction";
+import { ValueProposition } from "@/components/sections/ValueProposition";
+import { HowItWorks } from "@/components/sections/HowItWorks";
+//import { FeaturedClubs } from "@/components/sections/FeaturedClubs";
+import { Events } from "@/components/sections/Events";
+import { MediaResources } from "@/components/sections/MediaResources";
+import { Membership } from "@/components/sections/Membership";
+import { Partnerships } from "@/components/sections/Partnerships";
+import { Button } from "@/components/ui/Button";
 
+import dynamic from "next/dynamic";
+
+const FeaturedClubsContent = dynamic(() => import("@/components/sections/FeaturedClubs"), {
+    ssr: false,
+    loading: () => <p>Loading featured clubs...</p>,
+});
+
+export const dynamicParams = false;
 type HomePageProps = {
     locale: Locale;
 };
@@ -93,69 +110,39 @@ export default function HomePage({ locale }: HomePageProps) {
                         <p className="text-xl md:text-2xl text-neutral-600 mb-8 max-w-2xl mx-auto">
                             {content.hero.description[locale]}
                         </p>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="bg-gradient-to-r from-[#F3903F] to-[#E93E3A] text-white px-8 py-4 rounded-full text-lg font-bold shadow-lg hover:shadow-xl transition-shadow"
+                        <Button
+                            size="lg"
+                            className="text-lg"
                         >
                             {content.hero.cta[locale]}
-                        </motion.button>
+                        </Button>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Stats Section */}
-            <section className="py-20 bg-neutral-50">
-                <div className="container mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-heading text-center mb-16">
-                        {content.stats.title[locale]}
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        {content.stats.items.map((stat, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
-                                className="text-center"
-                            >
-                                <div className="text-4xl md:text-5xl font-heading gradient-text mb-2">
-                                    {stat.value}
-                                </div>
-                                <div className="text-neutral-600">
-                                    {stat.label[locale]}
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            {/* Introduction Section */}
+            <Introduction locale={locale} />
 
-            {/* Services Section */}
-            <section className="py-20">
-                <div className="container mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-heading text-center mb-16">
-                        {content.services.title[locale]}
-                    </h2>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {content.services.items.map((service, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
-                                className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow"
-                            >
-                                <div className="text-4xl mb-4">{service.icon}</div>
-                                <h3 className="text-xl font-heading mb-4">{service.title[locale]}</h3>
-                                <p className="text-neutral-600">{service.description[locale]}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
+            {/* Value Proposition Section */}
+            <ValueProposition locale={locale} />
+
+            {/* How It Works Section */}
+            <HowItWorks locale={locale} />
+
+            {/* Featured Clubs Section */}
+            <FeaturedClubsContent locale={locale} />
+
+            {/* Events Section */}
+            <Events locale={locale} />
+
+            {/* Media Resources Section */}
+            <MediaResources locale={locale} />
+
+            {/* Membership Section */}
+            <Membership locale={locale} />
+
+            {/* Partnerships Section */}
+            <Partnerships locale={locale} />
         </div>
     );
 }
