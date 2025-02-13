@@ -30,52 +30,56 @@ interface ClubCardProps {
     members: number;
     location: string;
     image: string;
+    clubId: string;
     index: number;
     onHover: () => void;
     active: boolean;
+    locale: Locale;
 }
 
-const ClubCard = ({ name, description, members, location, image, index, onHover, active }: ClubCardProps) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: index * 0.1 }}
-        className={`bg-white rounded-xl shadow-lg overflow-hidden transition-shadow hover:shadow-xl cursor-pointer ${active ? 'ring-2 ring-[#F3903F]' : ''
-            }`}
-        onMouseEnter={onHover}
-    >
-        <div className="relative h-48">
-            <Image
-                src={image}
-                alt={name}
-                fill
-                className="object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-            <div className="absolute bottom-4 left-4 right-4">
-                <h3 className="text-xl font-heading text-white mb-1">{name}</h3>
-                <div className="flex items-center text-white/90">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {location}
+const ClubCard = ({ name, description, members, location, image, clubId, index, onHover, active, locale }: ClubCardProps) => {
+    const router = useRouter();
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: index * 0.1 }}
+            className={`bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer transition-shadow hover:shadow-xl ${active ? 'ring-2 ring-[#F3903F]' : ''}`}
+            onMouseEnter={onHover}
+            onClick={() => router.push(`/${locale}/clubs/${clubId}`)}
+        >
+            <div className="relative h-48">
+                <Image
+                    src={image}
+                    alt={name}
+                    fill
+                    className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                    <h3 className="text-xl font-heading text-white mb-1">{name}</h3>
+                    <div className="flex items-center text-white/90">
+                        <MapPin className="w-4 h-4 mr-1" />
+                        {location}
+                    </div>
                 </div>
             </div>
-        </div>
-        <div className="p-4">
-            <p className="text-neutral-600 mb-4">{description}</p>
-            <div className="flex items-center justify-between">
-                <span className="text-sm text-neutral-500">
-                    {members} membres
-                </span>
-                <Button variant="ghost" size="sm">
-                    En savoir plus →
-                </Button>
+            <div className="p-4">
+                <p className="text-neutral-600 mb-4">{description}</p>
+                <div className="flex items-center justify-between">
+                    <span className="text-sm text-neutral-500">
+                        {members} membres
+                    </span>
+                    <Button variant="ghost" size="sm">
+                        En savoir plus →
+                    </Button>
+                </div>
             </div>
-        </div>
-    </motion.div>
-);
-
-
+        </motion.div>
+    );
+};
 
 interface FeaturedClubsProps {
     locale: Locale;
@@ -142,9 +146,11 @@ export default function FeaturedClubs({ locale }: FeaturedClubsProps) {
                             members={club.members}
                             location={club.location[locale]}
                             image={club.image}
+                            clubId={club.id}
                             index={index}
                             onHover={() => setActiveClub(index)}
                             active={activeClub === index}
+                            locale={locale}
                         />
                     ))}
                 </div>

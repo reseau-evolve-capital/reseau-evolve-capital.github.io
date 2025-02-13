@@ -1,5 +1,4 @@
-
-
+import { clubs } from "./club-config";
 export type NavItem = {
   href: string;
   title: {
@@ -7,6 +6,119 @@ export type NavItem = {
     en: string;
   };
 }
+// export type ClubMember = {
+//   name: string;
+//   role: "President" | "Secretary" | "Treasurer" | "Member";
+//   image?: string;
+// };
+
+export type InvestmentStrategy = {
+  focusAreas: LocalizedText; // e.g., "Tech, Green Energy, ETFs"
+  riskProfile: LocalizedText; // e.g., "Moderate, Long-term growth"
+  decisionProcess: LocalizedText; // How the club makes investment decisions
+  minimumInvestment: number;
+  monthlyContribution: number;
+};
+
+export type MeetingSchedule = {
+  frequency: LocalizedText; // e.g., "Monthly"
+  format: LocalizedText; // e.g., "In-person, Online"
+  location?: LocalizedText;
+};
+
+
+export type ClubMember = {
+  id: string;
+  name: string;
+  role: LocalizedText;
+  image: string;
+  bio: LocalizedText;
+  linkedin?: string;
+  twitter?: string;
+}
+
+export type ClubPerformance = {
+  year: number;
+  return: number;
+  benchmarkReturn: number;
+  topHoldings: {
+    name: string;
+    ticker: string;
+    weight: number;
+    return: number;
+  }[];
+}
+
+export type ClubSectionTitles = {
+  strategy: {
+    title: LocalizedText;
+    focusAreas: LocalizedText;
+    riskProfile: LocalizedText;
+    decisionProcess: LocalizedText;
+    investmentRequirements: LocalizedText;
+    minimumInvestment: LocalizedText;
+    monthlyContribution: LocalizedText;
+  };
+  story: {
+    title: LocalizedText;
+    origins: LocalizedText;
+    milestones: LocalizedText;
+    vision: LocalizedText;
+  };
+  gallery: LocalizedText;
+  executiveBoard: LocalizedText;
+  faq: LocalizedText;
+  contact: {
+    info: LocalizedText;
+    join: LocalizedText;
+  };
+}
+
+export type Club = {
+  id: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  location: LocalizedText;
+  members: number;
+  image: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  shortDescription: LocalizedText;
+  longDescription: LocalizedText;
+  foundedDate: string;
+  meetingSchedule: LocalizedText;
+  investmentStrategy: InvestmentStrategy;
+  performance: ClubPerformance[];
+  executiveBoard: ClubMember[];
+  // NEW FIELDS FOR DETAIL PAGE
+  story: {
+    origins: LocalizedText;
+    milestones: LocalizedText;
+    futureVision: LocalizedText;
+  };
+  gallery: {
+    image: string;
+    caption: LocalizedText;
+  }[];
+  contactInfo: {
+    email: string;
+    phone?: string;
+    address: LocalizedText;
+  };
+  joinProcess: {
+    steps: {
+      title: LocalizedText;
+      description: LocalizedText;
+    }[];
+    requirements: LocalizedText[];
+  };
+  faq: {
+    question: LocalizedText;
+    answer: LocalizedText;
+  }[];
+};
 
 export type Locale = 'fr' | 'en';
 
@@ -113,17 +225,7 @@ export type PageContent = {
     featuredClubs: {
       title: LocalizedText;
       description: LocalizedText;
-      clubs: {
-        name: LocalizedText;
-        description: LocalizedText;
-        location: LocalizedText;
-        members: number;
-        image: string;
-        coordinates: {
-          lat: number;
-          lng: number;
-        };
-      }[];
+      clubs: Club[];
       cta: LocalizedText;
     };
     events: {
@@ -215,7 +317,7 @@ export type PageContent = {
 export const defaultLocale: Locale = 'fr';
 export const locales: Locale[] = ['fr', 'en'];
 
-
+export const recClubs: Club[] = clubs;
 
 export const pageContent: PageContent = {
   home: {
@@ -255,7 +357,7 @@ export const pageContent: PageContent = {
           }
         },
         {
-          value: "5+",
+          value: "3+",
           label: {
             fr: "Clubs Créés",
             en: "Clubs Created"
@@ -269,7 +371,7 @@ export const pageContent: PageContent = {
           }
         },
         {
-          value: "5",
+          value: "6",
           label: {
             fr: "Années d'Expérience",
             en: "Years of Experience"
@@ -554,88 +656,7 @@ export const pageContent: PageContent = {
         fr: "Découvrez nos clubs actifs à travers la France et trouvez celui qui correspond à vos objectifs.",
         en: "Discover our active clubs across France and find the one that matches your goals."
       },
-      clubs: [
-        {
-          name: {
-            fr: "Evolve Capital Club",
-            en: "Evolve Capital Club"
-          },
-          description: {
-            fr: "Focus sur les entreprises technologiques et l'innovation.",
-            en: "Focus on technology companies and innovation."
-          },
-          location: {
-            fr: "Paris",
-            en: "Paris"
-          },
-          members: 20,
-          image: "/clubs/evolve_capital.jpg",
-          coordinates: {
-            lat: 48.8847,
-            lng: 2.3838
-          }
-        },
-        {
-          name: {
-            fr: "Paris Evolve Capital",
-            en: "Paris Evolve Capital"
-          },
-          description: {
-            fr: "Portefeuille diversifié avec un focus sur la technologie et le renouvelable.",
-            en: "Diversified portfolio with a focus on technology and renewable energy."
-          },
-          location: {
-            fr: "Poissy",
-            en: "Poissy"
-          },
-          members: 19,
-          image: "/clubs/paris_evolve_capital.jpg",
-          coordinates: {
-            lat: 48.9472,
-            lng: 2.0333
-          }
-        },
-        {
-          name: {
-            fr: "Vision Evolve Capital",
-            en: "Vision Evolve Capital"
-          },
-          description: {
-            fr: "Investissement équilibré dans les entreprises leader de marché.",
-            en: "Balanced investment in leading market companies."
-          },
-          location: {
-            fr: "Garenne-Colombes",
-            en: "Garenne-Colombes"
-          },
-          members: 20,
-          image: "/clubs/vision_evolve_capital.jpg",
-          coordinates: {
-            lat: 48.9044,
-            lng: 2.2486
-          }
-        },
-        // {
-        //   name: {
-        //     fr: "Club Lyon Finance",
-        //     en: "Lyon Finance Club"
-        //   },
-        //   description: {
-        //     fr: "Focus sur les marchés internationaux.",
-        //     en: "Focus on international markets."
-        //   },
-        //   location: {
-        //     fr: "Lyon",
-        //     en: "Lyon"
-        //   },
-        //   members: 14,
-        //   image: "/clubs/lyon.jpg",
-        //   coordinates: {
-        //     lat: 45.7640,
-        //     lng: 4.8357
-        //   }
-        // }
-      ],
+      clubs: recClubs,
       cta: {
         fr: "Explorer Tous les Clubs",
         en: "Explore All Clubs"
@@ -1244,27 +1265,27 @@ export const siteConfig = {
         en: "About"
       }
     },
-    {
-      href: "/services",
-      title: {
-        fr: "Services",
-        en: "Services"
-      }
-    },
-    {
-      href: "/events",
-      title: {
-        fr: "Événements",
-        en: "Events"
-      }
-    },
-    {
-      href: "/contact",
-      title: {
-        fr: "Contact",
-        en: "Contact"
-      }
-    },
+    // {
+    //   href: "/services",
+    //   title: {
+    //     fr: "Services",
+    //     en: "Services"
+    //   }
+    // },
+    // {
+    //   href: "/events",
+    //   title: {
+    //     fr: "Événements",
+    //     en: "Events"
+    //   }
+    // },
+    // {
+    //   href: "/contact",
+    //   title: {
+    //     fr: "Contact",
+    //     en: "Contact"
+    //   }
+    // },
   ] as NavItem[],
   links: {
     linkedin: "https://www.linkedin.com/company/evolve-capital-club/",
@@ -1274,6 +1295,79 @@ export const siteConfig = {
     youtube: "https://youtube.com/@evolvecapitalclub?si=6iUPCYA79mr34E7-"
     
   },
-  pageContent: pageContent
+  pageContent: pageContent,
+  sectionTitles: {
+    strategy: {
+      title: {
+        fr: "Stratégie d'investissement",
+        en: "Investment Strategy"
+      },
+      investmentRequirements: {
+        fr: "Conditions d'investissement",
+        en: "Investment Requirements"
+      },
+      focusAreas: {
+        fr: "Domaines d'investissement",
+        en: "Investment Focus"
+      },
+      riskProfile: {
+        fr: "Profil de risque",
+        en: "Risk Profile"
+      },
+      decisionProcess: {
+        fr: "Processus de décision",
+        en: "Decision Process"
+      },
+      minimumInvestment: {
+        fr: "Cotisation de départ",
+        en: "Initial Contribution"
+      },
+      monthlyContribution: {
+        fr: "Cotisation mensuelle",
+        en: "Monthly Contribution"
+      }
+    },
+    story: {
+      title: {
+        fr: "Notre Histoire",
+        en: "Our Story"
+      },
+      origins: {
+        fr: "Origines",
+        en: "Origins"
+      },
+      milestones: {
+        fr: "Etapes clés",
+        en: "Milestones"
+      },
+      vision: {
+        fr: "Vision",
+        en: "Vision"
+      }
+    },
+    gallery: {
+      fr: "Galerie",
+      en: "Gallery"
+    },
+    executiveBoard: {
+      fr: "Bureau", 
+      en: "Executive Board"
+    },
+    faq: {
+      fr: "FAQ",
+      en: "FAQ"
+    },
+    contact: {
+      info: {
+        fr: "Contact",
+        en: "Contact"
+      },
+      join: {
+        fr: "Rejoignez-nous",
+        en: "Join Us"
+      }
+    }
+    
+  } as ClubSectionTitles
 
 } as const;
