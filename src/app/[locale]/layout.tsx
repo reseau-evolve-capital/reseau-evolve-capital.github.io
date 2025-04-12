@@ -5,6 +5,8 @@ import { Navigation } from "@/components/navigation"
 import { siteConfig, type Locale } from "@/config/site-config"
 import { Analytics } from "@/components/Analytics"
 import { Footer } from '@/components/layout/Footer'
+import { ScrollToTop } from '@/components/ui/ScrollToTop'
+import { NewsletterProvider } from '@/components/newsletter'
 import { notFound } from 'next/navigation'
 type Props = {
     children: React.ReactNode
@@ -60,12 +62,15 @@ export default async function LocaleLayout({ children, params }: Props) {
     return (
         <html lang={locale}>
             <body className="min-h-screen bg-white font-sans antialiased">
-                <div className="relative flex min-h-screen flex-col">
-                    <Navigation />
-                    <main className="flex-1">{children}</main>
-                    <Footer locale={locale} />
-                </div>
-                <Analytics />
+                <NewsletterProvider locale={locale}>
+                    <div className="relative flex min-h-screen flex-col">
+                        <Navigation />
+                        <main className="flex-1">{children}</main>
+                        <Footer locale={locale} />
+                        <ScrollToTop />
+                    </div>
+                    <Analytics />
+                </NewsletterProvider>
             </body>
         </html>
     )

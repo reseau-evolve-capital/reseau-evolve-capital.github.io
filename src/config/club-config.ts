@@ -47,7 +47,7 @@ export const clubs: Club[] = [
             "fr": "Approche collaborative avec validation par le comité d'investissement.",
             "en": "Collaborative approach with validation by the investment committee."
           },
-          "minimumInvestment": 500,
+          "minimumInvestment": 300,
           "monthlyContribution": 100
         },
         "performance": [
@@ -192,12 +192,62 @@ export const clubs: Club[] = [
         "faq": [
           {
             "question": {
-              "fr": "Quels sont les frais d’adhésion ?",
+              "fr": "Quels sont les frais d'adhésion ?",
               "en": "What are the membership fees?"
             },
             "answer": {
-              "fr": "La cotisation annuelle est de 100€.",
-              "en": "The annual membership fee is €100."
+              "fr": "La cotisation mensuelle est au minimum de 100€.",
+              "en": "The monthly membership fee is at least €100."
+            }
+          },
+          {
+            "question": {
+              "fr": "Peut-on quitter un club à tout moment ?",
+              "en": "Can I leave a club at any time?"
+            },
+            "answer": {
+              "fr": "Oui, un membre peut sortir d'un club à tout moment. Toutefois, nous évaluons les candidats pour nous assurer qu'ils partagent une vision à long terme. L'engagement minimum recommandé est d'un an.",
+              "en": "Yes, members can leave a club at any time. However, we evaluate applicants to ensure they share a long-term vision. A minimum one-year commitment is recommended."
+            }
+          },
+          {
+            "question": {
+              "fr": "Qui gère l'argent dans un club d'investissement ?",
+              "en": "Who manages the money in an investment club?"
+            },
+            "answer": {
+              "fr": "L'argent n'est pas détenu par une seule personne. Un compte-titres est ouvert au nom du club chez un courtier agréé. Seuls les membres peuvent y faire des virements. Pour retirer de l'argent, un procès-verbal de réunion doit être envoyé au courtier, qui exécute alors le virement sortant.",
+              "en": "The money is not held by any single person. A brokerage account is opened in the club's name with a certified broker. Only members can fund it, and any withdrawal requires an official meeting record (minutes) sent to the broker, who handles the transfer."
+            }
+          },
+          {
+            "question": {
+              "fr": "Combien peut-on investir au maximum dans un club ?",
+              "en": "What is the maximum amount one can invest in a club?"
+            },
+            "answer": {
+              "fr": "Le plafond annuel est de 5 500 € par foyer fiscal. Une personne seule peut donc investir jusqu'à 5 500 € par an, et un couple marié ne doit pas dépasser ce montant à deux s'ils sont tous les deux membres.",
+              "en": "The annual cap is €5,500 per tax household. An individual can invest up to €5,500 per year, and a married couple must not exceed that amount together if both are members."
+            }
+          },
+          {
+            "question": {
+              "fr": "Qui décide de la stratégie d'investissement ?",
+              "en": "Who decides the investment strategy?"
+            },
+            "answer": {
+              "fr": "Contrairement à un fonds d'investissement classique, la stratégie est décidée collectivement par les membres. C'est ce qui fait la richesse pédagogique des clubs d'investissement du réseau.",
+              "en": "Unlike traditional investment funds, strategy decisions are made collectively by the members. This collaborative approach is central to the educational value of our clubs."
+            }
+          },
+          {
+            "question": {
+              "fr": "Peut-on intégrer un club après sa création ?",
+              "en": "Can I join a club after it has already started?"
+            },
+            "answer": {
+              "fr": "Oui. Le Réseau Evolve Capital a mis en place un système de gestion permettant l'intégration de nouveaux membres à tout moment dans la vie du club.",
+              "en": "Yes. Evolve Capital Network has a management system that allows new members to join at any point during the club"
             }
           }
         ]
@@ -248,8 +298,8 @@ export const clubs: Club[] = [
             "fr": "Analyse rigoureuse et prise de décision collective avec validation par le comité d'investissement.",
             "en": "Thorough analysis and collective decision-making with validation by the investment committee."
           },
-          "minimumInvestment": 500,
-          "monthlyContribution": 455
+          "minimumInvestment": 300,
+          "monthlyContribution": 200
         },
         "performance": [
           {
@@ -388,12 +438,62 @@ export const clubs: Club[] = [
         "faq": [
           {
             "question": {
-              "fr": "Quels sont les frais d’adhésion ?",
+              "fr": "Quels sont les frais d'adhésion ?",
               "en": "What are the membership fees?"
             },
             "answer": {
-              "fr": "La cotisation annuelle est de 100€.",
-              "en": "The annual membership fee is €100."
+              "fr": "La cotisation mensuelle est au minimum de 100€.",
+              "en": "The monthly membership fee is at least €100."
+            }
+          },
+          {
+            "question": {
+              "fr": "Peut-on quitter un club à tout moment ?",
+              "en": "Can I leave a club at any time?"
+            },
+            "answer": {
+              "fr": "Oui, un membre peut sortir d'un club à tout moment. Toutefois, nous évaluons les candidats pour nous assurer qu'ils partagent une vision à long terme. L'engagement minimum recommandé est d'un an.",
+              "en": "Yes, members can leave a club at any time. However, we evaluate applicants to ensure they share a long-term vision. A minimum one-year commitment is recommended."
+            }
+          },
+          {
+            "question": {
+              "fr": "Qui gère l'argent dans un club d'investissement ?",
+              "en": "Who manages the money in an investment club?"
+            },
+            "answer": {
+              "fr": "L'argent n'est pas détenu par une seule personne. Un compte-titres est ouvert au nom du club chez un courtier agréé. Seuls les membres peuvent y faire des virements. Pour retirer de l'argent, un procès-verbal de réunion doit être envoyé au courtier, qui exécute alors le virement sortant.",
+              "en": "The money is not held by any single person. A brokerage account is opened in the club's name with a certified broker. Only members can fund it, and any withdrawal requires an official meeting record (minutes) sent to the broker, who handles the transfer."
+            }
+          },
+          {
+            "question": {
+              "fr": "Combien peut-on investir au maximum dans un club ?",
+              "en": "What is the maximum amount one can invest in a club?"
+            },
+            "answer": {
+              "fr": "Le plafond annuel est de 5 500 € par foyer fiscal. Une personne seule peut donc investir jusqu'à 5 500 € par an, et un couple marié ne doit pas dépasser ce montant à deux s'ils sont tous les deux membres.",
+              "en": "The annual cap is €5,500 per tax household. An individual can invest up to €5,500 per year, and a married couple must not exceed that amount together if both are members."
+            }
+          },
+          {
+            "question": {
+              "fr": "Qui décide de la stratégie d'investissement ?",
+              "en": "Who decides the investment strategy?"
+            },
+            "answer": {
+              "fr": "Contrairement à un fonds d'investissement classique, la stratégie est décidée collectivement par les membres. C'est ce qui fait la richesse pédagogique des clubs d'investissement du réseau.",
+              "en": "Unlike traditional investment funds, strategy decisions are made collectively by the members. This collaborative approach is central to the educational value of our clubs."
+            }
+          },
+          {
+            "question": {
+              "fr": "Peut-on intégrer un club après sa création ?",
+              "en": "Can I join a club after it has already started?"
+            },
+            "answer": {
+              "fr": "Oui. Le Réseau Evolve Capital a mis en place un système de gestion permettant l'intégration de nouveaux membres à tout moment dans la vie du club.",
+              "en": "Yes. Evolve Capital Network has a management system that allows new members to join at any point during the club"
             }
           }
         ]
@@ -426,8 +526,8 @@ export const clubs: Club[] = [
           },
 
         "longDescription": {
-            "fr": "Fondé en février 2024, Vision Evolve Capital est né de la rencontre entre Louisia Minkala et Lionel Zoclancounon lors d'une conférence sur le réseautage. Inspirée par la présentation de Lionel sur les clubs d'investissement, Louisia a décidé de relever le défi en créant un club axé sur l'inclusion des femmes dans le domaine de l'investissement. Sous sa présidence, le club s'engage à fournir une éducation financière de qualité et à encourager les femmes à prendre en main leur avenir financier.",
-            "en": "Founded in February 2024, Vision Evolve Capital emerged from a networking conference where Louisia Minkala met Lionel Zoclancounon. Inspired by Lionel's presentation on investment clubs, Louisia took on the challenge of creating a club focused on women's inclusion in the investment realm. Under her leadership, the club is committed to providing quality financial education and encouraging women to take control of their financial future."
+            "fr": "Fondé en février 2024, Vision Evolve Capital est né de la rencontre entre Louisia Minkala et Lionel Zoclancounon lors d'une conférence de BlackNetwork. Inspirée par la présentation de Lionel sur les clubs d'investissement, Louisia a décidé de relever le défi en créant un club axé sur l'inclusion des femmes dans le domaine de l'investissement. Sous sa présidence, le club s'engage à fournir une éducation financière de qualité et à encourager les femmes à prendre en main leur avenir financier.",
+            "en": "Founded in February 2024, Vision Evolve Capital emerged from a networking conference of BlackNetwork where Louisia Minkala met Lionel Zoclancounon. Inspired by Lionel's presentation on investment clubs, Louisia took on the challenge of creating a club focused on women's inclusion in the investment realm. Under her leadership, the club is committed to providing quality financial education and encouraging women to take control of their financial future."
           },
           
         "foundedDate": "2024-02",
@@ -448,7 +548,7 @@ export const clubs: Club[] = [
             "fr": "Prise de décision collective, en s’inspirant des meilleures pratiques des clubs EC et PEC.",
             "en": "Collective decision-making, inspired by best practices from EC and PEC clubs."
           },
-          "minimumInvestment": 500,
+          "minimumInvestment": 300,
           "monthlyContribution": 100
         },
         "performance": [
@@ -517,17 +617,19 @@ export const clubs: Club[] = [
           }
         ],
         "story": {
-            "origins": {
-                "fr": "Fondé en février 2024, Vision Evolve Capital est né d’une rencontre déterminante entre Louisia Minkala et Lionel Zoclancounon lors d’une conférence sur le réseautage. Intriguée par la présentation de Lionel sur les clubs d’investissement et leur impact sur l’éducation financière, Louisia a immédiatement voulu faire partie de cette aventure. Déterminée à s’engager activement, elle a ensuite pris la décision audacieuse de devenir la première présidente du club. Sous son impulsion, VEC est devenu un espace où les femmes peuvent apprendre, investir et bâtir un avenir financier solide, tout en bénéficiant de l’expérience des autres clubs du réseau Evolve Capital.",
-                "en": "Founded in February 2024, Vision Evolve Capital was born from a pivotal encounter between Louisia Minkala and Lionel Zoclancounon at a networking conference. Captivated by Lionel’s presentation on investment clubs and their role in financial education, Louisia was immediately drawn to the idea and decided to join the initiative. Determined to take an active role, she later made the bold decision to become the club’s first president. Under her leadership, VEC has grown into a space where women can learn, invest, and build a strong financial future while benefiting from the experience of other clubs within the Evolve Capital network."
-              },
+          "origins": {
+            "fr": "Fondé en février 2024, Vision Evolve Capital (VEC) est né d'une rencontre marquante entre Louisia Minkala et Lionel Zoclancounon lors d'une conférence de BlackNetwork. Séduite par la présentation de Lionel sur les clubs d'investissement et leur portée éducative, Louisia a rapidement décidé de rejoindre l'aventure. Elle en devient la première présidente, avec la volonté affirmée de favoriser l'inclusion des femmes dans les dynamiques d'apprentissage financier. Bien que mixte, le VEC se distingue par la forte présence féminine en son sein, en faisant un club pionnier sur cet aspect au sein du réseau. Sous l'impulsion de Louisia, VEC s'affirme comme un espace d'apprentissage collaboratif, d'investissement stratégique et de sororité économique, tout en bénéficiant des bonnes pratiques des autres clubs du réseau.",
+            
+            "en": "Founded in February 2024, Vision Evolve Capital (VEC) was born from a meaningful encounter between Louisia Minkala and Lionel Zoclancounon at a networking conference of BlackNetwork. Inspired by Lionel's presentation on investment clubs and their role in financial education, Louisia quickly embraced the idea and chose to take part. She became the club's first president, driven by a clear mission to boost financial literacy among women. Although open to all, VEC stands out within the network for its strong female representation, making it a unique and forward-thinking club. Under Louisia's leadership, VEC has become a space for collaborative learning, strategic investing, and financial empowerment—drawing from the shared experience of the Evolve Capital network."
+          },
           "milestones": {
-            "fr": "2024 : Lancement du club et premières contributions au portefeuille.",
-            "en": "2024: Club launch and first portfolio contributions."
+            "fr": "2024 : Lancement du club. En à peine huit mois, le VEC atteint une valorisation de portefeuille de 30 000 €.",
+            "en": "2024: Club launch. In less than eight months, VEC reached a portfolio valuation of €30,000."
           },
           "futureVision": {
-            "fr": "D’ici 2026, VEC vise à structurer un portefeuille solide et à accompagner un maximum de membres vers l’indépendance financière.",
-            "en": "By 2026, VEC aims to build a strong portfolio and help as many members as possible achieve financial independence."
+            "fr": "D'ici 2026, VEC ambitionne d'atteindre 100 000 € d'actifs sous gestion, tout en renforçant les synergies entre ses membres. Le club souhaite devenir une référence dans l'accompagnement financier des jeunes actifs, en particulier des femmes, à travers une pédagogie de terrain, des ateliers pratiques et un esprit d'entraide structuré.",
+            
+            "en": "By 2026, VEC aims to reach €100,000 in assets under management and foster greater collaboration among its members. The club aspires to become a benchmark for financial education among young professionals—especially women—through hands-on learning, peer support, and a structured approach to long-term investing."
           }
         },
         "gallery": [
@@ -622,12 +724,62 @@ export const clubs: Club[] = [
         "faq": [
           {
             "question": {
-              "fr": "Quels sont les frais d’adhésion ?",
+              "fr": "Quels sont les frais d'adhésion ?",
               "en": "What are the membership fees?"
             },
             "answer": {
               "fr": "La cotisation mensuelle est au minimum de 100€.",
               "en": "The monthly membership fee is at least €100."
+            }
+          },
+          {
+            "question": {
+              "fr": "Peut-on quitter un club à tout moment ?",
+              "en": "Can I leave a club at any time?"
+            },
+            "answer": {
+              "fr": "Oui, un membre peut sortir d'un club à tout moment. Toutefois, nous évaluons les candidats pour nous assurer qu'ils partagent une vision à long terme. L'engagement minimum recommandé est d'un an.",
+              "en": "Yes, members can leave a club at any time. However, we evaluate applicants to ensure they share a long-term vision. A minimum one-year commitment is recommended."
+            }
+          },
+          {
+            "question": {
+              "fr": "Qui gère l'argent dans un club d'investissement ?",
+              "en": "Who manages the money in an investment club?"
+            },
+            "answer": {
+              "fr": "L'argent n'est pas détenu par une seule personne. Un compte-titres est ouvert au nom du club chez un courtier agréé. Seuls les membres peuvent y faire des virements. Pour retirer de l'argent, un procès-verbal de réunion doit être envoyé au courtier, qui exécute alors le virement sortant.",
+              "en": "The money is not held by any single person. A brokerage account is opened in the club's name with a certified broker. Only members can fund it, and any withdrawal requires an official meeting record (minutes) sent to the broker, who handles the transfer."
+            }
+          },
+          {
+            "question": {
+              "fr": "Combien peut-on investir au maximum dans un club ?",
+              "en": "What is the maximum amount one can invest in a club?"
+            },
+            "answer": {
+              "fr": "Le plafond annuel est de 5 500 € par foyer fiscal. Une personne seule peut donc investir jusqu'à 5 500 € par an, et un couple marié ne doit pas dépasser ce montant à deux s'ils sont tous les deux membres.",
+              "en": "The annual cap is €5,500 per tax household. An individual can invest up to €5,500 per year, and a married couple must not exceed that amount together if both are members."
+            }
+          },
+          {
+            "question": {
+              "fr": "Qui décide de la stratégie d'investissement ?",
+              "en": "Who decides the investment strategy?"
+            },
+            "answer": {
+              "fr": "Contrairement à un fonds d'investissement classique, la stratégie est décidée collectivement par les membres. C'est ce qui fait la richesse pédagogique des clubs d'investissement du réseau.",
+              "en": "Unlike traditional investment funds, strategy decisions are made collectively by the members. This collaborative approach is central to the educational value of our clubs."
+            }
+          },
+          {
+            "question": {
+              "fr": "Peut-on intégrer un club après sa création ?",
+              "en": "Can I join a club after it has already started?"
+            },
+            "answer": {
+              "fr": "Oui. Le Réseau Evolve Capital a mis en place un système de gestion permettant l'intégration de nouveaux membres à tout moment dans la vie du club.",
+              "en": "Yes. Evolve Capital Network has a management system that allows new members to join at any point during the club"
             }
           }
         ]

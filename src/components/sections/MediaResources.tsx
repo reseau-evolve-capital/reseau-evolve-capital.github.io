@@ -3,12 +3,12 @@
 import { motion } from 'framer-motion';
 import { Section } from '../ui/Section';
 import { Button } from '../ui/Button';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { type Locale } from '@/config/site-config';
 import { pageContent } from '@/config/site-config';
 import Image from 'next/image';
 import { Play, Newspaper, Headphones, ArrowUpRight } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface ResourceCardProps {
     type: 'article' | 'video' | 'podcast';
@@ -117,13 +117,41 @@ interface MediaResourcesProps {
 
 export function MediaResources({ locale }: MediaResourcesProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const content = pageContent.home.mediaResources;
-    const [activeType, setActiveType] = useState<'all' | 'article' | 'video' | 'podcast'>('all');
+    
+    // Get the activeResource from URL query params or default to 'all'
+    const defaultActiveType = (() => {
+        const paramType = searchParams.get('activeResource');
+        if (paramType && ['all', 'article', 'video', 'podcast'].includes(paramType)) {
+            return paramType as 'all' | 'article' | 'video' | 'podcast';
+        }
+        return 'all';
+    })();
+    
+    const [activeType, setActiveType] = useState<'all' | 'article' | 'video' | 'podcast'>(defaultActiveType);
+
+    // Update activeType if URL query param changes
+    useEffect(() => {
+        const paramType = searchParams.get('activeResource');
+        if (paramType && ['all', 'article', 'video', 'podcast'].includes(paramType)) {
+            setActiveType(paramType as 'all' | 'article' | 'video' | 'podcast');
+        }
+    }, [searchParams]);
 
     const filteredResources = content.resources.filter((resource) => {
         if (activeType === 'all') return true;
         return resource.type === activeType;
     });
+
+    const handleTypeChange = (type: 'all' | 'article' | 'video' | 'podcast') => {
+        setActiveType(type);
+        
+        // Update URL with the new activeResource parameter without page reload
+        const url = new URL(window.location.href);
+        url.searchParams.set('activeResource', type);
+        window.history.pushState({}, '', url);
+    };
 
     return (
         <Section>
@@ -153,7 +181,7 @@ export function MediaResources({ locale }: MediaResourcesProps) {
                     <Button
                         key={type}
                         variant={activeType === type ? 'default' : 'ghost'}
-                        onClick={() => setActiveType(type as typeof activeType)}
+                        onClick={() => handleTypeChange(type as typeof activeType)}
                         size="sm"
                         className="capitalize"
                     >
@@ -183,7 +211,7 @@ export function MediaResources({ locale }: MediaResourcesProps) {
             {/* CTA Section */}
             <div className="text-center">
                 <Button
-                    onClick={() => router.push(`/${locale}/resources`)}
+                    onClick={() => router.push(`/${locale}/#resources`)}
                     size="lg"
                 >
                     {content.cta[locale]}

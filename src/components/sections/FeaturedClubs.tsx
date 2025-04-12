@@ -156,7 +156,7 @@ export default function FeaturedClubs({ locale }: FeaturedClubsProps) {
                 </div>
             </div>
 
-            {/* CTA Section */}
+            {/* CTA Section 
             <div className="text-center">
                 <Button
                     onClick={() => router.push(`/${locale}/clubs`)}
@@ -165,6 +165,7 @@ export default function FeaturedClubs({ locale }: FeaturedClubsProps) {
                     {content.cta[locale]}
                 </Button>
             </div>
+            */}
         </Section>
     );
 } 

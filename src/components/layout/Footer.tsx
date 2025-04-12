@@ -1,28 +1,43 @@
 'use client';
 
-import { motion } from 'framer-motion';
-//import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Locale } from '@/config/site-config';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { useState } from 'react';
 import { siteConfig } from '@/config/site-config';
+import { AnchorLink } from '../ui/AnchorLink';
+import { homeSectionIds } from '@/lib/navigation';
+import { NewsletterButton } from "@/components/ui/NewsletterButton";
 
 interface FooterProps {
     locale: Locale;
 }
 
+// Map of footer link paths to home section IDs for anchor navigation
+const homeAnchorMap: Record<string, string> = {
+    '/clubs': homeSectionIds.clubs,
+    '/events': homeSectionIds.events,
+    '/resources': homeSectionIds.resources,
+    '/partnerships': homeSectionIds.partnerships,
+    '/membership/benefits': homeSectionIds.membership
+};
+
 export function Footer({ locale }: FooterProps) {
-    const [email, setEmail] = useState('');
-    const [isSubscribed, setIsSubscribed] = useState(false);
     const content = siteConfig.pageContent.home.footer;
 
-    const handleSubscribe = (e: React.FormEvent) => {
-        e.preventDefault();
-        // TODO: Implement newsletter subscription
-        setIsSubscribed(true);
+
+
+    // Determines if a link should use anchor navigation or regular navigation
+    const isAnchorLink = (href: string): boolean => {
+        return Object.keys(homeAnchorMap).includes(href);
+    };
+
+    // Gets the section ID for a home page section, if applicable
+    const getSectionIdForLink = (href: string): string | undefined => {
+        if (isAnchorLink(href)) {
+            return homeAnchorMap[href];
+        }
+        return undefined;
     };
 
     return (
@@ -47,29 +62,7 @@ export function Footer({ locale }: FooterProps) {
                         <p className="text-neutral-400 mb-6">
                             {content.newsletter.description[locale]}
                         </p>
-                        {!isSubscribed ? (
-                            <form onSubmit={handleSubscribe} className="flex gap-2">
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder={content.newsletter.placeholder[locale]}
-                                    className="flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#F3903F] text-white placeholder-neutral-500"
-                                    required
-                                />
-                                <Button type="submit" className="shrink-0">
-                                    {content.newsletter.button[locale]}
-                                </Button>
-                            </form>
-                        ) : (
-                            <motion.p
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-[#F3903F]"
-                            >
-                                {content.newsletter.success[locale]}
-                            </motion.p>
-                        )}
+                        <NewsletterButton locale={locale} variant="hero" />
                     </div>
 
                     {/* Navigation Links */}
@@ -79,17 +72,33 @@ export function Footer({ locale }: FooterProps) {
                                 {section.title[locale]}
                             </h3>
                             <ul className="space-y-4">
-                                {section.items.map((item) => (
-                                    <li key={item.href}>
-                                        <Link
-                                            href={`/${locale}${item.href}`}
-                                            className="text-neutral-400 hover:text-white transition-colors flex items-center group"
-                                        >
-                                            <span>{item.label[locale]}</span>
-                                            <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                                        </Link>
-                                    </li>
-                                ))}
+                                {section.items.map((item) => {
+                                    const sectionId = getSectionIdForLink(item.href);
+                                    
+                                    return (
+                                        <li key={item.href}>
+                                            {isAnchorLink(item.href) ? (
+                                                <AnchorLink
+                                                    href={`/${locale}`}
+                                                    sectionId={sectionId}
+                                                    locale={locale}
+                                                    className="text-neutral-400 hover:text-white transition-colors flex items-center group"
+                                                >
+                                                    <span>{item.label[locale]}</span>
+                                                    <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                                </AnchorLink>
+                                            ) : (
+                                                <Link
+                                                    href={`/${locale}${item.href}`}
+                                                    className="text-neutral-400 hover:text-white transition-colors flex items-center group"
+                                                >
+                                                    <span>{item.label[locale]}</span>
+                                                    <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                                </Link>
+                                            )}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     ))}
@@ -116,6 +125,7 @@ export function Footer({ locale }: FooterProps) {
                                     <Link
                                         key={href}
                                         href={href}
+                                        target="_blank"
                                         className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F3903F] transition-colors"
                                     >
                                         <Icon className="w-4 h-4" />

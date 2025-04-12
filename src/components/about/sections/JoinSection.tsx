@@ -112,8 +112,9 @@ export function JoinSection({ locale }: JoinSectionProps) {
                     >
                         <a href={join.cta.href}>
                             {join.cta.label[locale]}
-                            <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                            
                         </a>
+                        <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                     </Button>
                 </motion.div>
             </div>

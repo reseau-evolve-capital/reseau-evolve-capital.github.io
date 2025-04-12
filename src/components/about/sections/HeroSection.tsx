@@ -6,7 +6,7 @@ import { Section } from '@/components/ui/Section';
 import { Button } from '@/components/ui/Button';
 import { type Locale } from '@/config/site-config';
 import { aboutUsContent } from '@/config/about-us-config';
-
+import Link from 'next/link';
 interface HeroSectionProps {
     locale: Locale;
 }
@@ -49,9 +49,10 @@ export function HeroSection({ locale }: HeroSectionProps) {
                     <Button
                         size="lg"
                         className="group"
-                        onClick={() => document.getElementById('story')?.scrollIntoView({ behavior: 'smooth' })}
                     >
-                        {hero.cta.label[locale]}
+                        <Link href={`/${locale}/contact`}>
+                            {hero.cta.label[locale]}
+                        </Link>
                     </Button>
                 </motion.div>
             </div>

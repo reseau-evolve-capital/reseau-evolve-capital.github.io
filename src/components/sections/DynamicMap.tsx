@@ -53,9 +53,9 @@ const DynamicMap = ({ locale, clubs, activeClub, onClubClick }: DynamicMapProps)
     useEffect(() => {
         setIsMounted(true);
     }, []);
-    console.log("before is mounted!!!!!!");
+
     if (!isMounted) return <div className="w-full h-full bg-gray-200 rounded-2xl" />;
-    console.log("after is mounted!!!!!!");
+
     return (
         <MapContainer center={[48.8566, 2.3522]} zoom={10} className="w-full h-full" zoomControl={false}>
             <TileLayer

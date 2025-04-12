@@ -170,47 +170,95 @@ export const aboutUsContent: AboutUsContent = {
         image: "/brand/rec.jpeg", // Replace with actual image path
         cta: {
             label: { fr: "Rejoignez-nous", en: "Join Us" },
-            href: "/join"
+            href: "/contact"
         }
     },
     story: {
         title: { fr: "Notre Histoire: Une Vision Partagée", en: "Our Story: A Shared Vision" },
         subtitle: { fr: "De l'idée à l'impact, le récit de notre croissance et de notre engagement.", en: "From idea to impact, the story of our growth and commitment." },
         genesis: {
-            title: { fr: "La Genèse (2018): L'Étincelle", en: "The Genesis (2018): The Spark" },
-            content: { fr: "En 2018, Réseau Evolve Capital est né d'une vision simple : rendre l'investissement accessible et collaboratif.  [Add detailed story of the founders and their motivation]", en: "In 2018, Réseau Evolve Capital was born from a simple vision: to make investment accessible and collaborative. [Add detailed story of the founders and their motivation]" },
-            image: "/images/genesis-image.jpg" // Replace with actual image path
-        },
+            title: {
+              fr: "La Genèse (2018): L'Étincelle",
+              en: "The Genesis (2018): The Spark"
+            },
+            content: {
+              fr: "En 2018, tout commence avec une conviction partagée entre quelques amis passionnés de finance : l'investissement en Bourse ne devrait pas être réservé à une élite.\n\nÀ l'époque, chacun d'eux avait tenté l'aventure seul, confronté aux mêmes écueils : manque de méthode, isolement face aux décisions, difficulté à garder le cap sur le long terme.\n\nL'idée germe alors autour d'un principe simple mais puissant : et si on investissait ensemble ? Pas dans l'informel ou au hasard, mais avec une approche structurée, pédagogique, exigeante… et surtout collaborative.\n\nCe groupe fondateur crée le tout premier club d'investissement du réseau. Il expérimente, documente, ajuste. Rapidement, une méthodologie prend forme, centrée sur l'intelligence collective, la transparence et la montée en compétence de chaque membre.\n\nCe qui n'était qu'un essai devient un mouvement. D'autres clubs voient le jour. Une charte commune s'impose. Le Réseau Evolve Capital est officiellement lancé.\n\nDepuis, la mission est restée la même : démocratiser l'investissement boursier par l'action collective, la pédagogie concrète et l'envie de progresser ensemble.",
+              en: "In 2018, it all began with a shared conviction among a few finance enthusiasts: investing in the stock market shouldn't be reserved for a select few.\n\nAt the time, each of them had tried investing solo, facing the same challenges—lack of structure, isolation in decision-making, and difficulty staying the course.\n\nThat's when a powerful idea emerged: what if we invested together? Not informally or at random, but with a structured, educational, demanding—and above all—collaborative approach.\n\nThis founding group created the very first investment club in the network. They experimented, documented, and refined their process. Soon, a methodology emerged, focused on collective intelligence, transparency, and individual skill development.\n\nWhat began as a trial became a movement. More clubs followed. A shared charter took shape. Réseau Evolve Capital was officially born.\n\nSince then, the mission has remained the same: to democratize stock investing through collective action, practical education, and a shared drive to grow together."
+            },
+            image: "/about/genesis.png"
+          },
         timeline: [
             {
-                date: "2018",
-                title: { fr: "Création du REC", en: "Creation of REC" },
-                description: { fr: "Fondation du Réseau Evolve Capital.", en: "Foundation of Réseau Evolve Capital." },
-                image: "/images/timeline-2018.jpg" // Replace with image path if available
+              "date": "2018",
+              "title": { 
+                "fr": "Naissance du projet", 
+                "en": "Birth of the Project" 
+              },
+              "description": { 
+                "fr": "Un petit groupe d'investisseurs passionnés lance le premier club, posant les bases de ce qui deviendra le Réseau Evolve Capital.", 
+                "en": "A small group of passionate investors launches the first club, laying the groundwork for what would become Réseau Evolve Capital." 
+              },
+              "image": "/about/timeline-1.png"
             },
             {
-                date: "2020",
-                title: { fr: "Début de la croissance", en: "Growth Start" },
-                description: { fr: "Les premiers clubs rejoignent le réseau.", en: "The first clubs join the network." },
-                image: "/images/timeline-2020.jpg"
+              "date": "2020",
+              "title": { 
+                "fr": "Structuration du réseau", 
+                "en": "Network Structuring" 
+              },
+              "description": { 
+                "fr": "Les premiers clubs rejoignent l'initiative avec une charte commune et des outils partagés.", 
+                "en": "The first clubs join the initiative with a shared charter and collaborative tools." 
+              },
+              "image": "/images/timeline-2020.jpg"
             },
             {
-                date: "2021",
-                title: { fr: "2ème club", en: "2nd Club" },
-                description: { fr: "Création du deuxième club.", en: "Creation of the second club." },
-                image: "/images/timeline-2021.jpg"
+              "date": "2021",
+              "title": { 
+                "fr": "Modèle multi-club", 
+                "en": "Multi-Club Model" 
+              },
+              "description": { 
+                "fr": "Création du deuxième club d'investissement, marquant la réplication du modèle collaboratif.", 
+                "en": "Creation of the second investment club, marking the replication of the collaborative model." 
+              },
+              "image": "/images/timeline-2021.jpg"
             },
             {
-                date: "2023",
-                title: { fr: "Croissance fulgurante", en: "Rapid Growth" },
-                description: { fr: "Le réseau connaît une expansion rapide.", en: "The network experiences rapid expansion." },
-                image: "/images/timeline-2023.jpg"
+              "date": "2023",
+              "title": { 
+                "fr": "Croissance du réseau", 
+                "en": "Network Growth" 
+              },
+              "description": { 
+                "fr": "Le REC atteint une nouvelle échelle avec plusieurs clubs actifs, un cadre renforcé et des outils communs de pilotage.", 
+                "en": "REC reaches a new scale with multiple active clubs, a reinforced framework, and shared governance tools." 
+              },
+              "image": "/images/timeline-2023.jpg"
             },
             {
-                date: "2024",
-                title: { fr: "3ème club", en: "3rd Club" },
-                description: { fr: "Création du troisième club.", en: "Creation of the third club." },
-                image: "/images/timeline-2024.jpg"
+              "date": "2024",
+              "title": { 
+                "fr": "Diversification & impact local", 
+                "en": "Diversification & Local Impact" 
+              },
+              "description": { 
+                "fr": "Lancement du troisième club, premier en dehors de Paris, élargissant la portée du réseau à de nouveaux profils d'investisseurs.", 
+                "en": "Launch of the third club, the first outside Paris, expanding the network's reach to new investor profiles." 
+              },
+              "image": "/images/timeline-2024.jpg"
+            },
+            {
+              "date": "2025",
+              "title": {
+                "fr": "Cap stratégique & diversification",
+                "en": "Strategic Milestone & Diversification"
+              },
+              "description": {
+                "fr": "Le Réseau Evolve Capital dépasse les 650 000 euros gérés collectivement au sein des clubs. Fort de cette dynamique, le réseau amorce une diversification vers d'autres formes d'investissement comme l'immobilier.",
+                "en": "Réseau Evolve Capital surpasses €650,000 in assets collectively managed across its clubs. Building on this momentum, the network begins diversifying into new types of investments, including real estate."
+              },
+              "image": "/images/timeline-2025.jpg"
             }
         ],
         impact: {
@@ -224,55 +272,63 @@ export const aboutUsContent: AboutUsContent = {
         }
     },
     mission: {
-        title: { fr: "Notre Mission: L'Éducation Financière pour Tous", en: "Our Mission: Financial Education for All" },
+        title: {
+          "fr": "Notre Mission : L'Éducation Financière pour Tous",
+          "en": "Our Mission: Financial Education for All"
+        },
         statement: {
-            fr: "La mission du Réseau Evolve Capital est de démocratiser l'investissement boursier auprès des jeunes en France, en offrant un accès simplifié et un accompagnement de qualité à travers un réseau de clubs d'investissement dynamiques. Nous nous engageons à pérenniser et à développer ces clubs, en fournissant des ressources éducatives complètes et en favorisant un environnement collaboratif où le partage d'expériences est au cœur de notre démarche. Notre objectif est de former des investisseurs responsables et éclairés, capables de prendre en main leur avenir financier.",
-            en: "The mission of Réseau Evolve Capital is to democratize stock market investment among young people in France by providing simplified access and quality support through a network of dynamic investment clubs. We are committed to perpetuating and developing these clubs by providing comprehensive educational resources and fostering a collaborative environment where the sharing of experiences is central to our approach. Our goal is to train responsible and informed investors, capable of taking control of their financial future."
+          "fr": "La mission du Réseau Evolve Capital est de démocratiser l'investissement boursier auprès des jeunes, en rendant l'apprentissage de la finance accessible, concret et collectif. À travers un réseau de clubs d'investissement dynamiques, nous accompagnons nos membres avec des ressources pédagogiques solides, des outils collaboratifs et un cadre exigeant. Notre ambition est de former des investisseurs responsables, confiants et autonomes, capables de prendre en main leur avenir financier avec lucidité et rigueur.",
+          "en": "Réseau Evolve Capital's mission is to democratize stock market investing for young people, making financial learning accessible, practical, and community-driven. Through a vibrant network of investment clubs, we offer strong educational resources, collaborative tools, and a structured support system. Our goal is to empower responsible, confident, and financially autonomous investors—ready to shape their future with clarity and discipline."
         },
         "values": [
-    {
-      "title": { "fr": "Collaboration", "en": "Collaboration" },
-      "description": { "fr": "Nous croyons au pouvoir du collectif.", "en": "We believe in the power of the collective." },
-      "icon": "https://img.icons8.com/ios-filled/100/000000/collaboration.png"
-    },
-    {
-      "title": { "fr": "Transparence", "en": "Transparency" },
-      "description": { "fr": "Nous agissons avec intégrité et ouverture.", "en": "We act with integrity and openness." },
-      "icon": "https://img.icons8.com/ios-filled/100/000000/iris-scan.png"
-    },
-    {
-      "title": { "fr": "Éducation", "en": "Education" },
-      "description": { "fr": "Nous investissons dans le savoir de nos membres.", "en": "We invest in the knowledge of our members." },
-      "icon": "https://img.icons8.com/ios-filled/100/000000/graduation-cap.png"
-    },
-    {
-      "title": { "fr": "Ambition", "en": "Ambition" },
-      "description": { "fr": "Nous visons l'excellence et la croissance.", "en": "We aim for excellence and growth." },
-      "icon": "https://img.icons8.com/ios-filled/100/000000/mountain.png"
-    }
-  ]
-        
-  
-
+          {
+            "title": { "fr": "Collaboration", "en": "Collaboration" },
+            "description": { "fr": "Nous croyons au pouvoir du collectif.", "en": "We believe in the power of the collective." },
+            "icon": "https://img.icons8.com/ios-filled/100/000000/collaboration.png"
+          },
+          {
+            "title": { "fr": "Transparence", "en": "Transparency" },
+            "description": { "fr": "Nous agissons avec intégrité et ouverture.", "en": "We act with integrity and openness." },
+            "icon": "https://img.icons8.com/ios-filled/100/000000/iris-scan.png"
+          },
+          {
+            "title": { "fr": "Éducation", "en": "Education" },
+            "description": { "fr": "Nous investissons dans le savoir de nos membres.", "en": "We invest in the knowledge of our members." },
+            "icon": "https://img.icons8.com/ios-filled/100/000000/graduation-cap.png"
+          },
+          {
+            "title": { "fr": "Ambition", "en": "Ambition" },
+            "description": { "fr": "Nous visons l'excellence et la croissance.", "en": "We aim for excellence and growth." },
+            "icon": "https://img.icons8.com/ios-filled/100/000000/mountain.png"
+          }
+        ]
     },
     structure: {
-        title: { fr: "Notre Structure: La Force d'un Réseau Organisé", en: "Our Structure: The Strength of an Organized Network" },
+        title: {
+          "fr": "Notre Structure : La Force d'un Réseau Organisé",
+          "en": "Our Structure: The Strength of an Organized Network"
+        },
         overview: {
-            title: { fr: "Aperçu du Réseau", en: "Network Overview" },
-            content: {
-                "fr": "Le Réseau Evolve Capital est une structure organisée au service de ses clubs.  Chaque club, autonome dans sa gestion, bénéficie du soutien et des ressources du réseau.  Un Conseil d'Administration, composé des présidents de clubs, assure une gouvernance démocratique.  Le Bureau Exécutif met en œuvre la politique du réseau, appuyé par des unités spécialisées (Comité d'Investissement, Gestion des Risques, Cellule Darwin).  Cette organisation équilibre agilité locale et coordination nationale pour promouvoir l'éducation financière et l'investissement responsable.",
-                "en": "Réseau Evolve Capital has an organized structure to support its clubs. Each club, while managing its own affairs, benefits from network support and resources. A Board of Directors, comprised of club presidents, ensures democratic governance. The Executive Office implements network policy, supported by specialized units (Investment Committee, Risk Management, Darwin Unit). This structure balances local agility and national coordination to promote financial education and responsible investing."
+            title: {
+                "fr": "Aperçu du Réseau",
+                "en": "Network Overview"
             },
-            image: "/images/structure-overview.jpg" // Replace with actual image path
+            content: {
+                "fr": "Le Réseau Evolve Capital est une structure organisée au service de ses clubs et de leurs membres. Chaque club, autogéré et ancré localement, bénéficie du soutien, des outils et des ressources du réseau. Un Conseil d'Administration, composé des présidents de clubs, impulse une gouvernance démocratique et représentative. Le Bureau Exécutif exécute la stratégie du réseau, appuyé par des unités spécialisées (Comité d'Investissement, Gestion des Risques, Cellule Darwin). Cette organisation concilie l'agilité des clubs avec une coordination nationale, pour renforcer l'éducation financière et l'investissement responsable.",
+                "en": "Réseau Evolve Capital has an organized structure to support its clubs and members. Each club, self-managed and locally anchored, benefits from the network's support, tools, and resources. A Board of Directors, composed of club presidents, ensures democratic and representative governance. The Executive Office implements network strategy, supported by specialized units (Investment Committee, Risk Management, Darwin Unit). This structure balances club agility with national coordination to strengthen financial education and responsible investing."
+            },
+            image: "/about/network.png"
         },
         governance: {
-            title: { fr: "Gouvernance", en: "Governance" },
-            content: {
-                "fr": "La gouvernance du Réseau Evolve Capital est assurée par deux organes principaux : le Conseil d'Administration et le Bureau Exécutif. Le Conseil d'Administration, composé des présidents actifs de chaque club membre, détient le pouvoir de décision et contrôle l'activité du réseau. Il se réunit régulièrement pour définir les orientations stratégiques et s'assurer de la cohérence des actions menées. Le Bureau Exécutif, élu par le Conseil d'Administration, est responsable de la gestion opérationnelle du réseau et de la mise en œuvre des décisions prises. Il est garant de la cohésion entre les clubs et veille au bon fonctionnement de l'ensemble des organes. Cette structure bicéphale permet d'allier une vision stratégique d'ensemble, portée par les clubs, à une gestion efficace et réactive, assurée par le Bureau Exécutif.",
-                "en": "The governance of Réseau Evolve Capital is ensured by two main bodies: the Board of Directors and the Executive Office. The Board of Directors, composed of the active presidents of each member club, holds the decision-making power and oversees the network's activities. It meets regularly to define strategic directions and ensure the coherence of actions taken. The Executive Office, elected by the Board of Directors, is responsible for the operational management of the network and the implementation of decisions made. It ensures cohesion between the clubs and oversees the proper functioning of all bodies. This two-headed structure allows for a comprehensive strategic vision, driven by the clubs, combined with efficient and responsive management, ensured by the Executive Office."
+            title: {
+                "fr": "Gouvernance",
+                "en": "Governance"
             },
-
-            diagram: "/about/governance.jpeg" // Replace with actual diagram path
+            content: {
+                "fr": "La gouvernance du Réseau Evolve Capital repose sur deux organes complémentaires : le Conseil d'Administration et le Bureau Exécutif. Le Conseil, constitué des présidents actifs des clubs membres, définit les grandes orientations et veille à la cohérence stratégique du réseau. Il incarne une gouvernance démocratique, ancrée dans la réalité de terrain des clubs. Le Bureau Exécutif, élu par le Conseil, coordonne l'activité du réseau, anime les échanges entre clubs, et met en œuvre les projets structurants. Il pilote la stratégie de développement du réseau sans interférer dans les décisions d'investissement propres à chaque club. Cette organisation bicéphale permet d'allier vision stratégique partagée et efficacité collective.",
+                "en": "The governance of Réseau Evolve Capital is built on two complementary bodies: the Board of Directors and the Executive Office. The Board, composed of active presidents from member clubs, defines strategic priorities and ensures overall coherence within the network. It embodies a democratic governance model rooted in club-level realities. The Executive Office, elected by the Board, coordinates network-wide initiatives, facilitates inter-club collaboration, and implements key projects. It drives the network's development strategy without interfering in each club's specific investment decisions. This two-pillar governance model combines shared strategic vision with effective collective action."
+            },
+            diagram: "/about/governance.png"
         },
         "units": {
             "title": {
@@ -289,7 +345,7 @@ export const aboutUsContent: AboutUsContent = {
                         "fr": "Le comité d'investissement de chaque club analyse le marché boursier et propose des options d'investissement éclairées à ses membres.",
                         "en": "Each club's investment committee analyzes the stock market and proposes informed investment options to its members."
                     },
-                    "icon": "https://cdn-icons-png.flaticon.com/512/2002/2002113.png" // Example: lightbulb or idea icon
+                    "icon": "https://cdn-icons-png.flaticon.com/512/2002/2002113.png"
                 },
                 {
                     "name": {
@@ -298,9 +354,9 @@ export const aboutUsContent: AboutUsContent = {
                     },
                     "description": {
                         "fr": "La cellule de gestion des risques est une entité transversale qui supervise le fonctionnement de tous les clubs et s'assure de leur conformité et de leur bonne gestion.",
-                        "en": "The risk management unit is a cross-functional entity that oversees the operation of all clubs and ensures their compliance and good management."
+                        "en": "The risk management unit is a cross-functional entity that oversees the operation of all clubs and ensures their compliance and sound management."
                     },
-                    "icon": "https://cdn-icons-png.flaticon.com/512/88/88851.png" // Example: shield or checkmark icon
+                    "icon": "https://cdn-icons-png.flaticon.com/512/88/88851.png"
                 },
                 {
                     "name": {
@@ -309,9 +365,9 @@ export const aboutUsContent: AboutUsContent = {
                     },
                     "description": {
                         "fr": "La cellule Darwin est le moteur de l'innovation au sein du réseau. Elle crée des outils pour automatiser et faciliter la gestion des clubs, contribuant à l'efficacité globale.",
-                        "en": "The Darwin unit is the engine of innovation within the network. It creates tools to automate and facilitate the management of clubs, contributing to overall efficiency."
+                        "en": "The Darwin unit is the engine of innovation within the network. It develops tools to automate and facilitate club management, contributing to overall efficiency."
                     },
-                    "icon": "https://cdn-icons-png.flaticon.com/512/1199/1199154.png" // Example: gear or settings icon
+                    "icon": "https://cdn-icons-png.flaticon.com/512/1199/1199154.png"
                 }
             ]
         }
@@ -319,8 +375,8 @@ export const aboutUsContent: AboutUsContent = {
     approach: {
         title: { fr: "Notre Approche: Éducation, Communauté et Performance", en: "Our Approach: Education, Community and Performance" },
         description: {
-            fr: "Notre approche se fonde sur trois piliers essentiels : l'éducation financière, le développement d'une communauté soudée et la recherche de performances solides.  Nous mettons un accent particulier sur l'éducation de nos membres, car nous sommes convaincus que des investisseurs informés sont la clé du succès.  Nous proposons une variété de ressources, allant des formations et ateliers interactifs aux notes d'information quotidiennes et podcasts, en passant par un programme de mentorat pour un accompagnement personnalisé.  \n\nAu-delà de l'éducation, nous cultivons un fort esprit de communauté.  Le Réseau Evolve Capital est unique en France, offrant un cadre privilégié pour le partage d'expériences et de connaissances entre passionnés d'investissement.  Cette collaboration est au cœur de notre modèle et permet à nos membres de bénéficier de l'intelligence collective du réseau.\n\nEnfin, notre philosophie d'investissement est axée sur la performance à long terme.  Nous adoptons une approche rigoureuse et diversifiée, tout en tenant compte des spécificités fiscales avantageuses pour les clubs d'investissement.  Notre portefeuille a ainsi démontré sa résilience et sa capacité de croissance, même dans des contextes économiques difficiles, comme lors de la crise du COVID, où nous avons enregistré une croissance de 100%.",
-            en: "Our approach is based on three essential pillars: financial education, the development of a strong community, and the pursuit of solid performance. We place a particular emphasis on the education of our members, as we are convinced that informed investors are the key to success. We offer a variety of resources, ranging from interactive training and workshops to daily information notes and podcasts, as well as a mentorship program for personalized support.\n\nBeyond education, we cultivate a strong community spirit. Réseau Evolve Capital is unique in France, offering a privileged setting for sharing experiences and knowledge among investment enthusiasts. This collaboration is at the heart of our model and allows our members to benefit from the collective intelligence of the network.\n\nFinally, our investment philosophy is focused on long-term performance. We adopt a rigorous and diversified approach, while taking into account the specific tax advantages for investment clubs. Our portfolio has thus demonstrated its resilience and growth capacity, even in difficult economic contexts, such as during the COVID crisis, where we recorded 100% growth."
+            fr: "Notre approche se fonde sur trois piliers essentiels : l'éducation financière, le développement d'une communauté soudée et la recherche de performances solides.  Nous mettons un accent particulier sur l'éducation financière de nos membres, car nous sommes convaincus que des investisseurs informés sont la clé du succès.  Nous proposons une variété de ressources, allant des formations et ateliers interactifs aux notes d'information quotidiennes et podcasts.  \n\nAu-delà de l'éducation, nous cultivons un fort esprit de communauté.  Le Réseau Evolve Capital est unique en France, offrant un cadre privilégié pour le partage d'expériences et de connaissances entre passionnés d'investissement.  Cette collaboration est au cœur de notre modèle et permet à nos membres de bénéficier de l'intelligence collective du réseau.\n\n",
+            en: "Our approach is based on three essential pillars: financial education, the development of a strong community, and the pursuit of solid performance. We place a particular emphasis on the financial education of our members, as we are convinced that informed investors are the key to success. We offer a variety of resources, ranging from interactive training and workshops to daily information notes and podcasts. \n\nBeyond education, we cultivate a strong community spirit. Réseau Evolve Capital is unique in France, offering a privileged setting for sharing experiences and knowledge among investment enthusiasts. This collaboration is at the heart of our model and allows our members to benefit from the collective intelligence of the network.\n\n"
         },
         education: {
             title: { fr: "Éducation Financière", en: "Financial Education" },
@@ -372,8 +428,8 @@ export const aboutUsContent: AboutUsContent = {
                         "en": "Long-term Vision"
                     },
                     "description": {
-                        "fr": "Nous investissons pour l'avenir, avec un horizon de 5 à 10 ans.",
-                        "en": "We invest for the future, with a horizon of 5 to 10 years."
+                        "fr": "Nous investissons pour l'avenir, avec un horizon à 10 ans.",
+                        "en": "We invest for the future, with a horizon of 10 years."
                     },
                     "icon": "https://cdn-icons-png.flaticon.com/512/309/309228.png" // Example: Clock icon
                 },
@@ -403,38 +459,34 @@ export const aboutUsContent: AboutUsContent = {
         }
     },
     team: {
-        title: { fr: "Notre Équipe: Les Acteurs du Succès", en: "Our Team: The Actors of Success" },
+        title: { fr: "Dirigeants : le bureau exécutif", en: "Leaders: The Executive Team" },
         subtitle: { fr: "Rencontrez les membres passionnés qui font vivre le réseau.", en: "Meet the passionate members who bring the network to life." },
         members: [
-            // Add TeamMember objects here, using the information extracted from the images
             {
                 name: "Lionel ZOCLANCLOUNON",
                 role: { fr: "Président", en: "President" },
-                bio: { fr: "[Add bio in French]", en: "[Add bio in English]" },
-                image: "/images/lionel.jpg", // Replace with actual image path
-                social: { linkedin: "[LinkedIn URL]" }
+                bio: { fr: "Co-fondateur du Réseau Evolve Capital, Lionel est un entrepreneur web (Lazone / Omniventus) et investisseur engagé. Il milite pour une finance pédagogique, collective et accessible à tous.", en: "Co-founder of Réseau Evolve Capital, Lionel is a web entrepreneur (Lazone / Omniventus) and committed investor. He advocates for a collaborative, accessible, and educational approach to finance." },
+                image: "/members/amir.png",
+                social: { linkedin: "https://www.linkedin.com/in/lionel-zoclanclounon-061140a3/" }
             },
             {
                 name: "Edem AGBEHONOU",
                 role: { fr: "Vice-Président", en: "Vice-President" },
-                bio: { fr: "[Add bio in French]", en: "[Add bio in English]" },
-                image: "/images/edem.jpg", // Replace with actual image path
-                social: { linkedin: "[LinkedIn URL]" }
+                bio: { fr: "Ingénieur, entrepreneur et co-fondateur du réseau, Edem s'investit activement dans la structuration stratégique du REC. Son parcours dans l'associatif et la tech en fait un pilier de la dynamique collective.", en: "Engineer, entrepreneur, and co-founder of the network, Edem plays an active role in shaping REC's strategic direction. His background in tech and community organizing makes him a key pillar of the collective dynamic." },
+                image: "/members/edem.jpeg",
+                social: { linkedin: "https://www.linkedin.com/in/eagbehonou/" }
             },
             {
                 name: "Ruben AFOUDAH",
                 role: { fr: "Trésorier", en: "Treasurer" },
-                bio: { fr: "[Add bio in French]", en: "[Add bio in English]" },
-                image: "/images/ruben.jpg", // Replace with actual image path
-                social: { linkedin: "[LinkedIn URL]" }
+                bio: { fr: "Co-fondateur du réseau et analyste senior en gestion de collatéraux, Ruben a conçu la première matrice financière partagée entre les clubs. Il veille à la rigueur et à la transparence des outils du REC.", en: "Co-founder of the network and senior collateral analyst, Ruben designed the first shared financial matrix used across clubs. He ensures the network's tools are rigorous and transparent." },
+                image: "/members/ruben.jpeg",
+                social: { linkedin: "https://www.linkedin.com/in/ruben-afoudah-2b4362177/" }
             }
-            // ... more members
         ],
         spotlights: {
             title: { fr: "Histoires de Membres", en: "Member Stories" },
-            stories: [
-                // Add stories here
-            ]
+            stories: []
         }
     },
     join: {
@@ -540,20 +592,20 @@ export const aboutUsContent: AboutUsContent = {
         ],
         cta: {
             label: { fr: "Devenir Membre", en: "Become a Member" },
-            href: "/join"
+            href: "/contact"
         }
     },
     contact: {
         title: { fr: "Contactez-nous", en: "Contact Us" },
         content: { fr: "Pour toute question, n'hésitez pas à nous contacter.", en: "For any questions, please do not hesitate to contact us." },
         email: "contact@reseauevolvecapital.com", // Replace with actual email
-        phone: "+33 [Phone Number]", // Replace with actual phone number
-        address: { fr: "[Address in French]", en: "[Address in English]" },
+        phone: "+33 7 52 23 48 82", // Replace with actual phone number
+        address: { fr: "32 bis rue du cotentin, 75015 Paris", en: "32 bis rue du cotentin, 75015 Paris" },
         social: {
-            linkedin: "[LinkedIn URL]",
-            twitter: "[Twitter URL]",
-            facebook: "[Facebook URL]",
-            instagram: "[Instagram URL]"
+            linkedin: "https://www.linkedin.com/company/evolve-capital-club/?viewAsMember=true",
+            twitter: "https://x.com/evolvecapitalC",
+            facebook: "https://www.facebook.com/evolvecapitalclub",
+            instagram: "https://www.instagram.com/evolvecapitalclub/"
         }
     }
 };

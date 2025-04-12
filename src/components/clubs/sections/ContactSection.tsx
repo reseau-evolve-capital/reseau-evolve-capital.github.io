@@ -5,7 +5,7 @@ import { Section } from '@/components/ui/Section';
 import { Button } from '@/components/ui/Button';
 import { type Club, type Locale } from '@/config/site-config';
 import { Mail, Phone, Building, ArrowRight } from 'lucide-react';
-
+import Link from 'next/link';
 interface ContactSectionProps {
     club: Club;
     locale: Locale;
@@ -84,8 +84,10 @@ export function ContactSection({ club, locale }: ContactSectionProps) {
                                 className="w-full mt-6 group"
                                 size="lg"
                             >
-                                Apply Now
-                                <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                <Link href={`/${locale}/contact`} className="w-full flex items-center justify-center">
+                                    Apply Now
+                                    <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                </Link>
                             </Button>
                         </div>
                     </div>

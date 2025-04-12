@@ -345,8 +345,8 @@ export const pageContent: PageContent = {
         en: "Who We Are"
       },
       description: {
-        fr: "Réseau Evolve Capital est né de la volonté de démocratiser l'investissement boursier auprès des jeunes en France. Notre mission est de promouvoir l'éducation financière et les clubs d'investissement.",
-        en: "Réseau Evolve Capital was born from the desire to democratize stock market investment among young people in France. Our mission is to promote financial education and investment clubs."
+        fr: "Le Réseau Evolve Capital est né de la volonté de démocratiser l'investissement boursier auprès des jeunes en France. Notre mission est de promouvoir l'éducation financière et les clubs d'investissement.",
+        en: "The Réseau Evolve Capital was born from the desire to democratize stock market investment among young people in France. Our mission is to promote financial education and investment clubs."
       },
       stats: [
         {
@@ -548,15 +548,76 @@ export const pageContent: PageContent = {
             en: "Joining REC was a turning point in my investor life. I learned more in 6 months with the club than in 2 years alone."
           },
           author: {
-            fr: "Thomas Laurent",
-            en: "Thomas Laurent"
+            fr: "Francklin HODONOU",
+            en: "Francklin HODONOU"
+          },
+          role: {
+            fr: "Membre depuis 2024",
+            en: "Member since 2024"
+          },
+          image: "/testimonials/francklin.jpg"
+        },
+        {
+          content: {
+            "fr": "Membre d’Evolve Capital depuis près de six ans, j’y ai affiné ma vision de l’investissement grâce à la rigueur, l’intelligence collective et un cadre structurant. Au-delà des performances, ce sont l’apprentissage continu, l’entraide et la culture financière qui font toute la richesse de cette expérience.",
+            "en": "As a member of Evolve Capital for nearly six years, I’ve refined my investment outlook through rigour, collective intelligence and a structured framework. Beyond performance, it’s the ongoing learning, mutual support and financial culture that make this experience truly valuable."
+          },
+          author: {
+            fr: "Francis TAKPA",
+            en: "Francis TAKPA"
+          },
+          role: {
+            fr: "Membre depuis 2019",
+            en: "Member since 2019"
+          },
+          image: "/testimonials/francis.jpeg"
+        },
+        {
+          content: {
+            fr: "Avec REC, j'ai acquis des connaissances pratiques que je n'aurais jamais pu obtenir seul. Dans ce réseau dynamique constitué de personnes curieuses et passionnées par l'investissement, chaque rencontre est une opportunité d'apprendre.",
+            en: "With REC, I've gained practical knowledge that I could never have obtained alone. In this dynamic network of curious and passionate people about investing, each meeting is an opportunity to learn."
+          },
+          author: {
+            fr: "Adler KEDOTE",
+            en: "Adler KEDOTE"
+          },
+          role: {
+            fr: "Membre depuis 2019",
+            en: "Member since 2019"
+          },
+          image: "/testimonials/adler.jpeg"
+        },
+        {
+          content: {
+            fr: "REC est bien plus qu'un club d'investissement. C'est une communauté de soutien où chacun partage ses expériences et réussites.",
+            en: "REC is much more than an investment club. It's a support community where everyone shares their experiences and successes."
+          },
+          author: {
+            fr: "Johanna LECHAT",
+            en: "Johanna LECHAT"
+          },
+          role: {
+            fr: "Membre depuis 2023",
+            en: "Member since 2023"
+          },
+          image: "/testimonials/johanna.jpg"
+        },
+        {
+          content: {
+            fr: "Rejoindre REC a approfondi ma compréhension des marchés. Les formations et conseils reçus ont été inestimables.",
+            en: "Joining REC deepened my understanding of the markets. The training and advice I've received have been invaluable."
+          },
+          author: {
+            fr: "Guillaume POUCHAIN",
+            en: "Guillaume POUCHAIN"
           },
           role: {
             fr: "Membre depuis 2021",
             en: "Member since 2021"
           },
-          image: "/testimonials/thomas.png"
-        },
+          image: "/testimonials/guillaume.jpeg"
+        }
+        
         // Add more testimonials...
       ],
       findClubCTA: {
@@ -943,7 +1004,7 @@ export const pageContent: PageContent = {
         },
         {
           title: {
-            fr: "Réseau Qualifié",
+            fr: "Réseau de Qualifié",
             en: "Qualified Network"
           },
           description: {
@@ -1064,8 +1125,8 @@ export const pageContent: PageContent = {
       sponsorshipTiers: [
         {
           title: {
-            fr: "Partenaire Institutionnel",
-            en: "Institutional Partner"
+            fr: "Institutionnel",
+            en: "Institutional "
           },
           description: {
             fr: "Devenez un acteur majeur du développement des clubs d'investissement.",
@@ -1088,8 +1149,8 @@ export const pageContent: PageContent = {
         },
         {
           title: {
-            fr: "Partenaire Commercial",
-            en: "Business Partner"
+            fr: "Commercial",
+            en: "Business"
           },
           description: {
             fr: "Établissez des relations privilégiées avec notre communauté.",
@@ -1112,8 +1173,8 @@ export const pageContent: PageContent = {
         },
         {
           title: {
-            fr: "Partenaire Média",
-            en: "Media Partner"
+            fr: "Média",
+            en: "Media"
           },
           description: {
             fr: "Participez à la diffusion de l'éducation financière.",
@@ -1179,9 +1240,9 @@ export const pageContent: PageContent = {
           },
           items: [
             { href: "/about", label: { fr: "Notre Histoire", en: "Our Story" } },
-            { href: "/clubs", label: { fr: "Clubs d'Investissement", en: "Investment Clubs" } },
-            { href: "/events", label: { fr: "Événements", en: "Events" } },
-            { href: "/partnerships", label: { fr: "Partenariats", en: "Partnerships" } }
+            { href: "/#clubs", label: { fr: "Clubs d'Investissement", en: "Investment Clubs" } },
+            { href: "/#events", label: { fr: "Événements", en: "Events" } },
+            { href: "/#partnerships", label: { fr: "Partenariats", en: "Partnerships" } }
           ]
         },
         resources: {
@@ -1190,10 +1251,10 @@ export const pageContent: PageContent = {
             en: "Resources"
           },
           items: [
-            { href: "/resources", label: { fr: "Centre de Ressources", en: "Resource Center" } },
-            { href: "/resources/articles", label: { fr: "Articles", en: "Articles" } },
-            { href: "/resources/videos", label: { fr: "Vidéos", en: "Videos" } },
-            { href: "/resources/podcasts", label: { fr: "Podcasts", en: "Podcasts" } }
+            { href: "/#resources", label: { fr: "Centre de Ressources", en: "Resource Center" } },
+            { href: "/?activeResource=article#resources", label: { fr: "Articles", en: "Articles" } },
+            { href: "/?activeResource=video#resources", label: { fr: "Vidéos", en: "Videos" } },
+            { href: "/?activeResource=podcast#resources", label: { fr: "Podcasts", en: "Podcasts" } }
           ]
         },
         membership: {
@@ -1202,10 +1263,10 @@ export const pageContent: PageContent = {
             en: "Membership"
           },
           items: [
-            { href: "/membership", label: { fr: "Devenir Membre", en: "Become a Member" } },
-            { href: "/membership/benefits", label: { fr: "Avantages", en: "Benefits" } },
+            { href: "/contact", label: { fr: "Devenir Membre", en: "Become a Member" } },
+            //{ href: "/membership/benefits", label: { fr: "Avantages", en: "Benefits" } },
             { href: "/membership/faq", label: { fr: "FAQ", en: "FAQ" } },
-            { href: "/contact", label: { fr: "Contact", en: "Contact" } }
+            //{ href: "/contact", label: { fr: "Contact", en: "Contact" } }
           ]
         }
       },
@@ -1216,8 +1277,8 @@ export const pageContent: PageContent = {
         }
       },
       copyright: {
-        fr: "© 2024 Réseau Evolve Capital. Tous droits réservés.",
-        en: "© 2024 Réseau Evolve Capital. All rights reserved."
+        fr: "© 2025 Réseau Evolve Capital. Tous droits réservés.",
+        en: "© 2025 Réseau Evolve Capital. All rights reserved."
       }
     }
   }
@@ -1263,6 +1324,13 @@ export const siteConfig = {
       title: {
         fr: "À Propos",
         en: "About"
+      }
+    },
+    {
+      href: "/contact",
+      title: {
+        fr: "Contact",
+        en: "Contact"
       }
     },
     // {
