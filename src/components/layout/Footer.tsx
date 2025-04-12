@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Locale } from '@/config/site-config';
-import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight } from 'lucide-react';
+import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight, ExternalLink } from 'lucide-react';
 import { siteConfig } from '@/config/site-config';
 import { AnchorLink } from '../ui/AnchorLink';
 import { homeSectionIds } from '@/lib/navigation';
@@ -107,30 +107,63 @@ export function Footer({ locale }: FooterProps) {
                 {/* Bottom Section */}
                 <div className="border-t border-white/10 pt-8">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <p className="text-neutral-400 text-sm">
-                            {content.copyright[locale]}
-                        </p>
-                        <div className="flex items-center gap-4">
-                            <h3 className="text-sm font-medium">
-                                {content.social.title[locale]}
-                            </h3>
-                            <div className="flex gap-4">
-                                {[
-                                    { Icon: Linkedin, href: siteConfig.links.linkedin },
-                                    { Icon: Twitter, href: siteConfig.links.twitter },
-                                    { Icon: Facebook, href: siteConfig.links.facebook },
-                                    { Icon: Instagram, href: siteConfig.links.instagram },
-                                    { Icon: Mail, href: `/${locale}/contact` }
-                                ].map(({ Icon, href }) => (
-                                    <Link
-                                        key={href}
-                                        href={href}
-                                        target="_blank"
-                                        className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F3903F] transition-colors"
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                    </Link>
-                                ))}
+                        <div className="flex flex-col md:flex-row items-center gap-2 text-neutral-400 text-sm">
+                            <p>{content.copyright[locale]}</p>
+                            <span className="hidden md:block">•</span>
+                            <p>
+                                <span>{locale === 'fr' ? 'Réalisé par ' : 'Built by '}</span>
+                                <a 
+                                    href="https://omniventus.com" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-[#F3903F] hover:text-white transition-colors inline-flex items-center gap-1"
+                                >
+                                    Omniventus
+                                    <ExternalLink className="w-3 h-3" />
+                                </a>
+                            </p>
+                        </div>
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                            {/* Legal Links */}
+                            <div className="flex gap-6 text-sm text-neutral-400">
+                                <Link 
+                                    href={`/${locale}/legal/privacy-policy`} 
+                                    className="hover:text-white transition-colors"
+                                >
+                                    {locale === 'fr' ? 'Politique de Confidentialité' : 'Privacy Policy'}
+                                </Link>
+                                <Link 
+                                    href={`/${locale}/legal/terms`} 
+                                    className="hover:text-white transition-colors"
+                                >
+                                    {locale === 'fr' ? 'Mentions Légales' : 'Legal Notices'}
+                                </Link>
+                            </div>
+                            
+                            {/* Social Media Links */}
+                            <div className="flex items-center gap-4">
+                                <h3 className="text-sm font-medium">
+                                    {content.social.title[locale]}
+                                </h3>
+                                <div className="flex gap-4">
+                                    {[
+                                        { Icon: Linkedin, href: siteConfig.links.linkedin },
+                                        { Icon: Twitter, href: siteConfig.links.twitter },
+                                        { Icon: Facebook, href: siteConfig.links.facebook },
+                                        { Icon: Instagram, href: siteConfig.links.instagram },
+                                        { Icon: Mail, href: `/${locale}/contact` }
+                                    ].map(({ Icon, href }) => (
+                                        <Link
+                                            key={href}
+                                            href={href}
+                                            target={href.startsWith('/') ? undefined : "_blank"}
+                                            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F3903F] transition-colors"
+                                            rel={href.startsWith('/') ? undefined : "noopener noreferrer"}
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                        </Link>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
