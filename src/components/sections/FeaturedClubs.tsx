@@ -86,7 +86,7 @@ interface FeaturedClubsProps {
 }
 
 export default function FeaturedClubs({ locale }: FeaturedClubsProps) {
-    const router = useRouter();
+    //const router = useRouter();
     const content = pageContent.home.featuredClubs;
     const [activeClub, setActiveClub] = useState<number | null>(null);
     // const [isMounted, setIsMounted] = useState(false);
