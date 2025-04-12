@@ -1,14 +1,34 @@
 'use client';
 
 import { motion } from "framer-motion";
-import Image from "next/image";
+//import Image from "next/image";
 import { type Locale } from "@/config/site-config";
 import { pageContent } from "@/config/site-config";
 //import { BackgroundPattern } from "@/components/BackgroundPattern";
 //import { ThreeBackground } from "@/components/hero/ThreeBackground";
 import { AnimatedBackground } from "@/components/hero/AnimatedBackground";
 import { FloatingElements } from "@/components/hero/FloatingElements";
+import { Introduction } from "@/components/sections/Introduction";
+import { ValueProposition } from "@/components/sections/ValueProposition";
+//import { HowItWorks } from "@/components/sections/HowItWorks";
+//import { FeaturedClubs } from "@/components/sections/FeaturedClubs";
+import { Events } from "@/components/sections/Events";
+import { MediaResources } from "@/components/sections/MediaResources";
+import { Membership } from "@/components/sections/Membership";
+import { Partnerships } from "@/components/sections/Partnerships";
+import { Button } from "@/components/ui/Button";
+import { SectionNavigation } from "@/components/ui/SectionNavigation";
+import { Suspense } from "react";
 
+import dynamic from "next/dynamic";
+import Link from "next/link";
+
+const FeaturedClubsContent = dynamic(() => import("@/components/sections/FeaturedClubs"), {
+    ssr: false,
+    loading: () => <p>Loading featured clubs...</p>,
+});
+
+export const dynamicParams = false;
 type HomePageProps = {
     locale: Locale;
 };
@@ -23,6 +43,27 @@ export default function HomePage({ locale }: HomePageProps) {
             delay: 0,
             speed: 25,
             initialPosition: { x: 15, y: 30 }
+        },
+        {
+            image: '/companies/lvmh.svg',
+            size: 65,
+            delay: 2,
+            speed: 25,
+            initialPosition: { x: 75, y: 30 }
+        },
+        {
+            image: '/companies/essilor.svg',
+            size: 65,
+            delay: 3,
+            speed: 25,
+            initialPosition: { x: 55, y: 38 }
+        },
+        {
+            image: '/companies/coca_cola.svg',
+            size: 65,
+            delay: 5,
+            speed: 25,
+            initialPosition: { x: 45, y: 30 }
         },
         {
             image: '/companies/microsoft.svg',
@@ -63,8 +104,11 @@ export default function HomePage({ locale }: HomePageProps) {
 
     return (
         <div className="flex flex-col min-h-screen">
+            {/* Section Navigation */}
+            <SectionNavigation locale={locale} />
+            
             {/* Hero Section */}
-            <section className="relative h-screen flex items-center justify-center overflow-hidden">
+            <section id="hero" className="relative h-screen flex items-center justify-center overflow-hidden">
                 <AnimatedBackground />
                 <FloatingElements elements={customElements} />
                 {/* <div className="absolute inset-0 z-0">
@@ -93,68 +137,59 @@ export default function HomePage({ locale }: HomePageProps) {
                         <p className="text-xl md:text-2xl text-neutral-600 mb-8 max-w-2xl mx-auto">
                             {content.hero.description[locale]}
                         </p>
-                        <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            className="bg-gradient-to-r from-[#F3903F] to-[#E93E3A] text-white px-8 py-4 rounded-full text-lg font-bold shadow-lg hover:shadow-xl transition-shadow"
-                        >
-                            {content.hero.cta[locale]}
-                        </motion.button>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <Button
+                                size="lg"
+                                className="text-lg"
+                            >
+                                <Link href={`/${locale}/contact`}>
+                                    {content.hero.cta[locale]}
+                                </Link>
+                            </Button>
+                        </div>
                     </motion.div>
                 </div>
             </section>
 
-            {/* Stats Section */}
-            <section className="py-20 bg-neutral-50">
-                <div className="container mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-heading text-center mb-16">
-                        {content.stats.title[locale]}
-                    </h2>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-                        {content.stats.items.map((stat, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
-                                className="text-center"
-                            >
-                                <div className="text-4xl md:text-5xl font-heading gradient-text mb-2">
-                                    {stat.value}
-                                </div>
-                                <div className="text-neutral-600">
-                                    {stat.label[locale]}
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
+            {/* Introduction Section */}
+            <section id="introduction">
+                <Introduction locale={locale} />
             </section>
 
-            {/* Services Section */}
-            <section className="py-20">
-                <div className="container mx-auto px-4">
-                    <h2 className="text-3xl md:text-4xl font-heading text-center mb-16">
-                        {content.services.title[locale]}
-                    </h2>
-                    <div className="grid md:grid-cols-3 gap-8">
-                        {content.services.items.map((service, index) => (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.1 }}
-                                className="bg-white p-8 rounded-2xl shadow-lg hover:shadow-xl transition-shadow"
-                            >
-                                <div className="text-4xl mb-4">{service.icon}</div>
-                                <h3 className="text-xl font-heading mb-4">{service.title[locale]}</h3>
-                                <p className="text-neutral-600">{service.description[locale]}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
+            {/* Value Proposition Section */}
+            <section id="value-proposition">
+                <ValueProposition locale={locale} />
+            </section>
+
+            {/* How It Works Section 
+            <HowItWorks locale={locale} />
+            */}
+
+            {/* Featured Clubs Section */}
+            <section id="clubs">
+                <FeaturedClubsContent locale={locale} />
+            </section>
+
+            {/* Events Section */}
+            <section id="events">
+                <Events locale={locale} />
+            </section>
+
+            {/* Media Resources Section */}
+            <section id="resources">
+                <Suspense>
+                    <MediaResources locale={locale} />
+                </Suspense>
+            </section>
+
+            {/* Membership Section */}
+            <section id="membership">
+                <Membership locale={locale} />
+            </section>
+
+            {/* Partnerships Section */}
+            <section id="partnerships">
+                <Partnerships locale={locale} />
             </section>
         </div>
     );

@@ -1,6 +1,6 @@
 # Variables
 DOCKER_COMPOSE = docker-compose
-APP_NAME = omniventus-gh-pages
+APP_NAME = reseauevolvecapital-gh-pages
 
 .PHONY: help build up down restart logs clean install dev deploy-gh
 
@@ -52,7 +52,7 @@ export-static: ## Export static files to out directory
 	rm -rf out
 	npm run build
 	touch out/.nojekyll
-#	echo "reseauevolvecapital.com" > out/CNAME
+	echo "reseauevolvecapital.com" > out/CNAME
 
 ## GitHub Pages deployment
 deploy-gh: export-static ## Deploy to GitHub Pages

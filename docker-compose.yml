@@ -5,7 +5,7 @@ services:
       context: .
       target: builder
     ports:
-      - "3000:3000"
+      - "3005:3000"
     volumes:
       - .:/app
       - /app/node_modules
@@ -18,7 +18,7 @@ services:
   preview:
     image: node:20-alpine
     ports:
-      - "3001:3000"
+      - "3004:3000"
     volumes:
       - ./out:/app
     working_dir: /app
