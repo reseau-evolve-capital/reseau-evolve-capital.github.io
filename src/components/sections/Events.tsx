@@ -218,7 +218,7 @@ export function Events({ locale }: EventsProps) {
             {/* CTA Section */}
             <div className="text-center">
                 <Button
-                    onClick={() => router.push(`/${locale}/events`)}
+                    onClick={() => router.push(`/${locale}/#events`)}
                     size="lg"
                 >
                     {content.cta[locale]}

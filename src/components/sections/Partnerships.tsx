@@ -160,12 +160,14 @@ export function Partnerships({ locale }: PartnershipsProps) {
                     viewport={{ once: true }}
                     className="bg-gradient-to-br from-[#FFF33B] to-[#F3903F] rounded-2xl p-8 md:p-12"
                 >
+                    {/* CTA Section 
                     <h3 className="text-2xl md:text-3xl font-heading text-white mb-4">
                         {content.ctaTitle[locale]}
                     </h3>
                     <p className="text-white/90 mb-8 max-w-2xl mx-auto">
                         {content.ctaDescription[locale]}
                     </p>
+                    */}
                     <Button
                         onClick={() => router.push(`/${locale}/contact`)}
                         size="lg"

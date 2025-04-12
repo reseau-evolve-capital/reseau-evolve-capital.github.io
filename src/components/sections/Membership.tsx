@@ -128,7 +128,7 @@ export function Membership({ locale }: MembershipProps) {
                         </div>
 
                         <Button
-                            onClick={() => router.push(`/${locale}/join`)}
+                            onClick={() => router.push(`/${locale}/contact`)}
                             size="lg"
                             className="group"
                             onMouseEnter={() => setIsHovered(true)}

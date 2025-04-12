@@ -1,5 +1,4 @@
-
-
+import { clubs } from "./club-config";
 export type NavItem = {
   href: string;
   title: {
@@ -7,6 +6,119 @@ export type NavItem = {
     en: string;
   };
 }
+// export type ClubMember = {
+//   name: string;
+//   role: "President" | "Secretary" | "Treasurer" | "Member";
+//   image?: string;
+// };
+
+export type InvestmentStrategy = {
+  focusAreas: LocalizedText; // e.g., "Tech, Green Energy, ETFs"
+  riskProfile: LocalizedText; // e.g., "Moderate, Long-term growth"
+  decisionProcess: LocalizedText; // How the club makes investment decisions
+  minimumInvestment: number;
+  monthlyContribution: number;
+};
+
+export type MeetingSchedule = {
+  frequency: LocalizedText; // e.g., "Monthly"
+  format: LocalizedText; // e.g., "In-person, Online"
+  location?: LocalizedText;
+};
+
+
+export type ClubMember = {
+  id: string;
+  name: string;
+  role: LocalizedText;
+  image: string;
+  bio: LocalizedText;
+  linkedin?: string;
+  twitter?: string;
+}
+
+export type ClubPerformance = {
+  year: number;
+  return: number;
+  benchmarkReturn: number;
+  topHoldings: {
+    name: string;
+    ticker: string;
+    weight: number;
+    return: number;
+  }[];
+}
+
+export type ClubSectionTitles = {
+  strategy: {
+    title: LocalizedText;
+    focusAreas: LocalizedText;
+    riskProfile: LocalizedText;
+    decisionProcess: LocalizedText;
+    investmentRequirements: LocalizedText;
+    minimumInvestment: LocalizedText;
+    monthlyContribution: LocalizedText;
+  };
+  story: {
+    title: LocalizedText;
+    origins: LocalizedText;
+    milestones: LocalizedText;
+    vision: LocalizedText;
+  };
+  gallery: LocalizedText;
+  executiveBoard: LocalizedText;
+  faq: LocalizedText;
+  contact: {
+    info: LocalizedText;
+    join: LocalizedText;
+  };
+}
+
+export type Club = {
+  id: string;
+  name: LocalizedText;
+  description: LocalizedText;
+  location: LocalizedText;
+  members: number;
+  image: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+  shortDescription: LocalizedText;
+  longDescription: LocalizedText;
+  foundedDate: string;
+  meetingSchedule: LocalizedText;
+  investmentStrategy: InvestmentStrategy;
+  performance: ClubPerformance[];
+  executiveBoard: ClubMember[];
+  // NEW FIELDS FOR DETAIL PAGE
+  story: {
+    origins: LocalizedText;
+    milestones: LocalizedText;
+    futureVision: LocalizedText;
+  };
+  gallery: {
+    image: string;
+    caption: LocalizedText;
+  }[];
+  contactInfo: {
+    email: string;
+    phone?: string;
+    address: LocalizedText;
+  };
+  joinProcess: {
+    steps: {
+      title: LocalizedText;
+      description: LocalizedText;
+    }[];
+    requirements: LocalizedText[];
+  };
+  faq: {
+    question: LocalizedText;
+    answer: LocalizedText;
+  }[];
+};
 
 export type Locale = 'fr' | 'en';
 
@@ -113,17 +225,7 @@ export type PageContent = {
     featuredClubs: {
       title: LocalizedText;
       description: LocalizedText;
-      clubs: {
-        name: LocalizedText;
-        description: LocalizedText;
-        location: LocalizedText;
-        members: number;
-        image: string;
-        coordinates: {
-          lat: number;
-          lng: number;
-        };
-      }[];
+      clubs: Club[];
       cta: LocalizedText;
     };
     events: {
@@ -215,7 +317,7 @@ export type PageContent = {
 export const defaultLocale: Locale = 'fr';
 export const locales: Locale[] = ['fr', 'en'];
 
-
+export const recClubs: Club[] = clubs;
 
 export const pageContent: PageContent = {
   home: {
@@ -243,8 +345,8 @@ export const pageContent: PageContent = {
         en: "Who We Are"
       },
       description: {
-        fr: "Réseau Evolve Capital est né de la volonté de démocratiser l'investissement boursier auprès des jeunes en France. Notre mission est de promouvoir l'éducation financière et les clubs d'investissement.",
-        en: "Réseau Evolve Capital was born from the desire to democratize stock market investment among young people in France. Our mission is to promote financial education and investment clubs."
+        fr: "Le Réseau Evolve Capital est né de la volonté de démocratiser l'investissement boursier auprès des jeunes en France. Notre mission est de promouvoir l'éducation financière et les clubs d'investissement.",
+        en: "The Réseau Evolve Capital was born from the desire to democratize stock market investment among young people in France. Our mission is to promote financial education and investment clubs."
       },
       stats: [
         {
@@ -255,7 +357,7 @@ export const pageContent: PageContent = {
           }
         },
         {
-          value: "5+",
+          value: "3+",
           label: {
             fr: "Clubs Créés",
             en: "Clubs Created"
@@ -269,7 +371,7 @@ export const pageContent: PageContent = {
           }
         },
         {
-          value: "5",
+          value: "6",
           label: {
             fr: "Années d'Expérience",
             en: "Years of Experience"
@@ -446,15 +548,76 @@ export const pageContent: PageContent = {
             en: "Joining REC was a turning point in my investor life. I learned more in 6 months with the club than in 2 years alone."
           },
           author: {
-            fr: "Thomas Laurent",
-            en: "Thomas Laurent"
+            fr: "Francklin HODONOU",
+            en: "Francklin HODONOU"
+          },
+          role: {
+            fr: "Membre depuis 2024",
+            en: "Member since 2024"
+          },
+          image: "/testimonials/francklin.jpg"
+        },
+        {
+          content: {
+            "fr": "Membre d’Evolve Capital depuis près de six ans, j’y ai affiné ma vision de l’investissement grâce à la rigueur, l’intelligence collective et un cadre structurant. Au-delà des performances, ce sont l’apprentissage continu, l’entraide et la culture financière qui font toute la richesse de cette expérience.",
+            "en": "As a member of Evolve Capital for nearly six years, I’ve refined my investment outlook through rigour, collective intelligence and a structured framework. Beyond performance, it’s the ongoing learning, mutual support and financial culture that make this experience truly valuable."
+          },
+          author: {
+            fr: "Francis TAKPA",
+            en: "Francis TAKPA"
+          },
+          role: {
+            fr: "Membre depuis 2019",
+            en: "Member since 2019"
+          },
+          image: "/testimonials/francis.jpeg"
+        },
+        {
+          content: {
+            fr: "Avec REC, j'ai acquis des connaissances pratiques que je n'aurais jamais pu obtenir seul. Dans ce réseau dynamique constitué de personnes curieuses et passionnées par l'investissement, chaque rencontre est une opportunité d'apprendre.",
+            en: "With REC, I've gained practical knowledge that I could never have obtained alone. In this dynamic network of curious and passionate people about investing, each meeting is an opportunity to learn."
+          },
+          author: {
+            fr: "Adler KEDOTE",
+            en: "Adler KEDOTE"
+          },
+          role: {
+            fr: "Membre depuis 2019",
+            en: "Member since 2019"
+          },
+          image: "/testimonials/adler.jpeg"
+        },
+        {
+          content: {
+            fr: "REC est bien plus qu'un club d'investissement. C'est une communauté de soutien où chacun partage ses expériences et réussites.",
+            en: "REC is much more than an investment club. It's a support community where everyone shares their experiences and successes."
+          },
+          author: {
+            fr: "Johanna LECHAT",
+            en: "Johanna LECHAT"
+          },
+          role: {
+            fr: "Membre depuis 2023",
+            en: "Member since 2023"
+          },
+          image: "/testimonials/johanna.jpg"
+        },
+        {
+          content: {
+            fr: "Rejoindre REC a approfondi ma compréhension des marchés. Les formations et conseils reçus ont été inestimables.",
+            en: "Joining REC deepened my understanding of the markets. The training and advice I've received have been invaluable."
+          },
+          author: {
+            fr: "Guillaume POUCHAIN",
+            en: "Guillaume POUCHAIN"
           },
           role: {
             fr: "Membre depuis 2021",
             en: "Member since 2021"
           },
-          image: "/testimonials/thomas.png"
-        },
+          image: "/testimonials/guillaume.jpeg"
+        }
+        
         // Add more testimonials...
       ],
       findClubCTA: {
@@ -554,88 +717,7 @@ export const pageContent: PageContent = {
         fr: "Découvrez nos clubs actifs à travers la France et trouvez celui qui correspond à vos objectifs.",
         en: "Discover our active clubs across France and find the one that matches your goals."
       },
-      clubs: [
-        {
-          name: {
-            fr: "Evolve Capital Club",
-            en: "Evolve Capital Club"
-          },
-          description: {
-            fr: "Focus sur les entreprises technologiques et l'innovation.",
-            en: "Focus on technology companies and innovation."
-          },
-          location: {
-            fr: "Paris",
-            en: "Paris"
-          },
-          members: 20,
-          image: "/clubs/evolve_capital.jpg",
-          coordinates: {
-            lat: 48.8847,
-            lng: 2.3838
-          }
-        },
-        {
-          name: {
-            fr: "Paris Evolve Capital",
-            en: "Paris Evolve Capital"
-          },
-          description: {
-            fr: "Portefeuille diversifié avec un focus sur la technologie et le renouvelable.",
-            en: "Diversified portfolio with a focus on technology and renewable energy."
-          },
-          location: {
-            fr: "Poissy",
-            en: "Poissy"
-          },
-          members: 19,
-          image: "/clubs/paris_evolve_capital.jpg",
-          coordinates: {
-            lat: 48.9472,
-            lng: 2.0333
-          }
-        },
-        {
-          name: {
-            fr: "Vision Evolve Capital",
-            en: "Vision Evolve Capital"
-          },
-          description: {
-            fr: "Investissement équilibré dans les entreprises leader de marché.",
-            en: "Balanced investment in leading market companies."
-          },
-          location: {
-            fr: "Garenne-Colombes",
-            en: "Garenne-Colombes"
-          },
-          members: 20,
-          image: "/clubs/vision_evolve_capital.jpg",
-          coordinates: {
-            lat: 48.9044,
-            lng: 2.2486
-          }
-        },
-        // {
-        //   name: {
-        //     fr: "Club Lyon Finance",
-        //     en: "Lyon Finance Club"
-        //   },
-        //   description: {
-        //     fr: "Focus sur les marchés internationaux.",
-        //     en: "Focus on international markets."
-        //   },
-        //   location: {
-        //     fr: "Lyon",
-        //     en: "Lyon"
-        //   },
-        //   members: 14,
-        //   image: "/clubs/lyon.jpg",
-        //   coordinates: {
-        //     lat: 45.7640,
-        //     lng: 4.8357
-        //   }
-        // }
-      ],
+      clubs: recClubs,
       cta: {
         fr: "Explorer Tous les Clubs",
         en: "Explore All Clubs"
@@ -922,7 +1004,7 @@ export const pageContent: PageContent = {
         },
         {
           title: {
-            fr: "Réseau Qualifié",
+            fr: "Réseau de Qualifié",
             en: "Qualified Network"
           },
           description: {
@@ -1043,8 +1125,8 @@ export const pageContent: PageContent = {
       sponsorshipTiers: [
         {
           title: {
-            fr: "Partenaire Institutionnel",
-            en: "Institutional Partner"
+            fr: "Institutionnel",
+            en: "Institutional "
           },
           description: {
             fr: "Devenez un acteur majeur du développement des clubs d'investissement.",
@@ -1067,8 +1149,8 @@ export const pageContent: PageContent = {
         },
         {
           title: {
-            fr: "Partenaire Commercial",
-            en: "Business Partner"
+            fr: "Commercial",
+            en: "Business"
           },
           description: {
             fr: "Établissez des relations privilégiées avec notre communauté.",
@@ -1091,8 +1173,8 @@ export const pageContent: PageContent = {
         },
         {
           title: {
-            fr: "Partenaire Média",
-            en: "Media Partner"
+            fr: "Média",
+            en: "Media"
           },
           description: {
             fr: "Participez à la diffusion de l'éducation financière.",
@@ -1158,9 +1240,9 @@ export const pageContent: PageContent = {
           },
           items: [
             { href: "/about", label: { fr: "Notre Histoire", en: "Our Story" } },
-            { href: "/clubs", label: { fr: "Clubs d'Investissement", en: "Investment Clubs" } },
-            { href: "/events", label: { fr: "Événements", en: "Events" } },
-            { href: "/partnerships", label: { fr: "Partenariats", en: "Partnerships" } }
+            { href: "/#clubs", label: { fr: "Clubs d'Investissement", en: "Investment Clubs" } },
+            { href: "/#events", label: { fr: "Événements", en: "Events" } },
+            { href: "/#partnerships", label: { fr: "Partenariats", en: "Partnerships" } }
           ]
         },
         resources: {
@@ -1169,10 +1251,10 @@ export const pageContent: PageContent = {
             en: "Resources"
           },
           items: [
-            { href: "/resources", label: { fr: "Centre de Ressources", en: "Resource Center" } },
-            { href: "/resources/articles", label: { fr: "Articles", en: "Articles" } },
-            { href: "/resources/videos", label: { fr: "Vidéos", en: "Videos" } },
-            { href: "/resources/podcasts", label: { fr: "Podcasts", en: "Podcasts" } }
+            { href: "/#resources", label: { fr: "Centre de Ressources", en: "Resource Center" } },
+            { href: "/?activeResource=article#resources", label: { fr: "Articles", en: "Articles" } },
+            { href: "/?activeResource=video#resources", label: { fr: "Vidéos", en: "Videos" } },
+            { href: "/?activeResource=podcast#resources", label: { fr: "Podcasts", en: "Podcasts" } }
           ]
         },
         membership: {
@@ -1181,10 +1263,10 @@ export const pageContent: PageContent = {
             en: "Membership"
           },
           items: [
-            { href: "/membership", label: { fr: "Devenir Membre", en: "Become a Member" } },
-            { href: "/membership/benefits", label: { fr: "Avantages", en: "Benefits" } },
+            { href: "/contact", label: { fr: "Devenir Membre", en: "Become a Member" } },
+            //{ href: "/membership/benefits", label: { fr: "Avantages", en: "Benefits" } },
             { href: "/membership/faq", label: { fr: "FAQ", en: "FAQ" } },
-            { href: "/contact", label: { fr: "Contact", en: "Contact" } }
+            //{ href: "/contact", label: { fr: "Contact", en: "Contact" } }
           ]
         }
       },
@@ -1195,8 +1277,8 @@ export const pageContent: PageContent = {
         }
       },
       copyright: {
-        fr: "© 2024 Réseau Evolve Capital. Tous droits réservés.",
-        en: "© 2024 Réseau Evolve Capital. All rights reserved."
+        fr: "© 2025 Réseau Evolve Capital. Tous droits réservés.",
+        en: "© 2025 Réseau Evolve Capital. All rights reserved."
       }
     }
   }
@@ -1245,26 +1327,33 @@ export const siteConfig = {
       }
     },
     {
-      href: "/services",
-      title: {
-        fr: "Services",
-        en: "Services"
-      }
-    },
-    {
-      href: "/events",
-      title: {
-        fr: "Événements",
-        en: "Events"
-      }
-    },
-    {
       href: "/contact",
       title: {
         fr: "Contact",
         en: "Contact"
       }
     },
+    // {
+    //   href: "/services",
+    //   title: {
+    //     fr: "Services",
+    //     en: "Services"
+    //   }
+    // },
+    // {
+    //   href: "/events",
+    //   title: {
+    //     fr: "Événements",
+    //     en: "Events"
+    //   }
+    // },
+    // {
+    //   href: "/contact",
+    //   title: {
+    //     fr: "Contact",
+    //     en: "Contact"
+    //   }
+    // },
   ] as NavItem[],
   links: {
     linkedin: "https://www.linkedin.com/company/evolve-capital-club/",
@@ -1274,6 +1363,79 @@ export const siteConfig = {
     youtube: "https://youtube.com/@evolvecapitalclub?si=6iUPCYA79mr34E7-"
     
   },
-  pageContent: pageContent
+  pageContent: pageContent,
+  sectionTitles: {
+    strategy: {
+      title: {
+        fr: "Stratégie d'investissement",
+        en: "Investment Strategy"
+      },
+      investmentRequirements: {
+        fr: "Conditions d'investissement",
+        en: "Investment Requirements"
+      },
+      focusAreas: {
+        fr: "Domaines d'investissement",
+        en: "Investment Focus"
+      },
+      riskProfile: {
+        fr: "Profil de risque",
+        en: "Risk Profile"
+      },
+      decisionProcess: {
+        fr: "Processus de décision",
+        en: "Decision Process"
+      },
+      minimumInvestment: {
+        fr: "Cotisation de départ",
+        en: "Initial Contribution"
+      },
+      monthlyContribution: {
+        fr: "Cotisation mensuelle",
+        en: "Monthly Contribution"
+      }
+    },
+    story: {
+      title: {
+        fr: "Notre Histoire",
+        en: "Our Story"
+      },
+      origins: {
+        fr: "Origines",
+        en: "Origins"
+      },
+      milestones: {
+        fr: "Etapes clés",
+        en: "Milestones"
+      },
+      vision: {
+        fr: "Vision",
+        en: "Vision"
+      }
+    },
+    gallery: {
+      fr: "Galerie",
+      en: "Gallery"
+    },
+    executiveBoard: {
+      fr: "Bureau", 
+      en: "Executive Board"
+    },
+    faq: {
+      fr: "FAQ",
+      en: "FAQ"
+    },
+    contact: {
+      info: {
+        fr: "Contact",
+        en: "Contact"
+      },
+      join: {
+        fr: "Rejoignez-nous",
+        en: "Join Us"
+      }
+    }
+    
+  } as ClubSectionTitles
 
 } as const;

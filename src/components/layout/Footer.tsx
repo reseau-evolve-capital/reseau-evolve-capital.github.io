@@ -1,28 +1,43 @@
 'use client';
 
-import { motion } from 'framer-motion';
-//import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { type Locale } from '@/config/site-config';
-import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight } from 'lucide-react';
-import { Button } from '../ui/Button';
-import { useState } from 'react';
+import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight, ExternalLink } from 'lucide-react';
 import { siteConfig } from '@/config/site-config';
+import { AnchorLink } from '../ui/AnchorLink';
+import { homeSectionIds } from '@/lib/navigation';
+import { NewsletterButton } from "@/components/ui/NewsletterButton";
 
 interface FooterProps {
     locale: Locale;
 }
 
+// Map of footer link paths to home section IDs for anchor navigation
+const homeAnchorMap: Record<string, string> = {
+    '/clubs': homeSectionIds.clubs,
+    '/events': homeSectionIds.events,
+    '/resources': homeSectionIds.resources,
+    '/partnerships': homeSectionIds.partnerships,
+    '/membership/benefits': homeSectionIds.membership
+};
+
 export function Footer({ locale }: FooterProps) {
-    const [email, setEmail] = useState('');
-    const [isSubscribed, setIsSubscribed] = useState(false);
     const content = siteConfig.pageContent.home.footer;
 
-    const handleSubscribe = (e: React.FormEvent) => {
-        e.preventDefault();
-        // TODO: Implement newsletter subscription
-        setIsSubscribed(true);
+
+
+    // Determines if a link should use anchor navigation or regular navigation
+    const isAnchorLink = (href: string): boolean => {
+        return Object.keys(homeAnchorMap).includes(href);
+    };
+
+    // Gets the section ID for a home page section, if applicable
+    const getSectionIdForLink = (href: string): string | undefined => {
+        if (isAnchorLink(href)) {
+            return homeAnchorMap[href];
+        }
+        return undefined;
     };
 
     return (
@@ -47,29 +62,7 @@ export function Footer({ locale }: FooterProps) {
                         <p className="text-neutral-400 mb-6">
                             {content.newsletter.description[locale]}
                         </p>
-                        {!isSubscribed ? (
-                            <form onSubmit={handleSubscribe} className="flex gap-2">
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder={content.newsletter.placeholder[locale]}
-                                    className="flex-1 px-4 py-2 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-[#F3903F] text-white placeholder-neutral-500"
-                                    required
-                                />
-                                <Button type="submit" className="shrink-0">
-                                    {content.newsletter.button[locale]}
-                                </Button>
-                            </form>
-                        ) : (
-                            <motion.p
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="text-[#F3903F]"
-                            >
-                                {content.newsletter.success[locale]}
-                            </motion.p>
-                        )}
+                        <NewsletterButton locale={locale} variant="hero" />
                     </div>
 
                     {/* Navigation Links */}
@@ -79,17 +72,33 @@ export function Footer({ locale }: FooterProps) {
                                 {section.title[locale]}
                             </h3>
                             <ul className="space-y-4">
-                                {section.items.map((item) => (
-                                    <li key={item.href}>
-                                        <Link
-                                            href={`/${locale}${item.href}`}
-                                            className="text-neutral-400 hover:text-white transition-colors flex items-center group"
-                                        >
-                                            <span>{item.label[locale]}</span>
-                                            <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                                        </Link>
-                                    </li>
-                                ))}
+                                {section.items.map((item) => {
+                                    const sectionId = getSectionIdForLink(item.href);
+                                    
+                                    return (
+                                        <li key={item.href}>
+                                            {isAnchorLink(item.href) ? (
+                                                <AnchorLink
+                                                    href={`/${locale}`}
+                                                    sectionId={sectionId}
+                                                    locale={locale}
+                                                    className="text-neutral-400 hover:text-white transition-colors flex items-center group"
+                                                >
+                                                    <span>{item.label[locale]}</span>
+                                                    <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                                </AnchorLink>
+                                            ) : (
+                                                <Link
+                                                    href={`/${locale}${item.href}`}
+                                                    className="text-neutral-400 hover:text-white transition-colors flex items-center group"
+                                                >
+                                                    <span>{item.label[locale]}</span>
+                                                    <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                                </Link>
+                                            )}
+                                        </li>
+                                    );
+                                })}
                             </ul>
                         </div>
                     ))}
@@ -98,29 +107,63 @@ export function Footer({ locale }: FooterProps) {
                 {/* Bottom Section */}
                 <div className="border-t border-white/10 pt-8">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <p className="text-neutral-400 text-sm">
-                            {content.copyright[locale]}
-                        </p>
-                        <div className="flex items-center gap-4">
-                            <h3 className="text-sm font-medium">
-                                {content.social.title[locale]}
-                            </h3>
-                            <div className="flex gap-4">
-                                {[
-                                    { Icon: Linkedin, href: siteConfig.links.linkedin },
-                                    { Icon: Twitter, href: siteConfig.links.twitter },
-                                    { Icon: Facebook, href: siteConfig.links.facebook },
-                                    { Icon: Instagram, href: siteConfig.links.instagram },
-                                    { Icon: Mail, href: `/${locale}/contact` }
-                                ].map(({ Icon, href }) => (
-                                    <Link
-                                        key={href}
-                                        href={href}
-                                        className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F3903F] transition-colors"
-                                    >
-                                        <Icon className="w-4 h-4" />
-                                    </Link>
-                                ))}
+                        <div className="flex flex-col md:flex-row items-center gap-2 text-neutral-400 text-sm">
+                            <p>{content.copyright[locale]}</p>
+                            <span className="hidden md:block">•</span>
+                            <p>
+                                <span>{locale === 'fr' ? 'Réalisé par ' : 'Built by '}</span>
+                                <a 
+                                    href="https://omniventus.com" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-[#F3903F] hover:text-white transition-colors inline-flex items-center gap-1"
+                                >
+                                    Omniventus
+                                    <ExternalLink className="w-3 h-3" />
+                                </a>
+                            </p>
+                        </div>
+                        <div className="flex flex-col md:flex-row items-center gap-4">
+                            {/* Legal Links */}
+                            <div className="flex gap-6 text-sm text-neutral-400">
+                                <Link 
+                                    href={`/${locale}/legal/privacy-policy`} 
+                                    className="hover:text-white transition-colors"
+                                >
+                                    {locale === 'fr' ? 'Politique de Confidentialité' : 'Privacy Policy'}
+                                </Link>
+                                <Link 
+                                    href={`/${locale}/legal/terms`} 
+                                    className="hover:text-white transition-colors"
+                                >
+                                    {locale === 'fr' ? 'Mentions Légales' : 'Legal Notices'}
+                                </Link>
+                            </div>
+                            
+                            {/* Social Media Links */}
+                            <div className="flex items-center gap-4">
+                                <h3 className="text-sm font-medium">
+                                    {content.social.title[locale]}
+                                </h3>
+                                <div className="flex gap-4">
+                                    {[
+                                        { Icon: Linkedin, href: siteConfig.links.linkedin },
+                                        { Icon: Twitter, href: siteConfig.links.twitter },
+                                        { Icon: Facebook, href: siteConfig.links.facebook },
+                                        { Icon: Instagram, href: siteConfig.links.instagram },
+                                        { Icon: Mail, href: `/${locale}/contact` }
+                                    ].map(({ Icon, href }) => (
+                                        <Link
+                                            key={href}
+                                            href={href}
+                                            target={href.startsWith('/') ? undefined : "_blank"}
+                                            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F3903F] transition-colors"
+                                            rel={href.startsWith('/') ? undefined : "noopener noreferrer"}
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                        </Link>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>

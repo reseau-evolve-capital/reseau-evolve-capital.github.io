@@ -10,15 +10,18 @@ import { AnimatedBackground } from "@/components/hero/AnimatedBackground";
 import { FloatingElements } from "@/components/hero/FloatingElements";
 import { Introduction } from "@/components/sections/Introduction";
 import { ValueProposition } from "@/components/sections/ValueProposition";
-import { HowItWorks } from "@/components/sections/HowItWorks";
+//import { HowItWorks } from "@/components/sections/HowItWorks";
 //import { FeaturedClubs } from "@/components/sections/FeaturedClubs";
 import { Events } from "@/components/sections/Events";
 import { MediaResources } from "@/components/sections/MediaResources";
 import { Membership } from "@/components/sections/Membership";
 import { Partnerships } from "@/components/sections/Partnerships";
 import { Button } from "@/components/ui/Button";
+import { SectionNavigation } from "@/components/ui/SectionNavigation";
+import { Suspense } from "react";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 const FeaturedClubsContent = dynamic(() => import("@/components/sections/FeaturedClubs"), {
     ssr: false,
@@ -40,6 +43,27 @@ export default function HomePage({ locale }: HomePageProps) {
             delay: 0,
             speed: 25,
             initialPosition: { x: 15, y: 30 }
+        },
+        {
+            image: '/companies/lvmh.svg',
+            size: 65,
+            delay: 2,
+            speed: 25,
+            initialPosition: { x: 75, y: 30 }
+        },
+        {
+            image: '/companies/essilor.svg',
+            size: 65,
+            delay: 3,
+            speed: 25,
+            initialPosition: { x: 55, y: 38 }
+        },
+        {
+            image: '/companies/coca_cola.svg',
+            size: 65,
+            delay: 5,
+            speed: 25,
+            initialPosition: { x: 45, y: 30 }
         },
         {
             image: '/companies/microsoft.svg',
@@ -80,8 +104,11 @@ export default function HomePage({ locale }: HomePageProps) {
 
     return (
         <div className="flex flex-col min-h-screen">
+            {/* Section Navigation */}
+            <SectionNavigation locale={locale} />
+            
             {/* Hero Section */}
-            <section className="relative h-screen flex items-center justify-center overflow-hidden">
+            <section id="hero" className="relative h-screen flex items-center justify-center overflow-hidden">
                 <AnimatedBackground />
                 <FloatingElements elements={customElements} />
                 {/* <div className="absolute inset-0 z-0">
@@ -110,39 +137,60 @@ export default function HomePage({ locale }: HomePageProps) {
                         <p className="text-xl md:text-2xl text-neutral-600 mb-8 max-w-2xl mx-auto">
                             {content.hero.description[locale]}
                         </p>
-                        <Button
-                            size="lg"
-                            className="text-lg"
-                        >
-                            {content.hero.cta[locale]}
-                        </Button>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <Button
+                                size="lg"
+                                className="text-lg"
+                            >
+                                <Link href={`/${locale}/contact`}>
+                                    {content.hero.cta[locale]}
+                                </Link>
+                            </Button>
+                        </div>
                     </motion.div>
                 </div>
             </section>
 
             {/* Introduction Section */}
-            <Introduction locale={locale} />
+            <section id="introduction">
+                <Introduction locale={locale} />
+            </section>
 
             {/* Value Proposition Section */}
-            <ValueProposition locale={locale} />
+            <section id="value-proposition">
+                <ValueProposition locale={locale} />
+            </section>
 
-            {/* How It Works Section */}
+            {/* How It Works Section 
             <HowItWorks locale={locale} />
+            */}
 
             {/* Featured Clubs Section */}
-            <FeaturedClubsContent locale={locale} />
+            <section id="clubs">
+                <FeaturedClubsContent locale={locale} />
+            </section>
 
             {/* Events Section */}
-            <Events locale={locale} />
+            <section id="events">
+                <Events locale={locale} />
+            </section>
 
             {/* Media Resources Section */}
-            <MediaResources locale={locale} />
+            <section id="resources">
+                <Suspense>
+                    <MediaResources locale={locale} />
+                </Suspense>
+            </section>
 
             {/* Membership Section */}
-            <Membership locale={locale} />
+            <section id="membership">
+                <Membership locale={locale} />
+            </section>
 
             {/* Partnerships Section */}
-            <Partnerships locale={locale} />
+            <section id="partnerships">
+                <Partnerships locale={locale} />
+            </section>
         </div>
     );
 }

@@ -5,6 +5,8 @@ import { Navigation } from "@/components/navigation"
 import { siteConfig, type Locale } from "@/config/site-config"
 import { Analytics } from "@/components/Analytics"
 import { Footer } from '@/components/layout/Footer'
+import { ScrollToTop } from '@/components/ui/ScrollToTop'
+import { NewsletterProvider } from '@/components/newsletter'
 import { notFound } from 'next/navigation'
 type Props = {
     children: React.ReactNode
@@ -15,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { locale } = await params
     return {
         metadataBase: new URL(siteConfig.url),
-        keywords: ['stock market', 'investment', 'bitcoin', 'nyse', 'education', 'investor', 'cash', 'group investment', 'crypto', 'ethereum', 'blockchain', 'defi', 'web3', 'nft', 'solana', 'polkadot', 'cardano', 'dogecoin', 'shiba inu', 'ethereum', 'bitcoin', 'nyse', 'education', 'investor', 'cash', 'group investment'],
+        keywords: ['comment investir en bourse', 'club investment', 'débuter en bourse', 'clubs d\'investissement', 'education financière', 'apprendre à investir en bourse', 'independance financière', 'group investment', 'investir dans l\'imobilier en groupe', 'ethereum', 'blockchain', 'defi', 'web3', 'nft', 'solana', 'polkadot', 'cardano', 'dogecoin', 'shiba inu', 'ethereum', 'bitcoin', 'nyse', 'education', 'investor', 'cash', 'group investment'],
         title: {
             default: siteConfig.name[locale],
             template: `%s | ${siteConfig.name[locale]}`,
@@ -24,6 +26,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         // icons: {
         //     icon: "/favicon.ico",
         // },
+        // Enhanced SEO settings
+
         openGraph: {
             title: siteConfig.name[locale],
             description: siteConfig.description[locale],
@@ -58,12 +62,15 @@ export default async function LocaleLayout({ children, params }: Props) {
     return (
         <html lang={locale}>
             <body className="min-h-screen bg-white font-sans antialiased">
-                <div className="relative flex min-h-screen flex-col">
-                    <Navigation />
-                    <main className="flex-1">{children}</main>
-                    <Footer locale={locale} />
-                </div>
-                <Analytics />
+                <NewsletterProvider locale={locale}>
+                    <div className="relative flex min-h-screen flex-col">
+                        <Navigation />
+                        <main className="flex-1">{children}</main>
+                        <Footer locale={locale} />
+                        <ScrollToTop />
+                    </div>
+                    <Analytics />
+                </NewsletterProvider>
             </body>
         </html>
     )

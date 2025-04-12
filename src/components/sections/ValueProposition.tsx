@@ -2,8 +2,8 @@
 
 import { motion } from 'framer-motion';
 import { Section } from '../ui/Section';
-import { Button } from '../ui/Button';
-import { useRouter } from 'next/navigation';
+//import { Button } from '../ui/Button';
+//import { useRouter } from 'next/navigation';
 import { type Locale } from '@/config/site-config';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -72,7 +72,7 @@ interface ValuePropositionProps {
 }
 
 export function ValueProposition({ locale }: ValuePropositionProps) {
-    const router = useRouter();
+    //const router = useRouter();
     const content = pageContent.home.valueProposition;
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
@@ -153,7 +153,7 @@ export function ValueProposition({ locale }: ValuePropositionProps) {
                 </div>
             </div>
 
-            {/* CTA Section */}
+            {/* CTA Section 
             <div className="text-center">
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Button
@@ -171,6 +171,7 @@ export function ValueProposition({ locale }: ValuePropositionProps) {
                     </Button>
                 </div>
             </div>
+            */}
         </Section>
     );
 } 
