@@ -33,7 +33,18 @@ export function StorySection({ club, locale }: StorySectionProps) {
                         <h3 className="text-2xl font-heading">
                             {siteConfig.sectionTitles.story.milestones[locale]}
                         </h3>
-                        <p className="text-neutral-600">{club.story.milestones[locale]}</p>
+                        <div className="space-y-3">
+                            {Array.isArray(club.story.milestones) ? (
+                                club.story.milestones.map((milestone, index) => (
+                                    <div key={index} className="flex gap-4">
+                                        <div className="font-bold text-orange-500 min-w-16">{milestone.title[locale]}</div>
+                                        <p className="text-neutral-600">{milestone.content[locale]}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-neutral-600">{club.story.milestones[locale]}</p>
+                            )}
+                        </div>
                     </div>
                     <div className="space-y-4">
                         <h3 className="text-2xl font-heading">

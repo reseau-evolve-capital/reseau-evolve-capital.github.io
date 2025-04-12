@@ -95,7 +95,10 @@ export type Club = {
   // NEW FIELDS FOR DETAIL PAGE
   story: {
     origins: LocalizedText;
-    milestones: LocalizedText;
+    milestones: LocalizedText | {
+      title: LocalizedText;
+      content: LocalizedText;
+    }[];
     futureVision: LocalizedText;
   };
   gallery: {

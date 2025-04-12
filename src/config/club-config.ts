@@ -79,67 +79,143 @@ export const clubs: Club[] = [
         ],
         "executiveBoard": [
           {
-            "id": "lionel-zoclancounon",
-            "name": "Lionel Zoclancounon",
+            "id": "edem-agbehonou",
+            "name": "M. AGBEHONOU Edem",
             "role": {
               "fr": "Président",
               "en": "President"
             },
-            "image": "/images/members/lionel.jpg",
+            "image": "/members/edem.jpeg",
             "bio": {
-              "fr": "Fondateur du réseau Evolve Capital, expert en stratégie d'investissement.",
-              "en": "Founder of the Evolve Capital network, expert in investment strategy."
+              "fr": "Edem est un Ingénieur en Génie climatique de formation. Il porte un intérêt particulier à l'éducation financière, à l'investissement boursier et immobilier. Il est également entrepreneur dans le BTP et dans l'agribusiness.",
+              "en": "Edem is a climate engineering graduate with a strong interest in financial education, stock market and real estate investing. He is also an entrepreneur in construction and agribusiness."
             },
-            "linkedin": "https://linkedin.com/in/lionel-zoclancounon"
+            "linkedin": "https://www.linkedin.com/in/eagbehonou/"
           },
           {
-            "id": "edem-agbehonou",
-            "name": "Edem Agbehonou",
+            "id": "radi-hounsonlon",
+            "name": "MME. HOUNSONLON Radi",
             "role": {
-              "fr": "Vice-président",
-              "en": "Vice President"
+              "fr": "Secrétaire",
+              "en": "Secretary"
             },
-            "image": "/images/members/edem.jpg",
+            "image": "/members/radi.jpeg",
             "bio": {
-              "fr": "Investisseur et formateur spécialisé en marchés financiers.",
-              "en": "Investor and trainer specializing in financial markets."
+              "fr": "Radi est ingénieure généraliste. Une touche à tout avec un attrait pour la lecture. Elle porte de plus en plus d'intérêt à l'investissement boursier et immobilier. Par ailleurs, elle est en collaboration pour le développement d'une plateforme de recherches scientifiques en Afrique. Enfin, elle s'informe sur les opportunités et risques sur des business en Afrique.",
+              "en": "Radi is a general engineer with a passion for reading and a growing interest in stock market and real estate investing. She also collaborates on a scientific research platform in Africa and stays informed on business opportunities and risks across the continent."
             },
-            "linkedin": "https://linkedin.com/in/edem-agbehonou"
+            "linkedin": "https://www.linkedin.com/in/radi-hounsonlon-53b35929/"
+          },
+          {
+            "id": "valentino-houessou",
+            "name": "M. HOUESSOU Valentino",
+            "role": {
+              "fr": "Trésorier",
+              "en": "Treasurer"
+            },
+            "image": "/members/valentino.jpeg",
+            "bio": {
+              "fr": "Valentino est ingénieur en informatique et entrepreneur. Il est notamment le co-fondateur de La Zone, une agence digitale et d'outsourcing entre la France et l'Afrique subsaharienne. Il s'intéresse à l'investissement peu importe le secteur, avec une préférence pour l'investissement en Afrique.",
+              "en": "Valentino is a software engineer and entrepreneur. He is co-founder of La Zone, a digital and outsourcing agency operating between France and sub-Saharan Africa. He is passionate about investing across sectors, with a preference for African markets."
+            },
+            "linkedin": "https://www.linkedin.com/in/valentino-houessou/"
           }
         ],
         "story": {
           "origins": {
-            "fr": "Evolve Capital a été fondé en 2018 par un groupe de jeunes actifs désireux de démocratiser l’investissement boursier. Constatant un manque d’accès aux connaissances financières, ils ont créé un club collaboratif axé sur la formation et la prise de décision collective.",
-            "en": "Evolve Capital was founded in 2018 by a group of young professionals eager to democratize stock market investing. Noticing a lack of financial education accessibility, they created a collaborative club focused on learning and collective decision-making."
+            "fr": "Evolve Capital est né en 2018 de la volonté d'un groupe de jeunes actifs de reprendre le contrôle sur leur avenir financier. Constatant un manque criant de pédagogie en matière d'investissement boursier, ils décident de fonder un club collaboratif dédié à l'apprentissage, au partage d'expérience et à la prise de décision collective.",
+            "en": "Evolve Capital was born in 2018 from the determination of a group of young professionals to take control of their financial future. Noticing a glaring lack of education in stock market investing, they created a collaborative club focused on learning, experience sharing, and collective decision-making."
           },
-          "milestones": {
-            "fr": "2020 : Premier portefeuille structuré. 2021 : Premier million d'euros investi. 2023 : Extension du club et création de nouveaux groupes d'investissement.",
-            "en": "2020: First structured portfolio. 2021: First million euros invested. 2023: Expansion of the club and creation of new investment groups."
-          },
+          "milestones": [
+            {
+              "title": {
+                "fr": "2018",
+                "en": "2018"
+              },
+              "content": {
+                "fr": "Genèse du club.",
+                "en": "Club genesis."
+              }
+            },
+            {
+              "title": {
+                "fr": "2020",
+                "en": "2020"
+              },
+              "content": {
+                "fr": "Première restructuration majeure et mise en place d'un bureau solide (Président : Lionel Zoclancounon, Trésorier : Ruben Afoudah, Secrétaire : Edem Agbehonou).",
+                "en": "Major governance restructuring and formation of a strong executive board (President: Lionel Zoclancounon, Treasurer: Ruben Afoudah, Secretary: Edem Agbehonou)."
+              }
+            },
+            {
+              "title": {
+                "fr": "2021",
+                "en": "2021"
+              },
+              "content": {
+                "fr": "Atteinte du premier palier de 100 000 € d'actifs.",
+                "en": "First €100,000 milestone reached."
+              }
+            },
+            {
+              "title": {
+                "fr": "2023",
+                "en": "2023"
+              },
+              "content": {
+                "fr": "Formalisation du modèle de club et naissance du réseau.",
+                "en": "Club model formalized and network launched."
+              }
+            },
+            {
+              "title": {
+                "fr": "2025",
+                "en": "2025"
+              },
+              "content": {
+                "fr": "Dépassement des 600 000 € de valorisation.",
+                "en": "Portfolio value exceeds €600,000."
+              }
+            }
+          ],
           "futureVision": {
-            "fr": "D’ici 2025, nous visons une diversification accrue et l’intégration de classes d’actifs alternatives comme l’immobilier et les crypto-actifs.",
-            "en": "By 2025, we aim for greater diversification and the integration of alternative asset classes such as real estate and crypto assets."
+            "fr": "D'ici 2028, Evolve Capital ambitionne d'atteindre un capital collectif de 1 million d'euros, tout en consolidant son rôle de creuset d'apprentissage pour quiconque souhaite devenir un investisseur éclairé. Le club entend également élargir ses horizons au-delà de la bourse, en cultivant un réseau puissant de membres engagés dans leur autonomie financière.",
+            "en": "By 2028, Evolve Capital aims to reach €1 million in collective capital, while strengthening its role as a learning hub for anyone aspiring to become a savvy investor. The club also seeks to expand beyond the stock market, fostering a strong network of members committed to financial empowerment."
           }
         },
         "gallery": [
           {
-            "image": "/images/clubs/evolve-meeting.jpg",
+            "image": "/clubs/evolve_capital/ecc_1.jpeg",
             "caption": {
               "fr": "Réunion stratégique du club Evolve Capital.",
               "en": "Strategic meeting of the Evolve Capital club."
             }
           },
           {
-            "image": "/images/clubs/evolve-event.jpg",
+            "image": "/clubs/evolve_capital/evolve_capital.jpg",
             "caption": {
               "fr": "Événement de networking et d'investissement.",
               "en": "Networking and investment event."
             }
+          },
+          {
+            "image": "/clubs/evolve_capital/ecc_2.jpeg",
+            "caption": {
+              "fr": "Rencontre entre membres.",
+              "en": "Meeting between members."
+            }
+          },
+          {
+            "image": "/clubs/evolve_capital/ecc_3.jpeg",
+            "caption": {
+              "fr": "une autre rencontre entre membres.",
+              "en": "Another meeting between members."
+            }
           }
         ],
         "contactInfo": {
-          "email": "contact@evolvecapital.fr",
-          "phone": "+33 7 52 234 882",
+          "email": "evolvecapitalclub@gmail.com",
+          "phone": "+33 6 28 92 90 68",
           "address": {
             "fr": "Paris, France",
             "en": "Paris, France"
@@ -312,45 +388,45 @@ export const clubs: Club[] = [
         "executiveBoard": [
           {
             "id": "anael-ezin",
-            "name": "Anaël EZIN",
+            "name": "M. EZIN Anaël",
             "role": {
               "fr": "Président",
               "en": "President"
             },
-            "image": "/images/members/anael.jpg",
+            "image": "/members/anael.png",
             "bio": {
-              "fr": "Président du club, passionné par l’investissement boursier et les nouvelles technologies.",
-              "en": "President of the club, passionate about stock market investing and new technologies."
+              "fr": "Président en exercice du club, il porte un intérêt particulier aux investissements boursiers car il aspire à atteindre une liberté financière. Actuaire dans une compagnie d'assurance, il est passionné par les nouvelles technologies et pendant ses moments de loisirs il s'adonne au bricolage.",
+              "en": "Current president of the club, he has a strong interest in stock market investing as he aims for financial freedom. An actuary at an insurance company, he's passionate about new technologies and enjoys DIY projects in his free time."
             },
-            "linkedin": ""
+            "linkedin": "https://www.linkedin.com/in/anael-ezin/"
           },
           {
             "id": "manhirath-amoussa",
-            "name": "Manhirath AMOUSSA",
+            "name": "Mme AMOUSSA Manhirath",
             "role": {
-              "fr": "Trésorier",
+              "fr": "Trésorière",
               "en": "Treasurer"
             },
-            "image": "/images/members/manhirath.jpg",
+            "image": "/members/manhirath.png",
             "bio": {
-              "fr": "Trésorier et consultant en actuariat, adepte des défis et de la prise de risque calculée.",
-              "en": "Treasurer and actuarial consultant, enjoys challenges and calculated risk-taking."
+              "fr": "Trésorière et consultante en actuariat, elle aime beaucoup tout ce qui a trait à l'ouverture d'esprit, aux challenges et à la prise de risque.",
+              "en": "Treasurer and actuarial consultant, she greatly values open-mindedness, challenges, and risk-taking."
             },
-            "linkedin": ""
+            "linkedin": "https://www.linkedin.com/in/manhirath-amoussa-2bb85414a/"
           },
           {
             "id": "anissa-toure",
-            "name": "Anissa TOURE",
+            "name": "Mme TOURE Anissa",
             "role": {
               "fr": "Secrétaire",
               "en": "Secretary"
             },
-            "image": "/images/members/anissa.jpg",
+            "image": "/members/anissa.png",
             "bio": {
-              "fr": "Secrétaire du club, impliquée dans les projets de solidarité et de développement international.",
-              "en": "Secretary of the club, involved in sustainability and international development projects."
+              "fr": "Secrétaire en exercice du club. Chargée de projet solidarité durable, internationale et développement. Elle est intéressée par toutes les thématiques portées sur l'investissement pour une liberté financière.",
+              "en": "Current secretary of the club. Project manager in sustainable and international development. She is interested in all topics related to investing for financial freedom."
             },
-            "linkedin": ""
+            "linkedin": "https://www.linkedin.com/in/anissa-toure-a986a01a5/"
           }
         ],
         "story": {
@@ -358,10 +434,28 @@ export const clubs: Club[] = [
             "fr": "Fondé en 2021, le Paris Evolve Capital est né de la volonté d’un groupe d’investisseurs passionnés de structurer une approche collaborative pour maximiser les opportunités du marché.",
             "en": "Founded in 2021, Paris Evolve Capital was born from the desire of a group of passionate investors to structure a collaborative approach to maximize market opportunities."
           },
-          "milestones": {
-            "fr": "2023 : Croissance du portefeuille au-delà de 60 000€. 2024 : Objectif de 100 000€ fixé pour 2025.",
-            "en": "2023: Portfolio growth beyond €60,000. 2024: Target set at €100,000 for 2025."
-          },
+          "milestones": [
+            {
+              "title": {
+                "fr": "2023",
+                "en": "2023"
+              },
+              "content": {
+                "fr": "Croissance du portefeuille au-delà de 60 000€.",
+                "en": "Portfolio growth beyond €60,000."
+              }
+            },
+            {
+              "title": {
+                "fr": "2024",
+                "en": "2024"
+              },
+              "content": {
+                "fr": "Objectif de 100 000€ fixé pour 2025.",
+                "en": "Target set at €100,000 for 2025."
+              }
+            }
+          ],
           "futureVision": {
             "fr": "D’ici 2025, nous visons à atteindre 100 000€ de portefeuille et à intégrer de nouvelles stratégies d’investissement.",
             "en": "By 2025, we aim to reach a €100,000 portfolio and integrate new investment strategies."
@@ -369,14 +463,14 @@ export const clubs: Club[] = [
         },
         "gallery": [
           {
-            "image": "/images/clubs/pec-meeting.jpg",
+            "image": "/clubs/paris_evolve_capital/pec_1.jpeg",
             "caption": {
-              "fr": "Réunion d’analyse de portefeuille du PEC.",
-              "en": "PEC portfolio analysis meeting."
+              "fr": "Rencontre membres du PEC.",
+              "en": "PEC members meeting."
             }
           },
           {
-            "image": "/images/clubs/pec-event.jpg",
+            "image": "/clubs/paris_evolve_capital.jpg",
             "caption": {
               "fr": "Événement d’échange entre membres et experts en finance.",
               "en": "Networking event with members and financial experts."
@@ -384,8 +478,8 @@ export const clubs: Club[] = [
           }
         ],
         "contactInfo": {
-          "email": "contact@pec-evolvecapital.fr",
-          "phone": "+33 7 52 234 882",
+          "email": "paris.evolvecapital@gmail.com",
+          "phone": "+33 7 60 25 34 41",
           "address": {
             "fr": "Paris, France",
             "en": "Paris, France"
@@ -622,10 +716,18 @@ export const clubs: Club[] = [
             
             "en": "Founded in February 2024, Vision Evolve Capital (VEC) was born from a meaningful encounter between Louisia Minkala and Lionel Zoclancounon at a networking conference of BlackNetwork. Inspired by Lionel's presentation on investment clubs and their role in financial education, Louisia quickly embraced the idea and chose to take part. She became the club's first president, driven by a clear mission to boost financial literacy among women. Although open to all, VEC stands out within the network for its strong female representation, making it a unique and forward-thinking club. Under Louisia's leadership, VEC has become a space for collaborative learning, strategic investing, and financial empowerment—drawing from the shared experience of the Evolve Capital network."
           },
-          "milestones": {
-            "fr": "2024 : Lancement du club. En à peine huit mois, le VEC atteint une valorisation de portefeuille de 30 000 €.",
-            "en": "2024: Club launch. In less than eight months, VEC reached a portfolio valuation of €30,000."
-          },
+          "milestones": [
+            {
+              "title": {
+                "fr": "2024",
+                "en": "2024"
+              },
+              "content": {
+                "fr": "Lancement du club. En à peine huit mois, le VEC atteint une valorisation de portefeuille de 30 000 €.",
+                "en": "Club launch. In less than eight months, VEC reached a portfolio valuation of €30,000."
+              }
+            }
+          ],
           "futureVision": {
             "fr": "D'ici 2026, VEC ambitionne d'atteindre 100 000 € d'actifs sous gestion, tout en renforçant les synergies entre ses membres. Le club souhaite devenir une référence dans l'accompagnement financier des jeunes actifs, en particulier des femmes, à travers une pédagogie de terrain, des ateliers pratiques et un esprit d'entraide structuré.",
             
