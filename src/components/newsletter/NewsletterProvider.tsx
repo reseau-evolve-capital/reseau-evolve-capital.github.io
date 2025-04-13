@@ -1,10 +1,11 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect , useCallback} from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { NewsletterPopup } from './NewsletterPopup';
 import { newsletterConfig } from '@/config/newsletter-config';
 import { type Locale } from '@/config/site-config';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { NEWSLETTER_QUERY_PARAM } from '@/lib/newsletter';
 
 interface NewsletterContextType {
   showPopup: () => void;
@@ -30,7 +31,8 @@ export function NewsletterProvider({ children, locale }: NewsletterProviderProps
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const pathname = usePathname();
-console.log("isPopupVisible", isPopupVisible)
+  const searchParams = useSearchParams();
+  
   // Check if we should display the popup on the current page
   const shouldDisplayOnCurrentPage = useCallback(() => {
     if (newsletterConfig.displayOnAllPages) return true;
@@ -55,9 +57,21 @@ console.log("isPopupVisible", isPopupVisible)
     }
   };
 
-  // Initialize popup based on config and user history
+  // Check if the newsletter query parameter is present in the URL
+  const hasNewsletterQueryParam = useCallback(() => {
+    return searchParams.has(NEWSLETTER_QUERY_PARAM);
+  }, [searchParams]);
+
+  // Initialize popup based on config, user history, and URL parameters
   useEffect(() => {
     if (isInitialized) return;
+    
+    // If the newsletter query parameter is present, show the popup immediately
+    if (hasNewsletterQueryParam()) {
+      setIsPopupVisible(true);
+      setIsInitialized(true);
+      return;
+    }
     
     const initiatePopup = () => {
       // If we shouldn't display on this page, return
@@ -81,9 +95,9 @@ console.log("isPopupVisible", isPopupVisible)
     };
     
     initiatePopup();
-      setIsInitialized(true);
+    setIsInitialized(true);
      
-  }, [isInitialized, pathname, shouldDisplayOnCurrentPage]);
+  }, [isInitialized, pathname, shouldDisplayOnCurrentPage, hasNewsletterQueryParam]);
 
   const showPopup = () => {
     setIsPopupVisible(true);
@@ -92,16 +106,19 @@ console.log("isPopupVisible", isPopupVisible)
   const hidePopup = () => {
     setIsPopupVisible(false);
     
-    // Mark as dismissed in sessionStorage
-    if (newsletterConfig.showOncePerSession) {
-      sessionStorage.setItem('hasSeenNewsletterPopup', 'true');
-    }
-    
-    // Record dismissal time in localStorage for longer-term tracking
-    try {
-      localStorage.setItem('newsletterLastDismissed', JSON.stringify(new Date().toISOString()));
-    } catch {
-      // Ignore if localStorage is not available
+    // If the popup was opened via URL parameter, don't mark as seen for future visits
+    if (!hasNewsletterQueryParam()) {
+      // Mark as dismissed in sessionStorage
+      if (newsletterConfig.showOncePerSession) {
+        sessionStorage.setItem('hasSeenNewsletterPopup', 'true');
+      }
+      
+      // Record dismissal time in localStorage for longer-term tracking
+      try {
+        localStorage.setItem('newsletterLastDismissed', JSON.stringify(new Date().toISOString()));
+      } catch {
+        // Ignore if localStorage is not available
+      }
     }
   };
 
@@ -112,8 +129,8 @@ console.log("isPopupVisible", isPopupVisible)
         <NewsletterPopup
           locale={locale}
           delayTime={0} // No delay needed as we're managing this in the provider
-        showOncePerSession={false} // We're handling this in the provider
-        onClose={hidePopup}
+          showOncePerSession={false} // We're handling this in the provider
+          onClose={hidePopup}
         />
       )}
     </NewsletterContext.Provider>
