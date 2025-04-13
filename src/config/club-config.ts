@@ -325,6 +325,16 @@ export const clubs: Club[] = [
               "fr": "Oui. Le Réseau Evolve Capital a mis en place un système de gestion permettant l'intégration de nouveaux membres à tout moment dans la vie du club.",
               "en": "Yes. Evolve Capital Network has a management system that allows new members to join at any point during the club"
             }
+          },
+          {
+            "question": {
+              "fr": "Combien de membres peut-il y avoir au maximum dans un club ?",
+              "en": "What is the maximum number of members in a club?"
+            },
+            "answer": {
+              "fr": "Il peut y avoir 20 membres au maximum.",
+              "en": "There can be a maximum of 20 members."
+            }
           }
         ]
     },
@@ -451,14 +461,14 @@ export const clubs: Club[] = [
                 "en": "2024"
               },
               "content": {
-                "fr": "Objectif de 100 000€ fixé pour 2025.",
-                "en": "Target set at €100,000 for 2025."
+                "fr": "Objectif de 100 000€ atteint.",
+                "en": "Target of €100,000 reached."
               }
             }
           ],
           "futureVision": {
-            "fr": "D’ici 2025, nous visons à atteindre 100 000€ de portefeuille et à intégrer de nouvelles stratégies d’investissement.",
-            "en": "By 2025, we aim to reach a €100,000 portfolio and integrate new investment strategies."
+            "fr": "Notre objectif est d'atteindre 1.000.000 € d'actifs sous gestion d'ici 2031.",
+            "en": "Our goal is to reach 1.000.000 € in assets under management by 2031."
           }
         },
         "gallery": [
@@ -588,6 +598,16 @@ export const clubs: Club[] = [
             "answer": {
               "fr": "Oui. Le Réseau Evolve Capital a mis en place un système de gestion permettant l'intégration de nouveaux membres à tout moment dans la vie du club.",
               "en": "Yes. Evolve Capital Network has a management system that allows new members to join at any point during the club"
+            }
+          },
+          {
+            "question": {
+              "fr": "Combien de membres peut-il y avoir au maximum dans un club ?",
+              "en": "What is the maximum number of members in a club?"
+            },
+            "answer": {
+              "fr": "Il peut y avoir 20 membres au maximum.",
+              "en": "There can be a maximum of 20 members."
             }
           }
         ]
@@ -882,6 +902,16 @@ export const clubs: Club[] = [
             "answer": {
               "fr": "Oui. Le Réseau Evolve Capital a mis en place un système de gestion permettant l'intégration de nouveaux membres à tout moment dans la vie du club.",
               "en": "Yes. Evolve Capital Network has a management system that allows new members to join at any point during the club"
+            }
+          },
+          {
+            "question": {
+              "fr": "Combien de membres peut-il y avoir au maximum dans un club ?",
+              "en": "What is the maximum number of members in a club?"
+            },
+            "answer": {
+              "fr": "Il peut y avoir 20 membres au maximum.",
+              "en": "There can be a maximum of 20 members."
             }
           }
         ]
