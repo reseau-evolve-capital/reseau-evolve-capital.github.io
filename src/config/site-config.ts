@@ -577,6 +577,21 @@ export const pageContent: PageContent = {
         },
         {
           content: {
+            "fr": "Aventure humaine unique. J’y ai grandi en leadership, appris du collectif et trouvé ma place en tant que membre actif.",
+            "en": "Unique human adventure. I grew up in leadership, learned from the collective, and found my place as an active member."
+          },
+          author: {
+            fr: "Olivier OUEDRAOGO",
+            en: "Olivier OUEDRAOGO"
+          },
+          role: {
+            fr: "Membre depuis 2018",
+            en: "Member since 2018"
+          },
+          image: "/members/olivier.jpeg"
+        },
+        {
+          content: {
             fr: "Avec le REC, j’ai appris ensemble ce que je n’aurais jamais osé explorer seul. Curiosité, entraide et progrès collectif.",
             en: "With the REC, I learned together what I would never have dared to explore alone. Curiosity, mutual support and collective progress."
           },
