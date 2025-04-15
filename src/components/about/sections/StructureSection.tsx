@@ -50,6 +50,7 @@ export function StructureSection({ locale }: StructureSectionProps) {
                             alt={structure.overview.title[locale]}
                             fill
                             className="object-cover"
+                            objectFit="contain"
                         />
                     </motion.div>
                 </div>
