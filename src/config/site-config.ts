@@ -562,8 +562,8 @@ export const pageContent: PageContent = {
         },
         {
           content: {
-            "fr": "Membre d’Evolve Capital depuis près de six ans, j’y ai affiné ma vision de l’investissement grâce à la rigueur, l’intelligence collective et un cadre structurant. Au-delà des performances, ce sont l’apprentissage continu, l’entraide et la culture financière qui font toute la richesse de cette expérience.",
-            "en": "As a member of Evolve Capital for nearly six years, I’ve refined my investment outlook through rigour, collective intelligence and a structured framework. Beyond performance, it’s the ongoing learning, mutual support and financial culture that make this experience truly valuable."
+            "fr": "Depuis six ans au REC, j’ai gagné bien plus que des performances : méthode, partage, et une vraie culture financière.",
+            "en": "For six years at REC, I have gained much more than performance: method, sharing, and a real financial culture."
           },
           author: {
             fr: "Francis TAKPA",
@@ -577,8 +577,8 @@ export const pageContent: PageContent = {
         },
         {
           content: {
-            fr: "Avec REC, j'ai acquis des connaissances pratiques que je n'aurais jamais pu obtenir seul. Dans ce réseau dynamique constitué de personnes curieuses et passionnées par l'investissement, chaque rencontre est une opportunité d'apprendre.",
-            en: "With REC, I've gained practical knowledge that I could never have obtained alone. In this dynamic network of curious and passionate people about investing, each meeting is an opportunity to learn."
+            fr: "Avec le REC, j’ai appris ensemble ce que je n’aurais jamais osé explorer seul. Curiosité, entraide et progrès collectif.",
+            en: "With the REC, I learned together what I would never have dared to explore alone. Curiosity, mutual support and collective progress."
           },
           author: {
             fr: "Adler KEDOTE",
