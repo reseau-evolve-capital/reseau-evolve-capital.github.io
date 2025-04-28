@@ -14,6 +14,6 @@ WORKDIR /opt/app
 COPY . .
 RUN chown -R node:node /opt/app
 USER node
-RUN ["npm", "run", "build"]
+RUN yarn build
 EXPOSE 1337
-CMD ["npm", "run", "develop"]
+CMD ["yarn", "develop"]
