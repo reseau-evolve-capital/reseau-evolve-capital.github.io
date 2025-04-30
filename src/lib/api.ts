@@ -145,6 +145,27 @@ export async function getArticleBySlug(slug: string, locale: string): Promise<Ar
   }
 }
 
+export async function getArticleOfLocaleAndDocumentId(documentId: string, locale: string): Promise<Article | null> {
+  try {
+    const articles = strapiClient.collection('articles');
+    const response = await articles.find({
+      locale,
+      filters: {
+        documentId: {
+          $eq: documentId,
+        },
+      },
+      populate: ['featuredImage', 'category', 'author', 'author.avatar', 'tags'],
+    });
+
+    return response.data?.[0] as unknown as Article;
+  } catch (error) {
+    console.error(`Error fetching articles for documentId ${documentId}:`, error);
+    return null;
+  }
+}
+
+
 export async function getAllCategories(locale: string): Promise<Category[]> {
   try {
     const categories = strapiClient.collection('categories');

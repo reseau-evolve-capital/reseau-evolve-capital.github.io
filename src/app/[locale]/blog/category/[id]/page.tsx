@@ -4,10 +4,10 @@ import BlogCard from '@/components/blog/BlogCard';
 import CategoryList from '@/components/blog/CategoryList';
 
 interface CategoryPageProps {
-  params: {
+  params: Promise<{
     locale: string;
     id: string;
-  };
+  }>;
 }
 
 export const revalidate = 3600; // Revalidate at most once per hour
@@ -39,7 +39,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
-  const { locale, id } = params;
+  const { locale, id } = await params;
   const categoryId = parseInt(id, 10);
   
   // Get all categories to find the current one
@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { locale, id } = params;
+  const { locale, id } = await params;
   const categoryId = parseInt(id, 10);
   
   // Fetch articles for this category and all categories

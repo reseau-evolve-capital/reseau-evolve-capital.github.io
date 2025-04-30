@@ -1,4 +1,5 @@
 {
+  "extends": "@strapi/typescript-utils/tsconfigs/server",
   "compilerOptions": {
     "module": "CommonJS",
     "moduleResolution": "Node",
@@ -10,7 +11,8 @@
     "incremental": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "noEmitOnError": true,
+    "noEmitOnError": false,
+    "noImplicitAny": false,
     "noImplicitThis": true,
     "outDir": "dist",
     "rootDir": "."

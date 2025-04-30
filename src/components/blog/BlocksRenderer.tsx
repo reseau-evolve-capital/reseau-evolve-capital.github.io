@@ -1,11 +1,12 @@
 'use client';
-import React from 'react';
+import React, { JSX } from 'react';
 import Image from 'next/image';
 // Using default import from package
 import { BlocksRenderer as BlocksRendererComponent } from '@strapi/blocks-react-renderer';
 import { getStrapiMediaUrl } from '@/lib/api';
 
 interface BlocksRendererProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   content: any; // Accept any type for content
   className?: string;
 }
@@ -24,8 +25,8 @@ export default function BlocksRenderer({ content, className = "" }: BlocksRender
           
             image: ({ image }) => {
               if (!image) return null;
-              
-              const imageUrl = getStrapiMediaUrl(image);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const imageUrl = getStrapiMediaUrl(image as any);
               
               const caption = image?.caption || '';
               

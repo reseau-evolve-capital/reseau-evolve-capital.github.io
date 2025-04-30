@@ -2,14 +2,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getAllArticles, getArticleBySlug, getStrapiMediaUrl } from '@/lib/api';
+import { getAllArticles, getArticleBySlug, getStrapiMediaUrl, getArticleOfLocaleAndDocumentId } from '@/lib/api';
 import BlocksRenderer from '@/components/blog/BlocksRenderer';
+import SocialShareButtons from '@/components/blog/SocialShareButtons';
+import RelatedArticles from '@/components/blog/RelatedArticles';
 import { formatDate } from '@/lib/utils';
 
 interface ArticlePageProps {
   params: Promise<{
     locale: string;
     slug: string;
+    documentId: string;
   }>;
 }
 
@@ -19,7 +22,6 @@ export async function generateStaticParams() {
   // Get all articles for all locales for static generation
   const frArticles = await getAllArticles('fr');
   const enArticles = await getAllArticles('en');
-  
   const params = [];
   
   // Create params for French articles
@@ -27,6 +29,7 @@ export async function generateStaticParams() {
     params.push({
       locale: 'fr',
       slug: article.slug,
+      documentId: article.documentId,
     });
   }
   
@@ -35,6 +38,7 @@ export async function generateStaticParams() {
     params.push({
       locale: 'en',
       slug: article.slug,
+      documentId: article.documentId,
     });
   }
   
@@ -42,7 +46,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
-  const { locale, slug } = await params;
+  const { locale, slug, documentId } = await params;
   
   const article = await getArticleBySlug(slug, locale);
   
@@ -51,6 +55,15 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       title: 'Article not found',
     };
   }
+  const alternateArticle = await getArticleOfLocaleAndDocumentId(documentId, locale === 'fr' ? 'en' : 'fr');
+
+  const alternates = {
+    canonical: `/blog/${slug}`,
+    languages: {
+      'fr': `/fr/blog/${locale === 'fr' ? slug : alternateArticle?.slug || ''}`,
+      'en': `/en/blog/${locale === 'en' ? slug : alternateArticle?.slug || ''}`,
+    },
+  };
   
   return {
     title: article.SEOMetaTitle || article.title,
@@ -58,13 +71,7 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     openGraph: {
       images: [getStrapiMediaUrl(article.featuredImage)],
     },
-    alternates: {
-      canonical: `/blog/${slug}`,
-      languages: {
-        'fr': `/fr/blog/${slug}`,
-        'en': `/en/blog/${slug}`,
-      },
-    },
+    alternates,
   };
 }
 
@@ -78,6 +85,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   }
   
   const imageUrl = getStrapiMediaUrl(article.featuredImage);
+  const articleUrl = `/${locale}/blog/${slug}`;
   
   // Translations
   const translations = {
@@ -198,6 +206,22 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       {/* Article content */}
       <div className="prose prose-lg mx-auto max-w-3xl">
         <BlocksRenderer content={article.content} />
+        
+        {/* Social Share Buttons */}
+        <SocialShareButtons 
+          url={articleUrl}
+          title={article.title}
+          locale={locale}
+        />
+      </div>
+      
+      {/* Related Articles */}
+      <div className="mx-auto max-w-6xl">
+        <RelatedArticles 
+          currentArticle={article}
+          locale={locale}
+          maxArticles={3}
+        />
       </div>
     </article>
   );
