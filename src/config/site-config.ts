@@ -562,7 +562,7 @@ export const pageContent: PageContent = {
         },
         {
           content: {
-            "fr": "Depuis six ans au REC, j’ai gagné bien plus que des performances : méthode, partage, et une vraie culture financière.",
+            "fr": "Depuis six ans au REC, j'ai gagné bien plus que des performances : méthode, partage, et une vraie culture financière.",
             "en": "For six years at REC, I have gained much more than performance: method, sharing, and a real financial culture."
           },
           author: {
@@ -577,7 +577,7 @@ export const pageContent: PageContent = {
         },
         {
           content: {
-            "fr": "Aventure humaine unique. J’y ai grandi en leadership, appris du collectif et trouvé ma place en tant que membre actif.",
+            "fr": "Aventure humaine unique. J'y ai grandi en leadership, appris du collectif et trouvé ma place en tant que membre actif.",
             "en": "Unique human adventure. I grew up in leadership, learned from the collective, and found my place as an active member."
           },
           author: {
@@ -592,7 +592,7 @@ export const pageContent: PageContent = {
         },
         {
           content: {
-            fr: "Avec le REC, j’ai appris ensemble ce que je n’aurais jamais osé explorer seul. Curiosité, entraide et progrès collectif.",
+            fr: "Avec le REC, j'ai appris ensemble ce que je n'aurais jamais osé explorer seul. Curiosité, entraide et progrès collectif.",
             en: "With the REC, I learned together what I would never have dared to explore alone. Curiosity, mutual support and collective progress."
           },
           author: {
@@ -1342,6 +1342,13 @@ export const siteConfig = {
       title: {
         fr: "À Propos",
         en: "About"
+      }
+    },
+    {
+      href: "/blog",
+      title: {
+        fr: "Blog",
+        en: "Blog"
       }
     },
     {
