@@ -3,13 +3,15 @@ import { motion } from "framer-motion"
 import Link from "next/link"
 import { useRouter, usePathname } from 'next/navigation';
 import { siteConfig, locales, defaultLocale, type Locale } from "@/config/site-config"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image";
 
+//improve navigation links when on article page because just changing locale in url will not work. slug can be different in other locales
 export const Navigation = () => {
     const router = useRouter();
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false)
+    const [alternateUrls, setAlternateUrls] = useState<Record<Locale, string>>({} as Record<Locale, string>);
 
     const toggleMenu = () => setIsOpen(!isOpen)
 
@@ -21,8 +23,60 @@ export const Navigation = () => {
 
     const currentLocale = getCurrentLocale();
 
+    // Check if we're on a blog article page
+    const isBlogArticlePage = () => {
+        const pathSegments = pathname.split('/');
+        return pathSegments.length >= 4 && pathSegments[2] === 'blog' && pathSegments[3]?.length > 0;
+    }
+
+    // Extract blog slug and documentId from meta tags
+    useEffect(() => {
+        const fetchAlternateUrls = () => {
+            // Get alternate URLs from link rel="alternate" meta tags if available
+            const alternateLinks = document.querySelectorAll('link[rel="alternate"][hreflang]');
+            
+            const urls: Record<Locale, string> = {} as Record<Locale, string>;
+            
+            alternateLinks.forEach((link) => {
+                const hrefLang = link.getAttribute('hreflang');
+                const href = link.getAttribute('href');
+                
+                if (hrefLang && href && locales.includes(hrefLang as Locale)) {
+                    urls[hrefLang as Locale] = href;
+                }
+            });
+            
+            if (Object.keys(urls).length > 0) {
+                setAlternateUrls(urls);
+            }
+        };
+
+        // Only run in the browser
+        if (typeof window !== 'undefined') {
+            fetchAlternateUrls();
+        }
+    }, [pathname]);
+
     // Function to switch locale
-    const switchLocale = (newLocale: Locale) => {
+    const switchLocale = async (newLocale: Locale) => {
+        // If on a blog article page, use the alternate URL if available
+        if (isBlogArticlePage() && alternateUrls[newLocale]) {
+            // If we have a full URL, extract the path part
+            let targetPath = alternateUrls[newLocale];
+            if (targetPath.startsWith('http')) {
+                try {
+                    const url = new URL(targetPath);
+                    targetPath = url.pathname;
+                } catch (error) {
+                    console.error('Invalid URL in alternate link:', targetPath, error);
+                }
+            }
+            
+            router.push(targetPath);
+            return;
+        }
+        
+        // Default locale switching for non-blog pages or when alternates aren't available
         const pathWithoutLocale = pathname.replace(/^\/[^\/]+/, '');
         router.push(`/${newLocale}${pathWithoutLocale || '/'}`);
     }
