@@ -10,7 +10,7 @@ interface BlogCardProps {
 }
 
 export default function BlogCard({ article, locale }: BlogCardProps) {
-  console.log("article", article);
+
   // Access properties directly from article instead of using attributes
   const imageUrl = getStrapiMediaUrl(article.featuredImage);
   

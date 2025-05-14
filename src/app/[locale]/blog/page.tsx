@@ -27,7 +27,7 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
   
   const description = locale === 'en'
     ? 'Latest articles and insights from Reseau Evolve Capital'
-    : 'Derniers articles et analyses de Reseau Evolve Capital';
+    : 'Derniers articles et analyses du Reseau Evolve Capital';
   
   return {
     title,
