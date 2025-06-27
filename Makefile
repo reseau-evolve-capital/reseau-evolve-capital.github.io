@@ -137,3 +137,64 @@ strapi-prod-logs: ## View Strapi production container logs
 strapi-prod-restart: strapi-prod-down strapi-prod-up ## Restart Strapi production containers
 
 strapi-prod-init: strapi-setup strapi-prod-build strapi-prod-up ## Setup and start Strapi production with Docker in one command 
+
+# Load .env if present and set multi-origin remotes
+set-multi-origin:
+	@if [ -f .env ]; then \
+		export $(shell grep -v '^#' .env | xargs); \
+	fi; \
+	if [ -z "$$GIT_PRIMARY_REMOTE" ] || [ -z "$$GIT_SECONDARY_REMOTE" ]; then \
+		echo "Both GIT_PRIMARY_REMOTE and GIT_SECONDARY_REMOTE must be set (in .env or environment)."; \
+		exit 1; \
+	fi; \
+	git remote set-url origin $$GIT_PRIMARY_REMOTE; \
+	git remote set-url --add --push origin $$GIT_PRIMARY_REMOTE; \
+	git remote set-url --add --push origin $$GIT_SECONDARY_REMOTE
+
+# Push to both remotes via origin (Option 2)
+push-all:
+	branch=$$(git rev-parse --abbrev-ref HEAD); \
+	git push origin $$branch
+
+# Push only to primary remote
+push-primary:
+	@if [ -f .env ]; then \
+		export $(shell grep -v '^#' .env | xargs); \
+	fi; \
+	if [ -z "$$GIT_PRIMARY_REMOTE" ]; then \
+		echo "GIT_PRIMARY_REMOTE must be set (in .env or environment)."; \
+		exit 1; \
+	fi; \
+	branch=$$(git rev-parse --abbrev-ref HEAD); \
+	git push $$GIT_PRIMARY_REMOTE $$branch
+
+# Push only to secondary remote
+push-secondary:
+	@if [ -f .env ]; then \
+		export $(shell grep -v '^#' .env | xargs); \
+	fi; \
+	if [ -z "$$GIT_SECONDARY_REMOTE" ]; then \
+		echo "GIT_SECONDARY_REMOTE must be set (in .env or environment)."; \
+		exit 1; \
+	fi; \
+	branch=$$(git rev-parse --abbrev-ref HEAD); \
+	git push $$GIT_SECONDARY_REMOTE $$branch --force
+
+list-git-remotes:
+	git remote -v
+
+
+checkout-secondary-branch:
+	@if [ -z "$(branch)" ]; then \
+		echo "Usage: make checkout-secondary-branch branch=<branch-name>"; \
+		exit 1; \
+	fi; \
+	if [ -f .env ]; then \
+		export $$(grep -v '^#' .env | xargs); \
+	fi; \
+	if [ -z "$$GIT_SECONDARY_REMOTE" ]; then \
+		echo "GIT_SECONDARY_REMOTE must be set (in .env or environment)."; \
+		exit 1; \
+	fi; \
+	git fetch $$GIT_SECONDARY_REMOTE $${branch}; \
+	git checkout -b $${branch} $$GIT_SECONDARY_REMOTE/$${branch}

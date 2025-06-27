@@ -768,6 +768,43 @@ export const pageContent: PageContent = {
       "events": [
         {
           "title": {
+            "fr": "REC-CONNECT Parc de Sceaux",
+            "en": "REC-CONNECT Parc de Sceaux"
+          },
+          "description": {
+            "fr": "Une randonnée conviviale dans les allées du Parc de Sceaux, suivie d’un pique-nique entre membres et curieux du réseau. Un moment pour marcher, échanger et créer du lien autour des valeurs du REC.",
+            "en": "A friendly hike through the scenic paths of Parc de Sceaux, followed by a picnic with members and guests. A moment to walk, connect, and share around the values of the REC."
+          },
+          "date": {
+            "fr": "28 juin 2025",
+            "en": "June 28, 2025"
+          },
+          "time": {
+            "fr": "12h00 - 16h00",
+            "en": "12:00 PM - 4:00 PM"
+          },
+          "location": {
+            "fr": "Parc de Sceaux, Sceaux, France",
+            "en": "Parc de Sceaux, Sceaux, France"
+          },
+          "image": "/events/rec-connect-parc-de-sceaux.png",
+          "capacity": 100,
+          "registeredCount": 0,
+          "isPast": false,
+          "tags": [
+            {
+              "fr": "Randonnée",
+              "en": "Hiking"
+            },
+            {
+              "fr": "Pique-nique",
+              "en": "Picnic"
+            }
+          ],
+          "link": "https://www.helloasso.com/associations/reseau-evolve-capital/evenements/rec-connect-28-juin-2025"
+        },
+        {
+          "title": {
             "fr": "REC-CONNECT Bois de Vincennes",
             "en": "REC-CONNECT Bois de Vincennes"
           },
