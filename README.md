@@ -211,3 +211,7 @@ to bypass ngrok browser warning: https://stackoverflow.com/questions/73017353/ho
 
 
 configure regular ping on supabase database to avoid pause: https://dev.to/jps27cse/how-to-prevent-your-supabase-project-database-from-being-paused-using-github-actions-3hel#:~:text=Why%20Does%20Supabase%20Pause%20Your,true%20for%20free%2Dtier%20projects.
+
+i fixed the issue with strapi cloud deployment by adding tailwind to the 
+strapi project 
+but when i replace the datebase client to postgres, the deployment start failing 
