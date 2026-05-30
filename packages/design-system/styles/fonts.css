@@ -1,0 +1,47 @@
+/* MADE Tommy Soft — police display/titres/chiffres clés
+   ⚠️  Les .otf sont exclus du repo (voir LICENSES/MADE-TommySoft.md).
+       En leur absence, le fallback "Plus Jakarta Sans" s'applique. */
+
+@font-face {
+  font-family: 'Tommy Soft';
+  src: url('../assets/fonts/MADE-TommySoft-Light.otf') format('opentype');
+  font-weight: 300;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tommy Soft';
+  src: url('../assets/fonts/MADE-TommySoft-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tommy Soft';
+  src: url('../assets/fonts/MADE-TommySoft-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tommy Soft';
+  src: url('../assets/fonts/MADE-TommySoft-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tommy Soft';
+  src: url('../assets/fonts/MADE-TommySoft-ExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Tommy Soft';
+  src: url('../assets/fonts/MADE-TommySoft-Black.otf') format('opentype');
+  font-weight: 900;
+  font-display: swap;
+}
+
+/* Plus Jakarta Sans + IBM Plex Mono — Google Fonts
+   Ajouter dans <head> de chaque app :
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+*/
