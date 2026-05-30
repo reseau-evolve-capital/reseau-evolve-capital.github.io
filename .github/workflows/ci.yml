@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/monorepo]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Typecheck + Lint + Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm turbo typecheck
+
+      - name: Lint
+        run: pnpm turbo lint
+
+      - name: Test
+        run: pnpm turbo test
+
+      - name: 'Règle: pas de hex en dur dans packages/ui'
+        run: |
+          if grep -rE '#[0-9A-Fa-f]{6}' packages/ui/src \
+               --include='*.tsx' --include='*.ts' \
+               | grep -v '\.test\.' | grep -v '\.stories\.' | grep -v 'tokens/index'; then
+            echo "Hex en dur détecté dans packages/ui — utiliser les classes Tailwind"
+            exit 1
+          fi
+          echo "Aucun hex en dur"
+
+      - name: 'Règle: import lucide-react uniquement via Icon atom'
+        run: |
+          if grep -r "from 'lucide-react'" packages/ui/src \
+               --include='*.tsx' --include='*.ts' \
+               | grep -v 'atoms/Icon/Icon.tsx'; then
+            echo "Import lucide-react direct interdit — utiliser <Icon name='...' />"
+            exit 1
+          fi
+          echo "Imports lucide-react conformes"
+
+      - name: 'Règle: TrendBadge sans brand-red'
+        run: |
+          if grep -r 'brand-red\|E93E3A\|e93e3a' packages/ui/src/molecules/TrendBadge/; then
+            echo "brand-red interdit dans TrendBadge"
+            exit 1
+          fi
+          echo "TrendBadge conforme"
