@@ -16,17 +16,35 @@
     "test": "turbo test",
     "test:e2e": "turbo test:e2e",
     "storybook": "turbo storybook --filter=@evolve/ui",
-    "clean": "turbo clean && rm -rf node_modules .turbo"
+    "clean": "turbo clean && rm -rf node_modules .turbo",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
+  },
   "devDependencies": {
-    "turbo": "^2.0.0",
-    "typescript": "^5.4.2",
-    "prettier": "^3.3.0",
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
     "eslint": "^9.0.0",
-    "eslint-config-prettier": "^9.1.0"
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.3.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.2"
   }
 }
