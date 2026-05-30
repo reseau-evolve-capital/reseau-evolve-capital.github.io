@@ -1,17 +1,16 @@
-import type { StorybookConfig } from '@storybook/nextjs-vite'
-import tailwindcss from '@tailwindcss/vite'
+import type { StorybookConfig } from '@storybook/react-vite'
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(ts|tsx)'],
   addons: ['@storybook/addon-a11y'],
   framework: {
-    name: '@storybook/nextjs-vite',
+    name: '@storybook/react-vite',
     options: {},
   },
   docs: { autodocs: 'tag' },
   viteFinal: async (config) => {
-    config.plugins = config.plugins ?? []
-    config.plugins.push(tailwindcss())
+    const { default: tailwindcss } = await import('@tailwindcss/vite')
+    config.plugins = [...(config.plugins ?? []), tailwindcss()]
     return config
   },
 }
