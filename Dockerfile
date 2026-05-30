@@ -1,24 +1,30 @@
-# Build stage
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS base
+RUN npm install -g pnpm@9
+
+FROM base AS deps
 WORKDIR /app
-COPY package*.json ./
-RUN npm install
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY packages/types/package.json ./packages/types/
+COPY packages/utils/package.json ./packages/utils/
+COPY packages/design-system/package.json ./packages/design-system/
+COPY packages/data/package.json ./packages/data/
+COPY packages/ui/package.json ./packages/ui/
+COPY apps/web/package.json ./apps/web/
+RUN pnpm install --frozen-lockfile --prod
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN npm run build
+RUN pnpm --filter @evolve/web build
 
-# Production stage
-FROM node:20-alpine AS runner
+FROM base AS runner
 WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=builder /app/apps/web/.next/standalone ./
+COPY --from=builder /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /app/apps/web/public ./apps/web/public
 
-ENV NODE_ENV production
-
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-EXPOSE 3000
-
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
-
-CMD ["node", "server.js"] 
+EXPOSE 3001
+ENV PORT=3001
+CMD ["node", "apps/web/server.js"]

@@ -1,25 +1,12 @@
-#name: omniventus-gh-pages
 services:
   web:
     build:
       context: .
-      target: builder
+      dockerfile: Dockerfile
     ports:
-      - "3005:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
-      - /app/out
+      - '3001:3001'
     environment:
-      - NODE_ENV=development
-    command: sh -c "npm run dev"
-
-  preview:
-    image: node:20-alpine
-    ports:
-      - "3004:3000"
-    volumes:
-      - ./out:/app
-    working_dir: /app
-    command: npx serve -s . 
+      - NODE_ENV=production
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    restart: unless-stopped
