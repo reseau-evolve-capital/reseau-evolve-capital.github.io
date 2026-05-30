@@ -1,217 +1,68 @@
-# Reseau evolve capital website
+# Evolve Capital — Monorepo
 
-This repository contains the website for the Reseau Evolve Capital association.
+Plateforme d'investissement participatif pour clubs. Monorepo pnpm + Turborepo.
 
-## 🚀 Quick Start
+## Structure
 
-### Prerequisites
-
-- Node.js (v20 or later)
-- Docker and Docker Compose
-- Make (optional, but recommended)
-
-### Development Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/reseau-evolve-capital/reseau-evolve-capital.github.io.git
-cd reseau-evolve-capital.github.io
+```
+apps/
+  vitrine/        ← Site public (Next.js 15, GitHub Pages → reseauevolvecapital.com)
+  web/            ← App membre (Next.js 16, Vercel, :3001)
+packages/
+  design-system/  ← Tokens CSS + Tailwind V4 (zéro dépendance React)
+  ui/             ← Composants React atomiques + Storybook 10 (:6006)
+  types/          ← Interfaces TypeScript partagées
+  data/           ← Clients Supabase + Google Sheets
+  utils/          ← Fonctions pures (formatEUR, formatPct, formatDate)
 ```
 
-2. Install dependencies:
-```bash
-make install
-# or without Make
-npm install
-```
+## Prérequis
 
-3. Start development server:
-```bash
-make docker-dev
-# or without Make
-docker-compose up
-```
+- Node 20+ (`nvm use 20` ou `fnm use 20`)
+- pnpm 9+ (`corepack enable && corepack prepare pnpm@latest --activate`)
 
-The development server will be available at `http://localhost:3000`.
-
-## 🛠 Development
-
-### Available Commands
-
-#### Using Make
+## Quick start
 
 ```bash
-# Show all available commands
-make help
-
-# Development
-make dev              # Start development server without Docker
-make docker-dev       # Start development server with Docker
-make serve-static     # Preview static export locally
-
-# Building
-make build-prod       # Build for production
-make export-static    # Generate static files
-
-# Deployment
-make deploy-gh        # Deploy to GitHub Pages
-
-# Utility
-make lint            # Run linter
-make clean           # Clean Docker resources
-make purge           # Clean all build artifacts and dependencies
+pnpm install          # Installe tous les workspaces
+pnpm dev              # Lance vitrine (:3000) + web (:3001) via Turborepo
 ```
 
-#### Using npm directly
+## Commandes principales
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run lint         # Run linter
-npm run deploy       # Deploy to GitHub Pages
+# Développement
+make dev              # turbo dev (tous les workspaces)
+make dev-web          # apps/web seul sur :3001
+make dev-vitrine      # apps/vitrine seul sur :3000
+make storybook        # Storybook packages/ui sur :6006
+
+# Qualité (lancer les trois avant de push)
+make lint             # turbo lint
+make typecheck        # turbo typecheck
+make test             # turbo test
+
+# Base de données locale (Supabase CLI — pas Docker)
+make db-start         # supabase start
+make db-migrate       # supabase db push
+make db-reset         # ⚠ destructif — wipe DB locale
+make db-types         # regénère packages/data/src/supabase/types.gen.ts
 ```
 
-### Docker Services
+## Contributing
 
-The project includes two Docker services:
+Voir [CONTRIBUTING.md](./CONTRIBUTING.md) pour les conventions de commits, branches et tokens design.
 
-1. **web**: Development server with hot-reloading
-   - Port: 3000
-   - Command: `npm run dev`
+Format de commit : `type(scope): description`  
+Scopes valides : `web | vitrine | ui | design-system | data | types | utils | supabase | sheets | infra | ci`
 
-2. **preview**: Static file server for testing production builds
-   - Port: 3001
-   - Command: `npx serve -s`
+## Architecture
 
-## 📦 Building for Production
+- **Vitrine** : Next.js 15 statique, déployée sur GitHub Pages via `.github/workflows/deploy-vitrine.yml`. **Jamais refactorisée.**
+- **App web** : Next.js 16 App Router, auth Supabase magic link, TanStack Query v5, port 3001.
+- **Design system** : CSS custom properties (`:root` light / `[data-theme="dark"]`) + bloc Tailwind V4 `@theme {}`. Jamais de hex en dur dans les composants.
+- **Google Sheets** : source de vérité en V0, synchronisée dans Supabase Postgres toutes les 2h via Edge Function.
 
-To generate a static export:
+## Licence
 
-```bash
-make export-static
-# or without Make
-npm run build
-```
-
-The static files will be generated in the `out` directory. A `.nojekyll` file is automatically created in the `out` directory to ensure proper deployment on GitHub Pages.
-
-## 🚀 Deployment
-
-### GitHub Pages
-
-The site is automatically configured for GitHub Pages deployment. To deploy:
-
-1. Make sure your changes are committed and pushed
-2. Run the deployment command:
-```bash
-make deploy-gh
-# or without Make
-npm run deploy
-```
-
-The deployment process will:
-1. Generate a static export in the `out` directory
-2. Create a `.nojekyll` file to bypass Jekyll processing
-3. Push the contents to the `gh-pages` branch
-
-### Manual Deployment
-
-You can also manually deploy the static files from the `out` directory to any static file hosting service. Note that the `.nojekyll` file is only required for GitHub Pages deployment.
-
-## 🔧 Configuration
-
-- `next.config.ts`: Next.js configuration
-- `tailwind.config.ts`: Tailwind CSS configuration
-- `docker-compose.yml`: Docker services configuration
-- `Dockerfile`: Docker build configuration
-
-## 📝 Project Structure
-
-```
-.
-├── src/                  # Source files
-├── public/              # Static assets
-├── out/                 # Production build output
-│   └── .nojekyll       # Prevents GitHub Pages from using Jekyll
-├── .next/               # Next.js development build
-├── docker-compose.yml   # Docker Compose configuration
-├── Dockerfile          # Docker configuration
-├── next.config.ts      # Next.js configuration
-└── package.json        # Project dependencies and scripts
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-
-inspired by https://dev.to/daviidy/6-steps-to-deploy-your-react-nextjs-app-with-github-pages-33ck
-
-
-todo : keep og:image dimensions to 1200x630 and under 300kb
-
-
-write a function that will animate each element to mimic the movement of a stock chart. calculate the width and height of the screen and make each element animation start from X =0 to the over border of the screen. the final Y should be near the top of the screen as we will mimic a rising stock market. the animation should last arround 10 seconds for each element. the element can start their animation at different initial Y. 
-
-be creative
-
-
-
-
-
-create and implement the following pages.
-
-/[locale]/ - Home Page
-├── /[locale]/about - About Page
-├── /[locale]/clubs - Investment Clubs Page
-│   └── /[locale]/clubs/[clubId] - Individual Club Page
-├── /[locale]/events - Events Page
-│   └── /[locale]/events/[eventId] - Individual Event Page
-├── /[locale]/resources - Resources & Media Page
-│   └── /[locale]/resources/[type]/[slug] - Individual Resource Page
-├── /[locale]/membership - Membership Page
-│   └── /[locale]/membership/join - Join Form Page
-├── /[locale]/partnerships - Partnerships Page
-└── /[locale]/contact - Contact Page
-
-
-Clubs Page (/[locale]/clubs):
-Interactive map of all clubs
-Detailed list of clubs
-Search/filter functionality
-Club creation guide
-Individual club pages with:
-Club details
-Member profiles
-Performance metrics
-Join request form
-
-
-Resources Page (/[locale]/resources):
-Articles section
-Video library
-Podcast episodes
-Educational materials
-Search and filtering
-Individual resource pages with:
-Full content
-Related resources
-Download options
-Share functionality
-
-to bypass ngrok browser warning: https://stackoverflow.com/questions/73017353/how-to-bypass-ngrok-browser-warning
-
-
-configure regular ping on supabase database to avoid pause: https://dev.to/jps27cse/how-to-prevent-your-supabase-project-database-from-being-paused-using-github-actions-3hel#:~:text=Why%20Does%20Supabase%20Pause%20Your,true%20for%20free%2Dtier%20projects.
-
-i fixed the issue with strapi cloud deployment by adding tailwind to the 
-strapi project 
-but when i replace the datebase client to postgres, the deployment start failing 
+MIT
