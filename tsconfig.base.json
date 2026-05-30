@@ -25,6 +25,7 @@
     "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
+      "@/*": ["./*"],
       "@evolve/ui": ["packages/ui/src"],
       "@evolve/ui/*": ["packages/ui/src/*"],
       "@evolve/design-system": ["packages/design-system/src"],
