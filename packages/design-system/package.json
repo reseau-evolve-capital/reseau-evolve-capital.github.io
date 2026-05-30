@@ -2,10 +2,11 @@
   "name": "@evolve/design-system",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
+  "main": "./src/tokens/index.ts",
   "exports": {
-    ".": "./src/index.ts",
-    "./styles/*": "./src/styles/*"
+    ".": "./src/tokens/index.ts",
+    "./styles/index.css": "./styles/index.css",
+    "./styles/*": "./styles/*"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
