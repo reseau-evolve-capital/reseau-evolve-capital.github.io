@@ -38,3 +38,34 @@ Exemples :
 - Logique pure : Vitest
 - A11y : jest-axe
 - Flows critiques : Playwright E2E
+
+## Consommer les tokens design
+
+### Hiérarchie des sources
+
+1. **Source de vérité** = `packages/design-system/styles/tokens.css` (CSS custom properties)
+2. **Couche Tailwind** = `packages/design-system/styles/theme.css` (bloc `@theme {}`)
+3. **Couche TypeScript** = `packages/design-system/src/tokens/index.ts` (miroir typé)
+
+### Quel canal pour quel usage
+
+| Contexte              | Canal             | Exemple                                                |
+| --------------------- | ----------------- | ------------------------------------------------------ |
+| Composant React       | Classes Tailwind  | `bg-brand-yellow`, `text-data-negative`, `shadow-card` |
+| CSS local (rare)      | CSS var directe   | `color: var(--data-negative)`                          |
+| Calcul JS / Storybook | Import TypeScript | `import { dataViz } from '@evolve/design-system'`      |
+
+### 4 règles non-négociables
+
+1. `--brand-red` (#E93E3A) = branding uniquement — **jamais pour une perte**. Perte → `--data-negative` (#C53030). Vérifié en CI.
+2. Toute valeur monétaire passe par `formatEUR()` de `@evolve/utils`. **Jamais** `toLocaleString()`.
+3. Toute animation honore `prefers-reduced-motion: reduce` — utiliser les variants `motion-reduce:` Tailwind.
+4. Tout composant interactif a un état `error` et `empty` — fallback `—`, `EmptyState`, ou `ErrorBoundary`.
+
+### Checklist PR (composants UI)
+
+- [ ] Classes Tailwind des tokens (pas de hex en dur) — vérifié en CI
+- [ ] `prefers-reduced-motion` respecté sur toutes les animations
+- [ ] `jest-axe` vert sur chaque composant interactif
+- [ ] Stories Storybook : default + hover + focus + disabled + error + empty
+- [ ] Light mode ET dark mode (`[data-theme="dark"]`) vérifiés visuellement
