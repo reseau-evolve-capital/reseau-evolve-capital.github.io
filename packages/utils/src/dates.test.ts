@@ -17,6 +17,15 @@ describe('parseFrDate', () => {
     expect(parseFrDate('pas une date')).toBeNull()
     expect(parseFrDate('32/13/2020')).toBeNull()
   })
+  it('retourne null pour undefined', () => {
+    expect(parseFrDate(undefined)).toBeNull()
+  })
+  it('29/02/2019 (non-bissextile) retourne null', () => {
+    expect(parseFrDate('29/02/2019')).toBeNull()
+  })
+  it('29/02/2020 (bissextile) est valide', () => {
+    expect(parseFrDate('29/02/2020')).not.toBeNull()
+  })
 })
 
 describe('parseFrMonth', () => {

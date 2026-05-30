@@ -2,8 +2,14 @@ import { describe, it, expect } from 'vitest'
 import { toNum, toNumOrNull, toInt } from './numeric'
 
 describe('toNumOrNull (nettoyage FR)', () => {
-  it('"1 234,56" (NBSP) → 1234.56', () => {
+  it('"1 234,56" (NBSP U+00A0) → 1234.56', () => {
     expect(toNumOrNull('1 234,56')).toBe(1234.56)
+  })
+  it('"1 234,56" (narrow-NBSP U+202F) → 1234.56', () => {
+    expect(toNumOrNull('1 234,56')).toBe(1234.56)
+  })
+  it('"1.234,56" (point milliers + virgule décimale FR) → 1234.56', () => {
+    expect(toNumOrNull('1.234,56')).toBe(1234.56)
   })
   it('"19,90" → 19.9', () => expect(toNumOrNull('19,90')).toBe(19.9))
   it('vide / NaN → null', () => {

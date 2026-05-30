@@ -1,11 +1,19 @@
-/** Nettoyage des nombres au format FR issus de Google Sheets. */
+/**
+ * Nettoie un nombre au format FR issu de Google Sheets :
+ * retire espaces / NBSP (U+00A0) / narrow-NBSP (U+202F), gère le point comme
+ * séparateur de milliers quand une virgule décimale est présente (ex: "1.234,56"
+ * → "1234.56"), puis convertit la virgule décimale en point.
+ * Quand il n'y a pas de virgule, les points sont conservés tels quels
+ * (format déjà dot-decimal, ex: "1234.56").
+ */
 function normalize(v: string | null | undefined): string {
   if (v == null) return ''
-  // strip espace classique + NBSP + narrow NBSP, virgule → point
-  return v
-    .replace(/[\s  ]/g, '')
-    .replace(',', '.')
-    .trim()
+  let s = v.replace(/[\s  ]/g, '').trim()
+  if (s.includes(',')) {
+    // virgule = décimale FR → le point est un séparateur de milliers
+    s = s.replace(/\./g, '').replace(',', '.')
+  }
+  return s
 }
 
 /** Nombre ou null si vide/NaN. Usage mappers (colonnes nullable). */
