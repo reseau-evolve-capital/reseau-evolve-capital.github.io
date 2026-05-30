@@ -1,0 +1,12 @@
+# Vitrine — préserver la stabilité du site public
+apps/vitrine/ @lead-dev
+
+# Workflows GitHub Actions — toute modification critique
+/.github/workflows/ @lead-dev
+
+# Turbo config et root — impact global
+/turbo.json @lead-dev
+/package.json @lead-dev
+
+# Migrations Supabase — relecture avant merge main
+/supabase/migrations/ @lead-dev
