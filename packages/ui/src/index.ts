@@ -1,4 +1,4 @@
-// Atoms
+// Atoms (existants)
 export * from './atoms/Button'
 export * from './atoms/Text'
 export * from './atoms/Heading'
@@ -8,3 +8,14 @@ export * from './atoms/Pill'
 export * from './atoms/Avatar'
 export * from './atoms/Icon'
 export * from './atoms/Divider'
+// Atoms form
+export * from './atoms/Input'
+export * from './atoms/TextArea'
+export * from './atoms/Checkbox'
+export * from './atoms/Switch'
+export * from './atoms/Radio'
+export * from './atoms/Select'
+// Loaders + composition
+export * from './atoms/Spinner'
+export * from './atoms/Skeleton'
+export * from './atoms/IconButton'
