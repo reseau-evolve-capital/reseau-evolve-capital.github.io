@@ -2,7 +2,6 @@
 
 # dependencies
 /node_modules
-**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -13,16 +12,13 @@
 
 # testing
 /coverage
-**/coverage
 
 # next.js
 /.next/
 /out/
-**/.next/
 
 # production
 /build
-**/build
 
 # misc
 .DS_Store
@@ -43,8 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-# Turborepo
-.turbo
-
-# pnpm (pnpm-lock.yaml est commité intentionnellement pour le CI --frozen-lockfile)

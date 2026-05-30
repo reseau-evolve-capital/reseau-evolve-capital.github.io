@@ -1,0 +1,7 @@
+/* @import "@evolve/design-system/styles/index.css"; */
+/* Décommenté dans FND-005 une fois le design-system créé */
+
+body {
+  margin: 0;
+  padding: 0;
+}
