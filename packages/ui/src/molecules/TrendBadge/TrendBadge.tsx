@@ -3,7 +3,7 @@ import { cn } from '../../lib/cn'
 
 export type TrendDirection = 'up' | 'down' | 'flat' | 'warn'
 
-/** RÈGLE HARD : "down" utilise TOUJOURS data-negative — JAMAIS brand-red (#E93E3A) */
+/** RÈGLE HARD : direction "down" → data-negative UNIQUEMENT (jamais --color-brand-*). Voir CONTRIBUTING.md */
 const directionConfig: Record<TrendDirection, { bg: string; text: string; glyph: string }> = {
   up: { bg: 'bg-data-positive-50', text: 'text-data-positive', glyph: '▲' },
   down: { bg: 'bg-data-negative-50', text: 'text-data-negative', glyph: '▼' },

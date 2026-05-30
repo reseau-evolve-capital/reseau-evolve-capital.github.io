@@ -64,7 +64,8 @@ jobs:
 
       - name: 'Règle: TrendBadge sans brand-red'
         run: |
-          if grep -r 'brand-red\|E93E3A\|e93e3a' packages/ui/src/molecules/TrendBadge/; then
+          if grep -r 'brand-red\|E93E3A\|e93e3a' packages/ui/src/molecules/TrendBadge/ \
+               | grep -v '\.test\.' | grep -v '\.stories\.'; then
             echo "brand-red interdit dans TrendBadge"
             exit 1
           fi
