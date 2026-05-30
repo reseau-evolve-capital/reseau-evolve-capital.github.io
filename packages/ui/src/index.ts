@@ -1,2 +1,10 @@
-// Composants atomiques — ajoutés dans Sprint 1 (DS-*)
-export {}
+// Atoms
+export * from './atoms/Button'
+export * from './atoms/Text'
+export * from './atoms/Heading'
+export * from './atoms/Link'
+export * from './atoms/Badge'
+export * from './atoms/Pill'
+export * from './atoms/Avatar'
+export * from './atoms/Icon'
+export * from './atoms/Divider'
