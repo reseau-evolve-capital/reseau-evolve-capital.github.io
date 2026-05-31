@@ -18,6 +18,8 @@ import { contributionStatusLabel, type DashboardData } from '@/lib/data/dashboar
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
 
+import { HeroDetailDialog } from './HeroDetailDialog'
+
 const STALE_MS = 2 * 60 * 60 * 1000 // 2h
 
 export function DashboardView({ initialData }: { initialData: DashboardData | null }) {
@@ -26,6 +28,7 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
   const { data, isError } = useDashboard(initialData)
   const queryClient = useQueryClient()
   const [refreshing, setRefreshing] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(false)
   const startY = useRef<number | null>(null)
   const sync = useSyncStatus(data?.clubId ?? null)
   // `Date.now()` est impur en render (react-hooks/purity) : on capture "maintenant" dans un effet.
@@ -104,7 +107,11 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
         onSync={() => sync.mutate()}
         errorMessage={syncError}
       />
-      <DashboardHero netMarketValue={data.netMarketValue} syncedAt={data.syncedAt} />
+      <DashboardHero
+        netMarketValue={data.netMarketValue}
+        syncedAt={data.syncedAt}
+        onClick={() => setDetailOpen(true)}
+      />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KPICard title="Ma détention" value={data.detentionPct} format="pct" icon="ChartPie" />
         <KPICard
@@ -120,6 +127,14 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
           icon="Calendar"
         />
       </div>
+      <HeroDetailDialog
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        netMarketValue={data.netMarketValue}
+        detentionPct={data.detentionPct}
+        clubName={data.club.name}
+        syncedAt={data.syncedAt}
+      />
     </div>
   )
 }
