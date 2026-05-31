@@ -1,0 +1,21 @@
+<svg viewBox="0 0 240 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="240" height="160" fill="#FAF9F7"/>
+  <!-- Fond cercle large -->
+  <circle cx="120" cy="80" r="64" fill="#FDC70C" fill-opacity="0.12"/>
+  <!-- Cercle principal -->
+  <circle cx="120" cy="80" r="44" fill="#FDC70C" fill-opacity="0.25"/>
+  <!-- Cercle central -->
+  <circle cx="120" cy="80" r="24" fill="#FDC70C"/>
+  <!-- Lignes radiales -->
+  <line x1="120" y1="30" x2="120" y2="8" stroke="#231F20" stroke-width="2" stroke-linecap="round"/>
+  <line x1="155" y1="45" x2="170" y2="34" stroke="#231F20" stroke-width="2" stroke-linecap="round"/>
+  <line x1="166" y1="80" x2="188" y2="80" stroke="#231F20" stroke-width="2" stroke-linecap="round"/>
+  <line x1="155" y1="115" x2="170" y2="126" stroke="#231F20" stroke-width="2" stroke-linecap="round"/>
+  <line x1="120" y1="130" x2="120" y2="152" stroke="#231F20" stroke-width="2" stroke-linecap="round"/>
+  <line x1="85" y1="115" x2="70" y2="126" stroke="#231F20" stroke-width="2" stroke-linecap="round"/>
+  <line x1="74" y1="80" x2="52" y2="80" stroke="#231F20" stroke-width="2" stroke-linecap="round"/>
+  <line x1="85" y1="45" x2="70" y2="34" stroke="#231F20" stroke-width="2" stroke-linecap="round"/>
+  <!-- Signe montée -->
+  <polyline points="106,88 114,76 122,82 134,68" stroke="#231F20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <polyline points="128,68 134,68 134,74" stroke="#231F20" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
