@@ -28,7 +28,7 @@ export const SecondActive: Story = {
   play: async ({ canvasElement, args }) => {
     const canvas = within(canvasElement)
     // Clique sur le point 2 (index 1) — déjà actif, mais on vérifie le callback
-    const dot2 = canvas.getByRole('tab', { name: 'Aller à la slide 2' })
+    const dot2 = canvas.getByRole('button', { name: 'Aller à la slide 2' })
     await userEvent.click(dot2)
     expect(args.onSelect).toHaveBeenCalledWith(1)
   },

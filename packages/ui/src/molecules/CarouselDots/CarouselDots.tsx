@@ -14,14 +14,17 @@ export interface CarouselDotsProps {
 /** Indicateurs de pagination pour un carrousel. Chaque point est un bouton accessible. */
 export function CarouselDots({ count, active, onSelect, className }: CarouselDotsProps) {
   return (
-    <div role="tablist" className={cn('flex items-center justify-center gap-3', className)}>
+    <div
+      role="group"
+      aria-label="Choisir une diapositive"
+      className={cn('flex items-center justify-center gap-3', className)}
+    >
       {Array.from({ length: count }, (_, i) => (
         <button
           key={i}
           type="button"
-          role="tab"
           aria-label={`Aller à la slide ${i + 1}`}
-          aria-selected={i === active}
+          aria-current={i === active ? 'true' : undefined}
           onClick={() => onSelect(i)}
           className="grid h-11 w-11 place-items-center focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]"
         >

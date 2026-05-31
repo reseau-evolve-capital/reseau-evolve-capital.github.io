@@ -16,20 +16,21 @@ describe('CarouselDots — interaction', () => {
   it('cliquer sur le point 2 appelle onSelect(1)', () => {
     const handler = vi.fn()
     const { getByRole } = render(<CarouselDots count={3} active={0} onSelect={handler} />)
-    fireEvent.click(getByRole('tab', { name: 'Aller à la slide 2' }))
+    fireEvent.click(getByRole('button', { name: 'Aller à la slide 2' }))
     expect(handler).toHaveBeenCalledWith(1)
   })
 
-  it('le point actif a aria-selected=true', () => {
+  it('le point actif a aria-current=true', () => {
     const { getByRole } = render(<CarouselDots count={3} active={1} onSelect={() => undefined} />)
-    const dot2 = getByRole('tab', { name: 'Aller à la slide 2' })
-    expect(dot2).toHaveAttribute('aria-selected', 'true')
+    const dot2 = getByRole('button', { name: 'Aller à la slide 2' })
+    expect(dot2).toHaveAttribute('aria-current', 'true')
   })
 
-  it('rend autant de tabs que count', () => {
+  it('rend autant de boutons que count', () => {
     const { getAllByRole } = render(
       <CarouselDots count={5} active={0} onSelect={() => undefined} />
     )
-    expect(getAllByRole('tab')).toHaveLength(5)
+    // Le container group + les 5 boutons — on filtre sur les boutons
+    expect(getAllByRole('button')).toHaveLength(5)
   })
 })

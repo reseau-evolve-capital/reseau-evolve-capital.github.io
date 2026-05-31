@@ -31,7 +31,7 @@ describe('CarouselSlider — navigation via CarouselDots', () => {
     const { getByRole } = render(
       <CarouselSlider slides={sampleSlides} active={0} onActiveChange={handler} />
     )
-    fireEvent.click(getByRole('tab', { name: 'Aller à la slide 2' }))
+    fireEvent.click(getByRole('button', { name: 'Aller à la slide 2' }))
     expect(handler).toHaveBeenCalledWith(1)
   })
 })
@@ -84,7 +84,11 @@ describe('CarouselSlider — rendu', () => {
     const { getAllByRole } = render(
       <CarouselSlider slides={sampleSlides} active={0} onActiveChange={() => undefined} />
     )
-    expect(getAllByRole('group')).toHaveLength(3)
+    // On filtre sur les groupes qui sont des slides (aria-roledescription="slide")
+    const slideGroups = getAllByRole('group').filter(
+      (el) => el.getAttribute('aria-roledescription') === 'slide'
+    )
+    expect(slideGroups).toHaveLength(3)
   })
 
   it('rend le contenu de chaque slide', () => {

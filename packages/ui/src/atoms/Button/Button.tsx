@@ -61,6 +61,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading ? (
           <svg
+            aria-hidden="true"
+            focusable="false"
             className="animate-spin h-4 w-4 motion-reduce:animate-none"
             fill="none"
             viewBox="0 0 24 24"

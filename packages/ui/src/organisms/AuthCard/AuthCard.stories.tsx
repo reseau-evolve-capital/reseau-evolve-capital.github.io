@@ -50,7 +50,7 @@ export const Loading: Story = {
 }
 
 /** Erreur — message d'erreur sous le champ + bouton Réessayer */
-export const Error: Story = {
+export const ErrorState: Story = {
   args: {
     state: 'error',
     email: 'alice@evolve.fr',
