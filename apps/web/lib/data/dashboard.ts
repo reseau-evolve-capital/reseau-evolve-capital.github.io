@@ -17,9 +17,10 @@ type UserRow = Database['public']['Tables']['users']['Row']
 type ClubRow = Database['public']['Tables']['clubs']['Row']
 
 export type ContributionStatus = Database['public']['Enums']['contribution_status']
+export type MemberRole = Database['public']['Enums']['member_role']
 
 export interface DashboardData {
-  member: { firstname: string | null; fullName: string; role: string; joinedAt: string | null }
+  member: { firstname: string | null; fullName: string; role: MemberRole; joinedAt: string | null }
   clubId: string
   netMarketValue: number
   detentionPct: number // fraction 0..1

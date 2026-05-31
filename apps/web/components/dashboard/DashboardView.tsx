@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react'
 
 import { useQueryClient } from '@tanstack/react-query'
 
-import { DashboardHero, KPICard, EmptyState, Spinner, SyncBanner, type SyncRole } from '@evolve/ui'
+import { DashboardHero, KPICard, EmptyState, Spinner, SyncBanner } from '@evolve/ui'
 import { formatRelativeTime } from '@evolve/utils'
 
 import { contributionStatusLabel, type DashboardData } from '@/lib/data/dashboard'
@@ -102,7 +102,7 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
       )}
       <SyncBanner
         syncedAt={data.syncedAt}
-        userRole={data.member.role as SyncRole}
+        userRole={data.member.role}
         isSyncing={sync.isPending}
         onSync={() => sync.mutate()}
         errorMessage={syncError}

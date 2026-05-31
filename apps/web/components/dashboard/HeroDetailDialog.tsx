@@ -7,6 +7,8 @@
 
 import * as React from 'react'
 
+import Link from 'next/link'
+
 import * as Dialog from '@radix-ui/react-dialog'
 
 import { CurrencyAmount } from '@evolve/ui'
@@ -54,12 +56,12 @@ export function HeroDetailDialog({
               Dernière sync {formatRelativeTime(syncedAt)}
             </p>
           )}
-          <a
+          <Link
             href="/portfolio"
             className="mt-4 inline-block text-[14px] font-semibold text-brand-yellow"
           >
             Voir mon portefeuille →
-          </a>
+          </Link>
           <Dialog.Close
             aria-label="Fermer"
             className="absolute top-4 right-4 min-h-[44px] min-w-[44px] text-text-ter focus-visible:shadow-[var(--sh-glow)] outline-none rounded-md"
