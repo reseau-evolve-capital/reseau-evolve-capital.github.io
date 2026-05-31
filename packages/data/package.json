@@ -7,16 +7,19 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "@evolve/types": "workspace:*",
     "@evolve/utils": "workspace:*",
+    "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.0.0",
     "googleapis": "^144.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.0.0"
   }
 }
