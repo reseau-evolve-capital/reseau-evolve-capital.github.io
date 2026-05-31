@@ -1,4 +1,3 @@
-import * as React from 'react'
 import { useId } from 'react'
 import { Checkbox } from '../../atoms/Checkbox'
 import { Link } from '../../atoms/Link'
@@ -22,7 +21,8 @@ export interface ConsentRowProps {
 
 /**
  * Ligne de consentement interactive : Checkbox + label cliquable + lien optionnel [lire].
- * Le lien stop-propage le clic pour ne pas toggler la checkbox en même temps.
+ * Le lien est un SIBLING du label (pas un enfant) pour éviter que le clic sur le lien
+ * déclenche aussi le label-activation et toggle la checkbox en même temps.
  */
 export function ConsentRow({
   checked,
@@ -53,28 +53,22 @@ export function ConsentRow({
         aria-describedby={linkId}
         className="mt-0.5 shrink-0"
       />
-      {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- associé via id + aria-labelledby sur le Checkbox Radix */}
-      <label id={labelId} htmlFor={id} className="flex-1 cursor-pointer text-[14px] text-text">
-        {label}
-        {required && (
-          <span className="ml-1 text-data-negative" aria-hidden="true">
-            *
-          </span>
-        )}
+      <div className="flex flex-1 flex-wrap items-baseline gap-1">
+        {/* eslint-disable-next-line jsx-a11y/label-has-associated-control -- associé via id + aria-labelledby sur le Checkbox Radix */}
+        <label id={labelId} htmlFor={id} className="cursor-pointer text-[14px] text-text">
+          {label}
+          {required && (
+            <span className="ml-1 text-data-negative" aria-hidden="true">
+              *
+            </span>
+          )}
+        </label>
         {linkHref && (
-          <>
-            {' '}
-            <Link
-              id={linkId}
-              href={linkHref}
-              className="text-[14px]"
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            >
-              [{linkLabel}]
-            </Link>
-          </>
+          <Link id={linkId} href={linkHref} className="text-[14px]">
+            [{linkLabel}]
+          </Link>
         )}
-      </label>
+      </div>
     </div>
   )
 }

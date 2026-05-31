@@ -48,5 +48,10 @@ export const WithLink: Story = {
     const labelEl = canvas.getByText("J'accepte les conditions générales")
     await userEvent.click(labelEl)
     expect(args.onCheckedChange).toHaveBeenCalledWith(true)
+    // Clique sur [lire] — le lien est sibling du label, NE doit pas toggler la checkbox
+    const linkEl = canvas.getByRole('link', { name: '[lire]' })
+    ;(args.onCheckedChange as ReturnType<typeof fn>).mockClear()
+    await userEvent.click(linkEl)
+    expect(args.onCheckedChange).not.toHaveBeenCalled()
   },
 }

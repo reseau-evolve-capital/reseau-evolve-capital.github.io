@@ -22,7 +22,6 @@ export function CarouselDots({ count, active, onSelect, className }: CarouselDot
           role="tab"
           aria-label={`Aller à la slide ${i + 1}`}
           aria-selected={i === active}
-          aria-current={i === active ? 'true' : undefined}
           onClick={() => onSelect(i)}
           className="grid h-11 w-11 place-items-center focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]"
         >

@@ -56,4 +56,20 @@ describe('ConsentRow — interaction', () => {
     )
     expect(getByText('[lire]')).toBeTruthy()
   })
+
+  it('cliquer sur [lire] ne déclenche PAS onCheckedChange (lien sibling du label)', () => {
+    const handler = vi.fn()
+    const { getByRole } = render(
+      <ConsentRow
+        checked={false}
+        onCheckedChange={handler}
+        label="J'accepte les CGU"
+        linkHref="https://example.com/cgu"
+        linkLabel="lire"
+      />
+    )
+    const link = getByRole('link', { name: '[lire]' })
+    fireEvent.click(link)
+    expect(handler).not.toHaveBeenCalled()
+  })
 })
