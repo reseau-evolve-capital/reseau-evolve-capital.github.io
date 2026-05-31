@@ -35,8 +35,8 @@ function SectorPill({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        'rounded-[9999px] px-3 py-1.5 text-[13px] font-medium border transition-colors',
-        'focus-visible:outline-none focus-visible:shadow-[var(--shadow-glow)]',
+        'inline-flex items-center justify-center rounded-[9999px] px-3 py-1.5 text-[13px] font-medium border transition-colors min-h-[44px]',
+        'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]',
         active
           ? 'bg-brand-yellow text-accent-ink border-transparent'
           : 'bg-card text-text-sec border-border hover:bg-card-sub'
@@ -58,7 +58,7 @@ export function FilterBar({
   onDirChange,
   className,
 }: FilterBarProps) {
-  const current = sector ?? null
+  const sortId = React.useId()
   return (
     <div
       role="group"
@@ -66,26 +66,26 @@ export function FilterBar({
       className={cn('flex flex-wrap items-center gap-3 bg-card-sub p-3 rounded-[10px]', className)}
     >
       <div className="flex flex-wrap gap-2">
-        <SectorPill active={current === null} onClick={() => onSectorChange(null)}>
+        <SectorPill active={sector == null} onClick={() => onSectorChange(null)}>
           Tous
         </SectorPill>
         {sectors.map((s) => (
-          <SectorPill key={s} active={current === s} onClick={() => onSectorChange(s)}>
+          <SectorPill key={s} active={sector === s} onClick={() => onSectorChange(s)}>
             {s}
           </SectorPill>
         ))}
       </div>
 
       <div className="ml-auto flex items-center gap-2">
-        <label className="sr-only" htmlFor="pf-sort">
+        <label className="sr-only" htmlFor={sortId}>
           Trier par
         </label>
         <select
-          id="pf-sort"
+          id={sortId}
           data-testid="sort-select"
           value={sort}
           onChange={(e) => onSortChange(e.target.value as PortfolioSort)}
-          className="text-[13px] rounded-[8px] border border-border bg-card px-2 py-1.5 text-text focus-visible:outline-none focus-visible:shadow-[var(--shadow-glow)]"
+          className="text-[13px] rounded-[8px] border border-border bg-card px-2 py-1.5 text-text focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]"
         >
           {(Object.keys(SORT_LABEL) as PortfolioSort[]).map((k) => (
             <option key={k} value={k}>
@@ -97,7 +97,7 @@ export function FilterBar({
           type="button"
           aria-label={dir === 'asc' ? 'Ordre croissant' : 'Ordre décroissant'}
           onClick={() => onDirChange(dir === 'asc' ? 'desc' : 'asc')}
-          className="text-[13px] rounded-[8px] border border-border bg-card px-2.5 py-1.5 text-text focus-visible:outline-none focus-visible:shadow-[var(--shadow-glow)]"
+          className="inline-flex items-center justify-center text-[13px] rounded-[8px] border border-border bg-card px-2.5 py-1.5 text-text focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)] min-h-[44px] min-w-[44px]"
         >
           <span aria-hidden="true">{dir === 'asc' ? '↑' : '↓'}</span>
         </button>

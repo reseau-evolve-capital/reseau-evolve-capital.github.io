@@ -59,6 +59,22 @@ describe('FilterBar', () => {
     expect(onDirChange).toHaveBeenCalledWith('asc')
   })
 
+  it('onSortChange reçoit la clé de tri sélectionnée', async () => {
+    const onSortChange = vi.fn()
+    render(
+      <FilterBar
+        sectors={sectors}
+        sort="value"
+        dir="desc"
+        onSectorChange={() => {}}
+        onSortChange={onSortChange}
+        onDirChange={() => {}}
+      />
+    )
+    await userEvent.selectOptions(screen.getByRole('combobox'), 'name')
+    expect(onSortChange).toHaveBeenCalledWith('name')
+  })
+
   it("n'a aucune violation a11y", async () => {
     const { container } = render(
       <FilterBar
