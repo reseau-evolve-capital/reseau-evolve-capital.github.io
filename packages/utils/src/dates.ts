@@ -45,3 +45,19 @@ export function parseFrMonth(
   if (month == null) return null
   return { year: Number(m[2]), month }
 }
+
+/** Date passée → "à l'instant" | "il y a 14 min" | "il y a 2 h" | "il y a 3 j".
+ *  Entrée invalide → "—". `now` injectable pour les tests. */
+export function formatRelativeTime(input: Date | string | number, now: Date = new Date()): string {
+  const d = input instanceof Date ? input : new Date(input)
+  if (isNaN(d.getTime())) return '—'
+  const diffMs = now.getTime() - d.getTime()
+  const sec = Math.max(0, Math.floor(diffMs / 1000))
+  if (sec < 60) return "à l'instant"
+  const min = Math.floor(sec / 60)
+  if (min < 60) return `il y a ${min} min`
+  const h = Math.floor(min / 60)
+  if (h < 24) return `il y a ${h} h`
+  const j = Math.floor(h / 24)
+  return `il y a ${j} j`
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseFrDate, parseFrMonth } from './dates'
+import { parseFrDate, parseFrMonth, formatRelativeTime } from './dates'
 
 describe('parseFrDate', () => {
   it('parse dd/mm/yyyy en Date UTC', () => {
@@ -40,5 +40,24 @@ describe('parseFrMonth', () => {
     expect(parseFrMonth('zorglub 2018')).toBeNull()
     expect(parseFrMonth('')).toBeNull()
     expect(parseFrMonth(null)).toBeNull()
+  })
+})
+
+describe('formatRelativeTime', () => {
+  const now = new Date('2026-05-31T12:00:00Z')
+  it('moins d\'une minute → "à l\'instant"', () => {
+    expect(formatRelativeTime(new Date('2026-05-31T11:59:30Z'), now)).toBe("à l'instant")
+  })
+  it('minutes → "il y a 14 min"', () => {
+    expect(formatRelativeTime(new Date('2026-05-31T11:46:00Z'), now)).toBe('il y a 14 min')
+  })
+  it('heures → "il y a 2 h"', () => {
+    expect(formatRelativeTime(new Date('2026-05-31T10:00:00Z'), now)).toBe('il y a 2 h')
+  })
+  it('jours → "il y a 3 j"', () => {
+    expect(formatRelativeTime(new Date('2026-05-28T12:00:00Z'), now)).toBe('il y a 3 j')
+  })
+  it('entrée invalide → "—"', () => {
+    expect(formatRelativeTime('pas une date', now)).toBe('—')
   })
 })
