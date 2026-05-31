@@ -43,6 +43,33 @@ export const WithIcon: Story = {
   },
 }
 
+export const Pct: Story = {
+  args: {
+    title: 'Détention',
+    value: 0.1234,
+    format: 'pct',
+    trend: { direction: 'up', value: '+0,5 %' },
+  },
+}
+
+export const RawStatus: Story = {
+  args: {
+    title: 'Statut cotisation',
+    value: 'À jour',
+    format: 'raw',
+  },
+}
+
+export const Loading: Story = {
+  args: {
+    title: 'Quote-part estimée',
+    value: 65574.87,
+    isLoading: true,
+    trend: { direction: 'up', value: '+1,2 %' },
+    href: '/portfolio',
+  },
+}
+
 export const LightAndDark: Story = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: 16 }}>
