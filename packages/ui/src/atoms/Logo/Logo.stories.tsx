@@ -26,7 +26,7 @@ export const SurFondSombre: Story = {
       data-theme="dark"
       style={{
         padding: 24,
-        background: 'var(--color-bg, #0a0a0a)',
+        background: 'var(--color-bg)',
         borderRadius: 8,
         display: 'inline-flex',
         gap: 24,

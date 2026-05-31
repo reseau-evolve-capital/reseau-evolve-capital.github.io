@@ -1,5 +1,6 @@
 import { useRef, useState, type DragEvent } from 'react'
 import { cn } from '../../lib/cn'
+import { Icon } from '../Icon/Icon'
 
 export interface AvatarUploadProps {
   /** URL de prévisualisation de l'image déjà sélectionnée */
@@ -57,7 +58,16 @@ export function AvatarUpload({
         {previewUrl ? (
           <img src={previewUrl} alt="" className="h-full w-full object-cover" />
         ) : (
-          <span className="text-[12px] select-none">{isUploading ? 'Envoi…' : '📷 Photo'}</span>
+          <span className="flex flex-col items-center gap-1 select-none text-text-ter">
+            {isUploading ? (
+              <span className="text-[12px]">Envoi…</span>
+            ) : (
+              <>
+                <Icon name="Camera" size={20} aria-hidden="true" />
+                <span className="text-[12px]">Photo</span>
+              </>
+            )}
+          </span>
         )}
       </button>
 
