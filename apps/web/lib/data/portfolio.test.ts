@@ -25,6 +25,8 @@ describe('buildPortfolio', () => {
     expect(positions[0]!.currentValue).toBe(2000)
     expect(positions[0]!.isLive).toBe(true)
     expect(totalValue).toBe(2000)
+    // prix 200, quantity 10, book_value 1000 → gainLossEur = 2000 − 1000 = 1000
+    expect(positions[0]!.gainLossEur).toBe(1000)
   })
 
   it('retombe sur market_value snapshot quand prix null', () => {
@@ -44,9 +46,29 @@ describe('buildPortfolio', () => {
     expect(positions[0]!.allocationPct).toBeCloseTo(0.75)
   })
 
+  it('prix 0 → fallback snapshot (pas un cours valide)', () => {
+    const { positions } = buildPortfolio([row({})], { 'NASDAQ:META': 0 })
+    expect(positions[0]!.isLive).toBe(false)
+    expect(positions[0]!.livePrice).toBeNull()
+    // fallback sur market_value = 1800
+    expect(positions[0]!.currentValue).toBe(1800)
+  })
+
   it('secteur null → "Autres" dans l\'allocation', () => {
     const { allocation } = buildPortfolio([row({ sector: null })], { 'NASDAQ:META': null })
     expect(allocation[0]!.label).toBe('Autres')
+  })
+
+  it('edge total=0 : aucun NaN sur allocationPct / allocation.percentage', () => {
+    const { positions, totalValue, allocation } = buildPortfolio(
+      [row({ market_value: 0, quantity: 0 })],
+      { 'NASDAQ:META': null }
+    )
+    expect(totalValue).toBe(0)
+    expect(positions[0]!.allocationPct).toBe(0)
+    expect(Number.isNaN(positions[0]!.allocationPct)).toBe(false)
+    expect(allocation[0]!.percentage).toBe(0)
+    expect(Number.isNaN(allocation[0]!.percentage)).toBe(false)
   })
 
   it("agrège l'allocation par secteur (fractions sommant à ~1)", () => {

@@ -36,6 +36,9 @@ export type PositionRow = Pick<
   | 'gain_loss_pct'
 >
 
+/** PositionRow enrichi de synced_at (sélectionné dans la query mais hors Pick). */
+type PositionRowWithSync = PositionRow & { synced_at: string | null }
+
 export type MemberRole = Database['public']['Enums']['member_role']
 
 export interface PortfolioData {
@@ -72,8 +75,8 @@ export async function getPortfolioData(
     .eq('is_active', true)
     .maybeSingle<Pick<MembershipRow, 'role'>>()
 
-  // `synced_at` n'est pas dans le Pick PositionRow — on le lit via cast local.
-  const typedRows = rows as Array<PositionRow & { synced_at: string | null }>
+  // `synced_at` n'est pas dans le Pick PositionRow — cast unique sur le résultat de la query.
+  const typedRows = rows as PositionRowWithSync[]
 
   // Prend le synced_at le plus récent parmi les positions du club.
   const syncedAt = typedRows.reduce<string | null>((acc, r) => {
@@ -82,21 +85,8 @@ export async function getPortfolioData(
     return r.synced_at > acc ? r.synced_at : acc
   }, null)
 
-  const positions: PositionRow[] = typedRows.map((r) => ({
-    id: r.id,
-    name: r.name,
-    symbol: r.symbol,
-    category: r.category,
-    sector: r.sector,
-    quantity: Number(r.quantity),
-    pump: r.pump,
-    market_price_eur: r.market_price_eur,
-    market_value: r.market_value,
-    book_value: r.book_value,
-    allocation_pct: r.allocation_pct,
-    gain_loss_eur: r.gain_loss_eur,
-    gain_loss_pct: r.gain_loss_pct,
-  }))
+  // PositionRowWithSync est assignable à PositionRow[] — pas besoin de re-mapper champ par champ.
+  const positions: PositionRow[] = typedRows
 
   return {
     clubId,
@@ -116,21 +106,23 @@ export function buildPortfolio(
 ): { positions: PortfolioPosition[]; totalValue: number; allocation: AllocationItem[] } {
   const enriched = rows.map((r) => {
     const liveRaw = prices[r.symbol]
-    const isLive = typeof liveRaw === 'number' && Number.isFinite(liveRaw)
-    const livePrice: number | null = isLive ? (liveRaw as number) : null
-
+    // Un prix doit être strictement positif pour être un cours valide ; 0/null/NaN → fallback snapshot.
+    const livePrice = typeof liveRaw === 'number' && liveRaw > 0 ? liveRaw : null
     const bookValue = Number(r.book_value ?? 0)
-    const currentValue = isLive ? r.quantity * (livePrice as number) : Number(r.market_value ?? 0)
-    const gainLossEur = isLive
-      ? currentValue - bookValue
-      : Number(r.gain_loss_eur ?? currentValue - bookValue)
-    const gainLossPct = isLive
-      ? bookValue > 0
-        ? gainLossEur / bookValue
-        : 0
-      : pctToFraction(r.gain_loss_pct)
+    const currentValue = livePrice !== null ? r.quantity * livePrice : Number(r.market_value ?? 0)
+    // si gain_loss_eur absent du snapshot, recalcul depuis market_value − book_value
+    const gainLossEur =
+      livePrice !== null
+        ? currentValue - bookValue
+        : Number(r.gain_loss_eur ?? currentValue - bookValue)
+    const gainLossPct =
+      livePrice !== null
+        ? bookValue > 0
+          ? gainLossEur / bookValue
+          : 0
+        : pctToFraction(r.gain_loss_pct)
 
-    const vm: Omit<PortfolioPosition, 'allocationPct'> & { allocationPct: number } = {
+    const vm: PortfolioPosition = {
       id: r.id,
       name: r.name,
       symbol: r.symbol,
@@ -143,7 +135,7 @@ export function buildPortfolio(
       gainLossEur,
       gainLossPct,
       allocationPct: 0, // recalculé après totalisation
-      isLive,
+      isLive: livePrice !== null,
     }
     return vm
   })
