@@ -24,6 +24,7 @@ export * from './atoms/Logo'
 export * from './atoms/ProgressBar'
 export * from './atoms/AvatarUpload'
 // Molecules
+export * from './molecules/SparklineMini'
 export * from './molecules/CurrencyAmount'
 export * from './molecules/TrendBadge'
 export * from './molecules/FormField'
