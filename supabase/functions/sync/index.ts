@@ -250,6 +250,13 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // Idempotence : la feuille HISTORIQUE n'a pas de clé naturelle stable par ligne.
   // On purge donc les transactions du club puis on ré-insère l'intégralité (delete+insert).
   // Choix assumé : 2 syncs successives produisent le même état final en DB.
+  //
+  // LIMITATION CONNUE — fenêtre non atomique : le delete et l'insert sont DEUX
+  // round-trips réseau distincts, hors transaction. Si le process meurt entre les
+  // deux (timeout, crash, redéploiement de la function), les transactions du club
+  // restent VIDES jusqu'à la sync suivante. Auto-cicatrisant : la prochaine sync
+  // (~toutes les 2h via pg_cron) ré-insère l'intégralité. Risque accepté en V0.
+  // TODO(SHE/OPS): durcir via RPC transactionnelle (BEGIN; DELETE; INSERT; COMMIT) avant la prod.
   await runSheet('HISTORIQUE', async () => {
     const raw = await readSheet(sheetId, 'HISTORIQUE')
     const rows = parseHistorique(raw)
@@ -335,19 +342,29 @@ Deno.serve(async (req: Request): Promise<Response> => {
   // Post-sync.
   // ===========================================================================
 
-  // Rafraîchissement de la vue matérialisée (best-effort : échec ⇒ erreur non bloquante).
-  try {
-    const { error } = await supabase.rpc('refresh_member_quote_part')
-    if (error) throw new Error(error.message)
-  } catch (e) {
-    errors.push(`refresh_member_quote_part: ${errMsg(e)}`)
+  // Rafraîchissement de la vue matérialisée.
+  // On ne rafraîchit la MV que si TOUTES les feuilles ont réussi : sur une sync
+  // partielle, les données sont incohérentes (ex. positions importées mais Base en
+  // échec) et recalculer les quote-parts produirait des chiffres faux. On préfère
+  // laisser la MV sur son dernier état cohérent et attendre la prochaine sync.
+  if (errors.length === 0) {
+    try {
+      const { error } = await supabase.rpc('refresh_member_quote_part')
+      if (error) throw new Error(error.message)
+    } catch (e) {
+      errors.push(`refresh_member_quote_part: ${errMsg(e)}`)
+    }
   }
 
   // Horodatage de la dernière sync du club.
-  try {
-    await supabase.from('clubs').update({ synced_at: new Date().toISOString() }).eq('id', clubId)
-  } catch (e) {
-    errors.push(`update clubs.synced_at: ${errMsg(e)}`)
+  // Le client Supabase renvoie les erreurs dans { error } (il ne throw pas) : on
+  // déstructure et on remonte dans errors[] pour ne pas masquer un update raté.
+  {
+    const { error } = await supabase
+      .from('clubs')
+      .update({ synced_at: new Date().toISOString() })
+      .eq('id', clubId)
+    if (error) errors.push(`update clubs.synced_at: ${error.message}`)
   }
 
   // Alerte Sentry si >= 2 erreurs accumulées.
