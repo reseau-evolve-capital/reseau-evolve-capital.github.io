@@ -1,27 +1,24 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import { getPricesWithFallback } from '../getPriceProvider'
 
-const OLD = { ...process.env }
-beforeEach(() => {
-  vi.restoreAllMocks()
-})
 afterEach(() => {
-  process.env = { ...OLD }
+  vi.unstubAllEnvs()
+  vi.restoreAllMocks()
 })
 
 describe('getPricesWithFallback', () => {
   it('sans aucun provider configuré : retourne tous les symboles à null (pas de throw)', async () => {
-    delete process.env['GOOGLE_APPS_SCRIPT_URL']
-    delete process.env['GOOGLE_APPS_SCRIPT_SECRET']
-    delete process.env['GOOGLE_SHEETS_PRICE_SHEET_ID']
-    delete process.env['ALPHA_VANTAGE_KEY']
+    vi.stubEnv('GOOGLE_APPS_SCRIPT_URL', '')
+    vi.stubEnv('GOOGLE_APPS_SCRIPT_SECRET', '')
+    vi.stubEnv('GOOGLE_SHEETS_PRICE_SHEET_ID', '')
+    vi.stubEnv('ALPHA_VANTAGE_KEY', '')
     const prices = await getPricesWithFallback(['NASDAQ:META'])
     expect(prices).toEqual({ 'NASDAQ:META': null })
   })
 
   it('utilise Apps Script si configuré', async () => {
-    process.env['GOOGLE_APPS_SCRIPT_URL'] = 'https://example.com'
-    process.env['GOOGLE_APPS_SCRIPT_SECRET'] = 'secret'
+    vi.stubEnv('GOOGLE_APPS_SCRIPT_URL', 'https://example.com')
+    vi.stubEnv('GOOGLE_APPS_SCRIPT_SECRET', 'secret')
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({

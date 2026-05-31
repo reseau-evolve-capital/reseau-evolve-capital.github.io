@@ -23,4 +23,14 @@ describe('AlphaVantageProvider', () => {
     const prices = await p.getPrices(['META'])
     expect(prices['META']).toBeNull()
   })
+
+  it('null si la réponse HTTP est en erreur (ex 429)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({ ok: false, status: 429, json: async () => ({}) })
+    )
+    const p = new AlphaVantageProvider('key')
+    const prices = await p.getPrices(['META'])
+    expect(prices['META']).toBeNull()
+  })
 })

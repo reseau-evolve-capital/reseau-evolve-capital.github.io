@@ -1,23 +1,24 @@
-import { google } from 'googleapis'
+import { google, type sheets_v4 } from 'googleapis'
 import { PriceProvider, allNull } from './PriceProvider'
 
 /** Lit une feuille "Prices" (A: symbole, B: =GOOGLEFINANCE) via service account. */
 export class GoogleSheetsDirectProvider implements PriceProvider {
+  private sheets: sheets_v4.Sheets
   private sheetId: string
-  private range = 'Prices!A2:B1000'
+  private range = 'Prices!A2:B1000' // limite arbitraire ; >999 lignes de prix seraient tronquées
 
   constructor(sheetId?: string) {
     this.sheetId = sheetId ?? process.env['GOOGLE_SHEETS_PRICE_SHEET_ID'] ?? ''
     if (!this.sheetId) throw new Error('GOOGLE_SHEETS_PRICE_SHEET_ID requis')
+    const auth = new google.auth.GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    })
+    this.sheets = google.sheets({ version: 'v4', auth })
   }
 
   async getPrices(symbols: string[]): Promise<Record<string, number | null>> {
     try {
-      const auth = new google.auth.GoogleAuth({
-        scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-      })
-      const sheets = google.sheets({ version: 'v4', auth })
-      const res = await sheets.spreadsheets.values.get({
+      const res = await this.sheets.spreadsheets.values.get({
         spreadsheetId: this.sheetId,
         range: this.range,
       })

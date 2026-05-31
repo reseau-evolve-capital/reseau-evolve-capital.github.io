@@ -25,7 +25,10 @@ export class GoogleAppsScriptProvider implements PriceProvider {
       const data = (await res.json()) as { prices?: Record<string, number> }
       const prices = data.prices ?? {}
       return Object.fromEntries(
-        symbols.map((s) => [s, typeof prices[s] === 'number' ? (prices[s] as number) : null])
+        symbols.map((s) => {
+          const v = prices[s]
+          return [s, typeof v === 'number' ? v : null]
+        })
       )
     } catch {
       return allNull(symbols)
