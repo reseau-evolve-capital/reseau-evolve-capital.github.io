@@ -6,7 +6,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./supabase/client": "./src/supabase/client.ts",
-    "./supabase/server": "./src/supabase/server.ts"
+    "./supabase/server": "./src/supabase/server.ts",
+    "./prices": "./src/prices/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
