@@ -21,7 +21,10 @@ export function mapPortefeuilleRows(
       sector: row.sector,
       typologie: row.typologie,
       quantity: row.quantity,
-      currency: row.currency,
+      // positions.currency est NOT NULL DEFAULT 'EUR' en DB (migration 005) :
+      // on pose 'EUR' par défaut ici pour ne jamais transmettre de null (qui
+      // écraserait le défaut de la colonne et violerait la contrainte NOT NULL).
+      currency: row.currency ?? 'EUR',
       currency_ref: row.currencyRef,
       market_price_eur: row.marketPriceEur,
       market_value: row.marketValue,

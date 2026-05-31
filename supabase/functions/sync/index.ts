@@ -222,15 +222,35 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
           return userId ? { user_id: userId, ...m } : null
         })
         .filter((m): m is { user_id: string } & MembershipUpsert => m !== null)
-      if (memberships.length > 0) {
+      // QUARANTAINE — memberships.joined_at est NOT NULL en DB (migration 004). Une
+      // adhésion sans date d'entrée est l'anomalie : on l'écarte AVANT l'upsert pour ne
+      // pas faire crasher l'insert (les users restent tous upsertés — leurs champs requis
+      // sont déjà validés par le mapper, qui throw sur un email invalide).
+      const validMemberships = memberships.filter((m) => m.joined_at != null)
+      const droppedMembers = memberships
+        .filter((m) => m.joined_at == null)
+        .map((m) => {
+          const u = users.find((x) => idByEmail.get(x.email) === m.user_id)
+          return u?.full_name ?? m.user_id
+        })
+      if (validMemberships.length > 0) {
         const { error: mErr } = await supabase
           .from('memberships')
-          .upsert(memberships, { onConflict: 'user_id,club_id' })
+          .upsert(validMemberships, { onConflict: 'user_id,club_id' })
         if (mErr) throw new Error(`upsert memberships: ${mErr.message}`)
       }
-      // Status partial si des lignes ont été rejetées sans bloquer l'import.
-      const status: SnapshotStatus = rowErrors.length > 0 ? 'partial' : 'success'
-      if (rowErrors.length > 0) errors.push(`Base (lignes ignorées): ${rowErrors.join(' | ')}`)
+      // Status partial si des lignes ont été rejetées (mapper) ou des memberships écartés.
+      const notes: string[] = []
+      if (rowErrors.length > 0) notes.push(rowErrors.join(' | '))
+      if (droppedMembers.length > 0) {
+        notes.push(
+          `${droppedMembers.length} adhésion(s) ignorée(s) : date d'entrée absente (${droppedMembers.join(
+            ', '
+          )})`
+        )
+      }
+      const status: SnapshotStatus = notes.length > 0 ? 'partial' : 'success'
+      if (notes.length > 0) errors.push(`Base (lignes ignorées): ${notes.join(' | ')}`)
       snapshots['Base'] = await createSnapshot(
         supabase,
         clubId,
@@ -238,7 +258,7 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         raw,
         raw.length,
         status,
-        rowErrors.length > 0 ? rowErrors.join(' | ') : null
+        notes.length > 0 ? notes.join(' | ') : null
       )
     })
 
@@ -247,14 +267,27 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       const raw = await deps.readSheet(sheetId, 'Portefeuille')
       const rows = parsePortefeuille(raw)
       const { positions, aggregateRows } = mapPortefeuilleRows(rows, clubId)
+      // QUARANTAINE — positions.quantity est NOT NULL en DB (migration 005). Le mapper
+      // émet null sur une quantité illisible : on écarte ces lignes AVANT l'upsert pour
+      // ne pas faire crasher l'insert (design tolérant : snapshot partiel, on continue).
+      const validPositions = positions.filter((p) => p.quantity != null)
+      const droppedPositions = positions.filter((p) => p.quantity == null)
       const synced_at = new Date().toISOString()
-      const positionsWithMeta = positions.map((p) => ({ ...p, is_active: true, synced_at }))
+      const positionsWithMeta = validPositions.map((p) => ({ ...p, is_active: true, synced_at }))
       if (positionsWithMeta.length > 0) {
         const { error } = await supabase
           .from('positions')
           .upsert(positionsWithMeta, { onConflict: 'club_id,symbol' })
         if (error) throw new Error(`upsert positions: ${error.message}`)
       }
+      const status: SnapshotStatus = droppedPositions.length > 0 ? 'partial' : 'success'
+      const note =
+        droppedPositions.length > 0
+          ? `${droppedPositions.length} position(s) ignorée(s) : quantité illisible (${droppedPositions
+              .map((p) => p.symbol)
+              .join(', ')})`
+          : null
+      if (note) errors.push(`Portefeuille (lignes ignorées): ${note}`)
       // raw_data enrichi : matrice brute + lignes d'agrégat isolées (Provision, Espèces, total…).
       snapshots['Portefeuille'] = await createSnapshot(
         supabase,
@@ -262,7 +295,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         'Portefeuille',
         { rows: raw, aggregateRows },
         raw.length,
-        'success'
+        status,
+        note
       )
     })
 
@@ -281,22 +315,34 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       const raw = await deps.readSheet(sheetId, 'HISTORIQUE')
       const rows = parseHistorique(raw)
       const transactions = mapHistoriqueRows(rows, clubId)
+      // QUARANTAINE — transactions.transaction_date est NOT NULL en DB (migration 006).
+      // On filtre les lignes sans date AVANT l'insert (rappel : delete+insert, donc le
+      // filtre porte sur l'insert) pour ne pas faire crasher l'import (snapshot partiel).
+      const validTransactions = transactions.filter((t) => t.transaction_date != null)
+      const droppedTransactions = transactions.length - validTransactions.length
       const synced_at = new Date().toISOString()
       const { error: delErr } = await supabase.from('transactions').delete().eq('club_id', clubId)
       if (delErr) throw new Error(`delete transactions: ${delErr.message}`)
-      if (transactions.length > 0) {
+      if (validTransactions.length > 0) {
         const { error: insErr } = await supabase
           .from('transactions')
-          .insert(transactions.map((t) => ({ ...t, synced_at })))
+          .insert(validTransactions.map((t) => ({ ...t, synced_at })))
         if (insErr) throw new Error(`insert transactions: ${insErr.message}`)
       }
+      const status: SnapshotStatus = droppedTransactions > 0 ? 'partial' : 'success'
+      const note =
+        droppedTransactions > 0
+          ? `${droppedTransactions} transaction(s) ignorée(s) : date illisible`
+          : null
+      if (note) errors.push(`HISTORIQUE (lignes ignorées): ${note}`)
       snapshots['HISTORIQUE'] = await createSnapshot(
         supabase,
         clubId,
         'HISTORIQUE',
         raw,
         raw.length,
-        'success'
+        status,
+        note
       )
     })
 

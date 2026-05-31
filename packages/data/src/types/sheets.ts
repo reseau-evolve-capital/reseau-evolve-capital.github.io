@@ -104,7 +104,8 @@ export interface PositionUpsert {
   sector: string | null
   typologie: string | null
   quantity: number | null
-  currency: string | null
+  /** Colonne positions.currency NOT NULL DEFAULT 'EUR' (migration 005) : jamais null (défaut 'EUR' posé par le mapper). */
+  currency: string
   currency_ref: string | null
   market_price_eur: number | null
   market_value: number | null

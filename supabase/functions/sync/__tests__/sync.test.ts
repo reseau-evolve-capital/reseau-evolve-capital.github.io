@@ -448,13 +448,15 @@ function makeMockClient(store: Store): { client: SupabaseLike } {
 /** Construit le handler avec un store donné + readSheet stubbé (optionnellement défaillant). */
 function buildHandler(
   store: Store,
-  opts?: { order?: string[]; throwOn?: string }
+  opts?: { order?: string[]; throwOn?: string; overrides?: Record<string, string[][]> }
 ): (req: Request) => Promise<Response> {
   const mockReadSheet: SyncDeps['readSheet'] = (_sheetId: string, sheetName: string) => {
     opts?.order?.push(sheetName)
     if (opts?.throwOn && sheetName === opts.throwOn) {
       return Promise.reject(new Error(`lecture ${sheetName} indisponible (stub)`))
     }
+    const override = opts?.overrides?.[sheetName]
+    if (override) return Promise.resolve(override.map((row) => [...row]))
     return Promise.resolve(cloneSheet(sheetName))
   }
   const { client } = makeMockClient(store)
@@ -583,6 +585,40 @@ Deno.test(
     // Les données des autres feuilles sont bien en base.
     assertEquals(store.users.length, 2)
     assertEquals(store.positions.length, 1)
+  }
+)
+
+// Test 3bis — quarantaine : une ligne Portefeuille à quantité illisible est écartée
+//             AVANT l'upsert → snapshot 'partial', la mauvaise ligne absente du store,
+//             les lignes valides présentes. Le handler ne throw pas (design tolérant).
+Deno.test(
+  'handler : quarantaine Portefeuille (quantité illisible) → snapshot partial, ligne écartée',
+  async () => {
+    const store = emptyStore(true)
+    // AAPL : quantité valide ; BADQ : quantité non parsable (→ null après mapper) → écartée.
+    const handler = buildHandler(store, {
+      overrides: {
+        Portefeuille: [
+          ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours'],
+          ['Apple', 'AAPL', 'Action', '10', 'EUR', '1 234,56'],
+          ['BadCo', 'BADQ', 'Action', 'NON_NUM', 'EUR', '200'],
+          ['TOTAL', '', 'Agrégat', '', '', '5 000,00'],
+        ],
+      },
+    })
+    const res = await handler(syncRequest(CLUB_ID))
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as SyncResponseBody
+
+    // Le snapshot Portefeuille est partiel (1 ligne écartée), pas failed.
+    assertEquals(body.snapshots['Portefeuille'].status, 'partial')
+    // La ligne valide est en base, la mauvaise est absente.
+    assertEquals(store.positions.length, 1)
+    assertEquals(store.positions[0].symbol, 'AAPL')
+    assert(!store.positions.some((p) => p.symbol === 'BADQ'))
+    // La feuille reste comptée comme synchronisée (pas d'abort) et la note mentionne le symbole.
+    assert(body.synced_sheets.includes('Portefeuille'))
+    assert(body.errors.some((e) => e.includes('BADQ')))
   }
 )
 
