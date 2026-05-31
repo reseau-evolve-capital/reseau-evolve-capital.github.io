@@ -34,6 +34,7 @@ export * from './molecules/NumberStat'
 export * from './molecules/KPICard'
 export * from './molecules/CotisationMonth'
 export * from './molecules/DataRow'
+export * from './molecules/FilterBar'
 // Molecules auth + onboarding
 export * from './molecules/ProgressHeader'
 export * from './molecules/ConsentRow'
