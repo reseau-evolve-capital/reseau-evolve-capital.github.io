@@ -1,8 +1,11 @@
--- Table users — étend auth.users de Supabase
--- Pré-peuplée lors de l'import Base, même si le membre n'a pas encore de compte Auth.
+-- users étend les profils membres. Déviation assumée vs DATA_MODEL §2.2 (DDL) :
+-- pas de FK dure vers auth.users(id). Un membre importé depuis la feuille Base
+-- existe AVANT d'avoir un compte Supabase Auth (id = UUID généré localement).
+-- La liaison avec auth.users se fait à la connexion via l'email (epic E-AUT) —
+-- email reste la clé naturelle UNIQUE de matching. Voir CLAUDE.md / DATA_MODEL §2.2 (prose).
 
 CREATE TABLE IF NOT EXISTS users (
-  id                    UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id                    UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email                 TEXT NOT NULL UNIQUE,
   firstname             TEXT,                      -- prénom (issu de la décomposition de full_name)
   lastname              TEXT,                      -- nom de famille
