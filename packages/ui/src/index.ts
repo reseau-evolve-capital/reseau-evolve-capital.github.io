@@ -26,6 +26,7 @@ export * from './atoms/AvatarUpload'
 // Molecules
 export * from './molecules/EmptyState'
 export * from './molecules/SparklineMini'
+export * from './molecules/AllocationDonut'
 export * from './molecules/CurrencyAmount'
 export * from './molecules/TrendBadge'
 export * from './molecules/FormField'
