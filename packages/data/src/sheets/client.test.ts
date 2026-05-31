@@ -10,6 +10,7 @@ vi.mock('googleapis', () => ({
 
 describe('readSheet', () => {
   beforeEach(() => {
+    vi.resetModules()
     valuesGet.mockReset()
     process.env.GOOGLE_SA_KEY_BASE64 = Buffer.from(
       JSON.stringify({ client_email: 'x@y.iam', private_key: 'k' })
@@ -38,5 +39,11 @@ describe('readSheet', () => {
     vi.resetModules()
     const { readSheet } = await import('./client')
     await expect(readSheet('s', 'Base')).rejects.toThrow(/GOOGLE_SA_KEY_BASE64/)
+  })
+
+  it('retourne [] si la feuille est vide', async () => {
+    valuesGet.mockResolvedValue({ data: { values: null } })
+    const { readSheet } = await import('./client')
+    await expect(readSheet('s', 'Base')).resolves.toEqual([])
   })
 })
