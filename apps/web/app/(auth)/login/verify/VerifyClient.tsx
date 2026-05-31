@@ -11,13 +11,10 @@ interface Props {
 export function VerifyClient({ tokenHash }: Props) {
   const router = useRouter()
   const supabase = useSupabase()
-  const [error, setError] = useState(false)
+  const [error, setError] = useState(() => !tokenHash)
 
   useEffect(() => {
-    if (!tokenHash) {
-      setError(true)
-      return
-    }
+    if (!tokenHash) return
 
     let cancelled = false
     ;(async () => {
