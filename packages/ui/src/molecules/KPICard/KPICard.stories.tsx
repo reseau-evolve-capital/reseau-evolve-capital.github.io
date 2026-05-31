@@ -37,7 +37,7 @@ export const WithIcon: Story = {
   args: {
     title: 'Portefeuille',
     value: 65574.87,
-    icon: 'trending-up',
+    icon: 'TrendingUp',
     trend: { direction: 'up', value: '+1,2 %' },
     href: '/portfolio',
   },
