@@ -52,4 +52,18 @@ describe('DataRow', () => {
     const { container } = render(<DataRow position={pos} onClick={() => {}} />)
     expect(await axe(container)).toHaveNoViolations()
   })
+
+  it('variante statique (sans onClick) : aucune violation a11y', async () => {
+    const { container } = render(<DataRow position={pos} />)
+    expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('perte : classe data-negative présente, jamais de rouge brand', () => {
+    const { container } = render(
+      <DataRow position={{ ...pos, gainLossPct: -0.08, gainLossEur: -1200 }} />
+    )
+    expect(container.innerHTML).toContain('data-negative')
+    expect(container.innerHTML).not.toMatch(/E93E3A/i)
+    expect(container.innerHTML).not.toContain('brand-red')
+  })
 })

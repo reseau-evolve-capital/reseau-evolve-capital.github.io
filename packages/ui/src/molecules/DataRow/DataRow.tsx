@@ -34,7 +34,9 @@ export function DataRow({ position, onClick, isLoading, className }: DataRowProp
   const inner = (
     <>
       <div className="flex items-center justify-between gap-3">
-        <h3 className="font-display font-bold text-[14px] text-text truncate">{position.name}</h3>
+        <span className="font-display font-bold text-[14px] text-text truncate">
+          {position.name}
+        </span>
         {position.category && <Badge>{position.category}</Badge>}
       </div>
       <div className="mt-2 flex items-center justify-between gap-3">
@@ -43,7 +45,7 @@ export function DataRow({ position, onClick, isLoading, className }: DataRowProp
         </p>
         <span
           className={cn(
-            'font-semibold text-[13px] [font-feature-settings:"tnum"]',
+            "font-semibold text-[13px] [font-feature-settings:'tnum']",
             loss ? 'text-data-negative' : 'text-data-positive'
           )}
         >
@@ -72,7 +74,7 @@ export function DataRow({ position, onClick, isLoading, className }: DataRowProp
     )
   }
   return (
-    <div className={cn(base, className)} data-testid="position-row" aria-label={label}>
+    <div className={cn(base, className)} data-testid="position-row">
       {inner}
     </div>
   )
