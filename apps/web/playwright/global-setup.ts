@@ -19,6 +19,7 @@ import postgres from 'postgres'
 const DB_URL = process.env.E2E_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 
 const SEED_USER_ID = 'bbbbbbbb-0000-0000-0000-000000000001'
+const SEED_CLUB_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
 const TEST_EMAIL = 'test@example.com'
 
 export default async function globalSetup() {
@@ -39,6 +40,34 @@ export default async function globalSetup() {
              updated_at           = NOW()
        WHERE email = ${TEST_EMAIL}
     `
+
+    // 3. Garantir une ligne contributions pour le membre de seed (DSH-010).
+    //    Sans elle, member_quote_part renvoie des colonnes NULL → le dashboard affiche
+    //    l'état empty et les specs dashboard n'ont pas de DashboardView à piloter.
+    //    On pose des valeurs réalistes (synced il y a 10 min → état « frais », pas stale).
+    await sql`
+      INSERT INTO contributions (
+        membership_id, club_id, months_count, detention_pct, total_contributed,
+        net_market_value, status, amount_due, synced_at
+      )
+      SELECT m.id, ${SEED_CLUB_ID}::uuid, 12, 0.1234, 8000,
+             12345.67, 'ok', 0, NOW() - INTERVAL '10 minutes'
+        FROM memberships m
+       WHERE m.user_id = ${SEED_USER_ID}::uuid AND m.club_id = ${SEED_CLUB_ID}::uuid
+      ON CONFLICT (membership_id) DO UPDATE
+         SET net_market_value = EXCLUDED.net_market_value,
+             detention_pct    = EXCLUDED.detention_pct,
+             total_contributed = EXCLUDED.total_contributed,
+             status           = EXCLUDED.status,
+             amount_due       = EXCLUDED.amount_due,
+             synced_at        = NOW() - INTERVAL '10 minutes',
+             updated_at       = NOW()
+    `
+
+    // 4. Rafraîchir la vue matérialisée pour que le RSC du dashboard ait des données
+    //    (initialData non-null). CONCURRENTLY impossible hors transaction implicite ici ;
+    //    le REFRESH simple suffit en setup (pas de lecteurs concurrents).
+    await sql`REFRESH MATERIALIZED VIEW member_quote_part`
   } finally {
     await sql.end()
   }

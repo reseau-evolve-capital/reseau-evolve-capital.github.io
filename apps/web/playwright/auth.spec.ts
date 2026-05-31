@@ -9,34 +9,9 @@
  * 5. /admin en tant que member → /dashboard (redirect middleware)
  */
 
-import { test, expect, request as pwRequest } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://127.0.0.1:54321'
-const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
-
-/**
- * Génère un magic link via l'API admin GoTrue et retourne le hashed_token.
- * generate_link(type:'magiclink') crée/confirme le user dans auth.users
- * puis déclenche handle_new_user qui relie public.users par email.
- * Le hashed_token se vérifie avec type:'email' dans verifyOtp (confirmé en local).
- */
-async function generateMagicLink(email: string): Promise<string> {
-  const ctx = await pwRequest.newContext()
-  const res = await ctx.post(`${SUPABASE_URL}/auth/v1/admin/generate_link`, {
-    headers: {
-      apikey: SERVICE_ROLE,
-      Authorization: `Bearer ${SERVICE_ROLE}`,
-      'content-type': 'application/json',
-    },
-    data: { type: 'magiclink', email },
-  })
-  const body = await res.json()
-  const token = body.properties?.hashed_token ?? body.hashed_token
-  if (!token) {
-    throw new Error(`generate_link a échoué : ${JSON.stringify(body)}`)
-  }
-  return token as string
-}
+import { generateMagicLink } from './helpers'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scénario 1 : /dashboard sans session → redirect /login
