@@ -310,8 +310,7 @@ function makeMockClient(store: Store): { client: SupabaseLike } {
     constructor(private table: keyof Store) {}
 
     select(_cols?: string): this {
-      // .select() peut suivre un .upsert()/.insert() (returning) ou être l'op principale.
-      if (this.op === 'select') this.op = 'select'
+      // .select() après un write (upsert/insert) signifie "returning" — on ne réinitialise pas l'op.
       return this
     }
     eq(col: string, val: unknown): this {

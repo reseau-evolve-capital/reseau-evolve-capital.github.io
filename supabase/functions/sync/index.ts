@@ -409,4 +409,7 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
 
 // ---- Entrypoint de production ----
 // Câble les vraies dépendances (client Supabase réel + readSheet Google Sheets).
-Deno.serve(createSyncHandler({ createClient, readSheet }))
+// Démarre le serveur uniquement quand le module est l'entrée principale (pas à l'import en test).
+if (import.meta.main) {
+  Deno.serve(createSyncHandler({ createClient, readSheet }))
+}
