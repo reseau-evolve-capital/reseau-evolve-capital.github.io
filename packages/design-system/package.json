@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "tailwindcss": "^4",
     "typescript": "^5"
   }
 }

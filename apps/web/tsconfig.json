@@ -9,6 +9,7 @@
       "@evolve/ui": ["../../packages/ui/src"],
       "@evolve/ui/*": ["../../packages/ui/src/*"],
       "@evolve/design-system": ["../../packages/design-system/src"],
+      "@evolve/design-system/styles/*": ["../../packages/design-system/styles/*"],
       "@evolve/design-system/*": ["../../packages/design-system/src/*"],
       "@evolve/types": ["../../packages/types/src"],
       "@evolve/types/*": ["../../packages/types/src/*"],

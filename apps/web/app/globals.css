@@ -1,6 +1,9 @@
 /* @import "@evolve/design-system/styles/index.css"; */
 /* Décommenté dans FND-005 une fois le design-system créé */
 
+/* Scan des classes Tailwind dans les composants @evolve/ui */
+@source "../../../packages/ui/src";
+
 body {
   margin: 0;
   padding: 0;
