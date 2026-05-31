@@ -37,7 +37,7 @@ describe('PositionDetailModal', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 
-  it('Cours affiche "—" si livePrice null', () => {
+  it('Cours affiche "—" quand livePrice est null', () => {
     render(
       <PositionDetailModal
         position={{ ...pos, livePrice: null, isLive: false }}
@@ -45,7 +45,21 @@ describe('PositionDetailModal', () => {
         onOpenChange={() => {}}
       />
     )
-    expect(screen.getAllByText('—').length).toBeGreaterThan(0)
+    const coursLabel = screen.getByText('Cours')
+    expect(coursLabel.parentElement?.textContent).toContain('—')
+  })
+
+  it('perte : classe data-negative présente, jamais de rouge brand', () => {
+    const { baseElement } = render(
+      <PositionDetailModal
+        position={{ ...pos, gainLossPct: -0.08, gainLossEur: -1200 }}
+        open
+        onOpenChange={() => {}}
+      />
+    )
+    expect(baseElement.innerHTML).toContain('data-negative')
+    expect(baseElement.innerHTML).not.toMatch(/E93E3A/i)
+    expect(baseElement.innerHTML).not.toContain('brand-red')
   })
 
   it('Escape déclenche onOpenChange(false)', async () => {

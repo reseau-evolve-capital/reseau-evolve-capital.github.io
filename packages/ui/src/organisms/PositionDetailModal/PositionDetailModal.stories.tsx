@@ -61,7 +61,8 @@ export const Ouverte: Story = {
   },
 }
 
-/** Perte : les couleurs +/- € et +/- % utilisent `text-data-negative`, jamais le rouge brand. */
+/** Perte : les couleurs +/- € et +/- % utilisent `text-data-negative`, jamais le rouge brand.
+ *  Vérification unitaire dans PositionDetailModal.test.tsx (test "perte : classe data-negative"). */
 export const Perte: Story = {
   render: () => {
     const [open, setOpen] = React.useState(true)
@@ -70,8 +71,6 @@ export const Perte: Story = {
   play: async ({ canvasElement }) => {
     const body = within(canvasElement.ownerDocument.body)
     await waitFor(() => expect(body.getByRole('dialog')).toBeInTheDocument())
-    // Vérifie que le dialog est présent ; la couleur data-negative est vérifiée en unit test.
-    await expect(body.getByRole('dialog')).toBeInTheDocument()
   },
 }
 
