@@ -22,12 +22,20 @@ import { createServerClient } from '@evolve/data'
 // Upstash fonctionne sur l'edge runtime, mais nodejs est le choix sûr par défaut.
 export const runtime = 'nodejs'
 
-// Singleton au niveau module : évite de reconstruire le client Redis à chaque requête.
-const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(1, '5 m'),
-  prefix: 'sync',
-})
+// Init paresseuse du rate-limiter : on NE construit PAS le client au niveau module,
+// car `Redis.fromEnv()` lève une erreur à l'import si les variables Upstash sont absentes
+// (ce qui casserait `next build` et le dev/CI sans Upstash configuré).
+// Retourne null quand les variables d'env manquent — le handler décide alors du fail-open.
+let ratelimit: Ratelimit | null = null
+let ratelimitWarned = false
+function getRatelimit(): Ratelimit | null {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
+  ratelimit ??= new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(1, '5 m'),
+  })
+  return ratelimit
+}
 
 const bodySchema = z.object({
   club_id: z.string().min(1),
@@ -57,28 +65,43 @@ export async function POST(request: Request): Promise<NextResponse> {
   const supabase = createServerClient(cookieStore)
 
   // 3. Authentification.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  if (authError) {
+    return NextResponse.json({ error: "Erreur d'authentification." }, { status: 500 })
+  }
+  const user = authData.user
   if (!user) {
     return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
   }
 
   // 4. Contrôle de rôle (trésorier minimum) via le helper RLS.
-  const { data: role } = await supabase.rpc('get_user_role_in_club', {
+  // Une erreur infra du RPC ne doit JAMAIS être déguisée en 403 : on renvoie 500.
+  const { data: role, error: roleError } = await supabase.rpc('get_user_role_in_club', {
     p_club_id: club_id,
   })
+  if (roleError) {
+    return NextResponse.json({ error: 'Erreur lors de la vérification du rôle.' }, { status: 500 })
+  }
   if (!isAllowedRole(role)) {
     return NextResponse.json({ error: 'Rôle insuffisant (trésorier minimum).' }, { status: 403 })
   }
 
   // 5. Rate limit : 1 requête / 5 min par couple (club, utilisateur).
-  const { success } = await ratelimit.limit(`sync:${club_id}:${user.id}`)
-  if (!success) {
-    return NextResponse.json(
-      { error: 'Trop de tentatives. Réessaie dans quelques minutes.' },
-      { status: 429 }
-    )
+  // FAIL-OPEN : si le limiter n'est pas configuré (dev/CI sans Upstash), on saute
+  // la vérification plutôt que de bloquer un trésorier légitime. Un défaut de config
+  // du limiter ne doit pas dégrader le service ; on log un avertissement une seule fois.
+  const limiter = getRatelimit()
+  if (limiter) {
+    const { success } = await limiter.limit(`sync:${club_id}:${user.id}`)
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Trop de tentatives. Réessaie dans quelques minutes.' },
+        { status: 429 }
+      )
+    }
+  } else if (!ratelimitWarned) {
+    ratelimitWarned = true
+    console.warn('Rate-limit désactivé : variables Upstash absentes.')
   }
 
   // 6. Invocation de l'Edge Function `sync`.
