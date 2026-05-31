@@ -33,6 +33,7 @@ export * from './molecules/FormField'
 export * from './molecules/NumberStat'
 export * from './molecules/KPICard'
 export * from './molecules/CotisationMonth'
+export * from './molecules/DataRow'
 // Molecules auth + onboarding
 export * from './molecules/ProgressHeader'
 export * from './molecules/ConsentRow'
