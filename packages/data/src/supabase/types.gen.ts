@@ -540,12 +540,14 @@ export type Database = {
       }
     }
     Functions: {
+      email_is_invited: { Args: { p_email: string }; Returns: boolean }
       get_user_club_ids: { Args: never; Returns: string[] }
       get_user_role_in_club: {
         Args: { p_club_id: string }
         Returns: Database['public']['Enums']['member_role']
       }
       refresh_member_quote_part: { Args: never; Returns: undefined }
+      user_is_staff: { Args: never; Returns: boolean }
     }
     Enums: {
       contribution_status: 'ok' | 'pending' | 'late' | 'exempt'
