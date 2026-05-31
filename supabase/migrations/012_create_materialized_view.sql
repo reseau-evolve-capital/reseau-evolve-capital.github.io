@@ -27,6 +27,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS mqp_user_club_idx ON member_quote_part(user_id
 -- Fonction de rafraîchissement appelée par l'Edge Function /sync après chaque import réussi.
 -- SECURITY DEFINER : la Edge Function n'a pas besoin du service role pour appeler cette fonction.
 CREATE OR REPLACE FUNCTION refresh_member_quote_part()
-RETURNS void LANGUAGE SQL SECURITY DEFINER AS $$
+RETURNS void
+LANGUAGE SQL
+SECURITY DEFINER
+SET search_path = public, pg_catalog
+AS $$
   REFRESH MATERIALIZED VIEW CONCURRENTLY member_quote_part;
 $$;
