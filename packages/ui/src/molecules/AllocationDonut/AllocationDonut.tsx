@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 import { formatEUR, formatPct } from '@evolve/utils'
-import type { AllocationItem } from '@evolve/types'
+import { type AllocationItem, OTHER_SECTOR_LABEL } from '@evolve/types'
 import { cn } from '../../lib/cn'
 
 export interface AllocationDonutProps {
@@ -23,7 +23,7 @@ const SECTOR_PALETTE = [
 ]
 
 function colorFor(label: string, index: number): string {
-  if (label === 'Autres') return 'var(--color-data-neutral)'
+  if (label === OTHER_SECTOR_LABEL) return 'var(--color-data-neutral)'
   return SECTOR_PALETTE[index % SECTOR_PALETTE.length] as string
 }
 
@@ -31,6 +31,8 @@ function colorFor(label: string, index: number): string {
  *  Le role="img" est placé sur le div conteneur (pas sur PieChart) pour garantir
  *  la détection dans jsdom où Recharts peut wrapper différemment. */
 export function AllocationDonut({ data, totalValue, className }: AllocationDonutProps) {
+  if (!Array.isArray(data) || data.length === 0) return null
+
   const ariaLabel =
     'Allocation du portefeuille : ' +
     data.map((d) => `${d.label} ${formatPct(d.percentage, { showSign: false })}`).join(', ')

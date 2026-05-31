@@ -45,4 +45,14 @@ describe('AllocationDonut', () => {
     const { container } = render(<AllocationDonut data={data} totalValue={25000} />)
     expect(await axe(container)).toHaveNoViolations()
   })
+
+  it("n'utilise aucune couleur hex en dur (tokens CSS only)", () => {
+    const { container } = render(<AllocationDonut data={data} totalValue={25000} />)
+    expect(container.innerHTML).not.toMatch(/#[0-9a-fA-F]{6}/)
+  })
+
+  it('data vide → retourne null (container vide)', () => {
+    const { container } = render(<AllocationDonut data={[]} totalValue={0} />)
+    expect(container.querySelector('[role="img"]')).toBeNull()
+  })
 })
