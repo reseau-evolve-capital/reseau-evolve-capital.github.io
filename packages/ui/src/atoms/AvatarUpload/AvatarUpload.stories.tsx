@@ -44,4 +44,24 @@ export const WithError: Story = {
 
 export const Uploading: Story = {
   args: { isUploading: true },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // L'overlay "Envoi…" doit être visible même sans preview
+    await expect(canvas.getByText('Envoi…')).toBeInTheDocument()
+  },
+}
+
+/** Re-upload : l'overlay d'envoi s'affiche par-dessus une preview existante */
+export const UploadingWithPreview: Story = {
+  args: { isUploading: true, previewUrl: PREVIEW_URI },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // L'image de preview doit être présente dans le DOM
+    const img = canvasElement.querySelector('img')
+    await expect(img).toBeInTheDocument()
+    // L'overlay "Envoi…" doit être visible par-dessus la preview
+    await expect(canvas.getByText('Envoi…')).toBeInTheDocument()
+    // Le texte "Photo" ne doit PAS être visible (l'état vide est masqué)
+    await expect(canvas.queryByText('Photo')).not.toBeInTheDocument()
+  },
 }

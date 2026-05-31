@@ -1,6 +1,7 @@
 import { useRef, useState, type DragEvent } from 'react'
 import { cn } from '../../lib/cn'
 import { Icon } from '../Icon/Icon'
+import { Spinner } from '../Spinner/Spinner'
 
 export interface AvatarUploadProps {
   /** URL de prévisualisation de l'image déjà sélectionnée */
@@ -55,18 +56,27 @@ export function AvatarUpload({
           dragOver && 'border-brand-yellow'
         )}
       >
-        {previewUrl ? (
-          <img src={previewUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
+        {/* Prévisualisation — affichée dès qu'une URL est disponible */}
+        {previewUrl && <img src={previewUrl} alt="" className="h-full w-full object-cover" />}
+
+        {/* État vide — uniquement sans preview et sans upload en cours */}
+        {!previewUrl && !isUploading && (
           <span className="flex flex-col items-center gap-1 select-none text-text-ter">
-            {isUploading ? (
+            <Icon name="Camera" size={20} aria-hidden="true" />
+            <span className="text-[12px]">Photo</span>
+          </span>
+        )}
+
+        {/* Overlay d'envoi — visible par-dessus la preview ou l'état vide */}
+        {isUploading && (
+          <span
+            aria-live="polite"
+            className="absolute inset-0 grid place-items-center rounded-full bg-card/70"
+          >
+            <span className="flex flex-col items-center gap-1 text-text-ter select-none">
+              <Spinner size={20} aria-label="Envoi en cours" />
               <span className="text-[12px]">Envoi…</span>
-            ) : (
-              <>
-                <Icon name="Camera" size={20} aria-hidden="true" />
-                <span className="text-[12px]">Photo</span>
-              </>
-            )}
+            </span>
           </span>
         )}
       </button>
