@@ -121,7 +121,14 @@ export function PortfolioTable({ positions, isLoading, onRowClick }: PortfolioTa
                       <button
                         type="button"
                         onClick={h.column.getToggleSortingHandler()}
-                        className="inline-flex items-center gap-1 focus-visible:shadow-[var(--sh-glow)] outline-none rounded"
+                        aria-label={`Trier par ${String(h.column.columnDef.header)}${
+                          h.column.getIsSorted() === 'asc'
+                            ? ', tri croissant'
+                            : h.column.getIsSorted() === 'desc'
+                              ? ', tri décroissant'
+                              : ''
+                        }`}
+                        className="inline-flex items-center gap-1 focus-visible:shadow-[var(--sh-glow)] focus-visible:outline-none rounded"
                       >
                         {flexRender(h.column.columnDef.header, h.getContext())}
                         <span aria-hidden="true">
@@ -129,7 +136,7 @@ export function PortfolioTable({ positions, isLoading, onRowClick }: PortfolioTa
                             ? '↑'
                             : h.column.getIsSorted() === 'desc'
                               ? '↓'
-                              : ''}
+                              : '↕'}
                         </span>
                       </button>
                     ) : (
@@ -156,8 +163,16 @@ export function PortfolioTable({ positions, isLoading, onRowClick }: PortfolioTa
                 <tr
                   key={row.id}
                   onClick={() => onRowClick(row.original)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      onRowClick(row.original)
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label={`Voir le détail de ${row.original.name}`}
                   data-testid="position-row"
-                  className="border-b border-border hover:bg-card-sub cursor-pointer transition-colors"
+                  className="border-b border-border hover:bg-card-sub cursor-pointer transition-colors focus-visible:shadow-[var(--sh-glow)] focus-visible:outline-none"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="py-3 px-3 first:pl-0 align-middle">

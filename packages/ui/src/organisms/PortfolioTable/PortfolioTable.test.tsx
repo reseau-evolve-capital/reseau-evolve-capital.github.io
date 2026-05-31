@@ -44,12 +44,12 @@ describe('PortfolioTable', () => {
     expect(onRowClick).toHaveBeenCalledWith(expect.objectContaining({ name: 'META' }))
   })
 
-  it('tri par valeur : clic en-tête met à jour aria-sort', async () => {
+  it('tri par valeur : aria-sort bascule descending → ascending au clic', async () => {
     render(<PortfolioTable positions={rows} onRowClick={() => {}} />)
     const valHeader = screen.getByRole('columnheader', { name: /Valeur/i })
-    const btn = within(valHeader).getByRole('button')
-    await userEvent.click(btn)
-    expect(valHeader).toHaveAttribute('aria-sort')
+    expect(valHeader).toHaveAttribute('aria-sort', 'descending') // défaut currentValue desc
+    await userEvent.click(within(valHeader).getByRole('button'))
+    expect(valHeader).toHaveAttribute('aria-sort', 'ascending')
   })
 
   it("affiche l'EmptyState quand aucune position", () => {
@@ -60,5 +60,21 @@ describe('PortfolioTable', () => {
   it("n'a aucune violation a11y", async () => {
     const { container } = render(<PortfolioTable positions={rows} onRowClick={() => {}} />)
     expect(await axe(container)).toHaveNoViolations()
+  })
+
+  it('perf négative : cellule en text-data-negative, jamais brand-red', () => {
+    const { container } = render(<PortfolioTable positions={rows} onRowClick={() => {}} />)
+    expect(container.innerHTML).toContain('data-negative')
+    expect(container.innerHTML).not.toMatch(/E93E3A/i)
+    expect(container.innerHTML).not.toContain('brand-red')
+  })
+
+  it("activation clavier d'une ligne (Enter) → onRowClick", async () => {
+    const onRowClick = vi.fn()
+    render(<PortfolioTable positions={rows} onRowClick={onRowClick} />)
+    const row = screen.getByLabelText(/Voir le détail de META/i)
+    row.focus()
+    await userEvent.keyboard('{Enter}')
+    expect(onRowClick).toHaveBeenCalledWith(expect.objectContaining({ name: 'META' }))
   })
 })
