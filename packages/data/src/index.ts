@@ -1,3 +1,6 @@
 export { readSheet } from './sheets/client'
+export { mapBaseRowToMember } from './sheets/mappers/base.mapper'
+export { mapParametragesToClub } from './sheets/mappers/parametrages.mapper'
+export * from './types/sheets'
 export { createBrowserClient } from './supabase/client'
 export { createServerClient } from './supabase/server'
