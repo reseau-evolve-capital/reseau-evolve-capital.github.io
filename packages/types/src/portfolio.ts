@@ -40,3 +40,7 @@ export interface AllocationItem {
 
 export type PortfolioSort = 'value' | 'name' | 'performance'
 export type PortfolioDir = 'asc' | 'desc'
+
+/** Libellé du regroupement des secteurs inconnus/vides. Partagé entre l'agrégation
+ *  (buildPortfolio, apps/web) et l'affichage (AllocationDonut) pour éviter toute dérive. */
+export const OTHER_SECTOR_LABEL = 'Autres'
