@@ -16,7 +16,7 @@ import { NextResponse } from 'next/server'
 
 import { createServerClient } from '@evolve/data'
 
-import { getPortfolioData } from '@/lib/data/portfolio'
+import { getPortfolioData, type PortfolioData } from '@/lib/data/portfolio'
 
 export const runtime = 'nodejs'
 
@@ -49,7 +49,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Aucun club.' }, { status: 404 })
   }
 
-  let data
+  let data: PortfolioData | null
   try {
     data = await getPortfolioData(supabase, auth.user.id, clubId)
   } catch {
@@ -60,6 +60,6 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   return NextResponse.json(data, {
-    headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
+    headers: { 'Cache-Control': 'private, no-store' },
   })
 }
