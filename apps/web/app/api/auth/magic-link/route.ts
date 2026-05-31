@@ -1,0 +1,108 @@
+// Endpoint POST /api/auth/magic-link — envoie un lien magique Supabase à un email invité.
+//
+// Garde-fous (AUT-002) :
+//   - validation du corps { email } (zod, format email) → 400
+//   - vérification invitation via RPC email_is_invited (anon, SECURITY DEFINER) → 403
+//   - rate limit Upstash : 5 requêtes / 10 min par IP — fail-open si Upstash absent
+//   - envoi du lien via supabase.auth.signInWithOtp → 502 en cas d'échec
+//   - succès : { sent: true }
+//
+// Réf : ARCHITECTURE.md §1, DATA_MODEL.md, CLAUDE.md (conventions auth).
+
+import { cookies } from 'next/headers'
+import { NextResponse } from 'next/server'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
+import { z } from 'zod'
+import { createServerClient } from '@evolve/data'
+
+// Upstash fonctionne sur l'edge runtime, mais nodejs est le choix sûr par défaut.
+export const runtime = 'nodejs'
+
+// Init paresseuse du rate-limiter : on NE construit PAS le client au niveau module,
+// car `Redis.fromEnv()` lève une erreur à l'import si les variables Upstash sont absentes
+// (ce qui casserait `next build` et le dev/CI sans Upstash configuré).
+// Retourne null quand les variables d'env manquent — le handler décide alors du fail-open.
+let ratelimit: Ratelimit | null = null
+let ratelimitWarned = false
+function getRatelimit(): Ratelimit | null {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
+  ratelimit ??= new Ratelimit({
+    redis: Redis.fromEnv(),
+    limiter: Ratelimit.slidingWindow(5, '10 m'),
+  })
+  return ratelimit
+}
+
+const bodySchema = z.object({ email: z.string().email() })
+
+function clientIp(request: Request): string {
+  const fwd = request.headers.get('x-forwarded-for')
+  if (fwd) return fwd.split(',')[0]?.trim() || 'unknown'
+  return request.headers.get('x-real-ip') ?? 'unknown'
+}
+
+// L'origin pour emailRedirectTo ne doit JAMAIS provenir d'un header attaquant-contrôlé
+// (risque d'open-redirect). On utilise la variable d'env publique, sinon le défaut dev.
+function origin(): string {
+  return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3001'
+}
+
+export async function POST(request: Request): Promise<NextResponse> {
+  // 1. Validation du corps.
+  let email: string
+  try {
+    const json: unknown = await request.json()
+    email = bodySchema.parse(json).email
+  } catch {
+    return NextResponse.json({ error: 'Email invalide.' }, { status: 400 })
+  }
+
+  // 2. Rate limit : 5 requêtes / 10 min par IP.
+  // FAIL-OPEN : si le limiter n'est pas configuré (dev/CI sans Upstash), on saute
+  // la vérification plutôt que de bloquer un utilisateur légitime. Un défaut de config
+  // du limiter ne doit pas dégrader le service ; on log un avertissement une seule fois.
+  const limiter = getRatelimit()
+  if (limiter) {
+    const { success } = await limiter.limit(`magic-link:${clientIp(request)}`)
+    if (!success) {
+      return NextResponse.json(
+        { error: 'Trop de tentatives. Réessaie dans quelques minutes.' },
+        { status: 429 }
+      )
+    }
+  } else if (!ratelimitWarned) {
+    ratelimitWarned = true
+    console.warn('Rate-limit désactivé : variables Upstash absentes.')
+  }
+
+  // 3. Client Supabase serveur (session via cookies — cookies() est async en Next.js 16).
+  const cookieStore = await cookies()
+  const supabase = createServerClient(cookieStore)
+
+  // 4. Vérification invitation via le RPC email_is_invited (callable par anon, SECURITY DEFINER).
+  // Une erreur infra du RPC ne doit JAMAIS être déguisée en 403 : on renvoie 500.
+  const { data: invited, error: rpcError } = await supabase.rpc('email_is_invited', {
+    p_email: email,
+  })
+  if (rpcError) {
+    return NextResponse.json({ error: "Erreur de vérification de l'email." }, { status: 500 })
+  }
+  if (!invited) {
+    return NextResponse.json(
+      { error: "Cet email n'est pas encore invité dans un club Evolve Capital." },
+      { status: 403 }
+    )
+  }
+
+  // 5. Envoi du lien magique via Supabase Auth.
+  const { error: otpError } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: `${origin()}/login/verify`, shouldCreateUser: true },
+  })
+  if (otpError) {
+    return NextResponse.json({ error: "Impossible d'envoyer le lien." }, { status: 502 })
+  }
+
+  return NextResponse.json({ sent: true })
+}
