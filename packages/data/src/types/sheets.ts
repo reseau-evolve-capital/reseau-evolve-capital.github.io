@@ -80,7 +80,9 @@ export interface MembershipUpsert {
   club_id: string
   role: 'member'
   status: 'active' | 'left'
+  /** format 'yyyy-mm-dd' pour colonne Postgres DATE, ou null. */
   joined_at: string | null
+  /** format 'yyyy-mm-dd' pour colonne Postgres DATE, ou null. */
   leave_at?: string | null
   leave_with_amount?: number | null
 }

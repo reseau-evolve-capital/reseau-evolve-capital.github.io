@@ -25,9 +25,18 @@ export function mapBaseRowToMember(
     throw new Error(`Email invalide pour "${row.fullName}": "${row.email}"`)
   }
   const fullName = row.fullName.trim()
+  // Décomposition heuristique : full_name reste la référence (cf. DATA_MODEL §2.2).
+  // Le 1er token est traité comme nom (NOM en majuscules dans la Sheet), le reste
+  // comme prénom(s). Un mononyme (un seul token) produit firstname=''.
   const [lastname = '', ...rest] = fullName.split(/\s+/)
   const firstname = rest.join(' ')
-  const isActive = row.status.trim() === 'Membre actif'
+  const rawStatus = row.status.trim()
+  if (rawStatus !== 'Membre actif' && rawStatus !== 'Membre sorti') {
+    throw new Error(
+      `Statut inconnu "${row.status}" pour "${row.fullName}" (attendu: "Membre actif" ou "Membre sorti").`
+    )
+  }
+  const isActive = rawStatus === 'Membre actif'
 
   return {
     user: {

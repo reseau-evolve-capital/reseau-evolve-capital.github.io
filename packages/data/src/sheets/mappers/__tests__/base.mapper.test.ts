@@ -40,6 +40,35 @@ describe('mapBaseRowToMember', () => {
   it('email invalide → throw', () => {
     expect(() => mapBaseRowToMember({ ...row, email: 'pasunemail' }, CLUB)).toThrow(/email/i)
   })
+  it('statut inconnu → throw', () => {
+    expect(() => mapBaseRowToMember({ ...row, status: 'En cours' }, CLUB)).toThrow(
+      /statut inconnu/i
+    )
+  })
+  it('nom mononyme: lastname rempli, firstname vide', () => {
+    const { user } = mapBaseRowToMember({ ...row, fullName: 'DIALLO' }, CLUB)
+    expect(user.lastname).toBe('DIALLO')
+    expect(user.firstname).toBe('')
+  })
+  it('prénom composé: firstname = reste joint', () => {
+    const { user } = mapBaseRowToMember({ ...row, fullName: 'DIALLO Mamadou Abdoulaye' }, CLUB)
+    expect(user.lastname).toBe('DIALLO')
+    expect(user.firstname).toBe('Mamadou Abdoulaye')
+  })
+  it('phone/address absents → null', () => {
+    const { user } = mapBaseRowToMember(
+      {
+        fullName: 'X Y',
+        email: 'x@y.io',
+        joinedAt: '01/01/2020',
+        leftAt: null,
+        status: 'Membre actif',
+      },
+      CLUB
+    )
+    expect(user.phone).toBeNull()
+    expect(user.address).toBeNull()
+  })
   it('idempotent (2 appels = même résultat)', () => {
     expect(mapBaseRowToMember(row, CLUB)).toEqual(mapBaseRowToMember(row, CLUB))
   })

@@ -1,3 +1,4 @@
+import { stripAccents } from '@evolve/utils'
 import type { ParametragesRowDTO, ClubUpsert } from '../../types/sheets'
 
 /**
@@ -9,11 +10,7 @@ import type { ParametragesRowDTO, ClubUpsert } from '../../types/sheets'
 export function mapParametragesToClub(rows: ParametragesRowDTO[], sheetId: string): ClubUpsert {
   const first = rows[0]
   if (!first) throw new Error('Feuille PARAMETRAGES vide : aucune ligne de configuration.')
-  const slug = first.clubName
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+  const slug = stripAccents(first.clubName.trim().toLowerCase())
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
   return {

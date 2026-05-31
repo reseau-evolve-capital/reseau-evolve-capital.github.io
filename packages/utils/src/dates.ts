@@ -1,5 +1,7 @@
 /** Parsing de dates FR pour l'ingestion Sheets. Tout invalide → null (jamais throw). */
 
+import { stripAccents } from './strings'
+
 /** "01/06/2018" | "01-06-2018" → Date UTC à minuit. null si invalide. */
 export function parseFrDate(input: string | null | undefined): Date | null {
   if (input == null) return null
@@ -36,7 +38,7 @@ export function parseFrMonth(
   input: string | null | undefined
 ): { year: number; month: number } | null {
   if (input == null) return null
-  const normalized = input.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  const normalized = stripAccents(input.trim().toLowerCase())
   const m = normalized.match(/^([a-z]+)\s+(\d{4})$/)
   if (!m) return null
   const month = FR_MONTHS[m[1]!]
