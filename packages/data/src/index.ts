@@ -8,3 +8,4 @@ export { mapDetailsCotisationsRows } from './sheets/mappers/detailsCotisations.m
 export * from './types/sheets'
 export { createBrowserClient } from './supabase/client'
 export { createServerClient } from './supabase/server'
+export type { Database } from './supabase/types.gen'
