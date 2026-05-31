@@ -1,14 +1,8 @@
 import { z } from 'zod'
-import { parseFrDate } from '@evolve/utils'
 import type { BaseRowDTO, UserUpsert, MembershipUpsert } from '../../types/sheets'
+import { toIsoDate } from './_shared'
 
 const emailSchema = z.email() // zod v4
-
-/** Date FR → "yyyy-mm-dd" (format DATE Postgres) ou null. */
-function toIsoDate(input: string | null | undefined): string | null {
-  const d = parseFrDate(input)
-  return d ? d.toISOString().slice(0, 10) : null
-}
 
 /**
  * Mappe une ligne de la feuille Base (l'ancre) vers un couple user + membership.

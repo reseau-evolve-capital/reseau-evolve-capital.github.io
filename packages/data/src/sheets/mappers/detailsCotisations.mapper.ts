@@ -36,11 +36,15 @@ export function mapDetailsCotisationsRows(
     const parsed = parseFrMonth(row[0] ?? '')
     if (!parsed) continue
     const { year, month } = parsed
-    const periodPassed =
-      year < now.getUTCFullYear() ||
-      (year === now.getUTCFullYear() && month <= now.getUTCMonth() + 1)
+    // Une période est "passée" seulement si STRICTEMENT antérieure au mois courant
+    // (cf. DATA_MODEL §4.4 : montant null passé → late, montant null courant/futur → due).
+    const nowYear = now.getUTCFullYear()
+    const nowMonthNum = now.getUTCMonth() + 1 // 1..12
+    const periodPassed = year < nowYear || (year === nowYear && month < nowMonthNum)
     for (const [c, m] of colToMember) {
       const amount = toNumOrNull(row[c] ?? '')
+      // 'exempt' n'est volontairement jamais émis au niveau mensuel : l'exemption est
+      // gérée au niveau agrégé COTISATIONS (status 'exempt' du ContributionUpsert).
       const status: ContributionMonthUpsert['status'] =
         amount != null && amount > 0 ? 'paid' : periodPassed ? 'late' : 'due'
       months.push({

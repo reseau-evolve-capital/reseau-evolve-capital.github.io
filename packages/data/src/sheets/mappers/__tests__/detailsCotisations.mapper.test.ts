@@ -45,6 +45,45 @@ describe('mapDetailsCotisationsRows', () => {
     expect(afoudah.amount).toBe(0)
   })
 
+  it('mois courant ("janvier 2026") + montant vide → status "due" (pas late)', () => {
+    const rows = [HEADERS, ['janvier 2026', '100', '', '']]
+    const { months } = mapDetailsCotisationsRows(rows, CLUB, MEMBERSHIPS, NOW)
+    const afoudah = months.find((m) => m.membership_id === 'm-1')!
+    expect(afoudah.status).toBe('due')
+  })
+
+  it('mois strictement passé ("décembre 2025") + montant vide → status "late"', () => {
+    const rows = [HEADERS, ['décembre 2025', '100', '', '']]
+    const { months } = mapDetailsCotisationsRows(rows, CLUB, MEMBERSHIPS, NOW)
+    const afoudah = months.find((m) => m.membership_id === 'm-1')!
+    expect(afoudah.status).toBe('late')
+  })
+
+  it('mois futur ("juin 2030") + montant vide → status "due"', () => {
+    const rows = [HEADERS, ['juin 2030', '100', '', '']]
+    const { months } = mapDetailsCotisationsRows(rows, CLUB, MEMBERSHIPS, NOW)
+    const afoudah = months.find((m) => m.membership_id === 'm-1')!
+    expect(afoudah.status).toBe('due')
+  })
+
+  it('2 membres sur une période, issues mixtes (payé > 0 vs vide) → 2 months, statuts corrects', () => {
+    const members: MembershipLookup[] = [
+      { id: 'm-1', user_id: 'u-1', full_name: 'AFOUDAH Ruben' },
+      { id: 'm-2', user_id: 'u-2', full_name: 'DIALLO Mamadou' },
+    ]
+    const headers = ['Periode', '100', 'AFOUDAH Ruben', 'DIALLO Mamadou']
+    // période strictement passée : montant vide → late
+    const rows = [headers, ['décembre 2025', '100', '150', '']]
+    const { months } = mapDetailsCotisationsRows(rows, CLUB, members, NOW)
+    expect(months).toHaveLength(2)
+    const ruben = months.find((m) => m.membership_id === 'm-1')!
+    const mamadou = months.find((m) => m.membership_id === 'm-2')!
+    expect(ruben.amount).toBe(150)
+    expect(ruben.status).toBe('paid')
+    expect(mamadou.amount).toBe(0)
+    expect(mamadou.status).toBe('late')
+  })
+
   it('colonne "100" ignorée (ne produit jamais de month)', () => {
     const rows = [HEADERS, ['juin 2018', '100', '100', '']]
     const { months } = mapDetailsCotisationsRows(rows, CLUB, MEMBERSHIPS, NOW)

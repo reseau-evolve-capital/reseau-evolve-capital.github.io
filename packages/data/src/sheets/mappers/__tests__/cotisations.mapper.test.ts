@@ -66,6 +66,36 @@ describe('mapCotisationsRows', () => {
     }
   })
 
+  it('statut accentué "exempté" → exempt', () => {
+    const { contributions } = mapCotisationsRows(
+      [makeRow({ status: 'exempté' })],
+      CLUB,
+      MEMBERSHIPS
+    )
+    expect(contributions[0]!.status).toBe('exempt')
+  })
+
+  it('statut inconnu non vide → pending + collecté dans unknownStatuses', () => {
+    const { contributions, unknownStatuses } = mapCotisationsRows(
+      [makeRow({ status: 'Statut bizarre' })],
+      CLUB,
+      MEMBERSHIPS
+    )
+    expect(contributions[0]!.status).toBe('pending')
+    expect(unknownStatuses).toContain('Statut bizarre')
+  })
+
+  it('statut vide → pending sans signalement dans unknownStatuses', () => {
+    const { contributions, unknownStatuses } = mapCotisationsRows(
+      [makeRow({ status: '' })],
+      CLUB,
+      MEMBERSHIPS
+    )
+    expect(contributions[0]!.status).toBe('pending')
+    expect(unknownStatuses).not.toContain('')
+    expect(unknownStatuses).toHaveLength(0)
+  })
+
   it('valeurs numériques null → 0 (sauf net_market_value)', () => {
     const { contributions } = mapCotisationsRows(
       [
