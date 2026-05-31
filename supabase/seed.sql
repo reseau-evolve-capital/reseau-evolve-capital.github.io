@@ -1,0 +1,2 @@
+-- Seed local Supabase — données de développement.
+-- Vide pour l'instant : les clubs/membres sont importés via l'Edge Function sync (SHE-006).

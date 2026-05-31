@@ -19,5 +19,4 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at            TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx    ON users(email);
 CREATE INDEX        IF NOT EXISTS users_full_name_idx ON users(lower(full_name));  -- lookup insensible à la casse

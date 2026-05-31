@@ -16,4 +16,3 @@ CREATE TABLE IF NOT EXISTS clubs (
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS clubs_slug_idx ON clubs(slug);
