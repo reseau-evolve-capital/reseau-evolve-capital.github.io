@@ -19,9 +19,20 @@ export * from './atoms/Select'
 export * from './atoms/Spinner'
 export * from './atoms/Skeleton'
 export * from './atoms/IconButton'
+// Atoms auth + onboarding
+export * from './atoms/Logo'
+export * from './atoms/ProgressBar'
+export * from './atoms/AvatarUpload'
 // Molecules
 export * from './molecules/TrendBadge'
 export * from './molecules/FormField'
 export * from './molecules/NumberStat'
 export * from './molecules/KPICard'
 export * from './molecules/CotisationMonth'
+// Molecules auth + onboarding
+export * from './molecules/ProgressHeader'
+export * from './molecules/ConsentRow'
+export * from './molecules/SlideCard'
+export * from './molecules/CarouselDots'
+// Organisms
+export * from './organisms'
