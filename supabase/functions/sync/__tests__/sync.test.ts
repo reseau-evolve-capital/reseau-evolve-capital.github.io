@@ -297,7 +297,12 @@ function upsertRows(table: Row[], incoming: Row[], onConflict: string): void {
  */
 type SupabaseLike = ReturnType<SyncDeps['createClient']>
 
-function makeMockClient(store: Store): { client: SupabaseLike } {
+/** Enregistre les appels rpc() pour vérifier que le refresh de la MV a bien eu lieu. */
+interface RpcCalls {
+  names: string[]
+}
+
+function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLike } {
   // Builder par requête : accumule la table, l'opération et les filtres, puis
   // calcule le résultat au moment du `await` (then).
   class QueryBuilder implements PromiseLike<{ data: unknown; error: unknown }> {
@@ -433,8 +438,10 @@ function makeMockClient(store: Store): { client: SupabaseLike } {
     from(table: keyof Store) {
       return new QueryBuilder(table)
     },
-    rpc(_name: string, _args?: unknown) {
+    rpc(name: string, _args?: unknown) {
       // refresh_member_quote_part / get_user_role_in_club → no-op succès.
+      // On enregistre le nom pour permettre aux tests de vérifier que le refresh a eu lieu.
+      rpcCalls?.names.push(name)
       return Promise.resolve({ data: null, error: null })
     },
     // maybeSingle/single sont fournis sur QueryBuilder mais ne sont pas thenables
@@ -448,7 +455,12 @@ function makeMockClient(store: Store): { client: SupabaseLike } {
 /** Construit le handler avec un store donné + readSheet stubbé (optionnellement défaillant). */
 function buildHandler(
   store: Store,
-  opts?: { order?: string[]; throwOn?: string; overrides?: Record<string, string[][]> }
+  opts?: {
+    order?: string[]
+    throwOn?: string
+    overrides?: Record<string, string[][]>
+    rpcCalls?: RpcCalls
+  }
 ): (req: Request) => Promise<Response> {
   const mockReadSheet: SyncDeps['readSheet'] = (_sheetId: string, sheetName: string) => {
     opts?.order?.push(sheetName)
@@ -459,7 +471,7 @@ function buildHandler(
     if (override) return Promise.resolve(override.map((row) => [...row]))
     return Promise.resolve(cloneSheet(sheetName))
   }
-  const { client } = makeMockClient(store)
+  const { client } = makeMockClient(store, opts?.rpcCalls)
   return createSyncHandler({
     createClient: (() => client) as SyncDeps['createClient'],
     readSheet: mockReadSheet,
@@ -483,6 +495,7 @@ interface SyncResponseBody {
   club_id: string
   synced_sheets: string[]
   errors: string[]
+  warnings: string[]
   duration_ms: number
   snapshots: Record<string, { status: string; checksum: string; row_count: number }>
 }
@@ -499,12 +512,15 @@ const SHEET_ORDER = [
 // Test 1 — sync complète : 200, success=true, les 6 feuilles synchronisées.
 Deno.test('handler : sync complète → 200, success=true, 6 feuilles synchronisées', async () => {
   const store = emptyStore(true)
-  const handler = buildHandler(store)
+  const rpcCalls: RpcCalls = { names: [] }
+  const handler = buildHandler(store, { rpcCalls })
   const res = await handler(syncRequest(CLUB_ID))
   assertEquals(res.status, 200)
   const body = (await res.json()) as SyncResponseBody
   assertEquals(body.success, true)
   assertEquals(body.errors.length, 0)
+  // Fixtures propres : aucun warning non plus.
+  assertEquals(body.warnings.length, 0)
   assertEquals(body.synced_sheets.length, 6)
   assertEquals(body.synced_sheets, SHEET_ORDER)
   // Données effectivement importées dans le store.
@@ -517,6 +533,8 @@ Deno.test('handler : sync complète → 200, success=true, 6 feuilles synchronis
   for (const name of SHEET_ORDER) {
     assertEquals(body.snapshots[name].status, 'success')
   }
+  // Une sync propre rafraîchit bien la MV des quote-parts.
+  assert(rpcCalls.names.includes('refresh_member_quote_part'))
 })
 
 // Test 2 — idempotence : 2 syncs successives → même état final en DB.
@@ -557,19 +575,21 @@ Deno.test('handler : idempotence → 2 syncs produisent le même état final', a
   assertEquals(store.transactions.length, 1) // delete+insert : pas d'accumulation
 })
 
-// Test 3 — panne partielle : HISTORIQUE.readSheet throw → snapshot failed +
-//          erreur, MAIS les feuilles suivantes (COTISATIONS, Details) passent.
+// Test 3 — erreur DURE : HISTORIQUE.readSheet throw → exception attrapée par runSheet →
+//          snapshot failed + errors[], MAIS les feuilles suivantes (COTISATIONS, Details)
+//          passent. success=false et le refresh de la MV est SAUTÉ (gate sur errors durs).
 Deno.test(
-  'handler : panne partielle (HISTORIQUE throw) → snapshot failed, sync continue',
+  'handler : erreur dure (HISTORIQUE throw) → snapshot failed, sync continue, MV non rafraîchie',
   async () => {
     const store = emptyStore(true)
-    const handler = buildHandler(store, { throwOn: 'HISTORIQUE' })
+    const rpcCalls: RpcCalls = { names: [] }
+    const handler = buildHandler(store, { throwOn: 'HISTORIQUE', rpcCalls })
     const res = await handler(syncRequest(CLUB_ID))
     assertEquals(res.status, 200) // le handler répond toujours 200 ; success encode l'échec
     const body = (await res.json()) as SyncResponseBody
 
     assertEquals(body.success, false)
-    // HISTORIQUE échoue : snapshot failed + entrée errors, absente de synced_sheets.
+    // HISTORIQUE échoue : snapshot failed + entrée errors (DURE), absente de synced_sheets.
     assert(body.errors.some((e) => e.startsWith('HISTORIQUE:')))
     assert(!body.synced_sheets.includes('HISTORIQUE'))
     assertEquals(body.snapshots['HISTORIQUE'].status, 'failed')
@@ -585,18 +605,24 @@ Deno.test(
     // Les données des autres feuilles sont bien en base.
     assertEquals(store.users.length, 2)
     assertEquals(store.positions.length, 1)
+    // Erreur DURE → le refresh de la MV est sauté (gate errors.length === 0).
+    assert(!rpcCalls.names.includes('refresh_member_quote_part'))
   }
 )
 
-// Test 3bis — quarantaine : une ligne Portefeuille à quantité illisible est écartée
+// Test 3bis — quarantaine MOLLE : une ligne Portefeuille à quantité illisible est écartée
 //             AVANT l'upsert → snapshot 'partial', la mauvaise ligne absente du store,
-//             les lignes valides présentes. Le handler ne throw pas (design tolérant).
+//             les lignes valides présentes. C'est une anomalie RÉCUPÉRABLE : pas d'erreur
+//             dure (success=true), la note va dans warnings[] + snapshot.error_message,
+//             et la MV est tout de même rafraîchie.
 Deno.test(
-  'handler : quarantaine Portefeuille (quantité illisible) → snapshot partial, ligne écartée',
+  'handler : quarantaine Portefeuille (quantité illisible) → warning, snapshot partial, MV rafraîchie',
   async () => {
     const store = emptyStore(true)
+    const rpcCalls: RpcCalls = { names: [] }
     // AAPL : quantité valide ; BADQ : quantité non parsable (→ null après mapper) → écartée.
     const handler = buildHandler(store, {
+      rpcCalls,
       overrides: {
         Portefeuille: [
           ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours'],
@@ -610,15 +636,24 @@ Deno.test(
     assertEquals(res.status, 200)
     const body = (await res.json()) as SyncResponseBody
 
+    // Anomalie MOLLE → pas d'erreur dure : success reste true et errors[] est vide.
+    assertEquals(body.success, true)
+    assertEquals(body.errors.length, 0)
     // Le snapshot Portefeuille est partiel (1 ligne écartée), pas failed.
     assertEquals(body.snapshots['Portefeuille'].status, 'partial')
     // La ligne valide est en base, la mauvaise est absente.
     assertEquals(store.positions.length, 1)
     assertEquals(store.positions[0].symbol, 'AAPL')
     assert(!store.positions.some((p) => p.symbol === 'BADQ'))
-    // La feuille reste comptée comme synchronisée (pas d'abort) et la note mentionne le symbole.
+    // La feuille reste comptée comme synchronisée (pas d'abort).
     assert(body.synced_sheets.includes('Portefeuille'))
-    assert(body.errors.some((e) => e.includes('BADQ')))
+    // La note part dans warnings[] (pas errors[]) et dans le snapshot.error_message.
+    assert(body.warnings.some((w) => w.includes('BADQ')))
+    const snap = store.sheet_snapshots.find((s) => s.sheet_name === 'Portefeuille')
+    assert(snap !== undefined)
+    assert(String(snap.error_message ?? '').includes('BADQ'))
+    // Malgré le warning, la MV est rafraîchie (gate sur erreurs DURES uniquement).
+    assert(rpcCalls.names.includes('refresh_member_quote_part'))
   }
 )
 

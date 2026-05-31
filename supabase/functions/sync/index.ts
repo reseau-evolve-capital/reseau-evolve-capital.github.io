@@ -130,14 +130,25 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     }
 
     // ---- État de la sync ----
+    // DEUX CANAUX DISTINCTS — distinction DURE vs MOLLE (SHE-006) :
+    //   errors[]   = échecs DURS d'une feuille : exception throw par readSheet/mapper,
+    //                ou écriture Supabase renvoyant { error }. La feuille n'a PAS importé.
+    //                Snapshot 'failed'. Bloque le refresh de la MV.
+    //   warnings[] = anomalies MOLLES et récupérables : lignes en quarantaine (champ
+    //                requis NULL écarté), membres non résolus, statuts inconnus. La feuille
+    //                A importé (moins les lignes fautives). Snapshot 'partial'. Ces notes
+    //                vont aussi dans le snapshot.error_message, mais PAS dans errors[] :
+    //                elles ne doivent ni faire success=false ni bloquer le refresh de la MV
+    //                (une Sheet réelle a presque toujours quelques lignes sales).
     const syncedSheets: string[] = []
     const errors: string[] = []
+    const warnings: string[] = []
     const snapshots: Record<
       string,
       { status: SnapshotStatus; checksum: string; row_count: number }
     > = {}
 
-    /** Exécute une feuille en isolant ses erreurs : échec → snapshot failed + errors[], pas d'abort. */
+    /** Exécute une feuille en isolant ses erreurs DURES : exception → snapshot failed + errors[], pas d'abort. */
     async function runSheet(sheetName: string, handler: () => Promise<void>): Promise<void> {
       try {
         await handler()
@@ -249,8 +260,9 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
           )})`
         )
       }
+      // MOLLE : lignes rejetées / adhésions écartées → warnings[] (la feuille a importé).
       const status: SnapshotStatus = notes.length > 0 ? 'partial' : 'success'
-      if (notes.length > 0) errors.push(`Base (lignes ignorées): ${notes.join(' | ')}`)
+      if (notes.length > 0) warnings.push(`Base (lignes ignorées): ${notes.join(' | ')}`)
       snapshots['Base'] = await createSnapshot(
         supabase,
         clubId,
@@ -287,7 +299,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
               .map((p) => p.symbol)
               .join(', ')})`
           : null
-      if (note) errors.push(`Portefeuille (lignes ignorées): ${note}`)
+      // MOLLE : positions à quantité illisible écartées → warnings[] (la feuille a importé).
+      if (note) warnings.push(`Portefeuille (lignes ignorées): ${note}`)
       // raw_data enrichi : matrice brute + lignes d'agrégat isolées (Provision, Espèces, total…).
       snapshots['Portefeuille'] = await createSnapshot(
         supabase,
@@ -334,7 +347,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         droppedTransactions > 0
           ? `${droppedTransactions} transaction(s) ignorée(s) : date illisible`
           : null
-      if (note) errors.push(`HISTORIQUE (lignes ignorées): ${note}`)
+      // MOLLE : transactions à date illisible écartées → warnings[] (la feuille a importé).
+      if (note) warnings.push(`HISTORIQUE (lignes ignorées): ${note}`)
       snapshots['HISTORIQUE'] = await createSnapshot(
         supabase,
         clubId,
@@ -367,7 +381,9 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       const notes: string[] = []
       if (unmatched.length > 0) notes.push(`Membres non résolus: ${unmatched.join(', ')}`)
       if (unknownStatuses.length > 0) notes.push(`Statuts inconnus: ${unknownStatuses.join(', ')}`)
+      // MOLLE : membres non résolus / statuts inconnus → warnings[] (la feuille a importé).
       const status: SnapshotStatus = notes.length > 0 ? 'partial' : 'success'
+      if (notes.length > 0) warnings.push(`COTISATIONS: ${notes.join(' | ')}`)
       snapshots['COTISATIONS'] = await createSnapshot(
         supabase,
         clubId,
@@ -392,7 +408,10 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         )
         if (error) throw new Error(`upsert contribution_months: ${error.message}`)
       }
+      // MOLLE : en-têtes (noms de membres) non résolus → warnings[] (la feuille a importé).
       const status: SnapshotStatus = unmatched.length > 0 ? 'partial' : 'success'
+      if (unmatched.length > 0)
+        warnings.push(`Details cotisations: En-têtes non résolus: ${unmatched.join(', ')}`)
       snapshots['Details cotisations'] = await createSnapshot(
         supabase,
         clubId,
@@ -409,10 +428,13 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     // ===========================================================================
 
     // Rafraîchissement de la vue matérialisée.
-    // On ne rafraîchit la MV que si TOUTES les feuilles ont réussi : sur une sync
-    // partielle, les données sont incohérentes (ex. positions importées mais Base en
-    // échec) et recalculer les quote-parts produirait des chiffres faux. On préfère
-    // laisser la MV sur son dernier état cohérent et attendre la prochaine sync.
+    // On ne bloque le refresh que sur les erreurs DURES (errors[]) : une feuille en
+    // échec dur laisse des données incohérentes (ex. positions importées mais Base en
+    // échec), recalculer les quote-parts produirait des chiffres faux → on laisse la MV
+    // sur son dernier état cohérent et on attend la prochaine sync.
+    // En revanche, des WARNINGS seuls (lignes en quarantaine, membres non résolus) ne
+    // bloquent PAS le refresh : la feuille a importé l'essentiel, et une Sheet réelle a
+    // presque toujours quelques lignes sales — sinon la MV ne se rafraîchirait jamais.
     if (errors.length === 0) {
       try {
         const { error } = await supabase.rpc('refresh_member_quote_part')
@@ -433,7 +455,7 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       if (error) errors.push(`update clubs.synced_at: ${error.message}`)
     }
 
-    // Alerte Sentry si >= 2 erreurs accumulées.
+    // Alerte Sentry si >= 2 erreurs DURES accumulées (jamais sur de simples warnings).
     if (errors.length >= 2) {
       await alertSentry(Deno.env.get('SENTRY_DSN'), {
         club_id: clubId,
@@ -442,11 +464,13 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       })
     }
 
+    // success n'encode QUE les erreurs dures ; warnings est un ajout non-breaking.
     return json({
       success: errors.length === 0,
       club_id: clubId,
       synced_sheets: syncedSheets,
       errors,
+      warnings,
       duration_ms: Date.now() - startTime,
       snapshots,
     })
