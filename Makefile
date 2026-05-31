@@ -1,4 +1,4 @@
-.PHONY: dev dev-web dev-vitrine build lint typecheck test storybook \
+.PHONY: dev dev-web dev-vitrine build lint typecheck test test-e2e storybook \
         db-start db-stop db-migrate db-reset db-types db-sync \
         docker-build docker-up docker-down \
         clean help
@@ -28,6 +28,9 @@ typecheck:
 
 test:
 	pnpm turbo test
+
+test-e2e:
+	pnpm --filter @evolve/web exec playwright test
 
 ## Supabase local (via CLI, PAS docker-compose)
 db-start:
