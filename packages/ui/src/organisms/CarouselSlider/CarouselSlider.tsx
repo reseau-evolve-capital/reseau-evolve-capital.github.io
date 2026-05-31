@@ -1,3 +1,4 @@
+'use client'
 import { useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { CarouselDots } from '../../molecules/CarouselDots'
 import { cn } from '../../lib/cn'
