@@ -3,8 +3,8 @@
 // Hook de synchronisation manuelle (DSH-008).
 //
 // Déclenche POST /api/sync { club_id } (auth + rôle ≥ trésorier + rate-limit côté serveur).
-// 429 → erreur 'rate_limited' (le bandeau l'affiche en inline). Succès → invalide la
-// query ['dashboard'] pour refléter la nouvelle valorisation.
+// 429 → erreur 'rate_limited' (le bandeau l'affiche en inline). Succès → invalide toutes
+// les queries affectées : dashboard, portfolio, market-prices, contributions, et vues admin.
 // Réf : DSH-008, apps/web/app/api/sync/route.ts.
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -32,6 +32,7 @@ export function useSyncStatus(clubId: string | null) {
       void queryClient.invalidateQueries({ queryKey: ['portfolio'] })
       void queryClient.invalidateQueries({ queryKey: ['market-prices'] })
       void queryClient.invalidateQueries({ queryKey: ['contributions'] })
+      void queryClient.invalidateQueries({ queryKey: ['admin'] })
     },
   })
 }
