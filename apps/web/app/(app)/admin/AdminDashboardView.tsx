@@ -11,7 +11,7 @@ import { useClubSummary } from '@/lib/hooks/useClubSummary'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
 
 export function AdminDashboardView({ initialData }: { initialData: ClubSummary }) {
-  const { data } = useClubSummary(initialData)
+  const { data, isError } = useClubSummary(initialData)
   const sync = useSyncStatus(data.clubId)
 
   const syncError = sync.isError
@@ -25,6 +25,12 @@ export function AdminDashboardView({ initialData }: { initialData: ClubSummary }
       <Heading level="h1" className="text-[20px]">
         Espace trésorier
       </Heading>
+
+      {isError && (
+        <p role="status" className="text-[12px] text-text-ter">
+          Impossible d&apos;actualiser les données. Affichage des dernières valeurs connues.
+        </p>
+      )}
 
       <SyncBanner
         syncedAt={data.syncedAt}

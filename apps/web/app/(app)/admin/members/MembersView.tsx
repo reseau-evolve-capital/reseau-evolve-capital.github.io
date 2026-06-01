@@ -27,7 +27,7 @@ function toRow(m: ClubMember): MemberRow {
 const FILTER_ID = 'filter-impayes'
 
 export function MembersView({ initialData }: { initialData: ClubMembersPayload }) {
-  const { data } = useClubMembers(initialData)
+  const { data, isError } = useClubMembers(initialData)
   const [onlyUnpaid, setOnlyUnpaid] = useQueryState('impayes', parseAsBoolean.withDefault(false))
 
   const filtered = filterMembers(data.members, onlyUnpaid)
@@ -54,6 +54,11 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
           </label>
         </div>
       </div>
+      {isError && (
+        <p role="status" className="text-[12px] text-text-ter">
+          Impossible d&apos;actualiser les données. Affichage des dernières valeurs connues.
+        </p>
+      )}
       <MembersList members={filtered.map(toRow)} />
     </div>
   )
