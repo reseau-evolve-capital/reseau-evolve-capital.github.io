@@ -6,6 +6,7 @@ import {
   sortMembers,
   filterMembers,
   computeContribStats,
+  isStaffRole,
   type ClubMember,
 } from './admin'
 
@@ -51,6 +52,9 @@ describe('countUnpaid', () => {
     const members = [mk({ isUnpaid: true }), mk({ isUnpaid: false }), mk({ isUnpaid: true })]
     expect(countUnpaid(members)).toBe(2)
   })
+  it('renvoie 0 sur liste vide', () => {
+    expect(countUnpaid([])).toBe(0)
+  })
 })
 
 describe('clubTotalContributed', () => {
@@ -58,6 +62,9 @@ describe('clubTotalContributed', () => {
     expect(
       clubTotalContributed([mk({ totalContributed: 1000 }), mk({ totalContributed: 500 })])
     ).toBe(1500)
+  })
+  it('renvoie 0 sur liste vide', () => {
+    expect(clubTotalContributed([])).toBe(0)
   })
 })
 
@@ -85,6 +92,28 @@ describe('sortMembers', () => {
     const src = [a, b]
     sortMembers(src, 'name', 'asc')
     expect(src.map((m) => m.id)).toEqual(['a', 'b'])
+  })
+  it('trie par detention asc', () => {
+    const x = mk({ id: 'x', detentionPct: 0.05 })
+    const y = mk({ id: 'y', detentionPct: 0.25 })
+    expect(sortMembers([y, x], 'detention', 'asc').map((m) => m.id)).toEqual(['x', 'y'])
+  })
+  it('trie par months desc', () => {
+    const x = mk({ id: 'x', monthsCount: 3 })
+    const y = mk({ id: 'y', monthsCount: 12 })
+    expect(sortMembers([x, y], 'months', 'desc').map((m) => m.id)).toEqual(['y', 'x'])
+  })
+})
+
+describe('isStaffRole', () => {
+  it('vrai pour treasurer', () => {
+    expect(isStaffRole('treasurer')).toBe(true)
+  })
+  it('faux pour member', () => {
+    expect(isStaffRole('member')).toBe(false)
+  })
+  it('faux pour null', () => {
+    expect(isStaffRole(null)).toBe(false)
   })
 })
 

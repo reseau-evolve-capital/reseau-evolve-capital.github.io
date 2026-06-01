@@ -148,6 +148,8 @@ export async function getClubSummary(
       .returns<{ market_value: number | null }[]>(),
     supabase.from('clubs').select('synced_at').eq('id', clubId).single(),
   ])
+  if (positions.error) throw positions.error
+  if (club.error) throw club.error
   const portfolioValue = (positions.data ?? []).reduce((s, p) => s + Number(p.market_value ?? 0), 0)
   return {
     clubId,
@@ -235,16 +237,15 @@ export async function getClubContributionsTimeline(
     .order('month', { ascending: false })
   if (membershipId) q = q.eq('membership_id', membershipId)
 
-  const { data, error } =
-    await q.returns<
-      {
-        year: number
-        month: number
-        amount: number | null
-        status: MonthStatus
-        paid_at: string | null
-      }[]
-    >()
+  const { data, error } = await q.returns<
+    {
+      year: number
+      month: number
+      amount: number | null
+      status: MonthStatus
+      paid_at: string | null
+    }[]
+  >()
   if (error) throw error
 
   const months: MonthInput[] = (data ?? []).map((r) => ({
