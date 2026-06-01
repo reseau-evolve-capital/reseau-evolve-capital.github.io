@@ -7,8 +7,9 @@
  *   portfolio ne s'applique donc pas ici (il suppose un seed vide). On seede plutôt de
  *   vraies lignes `contribution_months` pour le membre, et on assert sur le rendu RSC réel.
  *
- *   - `contribution_months` est référencé par `membership_id` (stable malgré le re-key
- *     de public.users.id au login → la FK est sur user_id, pas sur membership.id).
+ *   - `contribution_months.membership_id` référence `memberships.id` (PK stable). Au login,
+ *     c'est `memberships.user_id` qui se re-keye (CASCADE depuis auth.users), pas la PK →
+ *     les mois seedés restent rattachés au bon membre.
  *   - On résout le membership via `club_id` (le seed n'a qu'une adhésion sur ce club).
  *   - Pour le scénario « retard », on bascule `contributions.status` puis on le réinitialise.
  *
@@ -177,8 +178,10 @@ test('chargement → titre, statut, KPIs et timeline visibles', async ({ page })
   await expect(page.getByRole('heading', { name: 'Mes cotisations' })).toBeVisible()
   // status='ok' (état seed) → Pill « Situation régulière ».
   await expect(page.getByText('Situation régulière')).toBeVisible()
-  // KPI « Total cotisé » (libellé de la carte).
+  // KPI « Total cotisé » : libellé + valeur (8 000 € seedé par global-setup) → vérifie la
+  // chaîne RSC → KPICard → formatEUR (NBSP comme séparateur de milliers).
   await expect(page.getByText('Total cotisé')).toBeVisible()
+  await expect(page.getByText(/8\s000/)).toBeVisible()
   // La timeline réelle est rendue (mois seedés).
   await expect(page.getByRole('list', { name: 'Historique des cotisations' })).toBeVisible()
 })
@@ -204,8 +207,9 @@ test("statut en retard → banner d'alerte avec montant dû", async ({ page }) =
     await page.goto('/contributions')
 
     // `getByRole('alert')` matche aussi le __next-route-announcer__ de Next (vide) → on cible
-    // le bandeau par son texte pour éviter la collision strict-mode.
-    await expect(page.getByText('Tu as un retard de cotisation')).toBeVisible()
+    // le bandeau par son texte. On asserte aussi le montant (100 €) pour vérifier que amount_due
+    // remonte bien de la DB jusqu'au rendu via formatEUR.
+    await expect(page.getByText(/retard de cotisation de 100/)).toBeVisible()
   } finally {
     await setContributionStatus(membershipId, 'ok', 0)
   }
@@ -219,9 +223,12 @@ test('clic sur une cellule de mois → Popover détail', async ({ page }) => {
   await page.goto('/contributions')
 
   // Première cellule (années DESC, mois DESC) = avril 2026 « en attente ». Son aria-label réel
-  // est produit par buildMonthAriaLabel (« Avril 2026, en attente »). Les cellules sont des carrés
-  // de 24px qui peuvent passer sous le header d'année `sticky` → on déclenche le clic via
-  // dispatchEvent (pas de hit-testing par coordonnées) pour ouvrir le Popover Radix de façon stable.
+  // est produit par buildMonthAriaLabel (« Avril 2026, en attente »).
+  // CONTOURNEMENT d'un défaut connu (à traiter en COT-008) : les cellules CotisationMonth font
+  // 24px (< cible tactile 44px) et la première ligne d'une année peut être occultée par le header
+  // d'année `sticky` → `.click()` échoue l'actionability. On déclenche donc le clic via
+  // dispatchEvent (pas de hit-testing par coordonnées). NE PAS remplacer par `.click()` tant que
+  // l'occlusion sticky / la taille de cible ne sont pas corrigées.
   const cell = page.getByRole('button', { name: /Avril 2026/ })
   await cell.dispatchEvent('click')
 
