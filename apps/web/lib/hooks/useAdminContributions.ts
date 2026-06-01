@@ -13,7 +13,6 @@ export interface AdminContribPayload {
   clubId: string
   years: TimelineYear[]
   stats: ContribStats
-  members: AdminContribOption[]
 }
 
 export async function fetchAdminContributions(
@@ -47,5 +46,6 @@ export function useAdminContributions(
     initialData: membershipId ? undefined : initialData,
     placeholderData: (prev) => prev,
     staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
   })
 }

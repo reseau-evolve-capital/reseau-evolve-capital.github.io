@@ -21,14 +21,24 @@ import {
   SelectContent,
   SelectItem,
 } from '@evolve/ui'
-import { useAdminContributions, type AdminContribPayload } from '@/lib/hooks/useAdminContributions'
+import {
+  useAdminContributions,
+  type AdminContribPayload,
+  type AdminContribOption,
+} from '@/lib/hooks/useAdminContributions'
 
 const ALL = 'all'
 
-export function AdminCotisationsView({ initialData }: { initialData: AdminContribPayload }) {
+export function AdminCotisationsView({
+  initialData,
+  members,
+}: {
+  initialData: AdminContribPayload
+  members: AdminContribOption[]
+}) {
   const [member, setMember] = useQueryState('membre')
   const membershipId = member && member !== ALL ? member : null
-  const { data, isError } = useAdminContributions(initialData, membershipId)
+  const { data, isError, isFetching } = useAdminContributions(initialData, membershipId)
 
   // data peut être undefined au 1er rendu filtré (query en cours, pas encore de placeholderData)
   const payload = data ?? initialData
@@ -55,7 +65,7 @@ export function AdminCotisationsView({ initialData }: { initialData: AdminContri
           <SelectPortal>
             <SelectContent>
               <SelectItem value={ALL}>Tous les membres</SelectItem>
-              {initialData.members.map((m) => (
+              {members.map((m) => (
                 <SelectItem key={m.id} value={m.id}>
                   {m.fullName}
                 </SelectItem>
@@ -71,7 +81,11 @@ export function AdminCotisationsView({ initialData }: { initialData: AdminContri
         </p>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div
+        className={`grid grid-cols-1 gap-4 sm:grid-cols-3 transition-opacity${
+          isFetching ? ' opacity-50' : ''
+        }`}
+      >
         <KPICard title="Total cotisé" value={stats.total} format="eur" />
         <KPICard title="Versements" value={stats.count} format="raw" />
         <KPICard title="Versement moyen" value={stats.average} format="eur" />

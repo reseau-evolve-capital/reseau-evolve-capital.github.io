@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
-import { getClubContributionsTimeline, getClubMembers, isStaffRole } from '@/lib/data/admin'
+import { getClubContributionsTimeline, isStaffRole } from '@/lib/data/admin'
 
 export const runtime = 'nodejs'
 
@@ -28,17 +28,9 @@ export async function GET(request: Request): Promise<NextResponse> {
   if (!isStaffRole(role)) return NextResponse.json({ error: 'Rôle insuffisant.' }, { status: 403 })
 
   try {
-    const [timeline, members] = await Promise.all([
-      getClubContributionsTimeline(supabase, clubId, membershipId),
-      getClubMembers(supabase, clubId),
-    ])
+    const timeline = await getClubContributionsTimeline(supabase, clubId, membershipId)
     return NextResponse.json(
-      {
-        clubId,
-        years: timeline.years,
-        stats: timeline.stats,
-        members: members.map((m) => ({ id: m.id, fullName: m.fullName })),
-      },
+      { clubId, years: timeline.years, stats: timeline.stats },
       { headers: { 'Cache-Control': 'private, no-store' } }
     )
   } catch {

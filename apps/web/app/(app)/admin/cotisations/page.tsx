@@ -26,12 +26,8 @@ export default async function AdminCotisationsPage() {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 py-6">
       <AdminCotisationsView
-        initialData={{
-          clubId: ctx.clubId,
-          years: timeline.years,
-          stats: timeline.stats,
-          members: members.map((m) => ({ id: m.id, fullName: m.fullName })),
-        }}
+        initialData={{ clubId: ctx.clubId, years: timeline.years, stats: timeline.stats }}
+        members={members.map((m) => ({ id: m.id, fullName: m.fullName }))}
       />
     </div>
   )
