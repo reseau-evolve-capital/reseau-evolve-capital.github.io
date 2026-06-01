@@ -1,3 +1,5 @@
+'use client'
+
 import * as React from 'react'
 import { CotisationMonth, type CotisationVariant } from '../../molecules/CotisationMonth'
 import { EmptyState } from '../../molecules/EmptyState'
@@ -40,7 +42,7 @@ function handleArrowNav(e: React.KeyboardEvent<HTMLDivElement>): void {
   if (buttons.length === 0) return
   const current = buttons.indexOf(document.activeElement as HTMLButtonElement)
   const forward = e.key === 'ArrowRight' || e.key === 'ArrowDown'
-  const next = current < 0 ? 0 : current + (forward ? 1 : -1)
+  const next = current < 0 ? (forward ? 0 : buttons.length - 1) : current + (forward ? 1 : -1)
   const clamped = Math.max(0, Math.min(buttons.length - 1, next))
   buttons[clamped]?.focus()
   e.preventDefault()

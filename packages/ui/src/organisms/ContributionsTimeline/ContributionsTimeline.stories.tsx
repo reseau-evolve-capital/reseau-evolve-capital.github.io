@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { within, expect, userEvent } from 'storybook/test'
 import { ContributionsTimeline, type TimelineYear } from './ContributionsTimeline'
 
 const meta: Meta<typeof ContributionsTimeline> = {
@@ -58,6 +59,18 @@ export const DeuxAnnees: Story = {
       },
       full(2025),
     ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // Trouver la première cellule (Avril 2026 en attente) et la deuxième (Mars 2026 payé)
+    const firstCell = canvas.getByRole('button', { name: 'Avril 2026 en attente' })
+    const secondCell = canvas.getByRole('button', { name: 'Mars 2026 payé' })
+    // Cliquer sur la première cellule pour lui donner le focus
+    await userEvent.click(firstCell)
+    expect(firstCell).toHaveFocus()
+    // Simuler ArrowRight — le focus doit se déplacer sur la deuxième cellule
+    await userEvent.keyboard('{ArrowRight}')
+    expect(secondCell).toHaveFocus()
   },
 }
 
