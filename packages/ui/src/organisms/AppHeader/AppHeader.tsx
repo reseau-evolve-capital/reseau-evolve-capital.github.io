@@ -105,7 +105,7 @@ export function AppHeader({
                   'data-[highlighted]:bg-neutral-100'
                 )}
               >
-                <Icon name="ShieldCheck" size={16} />
+                <Icon name="ShieldCheck" size={16} aria-hidden="true" />
                 <span>Espace trésorier</span>
               </DropdownMenu.Item>
             ) : null}
@@ -117,7 +117,7 @@ export function AppHeader({
                 'data-[highlighted]:bg-neutral-100'
               )}
             >
-              <Icon name="User" size={16} />
+              <Icon name="User" size={16} aria-hidden="true" />
               <span>Profil</span>
             </DropdownMenu.Item>
             <DropdownMenu.Item
@@ -128,7 +128,7 @@ export function AppHeader({
                 'data-[highlighted]:bg-neutral-100'
               )}
             >
-              <Icon name="LogOut" size={16} />
+              <Icon name="LogOut" size={16} aria-hidden="true" />
               <span>Déconnexion</span>
             </DropdownMenu.Item>
           </DropdownMenu.Content>

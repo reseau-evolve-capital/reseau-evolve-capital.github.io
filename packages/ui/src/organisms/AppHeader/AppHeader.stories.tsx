@@ -65,5 +65,10 @@ export const WithAdmin: Story = {
     expect(await menu.findByText('Espace trésorier')).toBeVisible()
     expect(await menu.findByText('Profil')).toBeVisible()
     expect(await menu.findByText('Déconnexion')).toBeVisible()
+    // Vérifie l'ordre : « Espace trésorier » en premier, « Profil » en second
+    const allItems = await menu.findAllByRole('menuitem')
+    expect(allItems).toHaveLength(3)
+    expect(allItems[0]!).toHaveTextContent('Espace trésorier')
+    expect(allItems[1]!).toHaveTextContent('Profil')
   },
 }
