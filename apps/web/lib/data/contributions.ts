@@ -20,6 +20,7 @@ type ContributionMonthRow = Database['public']['Tables']['contribution_months'][
 
 export type ContributionStatus = Database['public']['Enums']['contribution_status']
 export type MonthStatus = Database['public']['Enums']['month_status']
+export type MemberRole = Database['public']['Enums']['member_role']
 
 /** Donnée mensuelle brute consommée par les mappers (sous-ensemble de la Row). */
 export interface MonthInput {
@@ -33,6 +34,7 @@ export interface MonthInput {
 export interface ContributionsData {
   clubId: string
   status: ContributionStatus
+  userRole: MemberRole
   totalContributed: number
   monthsCount: number
   detentionPct: number // fraction 0..1 (formatPct l'attend ainsi)
@@ -138,11 +140,11 @@ export async function getContributionsData(
   // Fix 1 — résoudre l'adhésion du membre courant pour un filtre précis (role-safe).
   const { data: membership } = await supabase
     .from('memberships')
-    .select('id')
+    .select('id, role')
     .eq('user_id', userId)
     .eq('club_id', clubId)
     .eq('is_active', true)
-    .maybeSingle<{ id: string }>()
+    .maybeSingle<{ id: string; role: MemberRole }>()
   if (!membership) return null
   const membershipId = membership.id
 
@@ -189,6 +191,7 @@ export async function getContributionsData(
   return {
     clubId,
     status: summary.status,
+    userRole: membership.role,
     totalContributed: Number(summary.total_contributed ?? 0),
     monthsCount: Number(summary.months_count ?? 0),
     detentionPct: Number(summary.detention_pct ?? 0),

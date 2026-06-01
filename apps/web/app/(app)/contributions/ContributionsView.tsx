@@ -110,7 +110,7 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
       {/* SyncBanner : masqué pour les membres (rôle « member ») ; visible ≥ trésorier. */}
       <SyncBanner
         syncedAt={data.syncedAt}
-        userRole="member"
+        userRole={data.userRole}
         isSyncing={sync.isPending}
         onSync={() => sync.mutate()}
         errorMessage={syncError}

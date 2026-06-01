@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import type { ContributionsData } from '@/lib/data/contributions'
 
+/** Appelle GET /api/contributions. 404 → null (état empty), !ok → throw (état error). */
 export async function fetchContributions(): Promise<ContributionsData | null> {
   const res = await fetch('/api/contributions', { headers: { Accept: 'application/json' } })
   if (res.status === 404) return null
