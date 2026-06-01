@@ -31,6 +31,7 @@ export function useSyncStatus(clubId: string | null) {
       void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       void queryClient.invalidateQueries({ queryKey: ['portfolio'] })
       void queryClient.invalidateQueries({ queryKey: ['market-prices'] })
+      void queryClient.invalidateQueries({ queryKey: ['contributions'] })
     },
   })
 }
