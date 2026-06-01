@@ -27,6 +27,9 @@ export function usePortfolio(initialData: PortfolioData | null) {
     queryKey: ['portfolio'],
     queryFn: fetchPortfolio,
     initialData,
+    // initialData null (RSC sans positions) → marquer "périmé depuis l'epoch" pour
+    // refetch immédiat dès le montage/focus et récupérer d'éventuelles données fraîches.
+    initialDataUpdatedAt: initialData ? undefined : 0,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   })
