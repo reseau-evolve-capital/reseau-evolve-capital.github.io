@@ -41,7 +41,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   const startY = useRef<number | null>(null)
 
   // État de filtre/tri persistant dans l'URL (partageable). parseAsString → string | null.
-  const [sector, setSector] = useQueryState('type', parseAsString)
+  const [sector, setSector] = useQueryState('sector', parseAsString)
   const [sort, setSort] = useQueryState('sort', parseAsStringEnum(SORTS).withDefault('value'))
   const [dir, setDir] = useQueryState('dir', parseAsStringEnum(DIRS).withDefault('desc'))
 

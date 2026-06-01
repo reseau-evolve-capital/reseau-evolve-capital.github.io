@@ -27,6 +27,10 @@ export function useSyncStatus(clubId: string | null) {
       if (!res.ok) throw new Error('sync_failed')
       return (await res.json()) as SyncResult
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['dashboard'] }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      void queryClient.invalidateQueries({ queryKey: ['portfolio'] })
+      void queryClient.invalidateQueries({ queryKey: ['market-prices'] })
+    },
   })
 }
