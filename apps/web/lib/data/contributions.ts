@@ -123,41 +123,60 @@ export function buildTimelineYears(months: MonthInput[]): TimelineYear[] {
 }
 
 /** Charge les données cotisations du membre courant. RLS isole par auth.uid().
- *  Retourne null si aucune ligne `contributions` (état empty). */
+ *  Retourne null si aucune ligne `contributions` (état empty).
+ *
+ *  On résout d'abord le `membership_id` du membre courant : la table `contributions`
+ *  porte un index par `membership_id` et RLS expose TOUTES les lignes du club au
+ *  trésorier → filtrer par `club_id` seul renverrait plusieurs lignes et ferait
+ *  exploser `.maybeSingle()`. Cibler le `membership_id` garantit exactement 1 ligne
+ *  quel que soit le rôle (membre ou trésorier). */
 export async function getContributionsData(
   supabase: ServerClient,
-  _userId: string,
+  userId: string,
   clubId: string
 ): Promise<ContributionsData | null> {
-  const { data: summary, error } = await supabase
-    .from('contributions')
-    .select(
-      'status, total_contributed, months_count, detention_pct, penalties, amount_due, synced_at'
-    )
+  // Fix 1 — résoudre l'adhésion du membre courant pour un filtre précis (role-safe).
+  const { data: membership } = await supabase
+    .from('memberships')
+    .select('id')
+    .eq('user_id', userId)
     .eq('club_id', clubId)
-    .maybeSingle<
-      Pick<
-        ContributionRow,
-        | 'status'
-        | 'total_contributed'
-        | 'months_count'
-        | 'detention_pct'
-        | 'penalties'
-        | 'amount_due'
-        | 'synced_at'
-      >
-    >()
-  if (error) throw error
-  if (!summary) return null
+    .eq('is_active', true)
+    .maybeSingle<{ id: string }>()
+  if (!membership) return null
+  const membershipId = membership.id
 
-  const { data: monthRows, error: monthsError } = await supabase
-    .from('contribution_months')
-    .select('year, month, amount, status, paid_at')
-    .eq('club_id', clubId)
-    .order('year', { ascending: false })
-    .order('month', { ascending: false })
-    .returns<Pick<ContributionMonthRow, 'year' | 'month' | 'amount' | 'status' | 'paid_at'>[]>()
+  // Fix 2 — paralléliser les deux requêtes data (indépendantes, cf. dashboard.ts).
+  const [{ data: summary, error }, { data: monthRows, error: monthsError }] = await Promise.all([
+    supabase
+      .from('contributions')
+      .select(
+        'status, total_contributed, months_count, detention_pct, penalties, amount_due, synced_at'
+      )
+      .eq('membership_id', membershipId)
+      .maybeSingle<
+        Pick<
+          ContributionRow,
+          | 'status'
+          | 'total_contributed'
+          | 'months_count'
+          | 'detention_pct'
+          | 'penalties'
+          | 'amount_due'
+          | 'synced_at'
+        >
+      >(),
+    supabase
+      .from('contribution_months')
+      .select('year, month, amount, status, paid_at')
+      .eq('membership_id', membershipId)
+      .order('year', { ascending: false })
+      .order('month', { ascending: false })
+      .returns<Pick<ContributionMonthRow, 'year' | 'month' | 'amount' | 'status' | 'paid_at'>[]>(),
+  ])
+  if (error) throw error
   if (monthsError) throw monthsError
+  if (!summary) return null
 
   const months: MonthInput[] = (monthRows ?? []).map((r) => ({
     year: r.year,

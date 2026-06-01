@@ -38,6 +38,16 @@ describe('buildMonthTooltip', () => {
     const m: MonthInput = { year: 2024, month: 7, amount: 0, status: 'exempt', paidAt: null }
     expect(buildMonthTooltip(m)).toContain('exempté')
   })
+  it('due → en attente', () => {
+    const m: MonthInput = { year: 2025, month: 6, amount: 100, status: 'due', paidAt: null }
+    expect(buildMonthTooltip(m)).toContain('en attente')
+  })
+  it('paid sans paidAt → contient payé mais pas " le "', () => {
+    const m: MonthInput = { year: 2025, month: 4, amount: 50, status: 'paid', paidAt: null }
+    const t = buildMonthTooltip(m)
+    expect(t).toContain('payé')
+    expect(t).not.toContain(' le ')
+  })
 })
 
 describe("buildMonthAriaLabel — verbeux pour lecteur d'écran", () => {
@@ -52,6 +62,18 @@ describe("buildMonthAriaLabel — verbeux pour lecteur d'écran", () => {
     const a = buildMonthAriaLabel(m)
     expect(a).toContain('Mars 2025')
     expect(a).toContain('payé')
+  })
+  it('late → en retard', () => {
+    const m: MonthInput = { year: 2025, month: 5, amount: 100, status: 'late', paidAt: null }
+    expect(buildMonthAriaLabel(m)).toContain('en retard')
+  })
+  it('exempt → exempté', () => {
+    const m: MonthInput = { year: 2024, month: 8, amount: 0, status: 'exempt', paidAt: null }
+    expect(buildMonthAriaLabel(m)).toContain('exempté')
+  })
+  it('due → en attente', () => {
+    const m: MonthInput = { year: 2025, month: 7, amount: 100, status: 'due', paidAt: null }
+    expect(buildMonthAriaLabel(m)).toContain('en attente')
   })
 })
 
