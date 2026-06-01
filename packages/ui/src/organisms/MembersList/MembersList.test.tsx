@@ -69,6 +69,7 @@ describe('MembersList — rendu', () => {
     // COLY Marc a status: null
     const rows = screen.getAllByTestId('member-row')
     // Le tri par défaut est totalContributed desc : AFOUDAH(4200), BAMBA(1200), COLY(800)
+    expect(rows).toHaveLength(3)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const colyRow = rows[2]!
     expect(within(colyRow).getByText('—')).toBeInTheDocument()

@@ -62,15 +62,18 @@ export const Default: Story = {
     // Présence de « En retard » (statut BAMBA Inès)
     await expect(canvas.getByText('En retard')).toBeInTheDocument()
 
-    // Clic sur l'en-tête « Membre » → tri croissant par nom
-    const membreHeader = canvas.getByRole('columnheader', { name: /Membre/i })
-    const sortBtn = within(membreHeader).getByRole('button')
+    // Clic sur l'en-tête « Total cotisé » (déjà trié desc par défaut) → bascule en asc
+    // Ordre asc attendu : COLY (800), BAMBA (1200), AFOUDAH (4200) — prouve que le tri change réellement
+    const totalHeader = canvas.getByRole('columnheader', { name: /Total cotisé/i })
+    const sortBtn = within(totalHeader).getByRole('button', { name: /Trier par Total cotisé/ })
     await userEvent.click(sortBtn)
 
-    // Après tri croissant : AFOUDAH doit être en premier
-    const updatedRows = canvas.getAllByTestId('member-row')
+    const sortedRows = canvas.getAllByTestId('member-row')
+    await expect(sortedRows).toHaveLength(3)
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    await expect(within(updatedRows[0]!).getByText('AFOUDAH Ruben')).toBeInTheDocument()
+    await expect(within(sortedRows[0]!).getByText('COLY Marc')).toBeInTheDocument()
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    await expect(within(sortedRows[2]!).getByText('AFOUDAH Ruben')).toBeInTheDocument()
   },
 }
 
