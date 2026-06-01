@@ -119,7 +119,7 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
       {data.status === 'late' && (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-[10px] border border-data-warning-50 bg-data-warning-50 p-4"
+          className="flex items-start gap-3 rounded-[10px] border border-data-warning bg-data-warning-50 p-4"
         >
           <Icon name="TriangleAlert" size={20} className="text-data-warning" aria-hidden="true" />
           <div className="flex flex-col gap-1">
