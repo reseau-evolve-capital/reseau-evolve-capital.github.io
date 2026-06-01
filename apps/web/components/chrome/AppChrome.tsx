@@ -25,7 +25,7 @@ function resolveActiveHref(pathname: string | null): string {
   return match?.href ?? NAV_ITEMS[0]!.href
 }
 
-export function AppChromeHeader({ user }: { user: AppHeaderUser }) {
+export function AppChromeHeader({ user, isStaff }: { user: AppHeaderUser; isStaff: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = useSupabase()
@@ -41,6 +41,8 @@ export function AppChromeHeader({ user }: { user: AppHeaderUser }) {
       activeHref={resolveActiveHref(pathname)}
       user={user}
       linkComponent={Link}
+      canAccessAdmin={isStaff}
+      onAdmin={() => router.push('/admin')}
       onProfile={() => router.push('/onboarding')}
       onLogout={() => {
         void handleLogout()

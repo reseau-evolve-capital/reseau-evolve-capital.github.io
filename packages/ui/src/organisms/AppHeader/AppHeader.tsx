@@ -20,6 +20,10 @@ export interface AppHeaderProps {
   linkComponent?: React.ElementType
   onProfile?: () => void
   onLogout?: () => void
+  /** Affiche l'entrée « Espace trésorier » dans le menu (rôle ≥ trésorier). */
+  canAccessAdmin?: boolean
+  /** Action déclenchée par l'entrée admin (ex: router.push('/admin')). */
+  onAdmin?: () => void
   className?: string
 }
 
@@ -36,6 +40,8 @@ export function AppHeader({
   linkComponent: Link = 'a',
   onProfile,
   onLogout,
+  canAccessAdmin = false,
+  onAdmin,
   className,
 }: AppHeaderProps) {
   return (
@@ -90,6 +96,19 @@ export function AppHeader({
               'bg-card border border-border shadow-[var(--sh-pop)]'
             )}
           >
+            {canAccessAdmin ? (
+              <DropdownMenu.Item
+                onSelect={() => onAdmin?.()}
+                className={cn(
+                  'flex cursor-pointer select-none items-center gap-2 rounded-sm px-3 py-2',
+                  'text-[14px] text-text outline-none',
+                  'data-[highlighted]:bg-neutral-100'
+                )}
+              >
+                <Icon name="ShieldCheck" size={16} />
+                <span>Espace trésorier</span>
+              </DropdownMenu.Item>
+            ) : null}
             <DropdownMenu.Item
               onSelect={() => onProfile?.()}
               className={cn(

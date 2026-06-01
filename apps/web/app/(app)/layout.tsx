@@ -18,6 +18,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   } = await supabase.auth.getUser()
 
   let profile: { full_name: string | null; avatar_url: string | null } | null = null
+  let isStaff = false
   if (authUser) {
     const { data } = await supabase
       .from('users')
@@ -25,6 +26,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       .eq('id', authUser.id)
       .single()
     profile = data
+    const { data: staffData } = await supabase.rpc('user_is_staff')
+    isStaff = staffData ?? false
   }
 
   const user = {
@@ -35,7 +38,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <QueryProvider>
       <SupabaseProvider>
-        <AppChromeHeader user={user} />
+        <AppChromeHeader user={user} isStaff={isStaff} />
         <main className="pb-24 md:pb-8">{children}</main>
         <AppChromeBottom />
       </SupabaseProvider>

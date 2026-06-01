@@ -86,6 +86,37 @@ describe('AppHeader — menu utilisateur', () => {
   })
 })
 
+describe('AppHeader — entrée admin (canAccessAdmin)', () => {
+  it('affiche « Espace trésorier » quand canAccessAdmin est true', async () => {
+    const u = userEvent.setup()
+    const onAdmin = vi.fn()
+    render(
+      <AppHeader
+        items={items}
+        activeHref="/dashboard"
+        user={user}
+        canAccessAdmin={true}
+        onAdmin={onAdmin}
+      />
+    )
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    const adminItem = await screen.findByRole('menuitem', { name: /espace trésorier/i })
+    expect(adminItem).toBeTruthy()
+    await u.click(adminItem)
+    expect(onAdmin).toHaveBeenCalledTimes(1)
+  })
+
+  it("n'affiche pas « Espace trésorier » quand canAccessAdmin est absent", async () => {
+    const u = userEvent.setup()
+    render(<AppHeader items={items} activeHref="/dashboard" user={user} />)
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    await waitFor(() => {
+      expect(screen.getByRole('menuitem', { name: /profil/i })).toBeTruthy()
+    })
+    expect(screen.queryByRole('menuitem', { name: /espace trésorier/i })).toBeNull()
+  })
+})
+
 describe('AppHeader — accessibilité (jest-axe)', () => {
   it('état fermé : pas de violations axe', async () => {
     const { container } = render(<AppHeader items={items} activeHref="/dashboard" user={user} />)
