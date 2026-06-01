@@ -1,18 +1,19 @@
 /**
- * Tests E2E — écran /contributions (COT-005).
+ * Tests E2E — écran /contributions (COT-007).
  *
- * Réutilise le harness magic-link (loginAsSeedMember) + mocke /api/contributions pour
- * un rendu déterministe (statut ok, 16 mois, 2 années : 2026 et 2025).
+ * Stratégie : seeding DB chirurgical (comme global-setup.ts / refreshQuotePartView).
+ *   Le seed possède DÉJÀ une ligne `contributions` (posée par global-setup pour les specs
+ *   dashboard) → `initialData` est NON-null. Le pattern « mock + refetch au focus » du
+ *   portfolio ne s'applique donc pas ici (il suppose un seed vide). On seede plutôt de
+ *   vraies lignes `contribution_months` pour le membre, et on assert sur le rendu RSC réel.
  *
- * Stratégie d'hydratation :
- *   La page /contributions est rendue côté RSC avec `initialData`. Le seed n'a pas de
- *   cotisations → `initialData = null` → useContributions reçoit `initialDataUpdatedAt: 0`,
- *   ce qui marque la query comme périmée dès le montage. Un cycle blur→focus déclenche
- *   `refetchOnWindowFocus`, et la route mockée /api/contributions s'applique de façon
- *   déterministe. Résultat indépendant de l'état de la DB de seed.
+ *   - `contribution_months` est référencé par `membership_id` (stable malgré le re-key
+ *     de public.users.id au login → la FK est sur user_id, pas sur membership.id).
+ *   - On résout le membership via `club_id` (le seed n'a qu'une adhésion sur ce club).
+ *   - Pour le scénario « retard », on bascule `contributions.status` puis on le réinitialise.
  *
- * useSyncStatus utilise useMutation — il ne fetch que sur mutate(), jamais au montage.
- * Aucun stub /api/sync n'est nécessaire.
+ * useSyncStatus utilise useMutation (fetch uniquement sur mutate(), jamais au montage)
+ * → aucun stub réseau nécessaire.
  *
  * Desktop uniquement (1280×720 par défaut Playwright).
  *
@@ -20,121 +21,165 @@
  * retard, popover mois, sans auth → redirect.
  * Lighthouse/CI : hors scope (décision de cadrage) — perf/a11y couvertes par jest-axe en unit.
  *
- * Réf : COT-005, CLAUDE.md (a11y AA, copy FR, jamais de NaN/undefined).
+ * Réf : COT-007, CLAUDE.md (a11y AA, copy FR, jamais de NaN/undefined).
  */
 
-import { test, expect, type Page, type Route } from '@playwright/test'
-
-import type { ContributionsData } from '@/lib/data/contributions'
-import type { TimelineYear } from '@evolve/ui'
+import { test, expect } from '@playwright/test'
+import postgres from 'postgres'
 
 import { loginAsSeedMember } from './helpers'
 
+const DB_URL = process.env.E2E_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+const SEED_CLUB_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Fixture de données mockées
+// Seeding DB
 // ─────────────────────────────────────────────────────────────────────────────
 
-/**
- * Construit une ContributionsData déterministe.
- * - 2026 : mois 4 (en attente) + 3, 2, 1 (payés).
- * - 2025 : mois 12..1 tous payés.
- * Les ariaLabel sont contrôlés ici pour que les assertions soient stables.
- */
-function buildData(over?: Partial<ContributionsData>): ContributionsData {
-  const year2026: TimelineYear = {
-    year: 2026,
-    months: [4, 3, 2, 1].map((m) => ({
-      month: m,
-      variant: m === 4 ? 'pending' : 'paid',
-      tooltip: `Mois ${m}/2026`,
-      ariaLabel: `Mois ${m} 2026 ${m === 4 ? 'en attente' : 'payé'}`,
-    })),
-  }
+type MonthSeed = {
+  membership_id: string
+  club_id: string
+  year: number
+  month: number
+  amount: number
+  status: 'paid' | 'due' | 'late' | 'exempt'
+  due_date: string | null
+  paid_at: string | null
+  synced_at: string
+}
 
-  const year2025: TimelineYear = {
-    year: 2025,
-    months: Array.from({ length: 12 }, (_, i) => 12 - i).map((m) => ({
-      month: m,
-      variant: 'paid' as const,
-      tooltip: `Mois ${m}/2025`,
-      ariaLabel: `Mois ${m} 2025 payé`,
-    })),
-  }
-
-  return {
-    clubId: 'aaaaaaaa-0000-0000-0000-000000000001',
-    status: 'ok',
-    totalContributed: 28000,
-    monthsCount: 16,
-    detentionPct: 0.0899,
-    penalties: 0,
-    amountDue: 0,
-    syncedAt: new Date().toISOString(),
-    userRole: 'member',
-    years: [year2026, year2025],
-    ...over,
+/** Exécute `fn` avec un client postgres mono-connexion, fermé en fin d'appel. */
+async function withDb<T>(fn: (sql: ReturnType<typeof postgres>) => Promise<T>): Promise<T> {
+  const sql = postgres(DB_URL, { max: 1 })
+  try {
+    return await fn(sql)
+  } finally {
+    await sql.end()
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers de mock et de navigation
-// ─────────────────────────────────────────────────────────────────────────────
+/** Résout l'unique adhésion du club de seed (id stable malgré le re-key user au login). */
+async function resolveMembershipId(): Promise<string> {
+  return withDb(async (sql) => {
+    const rows = await sql<{ id: string }[]>`
+      SELECT id FROM memberships WHERE club_id = ${SEED_CLUB_ID}::uuid LIMIT 1
+    `
+    const id = rows[0]?.id
+    if (!id) throw new Error('Aucune adhésion de seed sur le club E2E')
+    return id
+  })
+}
 
 /**
- * Installe un mock 200 sur /api/contributions renvoyant `data`.
- *
- * useSyncStatus utilise useMutation (fetch uniquement sur mutate(), pas au montage)
- * → aucun stub /api/sync nécessaire.
+ * Seede des lignes contribution_months déterministes pour le membre :
+ *   - 2026 : jan-mars payés (100 €), avril « due » (en attente).
+ *   - 2025 : 12 mois payés (100 €).
+ * Idempotent via ON CONFLICT.
  */
-async function mockContributions(page: Page, data: ContributionsData): Promise<void> {
-  await page.route('**/api/contributions*', (route: Route) =>
-    route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(data),
+async function seedMonths(membershipId: string): Promise<void> {
+  const now = new Date().toISOString()
+  const rows: MonthSeed[] = []
+  const push = (year: number, month: number, status: MonthSeed['status']): void => {
+    const mm = String(month).padStart(2, '0')
+    rows.push({
+      membership_id: membershipId,
+      club_id: SEED_CLUB_ID,
+      year,
+      month,
+      amount: status === 'due' ? 0 : 100,
+      status,
+      due_date: `${year}-${mm}-05`,
+      paid_at: status === 'paid' ? `${year}-${mm}-05` : null,
+      synced_at: now,
     })
-  )
+  }
+  // 2026 : 4 mois (avril en attente)
+  ;[1, 2, 3].forEach((m) => push(2026, m, 'paid'))
+  push(2026, 4, 'due')
+  // 2025 : 12 mois payés
+  for (let m = 1; m <= 12; m++) push(2025, m, 'paid')
+
+  await withDb(async (sql) => {
+    await sql`
+      INSERT INTO contribution_months ${sql(
+        rows,
+        'membership_id',
+        'club_id',
+        'year',
+        'month',
+        'amount',
+        'status',
+        'due_date',
+        'paid_at',
+        'synced_at'
+      )}
+      ON CONFLICT (membership_id, year, month) DO UPDATE
+        SET amount    = EXCLUDED.amount,
+            status    = EXCLUDED.status,
+            due_date  = EXCLUDED.due_date,
+            paid_at   = EXCLUDED.paid_at,
+            synced_at = EXCLUDED.synced_at
+    `
+  })
 }
 
-/**
- * Authentifie le membre de seed, installe les mocks, navigue vers /contributions,
- * puis déclenche le refetch client pour que les données mockées s'affichent.
- *
- * Le seed n'a pas de cotisations → initialData=null → useContributions reçoit
- * initialDataUpdatedAt: 0, marquant la query comme périmée depuis l'epoch.
- * Un cycle blur→focus déclenche refetchOnWindowFocus et applique la route mockée.
- */
-async function gotoContributions(page: Page, data: ContributionsData): Promise<void> {
-  // Les mocks doivent être installés AVANT le goto pour intercepter le refetch post-hydratation.
-  await mockContributions(page, data)
-  await loginAsSeedMember(page)
-  await page.goto('/contributions')
-
-  // Déclenche le refetch client (query périmée depuis l'epoch → blur/focus → refetchOnWindowFocus).
-  await page.evaluate(() => {
-    window.dispatchEvent(new Event('blur'))
-    window.dispatchEvent(new Event('focus'))
-  })
-
-  // Attend que la timeline soit rendue — confirme que le refetch a produit les données mockées.
-  await expect(page.getByRole('list', { name: 'Historique des cotisations' })).toBeVisible({
-    timeout: 10_000,
+/** Bascule le statut de synthèse (scénario retard) ; réinitialisé en fin de test. */
+async function setContributionStatus(
+  membershipId: string,
+  status: 'ok' | 'late',
+  amountDue: number
+): Promise<void> {
+  await withDb(async (sql) => {
+    await sql`
+      UPDATE contributions
+         SET status = ${status}::contribution_status,
+             amount_due = ${amountDue},
+             updated_at = NOW()
+       WHERE membership_id = ${membershipId}::uuid
+    `
   })
 }
+
+/** Nettoie les mois seedés et réinitialise la synthèse à « ok » (post-suite). */
+async function cleanup(membershipId: string): Promise<void> {
+  await withDb(async (sql) => {
+    await sql`DELETE FROM contribution_months WHERE membership_id = ${membershipId}::uuid`
+    await sql`
+      UPDATE contributions
+         SET status = 'ok'::contribution_status, amount_due = 0, updated_at = NOW()
+       WHERE membership_id = ${membershipId}::uuid
+    `
+  })
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Cycle de vie
+// ─────────────────────────────────────────────────────────────────────────────
+
+let membershipId: string
+
+test.beforeAll(async () => {
+  membershipId = await resolveMembershipId()
+  await seedMonths(membershipId)
+})
+
+test.afterAll(async () => {
+  await cleanup(membershipId)
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scénario 1 : Chargement → titre, statut, KPIs et timeline visibles
 // ─────────────────────────────────────────────────────────────────────────────
 test('chargement → titre, statut, KPIs et timeline visibles', async ({ page }) => {
-  await gotoContributions(page, buildData())
+  await loginAsSeedMember(page)
+  await page.goto('/contributions')
 
-  // Titre de la page (h1 « Mes cotisations »).
   await expect(page.getByRole('heading', { name: 'Mes cotisations' })).toBeVisible()
-
-  // Pill de statut : status='ok' → label « Situation régulière ».
+  // status='ok' (état seed) → Pill « Situation régulière ».
   await expect(page.getByText('Situation régulière')).toBeVisible()
-
-  // La timeline est présente (landmark list déjà attendu dans gotoContributions, on re-confirme).
+  // KPI « Total cotisé » (libellé de la carte).
+  await expect(page.getByText('Total cotisé')).toBeVisible()
+  // La timeline réelle est rendue (mois seedés).
   await expect(page.getByRole('list', { name: 'Historique des cotisations' })).toBeVisible()
 })
 
@@ -142,9 +187,9 @@ test('chargement → titre, statut, KPIs et timeline visibles', async ({ page })
 // Scénario 2 : Timeline groupée par année (2026 et 2025)
 // ─────────────────────────────────────────────────────────────────────────────
 test('timeline groupée par année (2026 et 2025)', async ({ page }) => {
-  await gotoContributions(page, buildData())
+  await loginAsSeedMember(page)
+  await page.goto('/contributions')
 
-  // Les headings <h3> d'année doivent être rendus avec le texte de l'année.
   await expect(page.getByRole('heading', { name: '2026' })).toBeVisible()
   await expect(page.getByRole('heading', { name: '2025' })).toBeVisible()
 })
@@ -153,27 +198,35 @@ test('timeline groupée par année (2026 et 2025)', async ({ page }) => {
 // Scénario 3 : Statut en retard → banner d'alerte avec montant dû
 // ─────────────────────────────────────────────────────────────────────────────
 test("statut en retard → banner d'alerte avec montant dû", async ({ page }) => {
-  await gotoContributions(page, buildData({ status: 'late', amountDue: 100 }))
+  await setContributionStatus(membershipId, 'late', 100)
+  try {
+    await loginAsSeedMember(page)
+    await page.goto('/contributions')
 
-  // Le bandeau role="alert" doit être visible et mentionner « retard ».
-  const alert = page.getByRole('alert')
-  await expect(alert).toBeVisible()
-  await expect(alert).toContainText('retard')
+    // `getByRole('alert')` matche aussi le __next-route-announcer__ de Next (vide) → on cible
+    // le bandeau par son texte pour éviter la collision strict-mode.
+    await expect(page.getByText('Tu as un retard de cotisation')).toBeVisible()
+  } finally {
+    await setContributionStatus(membershipId, 'ok', 0)
+  }
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scénario 4 : Clic sur une cellule de mois → Popover détail
 // ─────────────────────────────────────────────────────────────────────────────
 test('clic sur une cellule de mois → Popover détail', async ({ page }) => {
-  await gotoContributions(page, buildData())
+  await loginAsSeedMember(page)
+  await page.goto('/contributions')
 
-  // La cellule « Mois 3 2026 payé » (bouton Radix Popover Trigger).
-  const cell = page.getByRole('button', { name: 'Mois 3 2026 payé' })
-  await cell.scrollIntoViewIfNeeded()
-  await cell.click()
+  // Première cellule (années DESC, mois DESC) = avril 2026 « en attente ». Son aria-label réel
+  // est produit par buildMonthAriaLabel (« Avril 2026, en attente »). Les cellules sont des carrés
+  // de 24px qui peuvent passer sous le header d'année `sticky` → on déclenche le clic via
+  // dispatchEvent (pas de hit-testing par coordonnées) pour ouvrir le Popover Radix de façon stable.
+  const cell = page.getByRole('button', { name: /Avril 2026/ })
+  await cell.dispatchEvent('click')
 
-  // Le contenu du Popover affiche le tooltip « Mois 3/2026 ».
-  await expect(page.getByText('Mois 3/2026')).toBeVisible({ timeout: 5_000 })
+  // Le Popover affiche le tooltip riche du mois (buildMonthTooltip : « Avril 2026 — en attente »).
+  await expect(page.getByText('Avril 2026 — en attente')).toBeVisible({ timeout: 5_000 })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
