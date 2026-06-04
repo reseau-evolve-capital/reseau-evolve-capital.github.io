@@ -17,7 +17,7 @@ export const ProgressBar = React.forwardRef<HTMLDivElement, ProgressBarProps>(
       <div
         ref={ref}
         role="progressbar"
-        aria-valuenow={clamped}
+        aria-valuenow={Math.round(clamped)}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-label={label}

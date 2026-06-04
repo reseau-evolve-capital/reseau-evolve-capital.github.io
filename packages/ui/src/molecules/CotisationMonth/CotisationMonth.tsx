@@ -5,7 +5,9 @@ import { cn } from '../../lib/cn'
 export type CotisationVariant = 'paid' | 'late' | 'pending' | 'exempt'
 
 const variantClasses: Record<CotisationVariant, string> = {
-  paid: 'bg-data-positive-50 hover:opacity-80',
+  // Jaune Evolve plein : le jaune = accent de marque pour « payé » (cf. réf visuelle).
+  // data-positive (vert) est réservé aux gains, sémantiquement faux ici.
+  paid: 'bg-brand-yellow hover:opacity-80',
   late: 'bg-data-warning-50 hover:opacity-80',
   pending: 'bg-data-neutral-50 hover:opacity-80',
   exempt: 'bg-neutral-100 opacity-50',

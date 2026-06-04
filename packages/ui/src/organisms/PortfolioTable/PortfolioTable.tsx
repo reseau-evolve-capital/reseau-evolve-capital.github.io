@@ -17,6 +17,12 @@ export interface PortfolioTableProps {
   positions: PortfolioPosition[]
   isLoading?: boolean
   onRowClick: (position: PortfolioPosition) => void
+  /**
+   * Nombre total de positions du club (avant filtrage). Sert au compteur du footer
+   * « Affiche N sur M ». Si omis ou égal à `positions.length`, le footer affiche
+   * simplement « N positions » (aucun filtre actif → pas de « sur »).
+   */
+  totalCount?: number
 }
 
 const col = createColumnHelper<PortfolioPosition>()
@@ -80,7 +86,12 @@ const ariaSort = (dir: false | 'asc' | 'desc'): 'none' | 'ascending' | 'descendi
   dir === 'asc' ? 'ascending' : dir === 'desc' ? 'descending' : 'none'
 
 /** Tableau desktop des positions (headless TanStack Table v8 + balisage HTML natif). */
-export function PortfolioTable({ positions, isLoading, onRowClick }: PortfolioTableProps) {
+export function PortfolioTable({
+  positions,
+  isLoading,
+  onRowClick,
+  totalCount,
+}: PortfolioTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'currentValue', desc: true }])
 
   const table = useReactTable({
@@ -101,6 +112,9 @@ export function PortfolioTable({ positions, isLoading, onRowClick }: PortfolioTa
       />
     )
   }
+
+  const rendered = table.getRowModel().rows.length
+  const total = totalCount ?? positions.length
 
   return (
     <div className="w-full overflow-x-auto">
@@ -182,7 +196,37 @@ export function PortfolioTable({ positions, isLoading, onRowClick }: PortfolioTa
                 </tr>
               ))}
         </tbody>
+        {!isLoading && (
+          <tfoot>
+            <tr>
+              <td colSpan={columns.length} className="pt-3 px-3 first:pl-0">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[12px]">
+                  <span className="text-text-sec">{counterLabel(rendered, total)}</span>
+                  {/* Historique des transactions reporté à la V1 (pas de route cible). */}
+                  <span
+                    aria-disabled="true"
+                    className="font-semibold text-text-ter cursor-not-allowed select-none"
+                  >
+                    Historique des transactions (bientôt) →
+                  </span>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        )}
       </table>
     </div>
   )
+}
+
+/**
+ * Compteur du footer. N = lignes rendues, M = total club.
+ * - M inconnu ou N === M → « N position(s) » (pas de filtre → pas trompeur).
+ * - sinon → « Affiche N sur M — voir toutes » (conforme à la réf desktop).
+ */
+function counterLabel(rendered: number, total: number): string {
+  if (total <= rendered) {
+    return `${rendered} position${rendered > 1 ? 's' : ''}`
+  }
+  return `Affiche ${rendered} sur ${total} — voir toutes`
 }

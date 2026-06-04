@@ -41,25 +41,32 @@ export function AllocationDonut({ data, totalValue, className }: AllocationDonut
     <div className={cn('w-full flex flex-col items-center', className)}>
       {/* role="img" sur le conteneur pour compatibilité jsdom/Recharts */}
       <div className="relative w-full" style={{ height: 260 }} role="img" aria-label={ariaLabel}>
-        <ResponsiveContainer width="100%" height="100%">
-          <PieChart data-testid="allocation-donut">
-            <Pie
-              data={data}
-              dataKey="value"
-              nameKey="label"
-              cx="50%"
-              cy="50%"
-              innerRadius={70}
-              outerRadius={105}
-              paddingAngle={2}
-              isAnimationActive={false}
-            >
-              {data.map((d, i) => (
-                <Cell key={d.label} fill={colorFor(d.label, i)} stroke="var(--color-card)" />
-              ))}
-            </Pie>
-          </PieChart>
-        </ResponsiveContainer>
+        {/* Recharts assigne role="img" à chaque <path> de secteur → masqué aux AT :
+            l'aria-label du conteneur porte déjà la description complète (svg-img-alt). */}
+        <div className="h-full w-full" aria-hidden="true">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart data-testid="allocation-donut">
+              <Pie
+                data={data}
+                dataKey="value"
+                nameKey="label"
+                cx="50%"
+                cy="50%"
+                innerRadius={70}
+                outerRadius={105}
+                paddingAngle={2}
+                isAnimationActive={false}
+                // Donut décoratif (aria-hidden) → on retire le <g> focusable de Recharts
+                // (rootTabIndex=0 par défaut), sinon « aria-hidden-focus ».
+                rootTabIndex={-1}
+              >
+                {data.map((d, i) => (
+                  <Cell key={d.label} fill={colorFor(d.label, i)} stroke="var(--color-card)" />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
         <div
           className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
           aria-hidden="true"

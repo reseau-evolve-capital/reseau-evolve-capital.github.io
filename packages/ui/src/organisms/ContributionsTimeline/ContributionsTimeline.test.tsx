@@ -63,6 +63,30 @@ describe('ContributionsTimeline — rendu', () => {
     expect(getByLabelText('Novembre 2025 en retard')).toBeInTheDocument()
   })
 
+  it('affiche les mois en ordre ascendant (janvier → décembre) même si l’entrée est descendante', () => {
+    // Dans 2025, l'entrée fournit déc (12) → nov (11) → oct (10) ; le rendu doit produire
+    // l'ordre DOM oct → nov → déc.
+    const { getAllByRole } = render(<ContributionsTimeline years={YEARS} />)
+    const labels = getAllByRole('button').map((b) => b.getAttribute('aria-label'))
+    expect(labels).toEqual([
+      // 2025 d'abord ? Non : l'ordre des années reste celui de l'entrée (2026 puis 2025).
+      'Mars 2026 payé',
+      'Avril 2026 en attente',
+      'Octobre 2025 payé',
+      'Novembre 2025 en retard',
+      'Décembre 2025 payé',
+    ])
+  })
+
+  it('rend une légende avec tous les statuts', () => {
+    const { getByRole, getByText } = render(<ContributionsTimeline years={YEARS} />)
+    const legend = getByRole('list', { name: 'Légende des statuts' })
+    expect(legend).toBeInTheDocument()
+    ;['Payé', 'En cours', 'Retard', 'Exempté', 'À venir'].forEach((label) => {
+      expect(getByText(label)).toBeInTheDocument()
+    })
+  })
+
   it('état vide → EmptyState', () => {
     const { getByText } = render(<ContributionsTimeline years={[]} />)
     expect(getByText("Aucune cotisation pour l'instant")).toBeInTheDocument()
@@ -75,12 +99,15 @@ describe('ContributionsTimeline — rendu', () => {
 })
 
 describe('ContributionsTimeline — navigation clavier', () => {
-  it('ArrowRight déplace le focus à la cellule suivante', () => {
+  it('ArrowRight déplace le focus à la cellule suivante (ordre ascendant)', () => {
+    // L'affichage trie les mois en ascendant : dans 2026, Mars (3) précède Avril (4).
     const { getByLabelText, getByRole } = render(<ContributionsTimeline years={YEARS} />)
-    const first = getByLabelText('Avril 2026 en attente')
+    const first = getByLabelText('Mars 2026 payé')
     first.focus()
     expect(document.activeElement).toBe(first)
-    fireEvent.keyDown(getByRole('list'), { key: 'ArrowRight' })
-    expect(document.activeElement).toBe(getByLabelText('Mars 2026 payé'))
+    fireEvent.keyDown(getByRole('list', { name: 'Historique des cotisations' }), {
+      key: 'ArrowRight',
+    })
+    expect(document.activeElement).toBe(getByLabelText('Avril 2026 en attente'))
   })
 })

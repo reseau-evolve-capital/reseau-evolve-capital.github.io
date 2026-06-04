@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
+import { within, expect } from 'storybook/test'
 import { CotisationMonth } from './CotisationMonth'
 
 const meta: Meta<typeof CotisationMonth> = {
@@ -15,6 +16,13 @@ export const Paid: Story = {
     tooltip: 'Mai 2026 — payé le 03/05',
     'aria-label': 'Mai 2026 payé',
     size: 'md',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const cell = canvas.getByRole('button', { name: 'Mai 2026 payé' })
+    // « Payé » = jaune Evolve plein (accent de marque), jamais le vert data-positive.
+    expect(cell.className).toContain('bg-brand-yellow')
+    expect(cell.className).not.toContain('bg-data-positive')
   },
 }
 

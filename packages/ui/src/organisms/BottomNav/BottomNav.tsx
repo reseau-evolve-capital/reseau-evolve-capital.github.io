@@ -3,11 +3,15 @@ import * as React from 'react'
 import { Icon, type IconName } from '../../atoms/Icon'
 import { cn } from '../../lib/cn'
 
-/** Élément de navigation partagé entre AppHeader (desktop) et BottomNav (mobile). */
+/** Élément de navigation partagé entre AppHeader (desktop), Sidebar (desktop) et BottomNav (mobile). */
 export interface NavItem {
   label: string
   href: string
   icon: IconName
+  /** Affiche une pastille de notification sur l'entrée (optionnel). */
+  notif?: boolean
+  /** Entrée non cliquable (fonctionnalité V1 à venir) — rendue désactivée (optionnel). */
+  disabled?: boolean
 }
 
 export interface BottomNavProps {

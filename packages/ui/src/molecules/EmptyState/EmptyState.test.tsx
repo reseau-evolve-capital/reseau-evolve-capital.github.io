@@ -49,6 +49,20 @@ describe('EmptyState — rendu', () => {
   })
 })
 
+describe('EmptyState — landmark accessible', () => {
+  it('expose un role="region" nommé par le title par défaut', () => {
+    const { getByRole } = render(<EmptyState title="Aucune cotisation" />)
+    expect(getByRole('region', { name: 'Aucune cotisation' })).toBeTruthy()
+  })
+
+  it('utilise aria-label comme nom du landmark quand il est fourni', () => {
+    const { getByRole } = render(
+      <EmptyState title="Aucune cotisation" aria-label="Historique des cotisations vide" />
+    )
+    expect(getByRole('region', { name: 'Historique des cotisations vide' })).toBeTruthy()
+  })
+})
+
 describe('EmptyState — interaction', () => {
   it("cliquer sur le bouton d'action appelle action.onClick", () => {
     const handler = vi.fn()

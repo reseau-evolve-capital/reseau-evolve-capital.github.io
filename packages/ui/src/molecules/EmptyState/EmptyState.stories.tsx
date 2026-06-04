@@ -57,3 +57,17 @@ export const Minimal: Story = {
     title: 'Rien à afficher pour le moment.',
   },
 }
+
+/** Landmark `region` nommé explicitement via `aria-label` (sinon le `title` sert de nom). */
+export const WithAriaLabel: Story = {
+  args: {
+    icon: 'ChartPie',
+    title: 'Aucune position',
+    description: "Ton club n'a pas encore de position ouverte.",
+    'aria-label': 'Portefeuille vide',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    expect(canvas.getByRole('region', { name: 'Portefeuille vide' })).toBeInTheDocument()
+  },
+}

@@ -18,9 +18,9 @@ globalThis.ResizeObserver = ResizeObserverMock
 // -------------------------------------------------------------------
 
 describe('DashboardHero — rendu', () => {
-  it('affiche le label "Ta valorisation nette"', () => {
+  it('affiche le label "Ta quote-part"', () => {
     const { getByText } = render(<DashboardHero netMarketValue={64_320.5} />)
-    expect(getByText('Ta valorisation nette')).toBeTruthy()
+    expect(getByText('Ta quote-part')).toBeTruthy()
   })
 
   it('rend le montant formaté (CurrencyAmount xl)', () => {
@@ -49,7 +49,7 @@ describe('DashboardHero — rendu', () => {
 describe('DashboardHero — isLoading', () => {
   it('isLoading=true → rend un skeleton (aria-hidden), pas le label ni le montant', () => {
     const { queryByText, container } = render(<DashboardHero netMarketValue={64_320.5} isLoading />)
-    expect(queryByText('Ta valorisation nette')).toBeNull()
+    expect(queryByText('Ta quote-part')).toBeNull()
     const skeleton = container.querySelector('[aria-hidden="true"]')
     expect(skeleton).not.toBeNull()
   })

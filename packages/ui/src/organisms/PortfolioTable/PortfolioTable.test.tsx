@@ -77,4 +77,25 @@ describe('PortfolioTable', () => {
     await userEvent.keyboard('{Enter}')
     expect(onRowClick).toHaveBeenCalledWith(expect.objectContaining({ name: 'META' }))
   })
+
+  it('footer : « Affiche N sur M — voir toutes » quand totalCount > positions rendues', () => {
+    render(<PortfolioTable positions={rows} totalCount={15} onRowClick={() => {}} />)
+    expect(screen.getByText(/Affiche 2 sur 15 — voir toutes/i)).toBeInTheDocument()
+  })
+
+  it('footer : « N positions » quand aucun filtre (totalCount absent)', () => {
+    render(<PortfolioTable positions={rows} onRowClick={() => {}} />)
+    expect(screen.getByText('2 positions')).toBeInTheDocument()
+  })
+
+  it('footer : lien historique des transactions est non-cliquable (V1, aria-disabled)', () => {
+    render(<PortfolioTable positions={rows} onRowClick={() => {}} />)
+    const link = screen.getByText(/Historique des transactions/i)
+    expect(link).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('footer : masqué pendant le chargement', () => {
+    render(<PortfolioTable positions={[]} isLoading onRowClick={() => {}} />)
+    expect(screen.queryByText(/Historique des transactions/i)).toBeNull()
+  })
 })

@@ -46,13 +46,13 @@ export function CarouselSlider({ slides, active, onActiveChange, className }: Ca
       role="region"
       aria-roledescription="carousel"
       aria-label="Présentation"
-      className={cn('flex flex-col gap-4', className)}
+      className={cn('flex w-full min-w-0 flex-col gap-4', className)}
       onKeyDown={onKey}
       tabIndex={0}
     >
       <div
         ref={trackRef}
-        className="flex snap-x snap-mandatory overflow-x-auto motion-reduce:scroll-auto"
+        className="flex w-full min-w-0 snap-x snap-mandatory overflow-x-auto motion-reduce:scroll-auto"
       >
         {slides.map((slide, i) => (
           <div

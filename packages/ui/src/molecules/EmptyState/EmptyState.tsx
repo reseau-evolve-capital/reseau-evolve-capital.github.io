@@ -9,11 +9,22 @@ export interface EmptyStateProps {
   description?: string
   action?: { label: string; onClick: () => void }
   className?: string
+  /** Libellé du landmark `region`. Par défaut : la prop `title`. */
+  'aria-label'?: string
 }
 
-export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
+export function EmptyState({
+  icon,
+  title,
+  description,
+  action,
+  className,
+  'aria-label': ariaLabel,
+}: EmptyStateProps) {
   return (
     <div
+      role="region"
+      aria-label={ariaLabel ?? title}
       className={cn(
         'bg-card border border-border rounded-[14px] p-8 text-center flex flex-col items-center gap-3',
         className

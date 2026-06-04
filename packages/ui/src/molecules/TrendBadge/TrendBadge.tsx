@@ -33,7 +33,9 @@ export function TrendBadge({ direction, value, subValue, className }: TrendBadge
     >
       <span aria-hidden="true">{glyph}</span>
       <span>{value}</span>
-      {subValue && <span className="opacity-70">{subValue}</span>}
+      {/* Dé-emphase par le poids (font-normal), pas par l'opacité : `opacity-70`
+          délavait la couleur sous le seuil AA (contraste insuffisant comme texte). */}
+      {subValue && <span className="font-normal">{subValue}</span>}
     </span>
   )
 }

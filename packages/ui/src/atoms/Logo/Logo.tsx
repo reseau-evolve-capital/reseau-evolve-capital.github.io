@@ -29,7 +29,9 @@ export const Logo = React.forwardRef<HTMLSpanElement, LogoProps>(
           />
         </svg>
         {variant === 'full' && (
-          <span className="text-text text-[16px] font-semibold leading-none">Evolve Capital</span>
+          // Couleur héritée du conteneur (currentColor) pour s'adapter clair/sombre
+          // et aux panneaux toujours-sombres (login) sans surcharge.
+          <span className="text-[16px] font-semibold leading-none">Evolve Capital</span>
         )}
       </span>
     )

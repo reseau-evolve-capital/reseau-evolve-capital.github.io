@@ -25,7 +25,7 @@ export const Default: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    const label = canvas.getByText('Ta valorisation nette')
+    const label = canvas.getByText('Ta quote-part')
     expect(label).toBeTruthy()
   },
 }

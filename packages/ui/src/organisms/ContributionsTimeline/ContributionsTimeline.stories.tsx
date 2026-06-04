@@ -62,13 +62,13 @@ export const DeuxAnnees: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
-    // Trouver la première cellule (Avril 2026 en attente) et la deuxième (Mars 2026 payé)
-    const firstCell = canvas.getByRole('button', { name: 'Avril 2026 en attente' })
-    const secondCell = canvas.getByRole('button', { name: 'Mars 2026 payé' })
+    // Affichage ascendant : dans 2026, Mars (3) précède Avril (4).
+    const firstCell = canvas.getByRole('button', { name: 'Mars 2026 payé' })
+    const secondCell = canvas.getByRole('button', { name: 'Avril 2026 en attente' })
     // Cliquer sur la première cellule pour lui donner le focus
     await userEvent.click(firstCell)
     expect(firstCell).toHaveFocus()
-    // Simuler ArrowRight — le focus doit se déplacer sur la deuxième cellule
+    // Simuler ArrowRight — le focus doit se déplacer sur la cellule suivante (mois +1)
     await userEvent.keyboard('{ArrowRight}')
     expect(secondCell).toHaveFocus()
   },

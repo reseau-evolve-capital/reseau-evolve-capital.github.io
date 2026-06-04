@@ -18,15 +18,17 @@ export interface OnboardingShellProps {
  */
 export function OnboardingShell({ header, footer, children, className }: OnboardingShellProps) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-card to-bg-page p-4">
+    <div className="flex min-h-screen w-full min-w-0 items-center justify-center bg-gradient-to-b from-card to-bg-page p-4">
       <section
         className={cn(
-          'flex w-full max-w-[640px] flex-col gap-6 rounded-lg border border-border bg-card p-6 shadow-[var(--sh-card)] sm:p-8',
+          // min-w-0 : autorise la carte à rétrécir sous la largeur min-content de son
+          // contenu (ex. carrousel à slides non-shrink) → pas de débordement horizontal mobile.
+          'flex w-full min-w-0 max-w-[640px] flex-col gap-6 rounded-lg border border-border bg-card p-6 shadow-[var(--sh-card)] sm:p-8',
           className
         )}
       >
         {header}
-        <div className="flex flex-col gap-4">{children}</div>
+        <div className="flex min-w-0 flex-col gap-4">{children}</div>
         {footer && <div className="flex flex-col gap-3">{footer}</div>}
       </section>
     </div>

@@ -13,7 +13,9 @@ const sizeClass: Record<NonNullable<CurrencyAmountProps['size']>, string> = {
   sm: 'text-[14px]',
   md: 'text-[16px]',
   lg: 'text-[20px] font-semibold',
-  xl: 'font-display font-black text-[56px] leading-none tracking-[-0.02em]',
+  // Hero display : réduit sur mobile pour les montants longs (ex. « 133 655,00 € »
+  // à 375px) puis 56px dès `sm` — évite tout débordement horizontal.
+  xl: 'font-display font-black text-[40px] sm:text-[56px] leading-none tracking-[-0.02em]',
 }
 
 /** Montant EUR FR ("1 234,56 €"). showSign → "+"/"−". Négatif → "−" (U+2212). NaN → "—". */

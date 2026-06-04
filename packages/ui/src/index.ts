@@ -23,6 +23,7 @@ export * from './atoms/IconButton'
 export * from './atoms/Logo'
 export * from './atoms/ProgressBar'
 export * from './atoms/AvatarUpload'
+export * from './atoms/ThemeToggle'
 // Molecules
 export * from './molecules/EmptyState'
 export * from './molecules/SparklineMini'

@@ -54,6 +54,20 @@ export const Default: Story = {
     const canvas = within(canvasElement)
     await userEvent.click(canvas.getByText('META'))
     await expect(args.onRowClick).toHaveBeenCalled()
+    // Footer : 3 positions rendues, aucun filtre → « 3 positions »
+    await expect(canvas.getByText('3 positions')).toBeInTheDocument()
+  },
+}
+
+/** Filtre actif : 3 positions rendues sur 15 au total → footer « Affiche 3 sur 15 — voir toutes ». */
+export const Filtered: Story = {
+  args: { positions, totalCount: 15, onRowClick: fn() },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText(/Affiche 3 sur 15 — voir toutes/i)).toBeInTheDocument()
+    // Le CTA historique est V1 (non cliquable).
+    const link = canvas.getByText(/Historique des transactions/i)
+    await expect(link).toHaveAttribute('aria-disabled', 'true')
   },
 }
 
