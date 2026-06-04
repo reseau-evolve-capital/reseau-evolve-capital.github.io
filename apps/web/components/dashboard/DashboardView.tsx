@@ -9,6 +9,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+import { useTranslations } from 'next-intl'
+
 import { useQueryClient } from '@tanstack/react-query'
 
 import { DashboardHero, KPICard, EmptyState, Spinner, SyncBanner } from '@evolve/ui'
@@ -23,6 +25,8 @@ import { HeroDetailDialog } from './HeroDetailDialog'
 const STALE_MS = 2 * 60 * 60 * 1000 // 2h
 
 export function DashboardView({ initialData }: { initialData: DashboardData | null }) {
+  const t = useTranslations('dashboard')
+  const tCommon = useTranslations('common')
   // Tous les hooks AVANT tout early return (règle des hooks React) : `data` peut être null
   // sur les états error/empty, donc useSyncStatus reçoit clubId nullable de façon sûre.
   const { data, isError } = useDashboard(initialData)
@@ -62,19 +66,15 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
     return (
       <EmptyState
         icon="TriangleAlert"
-        title="On n’a pas pu charger tes données. Réessaie ?"
-        description="Tes données restent en sécurité."
-        action={{ label: 'Réessayer', onClick: () => void refresh() }}
+        title={t('error.title')}
+        description={tCommon('dataSafe')}
+        action={{ label: tCommon('retry'), onClick: () => void refresh() }}
       />
     )
   }
   if (!data) {
     return (
-      <EmptyState
-        icon="Calendar"
-        title="Données non disponibles"
-        description="Tes données ne sont pas encore disponibles. Le trésorier doit d’abord synchroniser la matrice."
-      />
+      <EmptyState icon="Calendar" title={t('empty.title')} description={t('empty.description')} />
     )
   }
 
@@ -84,20 +84,20 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
   // Pas de système de toast dans apps/web → erreur de sync surfacée en inline dans le bandeau.
   const syncError = sync.isError
     ? sync.error.message === 'rate_limited'
-      ? 'Rate limit atteint. Réessaie dans quelques minutes.'
-      : 'La synchronisation a échoué. Réessaie ?'
+      ? t('sync.rateLimited')
+      : t('sync.failed')
     : null
 
   return (
     <div className="flex flex-col gap-4" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
       {refreshing && (
         <div className="flex items-center justify-center gap-2 text-[13px] text-text-sec py-1">
-          <Spinner size={16} /> Actualisation…
+          <Spinner size={16} /> {tCommon('refreshing')}
         </div>
       )}
       {stale && data.syncedAt && (
         <p className="text-[12px] text-text-ter">
-          Données mises à jour {formatRelativeTime(data.syncedAt)}.
+          {t('stale', { time: formatRelativeTime(data.syncedAt) })}
         </p>
       )}
       {/* Le statut de sync est déjà porté par la topbar du shell sur desktop. */}
@@ -108,23 +108,36 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
           isSyncing={sync.isPending}
           onSync={() => sync.mutate()}
           errorMessage={syncError}
+          syncedAtTemplate={(time) => t('syncBanner.syncedAt', { time })}
+          neverSyncedLabel={t('syncBanner.neverSynced')}
+          refreshLabel={t('syncBanner.refresh')}
+          refreshAriaLabel={t('syncBanner.refreshAria')}
         />
       </div>
       <DashboardHero
         netMarketValue={data.netMarketValue}
         syncedAt={data.syncedAt}
         onClick={() => setDetailOpen(true)}
+        label={t('hero.label')}
+        detailLabel={t('hero.viewDetail')}
+        accessibleNameTemplate={(amount) => t('hero.aria', { amount })}
+        syncedAtTemplate={(time) => t('hero.updated', { time })}
       />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <KPICard title="Ma détention" value={data.detentionPct} format="pct" icon="ChartPie" />
         <KPICard
-          title="Total cotisé"
+          title={t('kpi.detention')}
+          value={data.detentionPct}
+          format="pct"
+          icon="ChartPie"
+        />
+        <KPICard
+          title={t('kpi.totalContributed')}
           value={data.totalContributed}
           format="eur"
           icon="TrendingUp"
         />
         <KPICard
-          title="Statut cotisation"
+          title={t('kpi.contributionStatus')}
           value={contributionStatusLabel(data.contribution.status)}
           format="raw"
           icon="Calendar"

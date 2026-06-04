@@ -3,17 +3,19 @@
 // État 403 de l'espace admin. Réutilise EmptyState (a11y déjà couverte) — pas de nouveau
 // composant packages/ui. Ne révèle aucune info sensible (message générique).
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { EmptyState } from '@evolve/ui'
 
 export function Forbidden() {
   const router = useRouter()
+  const t = useTranslations('admin')
   return (
     <div className="mx-auto w-full max-w-md px-4 py-16">
       <EmptyState
         icon="Lock"
-        title="Accès refusé"
-        description="Cet espace est réservé aux trésoriers du club."
-        action={{ label: 'Retour au dashboard', onClick: () => router.push('/dashboard') }}
+        title={t('forbidden.title')}
+        description={t('forbidden.description')}
+        action={{ label: t('forbidden.action'), onClick: () => router.push('/dashboard') }}
       />
     </div>
   )

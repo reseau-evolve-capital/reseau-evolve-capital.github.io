@@ -1,10 +1,12 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { useMutation } from '@tanstack/react-query'
 import { Button } from '@evolve/ui'
 import { requestMagicLink } from '@/lib/api/auth'
 
 export function ResendButton({ email }: { email: string }) {
+  const t = useTranslations('login.checkEmail')
   const [cooldown, setCooldown] = useState(0)
 
   const mutation = useMutation({
@@ -26,11 +28,11 @@ export function ResendButton({ email }: { email: string }) {
         isLoading={mutation.isPending}
         onClick={() => mutation.mutate()}
       >
-        {cooldown > 0 ? `Renvoyer dans ${cooldown}s` : 'Renvoyer'}
+        {cooldown > 0 ? t('resendCooldown', { seconds: cooldown }) : t('resend')}
       </Button>
       {mutation.isError && (
         <p role="alert" className="mt-2 font-body text-[12px] text-data-negative">
-          {mutation.error instanceof Error ? mutation.error.message : 'Erreur'}
+          {mutation.error instanceof Error ? mutation.error.message : t('genericError')}
         </p>
       )}
     </div>

@@ -9,6 +9,7 @@
 //   - aria-label="Filtrer par membre" sur SelectTrigger suffit pour getByLabel() Playwright.
 
 import { useQueryState } from 'nuqs'
+import { useTranslations } from 'next-intl'
 import {
   ContributionsTimeline,
   KPICard,
@@ -36,6 +37,7 @@ export function AdminCotisationsView({
   initialData: AdminContribPayload
   members: AdminContribOption[]
 }) {
+  const t = useTranslations('admin')
   const [member, setMember] = useQueryState('membre')
   const membershipId = member && member !== ALL ? member : null
   const { data, isError, isFetching } = useAdminContributions(initialData, membershipId)
@@ -48,7 +50,7 @@ export function AdminCotisationsView({
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Heading level="h1" className="text-[20px]">
-          Cotisations du club
+          {t('cotisations.title')}
         </Heading>
         {/*
           Accessibilité : aria-label transmis via {...props} de SelectTrigger à RadixSelect.Trigger.
@@ -59,12 +61,12 @@ export function AdminCotisationsView({
           value={membershipId ?? ALL}
           onValueChange={(v) => void setMember(v === ALL ? null : v)}
         >
-          <SelectTrigger aria-label="Filtrer par membre" className="w-56">
-            <SelectValue placeholder="Tous les membres" />
+          <SelectTrigger aria-label={t('cotisations.filterMember')} className="w-56">
+            <SelectValue placeholder={t('cotisations.allMembers')} />
           </SelectTrigger>
           <SelectPortal>
             <SelectContent>
-              <SelectItem value={ALL}>Tous les membres</SelectItem>
+              <SelectItem value={ALL}>{t('cotisations.allMembers')}</SelectItem>
               {members.map((m) => (
                 <SelectItem key={m.id} value={m.id}>
                   {m.fullName}
@@ -77,7 +79,7 @@ export function AdminCotisationsView({
 
       {isError && (
         <p role="status" className="text-[12px] text-text-ter">
-          Impossible d&apos;actualiser les données. Affichage des dernières valeurs connues.
+          {t('staleData')}
         </p>
       )}
 
@@ -86,16 +88,16 @@ export function AdminCotisationsView({
           isFetching ? ' opacity-50' : ''
         }`}
       >
-        <KPICard title="Total cotisé" value={stats.total} format="eur" />
-        <KPICard title="Versements" value={stats.count} format="raw" />
-        <KPICard title="Versement moyen" value={stats.average} format="eur" />
+        <KPICard title={t('cotisations.kpi.total')} value={stats.total} format="eur" />
+        <KPICard title={t('cotisations.kpi.count')} value={stats.count} format="raw" />
+        <KPICard title={t('cotisations.kpi.average')} value={stats.average} format="eur" />
       </div>
 
       {payload.years.length === 0 ? (
         <EmptyState
           icon="Calendar"
-          title="Aucune cotisation"
-          description="Aucun versement enregistré pour ce filtre."
+          title={t('cotisations.empty.title')}
+          description={t('cotisations.empty.description')}
         />
       ) : (
         <ContributionsTimeline years={payload.years} />

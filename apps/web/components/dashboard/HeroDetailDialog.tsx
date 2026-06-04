@@ -9,6 +9,8 @@ import * as React from 'react'
 
 import Link from 'next/link'
 
+import { useTranslations } from 'next-intl'
+
 import * as Dialog from '@radix-ui/react-dialog'
 
 import { CurrencyAmount } from '@evolve/ui'
@@ -32,6 +34,8 @@ export function HeroDetailDialog({
   clubName,
   syncedAt,
 }: HeroDetailDialogProps) {
+  const t = useTranslations('dashboard')
+  const tCommon = useTranslations('common')
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -42,28 +46,30 @@ export function HeroDetailDialog({
                      focus:outline-none"
         >
           <Dialog.Title className="font-display font-bold text-[16px] text-text">
-            Ta quote-part
+            {t('detail.title')}
           </Dialog.Title>
           <Dialog.Description className="text-[14px] text-text-sec mt-1">
-            Elle représente {formatPct(detentionPct, { showSign: false })} du portefeuille de{' '}
-            {clubName}. Elle évolue selon tes cotisations et la performance des titres.
+            {t('detail.description', {
+              pct: formatPct(detentionPct, { showSign: false }),
+              clubName,
+            })}
           </Dialog.Description>
           <div className="mt-4">
             <CurrencyAmount amount={netMarketValue} size="lg" />
           </div>
           {syncedAt && (
             <p className="mt-2 text-[12px] text-text-ter">
-              Dernière sync {formatRelativeTime(syncedAt)}
+              {t('detail.lastSync', { time: formatRelativeTime(syncedAt) })}
             </p>
           )}
           <Link
             href="/portfolio"
             className="mt-4 inline-block text-[14px] font-semibold text-brand-yellow"
           >
-            Voir mon portefeuille →
+            {t('detail.viewPortfolio')}
           </Link>
           <Dialog.Close
-            aria-label="Fermer"
+            aria-label={tCommon('close')}
             className="absolute top-4 right-4 min-h-[44px] min-w-[44px] text-text-ter focus-visible:shadow-[var(--sh-glow)] outline-none rounded-md"
           >
             ✕

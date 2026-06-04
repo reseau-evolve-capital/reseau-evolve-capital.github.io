@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import {
   OnboardingShell,
   ProgressHeader,
@@ -11,36 +12,43 @@ import {
   Link,
 } from '@evolve/ui'
 
-const slides = [
-  {
-    imageSrc: '/onboarding/slide-1.svg',
-    imageAlt: 'Illustration quote-part',
-    title: 'Ta quote-part',
-    body: 'Suis l’évolution de ta quote-part en temps réel, avec les variations et la valorisation de ton portefeuille.',
-  },
-  {
-    imageSrc: '/onboarding/slide-2.svg',
-    imageAlt: 'Illustration club',
-    title: 'Ton club',
-    body: 'Retrouve les informations de ton club, consulte le tableau de bord commun et reste à jour sur les prises de décision.',
-  },
-  {
-    imageSrc: '/onboarding/slide-3.svg',
-    imageAlt: 'Illustration réseau',
-    title: 'Le réseau',
-    body: 'Échange avec les membres du réseau Evolve Capital et développe des synergies au sein de la communauté.',
-  },
-]
-
 export function TourClient() {
   const router = useRouter()
+  const t = useTranslations('onboarding')
   const [active, setActive] = useState(0)
+
+  const slides = [
+    {
+      imageSrc: '/onboarding/slide-1.svg',
+      imageAlt: t('tour.slide1.imageAlt'),
+      title: t('tour.slide1.title'),
+      body: t('tour.slide1.body'),
+    },
+    {
+      imageSrc: '/onboarding/slide-2.svg',
+      imageAlt: t('tour.slide2.imageAlt'),
+      title: t('tour.slide2.title'),
+      body: t('tour.slide2.body'),
+    },
+    {
+      imageSrc: '/onboarding/slide-3.svg',
+      imageAlt: t('tour.slide3.imageAlt'),
+      title: t('tour.slide3.title'),
+      body: t('tour.slide3.body'),
+    },
+  ]
 
   return (
     <OnboardingShell
       // Le tour est la dernière partie de l'étape 03 du fil d'onboarding (réf desktop :
       // « ÉTAPE 03 / 03 »), cohérent avec step-3 (consentements) → indicateur 3/3.
-      header={<ProgressHeader step={3} total={3} />}
+      header={
+        <ProgressHeader
+          step={3}
+          total={3}
+          formatLabel={(s, n) => t('progress', { step: s, total: n })}
+        />
+      }
       footer={
         <div className="flex flex-col items-center gap-3">
           <Button
@@ -50,10 +58,10 @@ export function TourClient() {
             onClick={() => router.push('/dashboard')}
             className="w-full"
           >
-            Accéder à mon espace
+            {t('tour.enterSpace')}
           </Button>
           <Link href="/dashboard" className="text-[14px] text-text-ter">
-            Passer le tour
+            {t('tour.skip')}
           </Link>
         </div>
       }
@@ -70,6 +78,8 @@ export function TourClient() {
         ))}
         active={active}
         onActiveChange={setActive}
+        regionAriaLabel={t('tour.regionAria')}
+        slideAriaLabel={(index, count) => t('tour.slideAria', { index, count })}
       />
     </OnboardingShell>
   )

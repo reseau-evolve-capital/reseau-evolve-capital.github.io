@@ -8,15 +8,412 @@
     "refreshing": "Actualisation…",
     "dataSafe": "Tes données restent en sécurité."
   },
-  "notFound": {
-    "title": "Page introuvable",
-    "description": "Cette page n’existe pas ou a été déplacée. Pas d’inquiétude, on te ramène en terrain connu.",
-    "backToDashboard": "Retour au tableau de bord"
+  "nav": {
+    "sidebar": {
+      "dashboard": "Tableau de bord",
+      "portfolio": "Portefeuille du club",
+      "contributions": "Mes cotisations",
+      "network": "Réseau des clubs",
+      "admin": "Espace trésorier",
+      "section": "Espace membre",
+      "navLabel": "Navigation principale",
+      "notification": "notification",
+      "soon": "Bientôt",
+      "clubTitle": "Club actif"
+    },
+    "bottom": {
+      "dashboard": "Tableau",
+      "portfolio": "Portefeuille",
+      "contributions": "Cotisations",
+      "navLabel": "Navigation mobile"
+    },
+    "topbar": {
+      "userMenu": "Menu utilisateur",
+      "admin": "Espace trésorier",
+      "profile": "Profil",
+      "logout": "Déconnexion"
+    },
+    "themeToggle": {
+      "toggle": "Basculer le thème",
+      "switchToLight": "Activer le mode clair",
+      "switchToDark": "Activer le mode sombre"
+    }
+  },
+  "login": {
+    "brand": {
+      "eyebrow": "Réseau de clubs d'investissement",
+      "headlineLead": "Rends visible ce que ton club",
+      "headlineHighlight": "construit ensemble.",
+      "tagline": "Un espace unique pour suivre le portefeuille, les cotisations et la quote-part de chaque membre — avec la rigueur d'un fonds, à l'échelle d'un cercle.",
+      "networkVizLabel": "Schéma d'un réseau de clubs connectés",
+      "stats": {
+        "clubs": "Clubs",
+        "members": "Membres",
+        "aum": "Sous gestion"
+      }
+    },
+    "help": {
+      "link": "Besoin d'aide ?"
+    },
+    "themeToggle": {
+      "toggle": "Basculer le thème",
+      "switchToLight": "Activer le mode clair",
+      "switchToDark": "Activer le mode sombre"
+    },
+    "form": {
+      "eyebrow": "Espace membre · Connexion",
+      "title": "Bienvenue.",
+      "subtitle": "Entre ton email, on t'envoie un lien de connexion — pas de mot de passe à retenir.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "lea@cercle-arago.fr",
+      "submit": "Recevoir mon lien →",
+      "submitting": "Envoi en cours…",
+      "reassurance": "Lien valable 15 min. Aucun mot de passe, aucun spam.",
+      "invalidEmail": "Adresse email invalide."
+    },
+    "passkey": {
+      "label": "Se connecter avec une passkey",
+      "badge": "V1"
+    },
+    "invite": {
+      "text": "Première venue ? Ton club t'envoie une invitation —",
+      "link": "en savoir plus",
+      "suffix": "."
+    },
+    "checkEmail": {
+      "title": "Vérifie ta boîte email",
+      "sentTo": "On t'a envoyé un lien magique à <strong>{email}</strong>. Il expire dans 10 minutes.",
+      "resend": "Renvoyer",
+      "resendCooldown": "Renvoyer dans {seconds}s",
+      "genericError": "Erreur"
+    },
+    "verify": {
+      "expiredTitle": "Ce lien a expiré ou est invalide.",
+      "expiredBody": "Demande-en un nouveau pour te connecter.",
+      "backToLogin": "Retour au login",
+      "connecting": "Connexion en cours…"
+    }
+  },
+  "onboarding": {
+    "progress": "Étape {step} sur {total}",
+    "phonePlaceholder": "+33 6 00 00 00 00",
+    "step1": {
+      "firstname": "Prénom",
+      "firstnamePlaceholder": "Votre prénom",
+      "lastname": "Nom",
+      "lastnamePlaceholder": "Votre nom de famille",
+      "phone": "Téléphone (facultatif)",
+      "phoneInvalid": "Format de téléphone invalide."
+    },
+    "step2": {
+      "avatarCaption": "Photo de profil (optionnel)",
+      "avatarUploadAria": "Ajouter une photo de profil (optionnel)",
+      "avatarEmpty": "Photo",
+      "avatarUploading": "Envoi…",
+      "avatarUploadingAria": "Envoi en cours",
+      "uploadError": "Échec de l'upload.",
+      "phone": "Téléphone",
+      "address": "Adresse",
+      "addressPlaceholder": "12 rue de la Paix, 75001 Paris"
+    },
+    "step3": {
+      "heading": "Quelques accords avant de commencer.",
+      "submit": "Rejoindre le club",
+      "rgpdLabel": "J'accepte la charte de confidentialité et le traitement de mes données personnelles.",
+      "rgpdLinkLabel": "lire",
+      "directoryLabel": "J'accepte d'apparaître dans l'annuaire des membres du club.",
+      "directoryLinkLabel": "en savoir plus",
+      "submitError": "Une erreur est survenue. Réessaie."
+    },
+    "tour": {
+      "enterSpace": "Accéder à mon espace",
+      "skip": "Passer le tour",
+      "regionAria": "Présentation",
+      "slideAria": "Slide {index} sur {count}",
+      "slide1": {
+        "imageAlt": "Illustration quote-part",
+        "title": "Ta quote-part",
+        "body": "Suis l’évolution de ta quote-part en temps réel, avec les variations et la valorisation de ton portefeuille."
+      },
+      "slide2": {
+        "imageAlt": "Illustration club",
+        "title": "Ton club",
+        "body": "Retrouve les informations de ton club, consulte le tableau de bord commun et reste à jour sur les prises de décision."
+      },
+      "slide3": {
+        "imageAlt": "Illustration réseau",
+        "title": "Le réseau",
+        "body": "Échange avec les membres du réseau Evolve Capital et développe des synergies au sein de la communauté."
+      }
+    }
+  },
+  "dashboard": {
+    "error": {
+      "title": "On n’a pas pu charger tes données. Réessaie ?"
+    },
+    "empty": {
+      "title": "Données non disponibles",
+      "description": "Tes données ne sont pas encore disponibles. Le trésorier doit d’abord synchroniser la matrice."
+    },
+    "sync": {
+      "rateLimited": "Rate limit atteint. Réessaie dans quelques minutes.",
+      "failed": "La synchronisation a échoué. Réessaie ?"
+    },
+    "stale": "Données mises à jour {time}.",
+    "hero": {
+      "label": "Ta quote-part",
+      "viewDetail": ", voir le détail",
+      "aria": "Ta quote-part : {amount}",
+      "updated": "Mis à jour {time}"
+    },
+    "syncBanner": {
+      "syncedAt": "Synchronisé {time}",
+      "neverSynced": "—",
+      "refresh": "Actualiser",
+      "refreshAria": "Actualiser les données"
+    },
+    "kpi": {
+      "detention": "Ma détention",
+      "totalContributed": "Total cotisé",
+      "contributionStatus": "Statut cotisation"
+    },
+    "detail": {
+      "title": "Ta quote-part",
+      "description": "Elle représente {pct} du portefeuille de {clubName}. Elle évolue selon tes cotisations et la performance des titres.",
+      "lastSync": "Dernière sync {time}",
+      "viewPortfolio": "Voir mon portefeuille →"
+    }
+  },
+  "portfolio": {
+    "title": "Portefeuille",
+    "subtitle": "{count, plural, one {# position ouverte} other {# positions ouvertes}}",
+    "filtersRegion": "Filtres",
+    "summaryRegion": "Synthèse",
+    "lastSync": "Dernière sync",
+    "totalGainLoss": "Gain / perte total",
+    "errorState": {
+      "title": "On n’a pas pu charger ton portefeuille. Réessaie ?"
+    },
+    "emptyState": {
+      "title": "Ton club n’a pas encore de position ouverte.",
+      "description": "Le trésorier doit d’abord synchroniser la matrice."
+    },
+    "sync": {
+      "rateLimited": "Rate limit atteint. Réessaie dans quelques minutes.",
+      "failed": "La synchronisation a échoué. Réessaie ?",
+      "syncedAt": "Synchronisé {time}",
+      "neverSynced": "—",
+      "refresh": "Actualiser",
+      "refreshAria": "Actualiser les données"
+    },
+    "sort": {
+      "value": "Valeur",
+      "name": "Nom",
+      "performance": "Performance"
+    },
+    "filters": {
+      "group": "Filtres du portefeuille",
+      "all": "Tous",
+      "sortBy": "Trier par",
+      "ascending": "Ordre croissant",
+      "descending": "Ordre décroissant"
+    },
+    "allocation": {
+      "title": "Répartition sectorielle",
+      "totalValue": "Valeur totale",
+      "ariaPrefix": "Allocation du portefeuille : ",
+      "legend": "Légende de l'allocation"
+    },
+    "table": {
+      "columns": {
+        "name": "Actif",
+        "category": "Type",
+        "quantity": "Quantité",
+        "pru": "PRU",
+        "livePrice": "Cours",
+        "currentValue": "Valeur",
+        "gainLossEur": "+/- €",
+        "gainLossPct": "+/- %"
+      },
+      "emptyTitle": "Aucune position",
+      "emptyDescription": "Ton club n'a pas encore de position ouverte.",
+      "transactionsHistory": "Historique des transactions (bientôt) →",
+      "tableLabel": "Portefeuille des positions",
+      "sortLabel": "Trier par {column}{direction, select, asc {, tri croissant} desc {, tri décroissant} other {}}",
+      "rowLabel": "Voir le détail de {name}",
+      "counter": {
+        "unfiltered": "{count, plural, one {# position} other {# positions}}",
+        "filtered": "Affiche {rendered} sur {total} — voir toutes"
+      }
+    },
+    "modal": {
+      "quantity": "Quantité",
+      "pru": "PRU",
+      "livePrice": "Cours",
+      "currentValue": "Valeur totale",
+      "gainLossEur": "+/- €",
+      "gainLossPct": "+/- %",
+      "allocationPct": "% du portefeuille"
+    }
+  },
+  "contributions": {
+    "title": "Mes cotisations",
+    "historyTitle": "Historique mensuel",
+    "attestationCta": "Télécharger l’attestation de détention (bientôt)",
+    "status": {
+      "ok": "Situation régulière",
+      "pending": "En attente",
+      "late": "En retard",
+      "exempt": "Exempté"
+    },
+    "kpi": {
+      "totalContributed": "Total cotisé",
+      "monthsCount": "Nombre de mois",
+      "detentionPct": "Quote-part"
+    },
+    "penalties": {
+      "title": "Pénalités",
+      "active": "{amount} de pénalités en cours.",
+      "none": "Aucune pénalité en cours."
+    },
+    "lateAlert": {
+      "title": "Tu as un retard de cotisation de {amount}.",
+      "body": "Rapproche-toi du trésorier de ton club pour régulariser ta situation."
+    },
+    "empty": {
+      "title": "Aucune cotisation pour l’instant",
+      "description": "Ta première cotisation apparaîtra ici."
+    },
+    "error": {
+      "loadTitle": "On n’a pas pu charger tes cotisations. Réessaie ?"
+    },
+    "sync": {
+      "rateLimited": "Rate limit atteint. Réessaie dans quelques minutes.",
+      "failed": "La synchronisation a échoué. Réessaie ?"
+    },
+    "timeline": {
+      "legend": {
+        "paid": "Payé",
+        "pending": "En cours",
+        "late": "Retard",
+        "exempt": "Exempté",
+        "upcoming": "À venir"
+      },
+      "monthInitials": ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+      "legendLabel": "Légende des statuts",
+      "historyLabel": "Historique des cotisations",
+      "emptyTitle": "Aucune cotisation pour l’instant",
+      "emptyDescription": "Ta première cotisation apparaîtra ici."
+    }
+  },
+  "admin": {
+    "staleData": "Impossible d'actualiser les données. Affichage des dernières valeurs connues.",
+    "sync": {
+      "syncedAt": "Synchronisé {time}",
+      "refresh": "Actualiser",
+      "refreshAria": "Actualiser les données"
+    },
+    "forbidden": {
+      "title": "Accès refusé",
+      "description": "Cet espace est réservé aux trésoriers du club.",
+      "action": "Retour au dashboard"
+    },
+    "dashboard": {
+      "title": "Espace trésorier",
+      "syncError": {
+        "rateLimited": "Rate limit atteint. Réessaie dans quelques minutes.",
+        "failed": "La synchronisation a échoué. Réessaie ?"
+      },
+      "unpaidAlert": "{count, plural, =1 {1 membre est en situation d’impayé.} other {# membres sont en situation d’impayé.}}",
+      "kpi": {
+        "activeMembers": "Membres actifs",
+        "portfolioValue": "Valeur du portefeuille",
+        "totalContributed": "Total cotisé",
+        "unpaidCount": "Membres en impayé"
+      }
+    },
+    "members": {
+      "title": "Membres du club",
+      "filterUnpaid": "Afficher seulement les membres en impayé",
+      "tableLabel": "Membres du club",
+      "columns": {
+        "fullName": "Membre",
+        "role": "Rôle",
+        "totalContributed": "Total cotisé",
+        "detentionPct": "Quote-part",
+        "monthsCount": "Mois cotisés",
+        "status": "Statut"
+      },
+      "roles": {
+        "member": "Membre",
+        "treasurer": "Trésorier",
+        "president": "Président",
+        "network_admin": "Admin réseau"
+      },
+      "statuses": {
+        "ok": "À jour",
+        "pending": "En attente",
+        "late": "En retard",
+        "exempt": "Exempté"
+      },
+      "empty": {
+        "title": "Aucun membre",
+        "description": "Ce club n'a pas encore de membre correspondant à ce filtre."
+      },
+      "sortLabel": "Trier par {column}{direction, select, asc {, tri croissant} desc {, tri décroissant} other {}}",
+      "detentionBarLabel": "Quote-part de {name}"
+    },
+    "cotisations": {
+      "title": "Cotisations du club",
+      "filterMember": "Filtrer par membre",
+      "allMembers": "Tous les membres",
+      "kpi": {
+        "total": "Total cotisé",
+        "count": "Versements",
+        "average": "Versement moyen"
+      },
+      "empty": {
+        "title": "Aucune cotisation",
+        "description": "Aucun versement enregistré pour ce filtre."
+      }
+    }
   },
   "errors": {
     "auth": {
       "title": "On n'a pas pu charger la connexion. Réessaie ?",
       "body": "Aucune inquiétude, ton compte est en sécurité."
+    },
+    "onboarding": {
+      "title": "On n'a pas pu charger ton inscription. Réessaie ?",
+      "body": "Ta progression est conservée, tu peux reprendre là où tu en étais."
+    },
+    "dashboard": {
+      "title": "On n’a pas pu charger ton tableau de bord. Réessaie ?"
+    },
+    "portfolio": {
+      "title": "On n'a pas pu charger ton portefeuille. Réessaie ?"
+    },
+    "contributions": {
+      "title": "On n'a pas pu charger tes cotisations. Réessaie ?"
+    },
+    "admin": {
+      "dashboard": {
+        "title": "On n'a pas pu charger l'espace trésorier. Réessaie ?"
+      },
+      "members": {
+        "title": "On n'a pas pu charger les membres. Réessaie ?"
+      },
+      "cotisations": {
+        "title": "On n'a pas pu charger les cotisations du club. Réessaie ?"
+      }
+    },
+    "nav": {
+      "requestFailed": "Une erreur est survenue. Réessaie."
     }
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "description": "Cette page n’existe pas ou a été déplacée. Pas d’inquiétude, on te ramène en terrain connu.",
+    "backToDashboard": "Retour au tableau de bord"
   }
 }

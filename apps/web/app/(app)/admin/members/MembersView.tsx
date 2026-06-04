@@ -5,6 +5,7 @@
 // Réf : E-ADM, CLAUDE.md (a11y, formatage @evolve/utils).
 
 import { useQueryState, parseAsBoolean } from 'nuqs'
+import { useTranslations } from 'next-intl'
 import { MembersList, Heading, Switch, type MemberRow } from '@evolve/ui'
 import type { ClubMember } from '@/lib/data/admin'
 import { filterMembers } from '@/lib/data/admin'
@@ -27,6 +28,7 @@ function toRow(m: ClubMember): MemberRow {
 const FILTER_ID = 'filter-impayes'
 
 export function MembersView({ initialData }: { initialData: ClubMembersPayload }) {
+  const t = useTranslations('admin')
   const { data, isError } = useClubMembers(initialData)
   const [onlyUnpaid, setOnlyUnpaid] = useQueryState('impayes', parseAsBoolean.withDefault(false))
 
@@ -36,7 +38,7 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Heading level="h1" className="text-[20px]">
-          Membres du club
+          {t('members.title')}
         </Heading>
         {/*
           Accessibilité : <label htmlFor> + id sur le Switch (Radix passe id au <button> DOM).
@@ -50,16 +52,46 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             onCheckedChange={(v) => void setOnlyUnpaid(v)}
           />
           <label htmlFor={FILTER_ID} className="text-[14px] text-text-sec cursor-pointer">
-            Afficher seulement les membres en impayé
+            {t('members.filterUnpaid')}
           </label>
         </div>
       </div>
       {isError && (
         <p role="status" className="text-[12px] text-text-ter">
-          Impossible d&apos;actualiser les données. Affichage des dernières valeurs connues.
+          {t('staleData')}
         </p>
       )}
-      <MembersList members={filtered.map(toRow)} />
+      <MembersList
+        members={filtered.map(toRow)}
+        labels={{
+          columns: {
+            fullName: t('members.columns.fullName'),
+            role: t('members.columns.role'),
+            totalContributed: t('members.columns.totalContributed'),
+            detentionPct: t('members.columns.detentionPct'),
+            monthsCount: t('members.columns.monthsCount'),
+            status: t('members.columns.status'),
+          },
+          roles: {
+            member: t('members.roles.member'),
+            treasurer: t('members.roles.treasurer'),
+            president: t('members.roles.president'),
+            network_admin: t('members.roles.network_admin'),
+          },
+          statuses: {
+            ok: t('members.statuses.ok'),
+            pending: t('members.statuses.pending'),
+            late: t('members.statuses.late'),
+            exempt: t('members.statuses.exempt'),
+          },
+          emptyTitle: t('members.empty.title'),
+          emptyDescription: t('members.empty.description'),
+          tableLabel: t('members.tableLabel'),
+          sortLabel: (column, direction) =>
+            t('members.sortLabel', { column, direction: direction || 'none' }),
+          detentionBarLabel: (name) => t('members.detentionBarLabel', { name }),
+        }}
+      />
     </div>
   )
 }

@@ -6,6 +6,7 @@
 // Mobile : seul le panneau formulaire s'affiche (logo en tête).
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useMutation } from '@tanstack/react-query'
 import { Logo, Button, Input, FormField, ThemeToggle, Icon } from '@evolve/ui'
 import { requestMagicLink } from '@/lib/api/auth'
@@ -34,13 +35,13 @@ function BrandStat({ value, label }: { value: string; label: string }) {
 }
 
 /** Visualisation décorative « réseau de clubs » (4 nœuds reliés, 1 actif jaune). */
-function ClubNetworkViz() {
+function ClubNetworkViz({ ariaLabel }: { ariaLabel: string }) {
   return (
     <svg
       viewBox="0 0 320 180"
       className="mt-2 w-full max-w-[360px] rounded-[14px] border border-neutral-800 bg-neutral-900 p-2"
       role="img"
-      aria-label="Schéma d'un réseau de clubs connectés"
+      aria-label={ariaLabel}
     >
       <g stroke="var(--color-neutral-700)" strokeWidth="1.5">
         <line x1="70" y1="55" x2="250" y2="55" />
@@ -73,12 +74,16 @@ function ClubNetworkViz() {
 }
 
 export function LoginScreen() {
+  const t = useTranslations('login')
+  const tc = useTranslations('common')
+  const tErr = useTranslations('errors.nav')
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [clientError, setClientError] = useState<string | undefined>()
 
   const mutation = useMutation({
-    mutationFn: requestMagicLink,
+    // Message de repli traduit passé à requestMagicLink (module non-React → pas de hook i18n).
+    mutationFn: (value: string) => requestMagicLink(value, tErr('requestFailed')),
     onSuccess: () => router.push(`/login/check-email?email=${encodeURIComponent(email)}`),
   })
 
@@ -91,7 +96,7 @@ export function LoginScreen() {
   function submit() {
     setClientError(undefined)
     if (!EMAIL_RE.test(email)) {
-      setClientError('Adresse email invalide.')
+      setClientError(t('form.invalidEmail'))
       return
     }
     mutation.mutate(email)
@@ -105,39 +110,42 @@ export function LoginScreen() {
           <Logo variant="full" src={LOGO_SRC} />
           <div className="flex flex-col gap-5">
             <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-brand-yellow">
-              Réseau de clubs d&apos;investissement
+              {t('brand.eyebrow')}
             </p>
             <h1 className="font-display text-[38px] font-bold leading-[1.06] text-neutral-50 lg:text-[44px]">
-              Rends visible ce que ton club{' '}
+              {t('brand.headlineLead')}{' '}
               <span className="box-decoration-clone bg-brand-yellow px-1.5 text-neutral-900">
-                construit ensemble.
+                {t('brand.headlineHighlight')}
               </span>
             </h1>
             <p className="max-w-[44ch] text-[15px] leading-relaxed text-neutral-400">
-              Un espace unique pour suivre le portefeuille, les cotisations et la quote-part de
-              chaque membre — avec la rigueur d&apos;un fonds, à l&apos;échelle d&apos;un cercle.
+              {t('brand.tagline')}
             </p>
           </div>
-          <ClubNetworkViz />
+          <ClubNetworkViz ariaLabel={t('brand.networkVizLabel')} />
         </div>
         <div className="flex gap-10">
-          <BrandStat value="4" label="Clubs" />
-          <BrandStat value="48" label="Membres" />
-          <BrandStat value="1,2 M€" label="Sous gestion" />
+          <BrandStat value="4" label={t('brand.stats.clubs')} />
+          <BrandStat value="48" label={t('brand.stats.members')} />
+          <BrandStat value="1,2 M€" label={t('brand.stats.aum')} />
         </div>
       </aside>
 
       {/* Panneau formulaire — thémé */}
       <main className="flex flex-1 flex-col px-6 py-6 md:px-12 lg:px-20">
         <div className="flex items-center justify-end gap-3">
-          <ThemeToggle />
+          <ThemeToggle
+            toggleLabel={t('themeToggle.toggle')}
+            switchToLightLabel={t('themeToggle.switchToLight')}
+            switchToDarkLabel={t('themeToggle.switchToDark')}
+          />
           <a
             href={HELP_URL}
             target="_blank"
             rel="noreferrer"
             className="rounded px-1 text-[13px] text-text-sec transition-colors hover:text-text focus:outline-none focus-visible:shadow-[var(--sh-glow)]"
           >
-            Besoin d&apos;aide ?
+            {t('help.link')}
           </a>
         </div>
 
@@ -146,15 +154,12 @@ export function LoginScreen() {
             <Logo variant="full" src={LOGO_SRC} className="mb-8 md:hidden" />
 
             <p className="font-mono text-[12px] uppercase tracking-[0.16em] text-text-ter">
-              Espace membre · Connexion
+              {t('form.eyebrow')}
             </p>
             <h2 className="mt-3 font-display text-[34px] font-bold leading-tight text-text">
-              Bienvenue.
+              {t('form.title')}
             </h2>
-            <p className="mt-3 text-[15px] leading-relaxed text-text-sec">
-              Entre ton email, on t&apos;envoie un lien de connexion — pas de mot de passe à
-              retenir.
-            </p>
+            <p className="mt-3 text-[15px] leading-relaxed text-text-sec">{t('form.subtitle')}</p>
 
             <form
               onSubmit={(e) => {
@@ -164,13 +169,13 @@ export function LoginScreen() {
               noValidate
               className="mt-7 flex flex-col gap-4"
             >
-              <FormField label="Email" error={errorMessage}>
+              <FormField label={t('form.emailLabel')} error={errorMessage}>
                 {(fieldProps) => (
                   <Input
                     {...fieldProps}
                     type="email"
                     autoComplete="email"
-                    placeholder="lea@cercle-arago.fr"
+                    placeholder={t('form.emailPlaceholder')}
                     value={email}
                     disabled={isLoading}
                     onChange={(e) => setEmail(e.target.value)}
@@ -182,20 +187,18 @@ export function LoginScreen() {
                 variant="primary"
                 size="lg"
                 isLoading={isLoading}
-                aria-label={isLoading ? 'Envoi en cours…' : undefined}
+                aria-label={isLoading ? t('form.submitting') : undefined}
                 className="w-full"
               >
-                Recevoir mon lien →
+                {t('form.submit')}
               </Button>
             </form>
 
-            <p className="mt-3 text-center text-[13px] text-text-ter">
-              Lien valable 15 min. Aucun mot de passe, aucun spam.
-            </p>
+            <p className="mt-3 text-center text-[13px] text-text-ter">{t('form.reassurance')}</p>
 
             <div className="my-6 flex items-center gap-4">
               <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[12px] text-text-ter">OU</span>
+              <span className="font-mono text-[12px] text-text-ter">{tc('or')}</span>
               <span className="h-px flex-1 bg-border" />
             </div>
 
@@ -206,23 +209,23 @@ export function LoginScreen() {
               className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-[10px] border border-border px-4 py-3 text-[14px] font-semibold text-text-ter opacity-70"
             >
               <Icon name="KeyRound" size={20} aria-hidden="true" />
-              Se connecter avec une passkey
+              {t('passkey.label')}
               <span className="rounded-full bg-neutral-100 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-ter">
-                V1
+                {t('passkey.badge')}
               </span>
             </button>
 
             <p className="mt-6 text-center text-[13px] text-text-sec">
-              Première venue ? Ton club t&apos;envoie une invitation —{' '}
+              {t('invite.text')}{' '}
               <a
                 href={HELP_URL}
                 target="_blank"
                 rel="noreferrer"
                 className="rounded font-semibold text-text underline-offset-2 hover:underline focus:outline-none focus-visible:shadow-[var(--sh-glow)]"
               >
-                en savoir plus
+                {t('invite.link')}
               </a>
-              .
+              {t('invite.suffix')}
             </p>
           </div>
         </div>

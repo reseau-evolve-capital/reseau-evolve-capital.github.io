@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { useMutation } from '@tanstack/react-query'
 import { OnboardingShell, ProgressHeader, ConsentRow, Button, Heading } from '@evolve/ui'
 import { useOnboardingStore } from '@/lib/stores/onboarding'
@@ -9,6 +10,8 @@ import { submitOnboardingProfile } from '@/lib/api/onboarding'
 
 export function Step3Form() {
   const router = useRouter()
+  const t = useTranslations('onboarding')
+  const tCommon = useTranslations('common')
   const store = useOnboardingStore()
 
   const [rgpd, setRgpd] = useState(store.rgpdConsented)
@@ -40,7 +43,13 @@ export function Step3Form() {
 
   return (
     <OnboardingShell
-      header={<ProgressHeader step={3} total={3} />}
+      header={
+        <ProgressHeader
+          step={3}
+          total={3}
+          formatLabel={(s, n) => t('progress', { step: s, total: n })}
+        />
+      }
       footer={
         <div className="flex flex-col gap-2">
           <Button
@@ -52,7 +61,7 @@ export function Step3Form() {
             onClick={() => mutation.mutate()}
             className="w-full"
           >
-            Rejoindre le club
+            {t('step3.submit')}
           </Button>
           <Button
             type="button"
@@ -62,29 +71,29 @@ export function Step3Form() {
             onClick={() => router.push('/onboarding/step-2')}
             className="w-full"
           >
-            Retour
+            {tCommon('back')}
           </Button>
         </div>
       }
     >
       <div className="flex flex-col gap-6">
-        <Heading level="h2">Quelques accords avant de commencer.</Heading>
+        <Heading level="h2">{t('step3.heading')}</Heading>
 
         <div className="flex flex-col gap-2">
           <ConsentRow
             checked={rgpd}
             onCheckedChange={setRgpd}
-            label="J'accepte la charte de confidentialité et le traitement de mes données personnelles."
+            label={t('step3.rgpdLabel')}
             linkHref="/legal/charter"
-            linkLabel="lire"
+            linkLabel={t('step3.rgpdLinkLabel')}
             required
           />
 
           <ConsentRow
             checked={directory}
             onCheckedChange={setDirectory}
-            label="J'accepte d'apparaître dans l'annuaire des membres du club."
-            linkLabel="en savoir plus"
+            label={t('step3.directoryLabel')}
+            linkLabel={t('step3.directoryLinkLabel')}
           />
         </div>
 
@@ -93,9 +102,7 @@ export function Step3Form() {
             role="alert"
             className="rounded-md bg-data-negative/10 px-3 py-2 text-[14px] text-data-negative"
           >
-            {mutation.error instanceof Error
-              ? mutation.error.message
-              : 'Une erreur est survenue. Réessaie.'}
+            {mutation.error instanceof Error ? mutation.error.message : t('step3.submitError')}
           </p>
         )}
       </div>

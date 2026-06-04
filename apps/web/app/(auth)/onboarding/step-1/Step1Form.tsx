@@ -2,21 +2,26 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { z } from 'zod'
 import { OnboardingShell, ProgressHeader, FormField, Input, Button } from '@evolve/ui'
 import { useOnboardingStore } from '@/lib/stores/onboarding'
 
 // Téléphone facultatif (F8) : accepté vide ; si rempli, format souple international.
 // Regex permissive : chiffres, espaces, +, parenthèses, point, tiret — 6 à 20 caractères.
+// NB : le message d'erreur affiché est résolu via i18n (t('step1.phoneInvalid')) côté handleSubmit ;
+// la chaîne ci-dessous n'est jamais montrée à l'utilisateur.
 const phoneSchema = z
   .string()
   .trim()
-  .regex(/^[+0-9 ().-]{6,20}$/, 'Format de téléphone invalide.')
+  .regex(/^[+0-9 ().-]{6,20}$/)
   .optional()
   .or(z.literal(''))
 
 export function Step1Form() {
   const router = useRouter()
+  const t = useTranslations('onboarding')
+  const tCommon = useTranslations('common')
   const store = useOnboardingStore()
 
   const [firstname, setFirstname] = useState(store.firstname)
@@ -35,7 +40,7 @@ export function Step1Form() {
     // Validation souple uniquement si un numéro a été saisi (vide = accepté).
     const result = phoneSchema.safeParse(trimmedPhone)
     if (!result.success) {
-      setPhoneError(result.error.issues[0]?.message ?? 'Format de téléphone invalide.')
+      setPhoneError(t('step1.phoneInvalid'))
       return
     }
     setPhoneError(undefined)
@@ -50,7 +55,13 @@ export function Step1Form() {
 
   return (
     <OnboardingShell
-      header={<ProgressHeader step={1} total={3} />}
+      header={
+        <ProgressHeader
+          step={1}
+          total={3}
+          formatLabel={(s, n) => t('progress', { step: s, total: n })}
+        />
+      }
       footer={
         <Button
           type="submit"
@@ -60,12 +71,12 @@ export function Step1Form() {
           disabled={!isValid}
           className="w-full"
         >
-          Continuer
+          {tCommon('continue')}
         </Button>
       }
     >
       <form id="step1" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
-        <FormField label="Prénom" required>
+        <FormField label={t('step1.firstname')} required>
           {({ id, ...ariaProps }) => (
             <Input
               id={id}
@@ -73,12 +84,12 @@ export function Step1Form() {
               value={firstname}
               onChange={(e) => setFirstname(e.target.value)}
               autoComplete="given-name"
-              placeholder="Votre prénom"
+              placeholder={t('step1.firstnamePlaceholder')}
             />
           )}
         </FormField>
 
-        <FormField label="Nom" required>
+        <FormField label={t('step1.lastname')} required>
           {({ id, ...ariaProps }) => (
             <Input
               id={id}
@@ -86,12 +97,12 @@ export function Step1Form() {
               value={lastname}
               onChange={(e) => setLastname(e.target.value)}
               autoComplete="family-name"
-              placeholder="Votre nom de famille"
+              placeholder={t('step1.lastnamePlaceholder')}
             />
           )}
         </FormField>
 
-        <FormField label="Téléphone (facultatif)" error={phoneError}>
+        <FormField label={t('step1.phone')} error={phoneError}>
           {({ id, ...ariaProps }) => (
             <Input
               id={id}
@@ -103,7 +114,7 @@ export function Step1Form() {
                 if (phoneError) setPhoneError(undefined)
               }}
               autoComplete="tel"
-              placeholder="+33 6 00 00 00 00"
+              placeholder={t('phonePlaceholder')}
             />
           )}
         </FormField>

@@ -10,6 +10,7 @@
 // topbar reçoivent leurs données (user, club, sync, date) depuis le layout serveur.
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import {
   Sidebar,
   AppTopbar,
@@ -24,20 +25,30 @@ import { useSupabase } from '@/components/providers/SupabaseProvider'
 /** Logo de marque servi par l'app (apps/web/public/logo.jpg). */
 const LOGO_SRC = '/logo.jpg'
 
-/** Nav latérale desktop — libellés alignés sur la réf. */
-const SIDEBAR_ITEMS: NavItem[] = [
-  { label: 'Tableau de bord', href: '/dashboard', icon: 'LayoutDashboard' },
-  { label: 'Portefeuille du club', href: '/portfolio', icon: 'ChartPie' },
-  { label: 'Mes cotisations', href: '/contributions', icon: 'Calendar' },
-  { label: 'Réseau des clubs', href: '#', icon: 'Waypoints', disabled: true },
-]
+/**
+ * Type des libellés de nav traduits, indexé par fonction `t` du namespace `nav`.
+ * Les `href`/`icon`/`disabled` restent figés ; seuls les `label` sont injectés.
+ */
+type NavT = ReturnType<typeof useTranslations<'nav'>>
 
-/** BottomNav mobile — 3 onglets (décision V0), libellés courts. */
-const BOTTOM_ITEMS: NavItem[] = [
-  { label: 'Tableau', href: '/dashboard', icon: 'LayoutDashboard' },
-  { label: 'Portefeuille', href: '/portfolio', icon: 'ChartPie' },
-  { label: 'Cotisations', href: '/contributions', icon: 'Calendar' },
-]
+/** Nav latérale desktop — libellés alignés sur la réf, traduits via `nav.sidebar`. */
+function sidebarItems(t: NavT): NavItem[] {
+  return [
+    { label: t('sidebar.dashboard'), href: '/dashboard', icon: 'LayoutDashboard' },
+    { label: t('sidebar.portfolio'), href: '/portfolio', icon: 'ChartPie' },
+    { label: t('sidebar.contributions'), href: '/contributions', icon: 'Calendar' },
+    { label: t('sidebar.network'), href: '#', icon: 'Waypoints', disabled: true },
+  ]
+}
+
+/** BottomNav mobile — 3 onglets (décision V0), libellés courts via `nav.bottom`. */
+function bottomItems(t: NavT): NavItem[] {
+  return [
+    { label: t('bottom.dashboard'), href: '/dashboard', icon: 'LayoutDashboard' },
+    { label: t('bottom.portfolio'), href: '/portfolio', icon: 'ChartPie' },
+    { label: t('bottom.contributions'), href: '/contributions', icon: 'Calendar' },
+  ]
+}
 
 /** Onglet actif : correspondance exacte ou préfixe du pathname courant. */
 function resolveActiveHref(pathname: string | null, items: NavItem[]): string {
@@ -56,10 +67,12 @@ export function AppChromeSidebar({
   isStaff: boolean
   clubActif?: SidebarClub
 }) {
+  const t = useTranslations('nav')
   const pathname = usePathname()
+  const base = sidebarItems(t)
   const items: NavItem[] = isStaff
-    ? [...SIDEBAR_ITEMS, { label: 'Espace trésorier', href: '/admin', icon: 'ShieldCheck' }]
-    : SIDEBAR_ITEMS
+    ? [...base, { label: t('sidebar.admin'), href: '/admin', icon: 'ShieldCheck' }]
+    : base
   return (
     <Sidebar
       items={items}
@@ -67,6 +80,13 @@ export function AppChromeSidebar({
       linkComponent={Link}
       clubActif={clubActif}
       logoSrc={LOGO_SRC}
+      labels={{
+        section: t('sidebar.section'),
+        navLabel: t('sidebar.navLabel'),
+        notification: t('sidebar.notification'),
+        soon: t('sidebar.soon'),
+        clubTitle: t('sidebar.clubTitle'),
+      }}
     />
   )
 }
@@ -82,6 +102,7 @@ export function AppChromeTopbar({
   syncLabel?: string
   dateLabel?: string
 }) {
+  const t = useTranslations('nav')
   const router = useRouter()
   const supabase = useSupabase()
 
@@ -102,19 +123,34 @@ export function AppChromeTopbar({
       }}
       syncLabel={syncLabel}
       dateLabel={dateLabel}
-      themeToggle={<ThemeToggle />}
+      themeToggle={
+        <ThemeToggle
+          toggleLabel={t('themeToggle.toggle')}
+          switchToLightLabel={t('themeToggle.switchToLight')}
+          switchToDarkLabel={t('themeToggle.switchToDark')}
+        />
+      }
       logoSrc={LOGO_SRC}
+      labels={{
+        userMenu: t('topbar.userMenu'),
+        admin: t('topbar.admin'),
+        profile: t('topbar.profile'),
+        logout: t('topbar.logout'),
+      }}
     />
   )
 }
 
 export function AppChromeBottom() {
+  const t = useTranslations('nav')
   const pathname = usePathname()
+  const items = bottomItems(t)
   return (
     <BottomNav
-      items={BOTTOM_ITEMS}
-      activeHref={resolveActiveHref(pathname, BOTTOM_ITEMS)}
+      items={items}
+      activeHref={resolveActiveHref(pathname, items)}
       linkComponent={Link}
+      navLabel={t('bottom.navLabel')}
     />
   )
 }

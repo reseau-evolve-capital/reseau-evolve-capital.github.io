@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 import { Button } from '@evolve/ui'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function VerifyClient({ tokenHash }: Props) {
+  const t = useTranslations('login.verify')
   const router = useRouter()
   const supabase = useSupabase()
   const [error, setError] = useState(() => !tokenHash)
@@ -49,14 +51,14 @@ export function VerifyClient({ tokenHash }: Props) {
     return (
       <section className="w-full max-w-md rounded-lg border border-border bg-card p-8 text-center shadow-card">
         <h1 className="font-display text-[24px] font-bold leading-tight tracking-[-0.01em] text-text">
-          Ce lien a expiré ou est invalide.
+          {t('expiredTitle')}
         </h1>
         <p className="mt-3 font-body text-[14px] leading-relaxed text-text-sec">
-          Demande-en un nouveau pour te connecter.
+          {t('expiredBody')}
         </p>
         <div className="mt-6">
           <Button variant="primary" onClick={() => router.push('/login')}>
-            Retour au login
+            {t('backToLogin')}
           </Button>
         </div>
       </section>
@@ -65,7 +67,7 @@ export function VerifyClient({ tokenHash }: Props) {
 
   return (
     <p className="font-body text-[14px] text-text-sec" role="status">
-      Connexion en cours…
+      {t('connecting')}
     </p>
   )
 }

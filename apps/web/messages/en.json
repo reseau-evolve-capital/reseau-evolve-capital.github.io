@@ -8,15 +8,412 @@
     "refreshing": "Refreshing…",
     "dataSafe": "Your data stays safe."
   },
-  "notFound": {
-    "title": "Page not found",
-    "description": "This page doesn’t exist or has been moved. No worries, we’ll take you back to familiar ground.",
-    "backToDashboard": "Back to dashboard"
+  "nav": {
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "portfolio": "Club portfolio",
+      "contributions": "My contributions",
+      "network": "Club network",
+      "admin": "Treasurer area",
+      "section": "Member area",
+      "navLabel": "Main navigation",
+      "notification": "notification",
+      "soon": "Soon",
+      "clubTitle": "Active club"
+    },
+    "bottom": {
+      "dashboard": "Dashboard",
+      "portfolio": "Portfolio",
+      "contributions": "Contributions",
+      "navLabel": "Mobile navigation"
+    },
+    "topbar": {
+      "userMenu": "User menu",
+      "admin": "Treasurer area",
+      "profile": "Profile",
+      "logout": "Log out"
+    },
+    "themeToggle": {
+      "toggle": "Toggle theme",
+      "switchToLight": "Switch to light mode",
+      "switchToDark": "Switch to dark mode"
+    }
+  },
+  "login": {
+    "brand": {
+      "eyebrow": "Network of investment clubs",
+      "headlineLead": "Make visible what your club",
+      "headlineHighlight": "builds together.",
+      "tagline": "A single space to track the portfolio, contributions and each member's stake — with the rigor of a fund, at the scale of a circle.",
+      "networkVizLabel": "Diagram of a network of connected clubs",
+      "stats": {
+        "clubs": "Clubs",
+        "members": "Members",
+        "aum": "Under management"
+      }
+    },
+    "help": {
+      "link": "Need help?"
+    },
+    "themeToggle": {
+      "toggle": "Toggle theme",
+      "switchToLight": "Switch to light mode",
+      "switchToDark": "Switch to dark mode"
+    },
+    "form": {
+      "eyebrow": "Member area · Sign in",
+      "title": "Welcome.",
+      "subtitle": "Enter your email and we'll send you a sign-in link — no password to remember.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "lea@cercle-arago.fr",
+      "submit": "Send my link →",
+      "submitting": "Sending…",
+      "reassurance": "Link valid for 15 min. No password, no spam.",
+      "invalidEmail": "Invalid email address."
+    },
+    "passkey": {
+      "label": "Sign in with a passkey",
+      "badge": "V1"
+    },
+    "invite": {
+      "text": "First time here? Your club sends you an invitation —",
+      "link": "learn more",
+      "suffix": "."
+    },
+    "checkEmail": {
+      "title": "Check your inbox",
+      "sentTo": "We've sent a magic link to <strong>{email}</strong>. It expires in 10 minutes.",
+      "resend": "Resend",
+      "resendCooldown": "Resend in {seconds}s",
+      "genericError": "Error"
+    },
+    "verify": {
+      "expiredTitle": "This link has expired or is invalid.",
+      "expiredBody": "Request a new one to sign in.",
+      "backToLogin": "Back to login",
+      "connecting": "Signing in…"
+    }
+  },
+  "onboarding": {
+    "progress": "Step {step} of {total}",
+    "phonePlaceholder": "+33 6 00 00 00 00",
+    "step1": {
+      "firstname": "First name",
+      "firstnamePlaceholder": "Your first name",
+      "lastname": "Last name",
+      "lastnamePlaceholder": "Your last name",
+      "phone": "Phone (optional)",
+      "phoneInvalid": "Invalid phone format."
+    },
+    "step2": {
+      "avatarCaption": "Profile photo (optional)",
+      "avatarUploadAria": "Add a profile photo (optional)",
+      "avatarEmpty": "Photo",
+      "avatarUploading": "Uploading…",
+      "avatarUploadingAria": "Uploading",
+      "uploadError": "Upload failed.",
+      "phone": "Phone",
+      "address": "Address",
+      "addressPlaceholder": "12 rue de la Paix, 75001 Paris"
+    },
+    "step3": {
+      "heading": "A few agreements before you get started.",
+      "submit": "Join the club",
+      "rgpdLabel": "I accept the privacy policy and the processing of my personal data.",
+      "rgpdLinkLabel": "read",
+      "directoryLabel": "I agree to appear in the club's member directory.",
+      "directoryLinkLabel": "learn more",
+      "submitError": "Something went wrong. Try again."
+    },
+    "tour": {
+      "enterSpace": "Go to my space",
+      "skip": "Skip the tour",
+      "regionAria": "Introduction",
+      "slideAria": "Slide {index} of {count}",
+      "slide1": {
+        "imageAlt": "Stake illustration",
+        "title": "Your stake",
+        "body": "Track how your stake evolves in real time, with the changes and the valuation of your portfolio."
+      },
+      "slide2": {
+        "imageAlt": "Club illustration",
+        "title": "Your club",
+        "body": "Find your club's information, view the shared dashboard and stay up to date on decisions."
+      },
+      "slide3": {
+        "imageAlt": "Network illustration",
+        "title": "The network",
+        "body": "Connect with members of the Evolve Capital network and build synergies within the community."
+      }
+    }
+  },
+  "dashboard": {
+    "error": {
+      "title": "We couldn't load your data. Try again?"
+    },
+    "empty": {
+      "title": "Data not available",
+      "description": "Your data isn't available yet. The treasurer must first sync the matrix."
+    },
+    "sync": {
+      "rateLimited": "Rate limit reached. Try again in a few minutes.",
+      "failed": "Sync failed. Try again?"
+    },
+    "stale": "Data updated {time}.",
+    "hero": {
+      "label": "Your stake",
+      "viewDetail": ", view details",
+      "aria": "Your stake: {amount}",
+      "updated": "Updated {time}"
+    },
+    "syncBanner": {
+      "syncedAt": "Synced {time}",
+      "neverSynced": "—",
+      "refresh": "Refresh",
+      "refreshAria": "Refresh data"
+    },
+    "kpi": {
+      "detention": "My holding",
+      "totalContributed": "Total contributed",
+      "contributionStatus": "Contribution status"
+    },
+    "detail": {
+      "title": "Your stake",
+      "description": "It represents {pct} of {clubName}'s portfolio. It evolves with your contributions and the performance of the holdings.",
+      "lastSync": "Last sync {time}",
+      "viewPortfolio": "View my portfolio →"
+    }
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "{count, plural, one {# open position} other {# open positions}}",
+    "filtersRegion": "Filters",
+    "summaryRegion": "Summary",
+    "lastSync": "Last sync",
+    "totalGainLoss": "Total gain / loss",
+    "errorState": {
+      "title": "We couldn't load your portfolio. Try again?"
+    },
+    "emptyState": {
+      "title": "Your club has no open position yet.",
+      "description": "The treasurer must first sync the matrix."
+    },
+    "sync": {
+      "rateLimited": "Rate limit reached. Try again in a few minutes.",
+      "failed": "Sync failed. Try again?",
+      "syncedAt": "Synced {time}",
+      "neverSynced": "—",
+      "refresh": "Refresh",
+      "refreshAria": "Refresh data"
+    },
+    "sort": {
+      "value": "Value",
+      "name": "Name",
+      "performance": "Performance"
+    },
+    "filters": {
+      "group": "Portfolio filters",
+      "all": "All",
+      "sortBy": "Sort by",
+      "ascending": "Ascending order",
+      "descending": "Descending order"
+    },
+    "allocation": {
+      "title": "Sector allocation",
+      "totalValue": "Total value",
+      "ariaPrefix": "Portfolio allocation: ",
+      "legend": "Allocation legend"
+    },
+    "table": {
+      "columns": {
+        "name": "Asset",
+        "category": "Type",
+        "quantity": "Quantity",
+        "pru": "Avg cost",
+        "livePrice": "Price",
+        "currentValue": "Value",
+        "gainLossEur": "+/- €",
+        "gainLossPct": "+/- %"
+      },
+      "emptyTitle": "No position",
+      "emptyDescription": "Your club has no open position yet.",
+      "transactionsHistory": "Transaction history (soon) →",
+      "tableLabel": "Position portfolio",
+      "sortLabel": "Sort by {column}{direction, select, asc {, ascending} desc {, descending} other {}}",
+      "rowLabel": "View details for {name}",
+      "counter": {
+        "unfiltered": "{count, plural, one {# position} other {# positions}}",
+        "filtered": "Showing {rendered} of {total} — view all"
+      }
+    },
+    "modal": {
+      "quantity": "Quantity",
+      "pru": "Avg cost",
+      "livePrice": "Price",
+      "currentValue": "Total value",
+      "gainLossEur": "+/- €",
+      "gainLossPct": "+/- %",
+      "allocationPct": "% of portfolio"
+    }
+  },
+  "contributions": {
+    "title": "My contributions",
+    "historyTitle": "Monthly history",
+    "attestationCta": "Download holding certificate (soon)",
+    "status": {
+      "ok": "Up to date",
+      "pending": "Pending",
+      "late": "Overdue",
+      "exempt": "Exempt"
+    },
+    "kpi": {
+      "totalContributed": "Total contributed",
+      "monthsCount": "Number of months",
+      "detentionPct": "Stake"
+    },
+    "penalties": {
+      "title": "Penalties",
+      "active": "{amount} in outstanding penalties.",
+      "none": "No outstanding penalty."
+    },
+    "lateAlert": {
+      "title": "You have an overdue contribution of {amount}.",
+      "body": "Reach out to your club's treasurer to settle your situation."
+    },
+    "empty": {
+      "title": "No contributions yet",
+      "description": "Your first contribution will appear here."
+    },
+    "error": {
+      "loadTitle": "We couldn't load your contributions. Try again?"
+    },
+    "sync": {
+      "rateLimited": "Rate limit reached. Try again in a few minutes.",
+      "failed": "Sync failed. Try again?"
+    },
+    "timeline": {
+      "legend": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "late": "Overdue",
+        "exempt": "Exempt",
+        "upcoming": "Upcoming"
+      },
+      "monthInitials": ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+      "legendLabel": "Status legend",
+      "historyLabel": "Contribution history",
+      "emptyTitle": "No contributions yet",
+      "emptyDescription": "Your first contribution will appear here."
+    }
+  },
+  "admin": {
+    "staleData": "Couldn't refresh the data. Showing the last known values.",
+    "sync": {
+      "syncedAt": "Synced {time}",
+      "refresh": "Refresh",
+      "refreshAria": "Refresh data"
+    },
+    "forbidden": {
+      "title": "Access denied",
+      "description": "This area is reserved for club treasurers.",
+      "action": "Back to dashboard"
+    },
+    "dashboard": {
+      "title": "Treasurer area",
+      "syncError": {
+        "rateLimited": "Rate limit reached. Try again in a few minutes.",
+        "failed": "Sync failed. Try again?"
+      },
+      "unpaidAlert": "{count, plural, =1 {1 member is in arrears.} other {# members are in arrears.}}",
+      "kpi": {
+        "activeMembers": "Active members",
+        "portfolioValue": "Portfolio value",
+        "totalContributed": "Total contributed",
+        "unpaidCount": "Members in arrears"
+      }
+    },
+    "members": {
+      "title": "Club members",
+      "filterUnpaid": "Show only members in arrears",
+      "tableLabel": "Club members",
+      "columns": {
+        "fullName": "Member",
+        "role": "Role",
+        "totalContributed": "Total contributed",
+        "detentionPct": "Stake",
+        "monthsCount": "Months contributed",
+        "status": "Status"
+      },
+      "roles": {
+        "member": "Member",
+        "treasurer": "Treasurer",
+        "president": "President",
+        "network_admin": "Network admin"
+      },
+      "statuses": {
+        "ok": "Up to date",
+        "pending": "Pending",
+        "late": "Overdue",
+        "exempt": "Exempt"
+      },
+      "empty": {
+        "title": "No members",
+        "description": "This club has no member matching this filter yet."
+      },
+      "sortLabel": "Sort by {column}{direction, select, asc {, ascending} desc {, descending} other {}}",
+      "detentionBarLabel": "{name}'s stake"
+    },
+    "cotisations": {
+      "title": "Club contributions",
+      "filterMember": "Filter by member",
+      "allMembers": "All members",
+      "kpi": {
+        "total": "Total contributed",
+        "count": "Payments",
+        "average": "Average payment"
+      },
+      "empty": {
+        "title": "No contributions",
+        "description": "No payment recorded for this filter."
+      }
+    }
   },
   "errors": {
     "auth": {
       "title": "We couldn't load the sign-in. Try again?",
       "body": "No worries, your account is safe."
+    },
+    "onboarding": {
+      "title": "We couldn't load your sign-up. Try again?",
+      "body": "Your progress is saved, you can pick up right where you left off."
+    },
+    "dashboard": {
+      "title": "We couldn't load your dashboard. Try again?"
+    },
+    "portfolio": {
+      "title": "We couldn't load your portfolio. Try again?"
+    },
+    "contributions": {
+      "title": "We couldn't load your contributions. Try again?"
+    },
+    "admin": {
+      "dashboard": {
+        "title": "We couldn't load the treasurer area. Try again?"
+      },
+      "members": {
+        "title": "We couldn't load the members. Try again?"
+      },
+      "cotisations": {
+        "title": "We couldn't load the club contributions. Try again?"
+      }
+    },
+    "nav": {
+      "requestFailed": "Something went wrong. Try again."
     }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This page doesn't exist or has been moved. No worries, we'll bring you back to familiar ground.",
+    "backToDashboard": "Back to dashboard"
   }
 }

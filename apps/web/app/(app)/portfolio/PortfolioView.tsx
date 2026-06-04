@@ -15,6 +15,7 @@
 import { useMemo, useRef, useState } from 'react'
 
 import { useQueryClient } from '@tanstack/react-query'
+import { useTranslations } from 'next-intl'
 import { useQueryState, parseAsStringEnum, parseAsString } from 'nuqs'
 
 import {
@@ -50,6 +51,8 @@ function trendDirection(value: number): 'up' | 'down' | 'flat' {
 
 export function PortfolioView({ initialData }: { initialData: PortfolioData | null }) {
   // Tous les hooks AVANT tout early return (règle des hooks React).
+  const t = useTranslations('portfolio')
+  const tCommon = useTranslations('common')
   const { data, isError } = usePortfolio(initialData)
   const queryClient = useQueryClient()
   const [refreshing, setRefreshing] = useState(false)
@@ -118,9 +121,9 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
     return (
       <EmptyState
         icon="TriangleAlert"
-        title="On n’a pas pu charger ton portefeuille. Réessaie ?"
-        description="Tes données restent en sécurité."
-        action={{ label: 'Réessayer', onClick: () => void refresh() }}
+        title={t('errorState.title')}
+        description={tCommon('dataSafe')}
+        action={{ label: tCommon('retry'), onClick: () => void refresh() }}
       />
     )
   }
@@ -128,8 +131,8 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
     return (
       <EmptyState
         icon="ChartPie"
-        title="Ton club n’a pas encore de position ouverte."
-        description="Le trésorier doit d’abord synchroniser la matrice."
+        title={t('emptyState.title')}
+        description={t('emptyState.description')}
       />
     )
   }
@@ -137,21 +140,19 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   // Pas de système de toast dans apps/web → erreur de sync surfacée en inline dans le bandeau.
   const syncError = sync.isError
     ? sync.error.message === 'rate_limited'
-      ? 'Rate limit atteint. Réessaie dans quelques minutes.'
-      : 'La synchronisation a échoué. Réessaie ?'
+      ? t('sync.rateLimited')
+      : t('sync.failed')
     : null
 
   const openCount = built.positions.length
-  const subtitle = `${openCount} position${openCount > 1 ? 's' : ''} ouverte${
-    openCount > 1 ? 's' : ''
-  }`
+  const subtitle = t('subtitle', { count: openCount })
   const totalDir = trendDirection(totalGainLoss)
 
   return (
     <div className="flex flex-col gap-6" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
       {refreshing && (
         <div className="flex items-center justify-center gap-2 text-[13px] text-text-sec">
-          <Spinner size={16} /> Actualisation…
+          <Spinner size={16} /> {tCommon('refreshing')}
         </div>
       )}
 
@@ -164,6 +165,10 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
           isSyncing={sync.isPending}
           onSync={() => sync.mutate()}
           errorMessage={syncError}
+          syncedAtTemplate={(time) => t('sync.syncedAt', { time })}
+          neverSyncedLabel={t('sync.neverSynced')}
+          refreshLabel={t('sync.refresh')}
+          refreshAriaLabel={t('sync.refreshAria')}
         />
       </div>
 
@@ -181,7 +186,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
         {/* En-tête centre : titre + sous-titre + hero valeur totale + gain/perte (TrendBadge). */}
         <header className="flex flex-col gap-2 lg:col-start-2 lg:row-start-1">
           <Heading level="h1" className="text-[20px]">
-            Portefeuille
+            {t('title')}
           </Heading>
           <p className="text-[13px] text-text-sec">{subtitle}</p>
           <div className="mt-1 flex flex-wrap items-baseline gap-3">
@@ -196,7 +201,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
 
         {/* Colonne gauche : filtres secteur/tri (FilterBar, state nuqs inchangé) + dernière sync. */}
         <aside
-          aria-label="Filtres"
+          aria-label={t('filtersRegion')}
           className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:row-span-2"
         >
           <FilterBar
@@ -207,10 +212,22 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
             onSectorChange={(s) => void setSector(s)}
             onSortChange={(s) => void setSort(s)}
             onDirChange={(d) => void setDir(d)}
+            sortLabels={{
+              value: t('sort.value'),
+              name: t('sort.name'),
+              performance: t('sort.performance'),
+            }}
+            labels={{
+              group: t('filters.group'),
+              all: t('filters.all'),
+              sortBy: t('filters.sortBy'),
+              ascending: t('filters.ascending'),
+              descending: t('filters.descending'),
+            }}
           />
           <div className="flex flex-col gap-1 rounded-[10px] border border-border bg-card-sub px-3 py-2">
             <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter">
-              Dernière sync
+              {t('lastSync')}
             </span>
             <span className="text-[13px] text-text-sec [font-feature-settings:'tnum']">
               {data.syncedAt ? formatRelativeTime(data.syncedAt) : '—'}
@@ -220,7 +237,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
 
         {/* Colonne droite : répartition sectorielle (donut + légende) + gain/perte total. */}
         <aside
-          aria-label="Synthèse"
+          aria-label={t('summaryRegion')}
           className="flex flex-col gap-4 lg:col-start-3 lg:row-start-1 lg:row-span-2"
         >
           <section aria-labelledby="alloc-title" className="flex flex-col gap-3">
@@ -228,13 +245,19 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
               id="alloc-title"
               className="font-display text-[13px] font-semibold uppercase tracking-[0.06em] text-text-ter"
             >
-              Répartition sectorielle
+              {t('allocation.title')}
             </h3>
-            <AllocationDonut data={built.allocation} totalValue={built.totalValue} />
+            <AllocationDonut
+              data={built.allocation}
+              totalValue={built.totalValue}
+              totalLabel={t('allocation.totalValue')}
+              ariaLabelPrefix={t('allocation.ariaPrefix')}
+              legendLabel={t('allocation.legend')}
+            />
           </section>
           <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-card-sub px-4 py-3">
             <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter">
-              Gain / perte total
+              {t('totalGainLoss')}
             </span>
             <CurrencyAmount amount={totalGainLoss} size="lg" showSign className="block" />
             <TrendBadge
@@ -254,6 +277,29 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
               positions={visible}
               onRowClick={setSelected}
               totalCount={built.positions.length}
+              labels={{
+                columns: {
+                  name: t('table.columns.name'),
+                  category: t('table.columns.category'),
+                  quantity: t('table.columns.quantity'),
+                  pru: t('table.columns.pru'),
+                  livePrice: t('table.columns.livePrice'),
+                  currentValue: t('table.columns.currentValue'),
+                  gainLossEur: t('table.columns.gainLossEur'),
+                  gainLossPct: t('table.columns.gainLossPct'),
+                },
+                emptyTitle: t('table.emptyTitle'),
+                emptyDescription: t('table.emptyDescription'),
+                transactionsHistory: t('table.transactionsHistory'),
+                tableLabel: t('table.tableLabel'),
+                sortLabel: (column, direction) =>
+                  t('table.sortLabel', { column, direction: direction || 'none' }),
+                rowLabel: (name) => t('table.rowLabel', { name }),
+                counter: (rendered, total) =>
+                  total <= rendered
+                    ? t('table.counter.unfiltered', { count: rendered })
+                    : t('table.counter.filtered', { rendered, total }),
+              }}
             />
           </div>
           {/* Mobile : cards */}
@@ -270,6 +316,16 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
         open={selected !== null}
         onOpenChange={(o) => {
           if (!o) setSelected(null)
+        }}
+        labels={{
+          quantity: t('modal.quantity'),
+          pru: t('modal.pru'),
+          livePrice: t('modal.livePrice'),
+          currentValue: t('modal.currentValue'),
+          gainLossEur: t('modal.gainLossEur'),
+          gainLossPct: t('modal.gainLossPct'),
+          allocationPct: t('modal.allocationPct'),
+          close: tCommon('close'),
         }}
       />
     </div>

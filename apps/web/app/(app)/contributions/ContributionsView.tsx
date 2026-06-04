@@ -8,6 +8,7 @@
 import { useRef, useState } from 'react'
 
 import { useQueryClient } from '@tanstack/react-query'
+import { useTranslations } from 'next-intl'
 
 import {
   ContributionsTimeline,
@@ -28,14 +29,17 @@ import type { ContributionsData, ContributionStatus } from '@/lib/data/contribut
 import { useContributions } from '@/lib/hooks/useContributions'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
 
-const STATUS_PILL: Record<ContributionStatus, { status: PillStatus; label: string }> = {
-  ok: { status: 'cotisation-ok', label: 'Situation régulière' },
-  pending: { status: 'cotisation-pending', label: 'En attente' },
-  late: { status: 'cotisation-late', label: 'En retard' },
-  exempt: { status: 'cotisation-exempt', label: 'Exempté' },
+// La variante visuelle (couleur) du Pill reste interne ; seul le libellé est externalisé (i18n).
+const STATUS_PILL: Record<ContributionStatus, PillStatus> = {
+  ok: 'cotisation-ok',
+  pending: 'cotisation-pending',
+  late: 'cotisation-late',
+  exempt: 'cotisation-exempt',
 }
 
 export function ContributionsView({ initialData }: { initialData: ContributionsData | null }) {
+  const t = useTranslations('contributions')
+  const tc = useTranslations('common')
   // Tous les hooks AVANT tout early return (règle des hooks React).
   const { data, isError } = useContributions(initialData)
   const queryClient = useQueryClient()
@@ -65,30 +69,26 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
     return (
       <EmptyState
         icon="TriangleAlert"
-        title="On n’a pas pu charger tes cotisations. Réessaie ?"
-        description="Tes données restent en sécurité."
-        action={{ label: 'Réessayer', onClick: () => void refresh() }}
+        title={t('error.loadTitle')}
+        description={tc('dataSafe')}
+        action={{ label: tc('retry'), onClick: () => void refresh() }}
       />
     )
   }
   if (!data) {
     return (
-      <EmptyState
-        icon="Calendar"
-        title="Aucune cotisation pour l’instant"
-        description="Ta première cotisation apparaîtra ici."
-      />
+      <EmptyState icon="Calendar" title={t('empty.title')} description={t('empty.description')} />
     )
   }
 
   // Pas de système de toast dans apps/web → erreur de sync surfacée en inline dans le bandeau.
   const syncError = sync.isError
     ? sync.error.message === 'rate_limited'
-      ? 'Rate limit atteint. Réessaie dans quelques minutes.'
-      : 'La synchronisation a échoué. Réessaie ?'
+      ? t('sync.rateLimited')
+      : t('sync.failed')
     : null
 
-  const pill = STATUS_PILL[data.status]
+  const pillStatus = STATUS_PILL[data.status]
 
   // SyncBanner ne s'affiche que pour les rôles ≥ trésorier (cf. SyncBanner). On reproduit la
   // garde ici pour ne pas réserver un wrapper vide (et son gap) côté membre sur mobile.
@@ -98,16 +98,16 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
     <div className="flex flex-col gap-6" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
       {refreshing && (
         <div className="flex items-center justify-center gap-2 text-[13px] text-text-sec">
-          <Spinner size={16} /> Actualisation…
+          <Spinner size={16} /> {tc('refreshing')}
         </div>
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Heading level="h1" className="text-[20px]">
-          Mes cotisations
+          {t('title')}
         </Heading>
         <div role="status" aria-live="polite">
-          <Pill status={pill.status}>{pill.label}</Pill>
+          <Pill status={pillStatus}>{t(`status.${data.status}`)}</Pill>
         </div>
       </div>
 
@@ -143,10 +143,10 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
               />
               <div className="flex flex-col gap-1">
                 <Text className="font-semibold">
-                  Tu as un retard de cotisation de {formatEUR(data.amountDue)}.
+                  {t('lateAlert.title', { amount: formatEUR(data.amountDue) })}
                 </Text>
                 <Text variant="caption" color="text-sec" className="normal-case tracking-normal">
-                  Rapproche-toi du trésorier de ton club pour régulariser ta situation.
+                  {t('lateAlert.body')}
                 </Text>
               </div>
             </div>
@@ -154,32 +154,48 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
 
           {/* KPIs : 3 colonnes en mobile/tablette, empilés en desktop (colonne étroite). */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1">
-            <KPICard title="Total cotisé" value={data.totalContributed} format="eur" />
-            <KPICard title="Nombre de mois" value={data.monthsCount} format="raw" />
-            <KPICard title="Quote-part" value={data.detentionPct} format="pct" />
+            <KPICard title={t('kpi.totalContributed')} value={data.totalContributed} format="eur" />
+            <KPICard title={t('kpi.monthsCount')} value={data.monthsCount} format="raw" />
+            <KPICard title={t('kpi.detentionPct')} value={data.detentionPct} format="pct" />
           </div>
 
           <div className="rounded-[10px] border border-border bg-card p-4">
-            <Text className="font-semibold">Pénalités</Text>
+            <Text className="font-semibold">{t('penalties.title')}</Text>
             <Text color="text-sec" className="mt-1 block">
               {data.penalties > 0
-                ? `${formatEUR(data.penalties)} de pénalités en cours.`
-                : 'Aucune pénalité en cours.'}
+                ? t('penalties.active', { amount: formatEUR(data.penalties) })
+                : t('penalties.none')}
             </Text>
           </div>
 
           {/* Génération PDF de l'attestation reportée à la V1 (décision E-COT). */}
           <Button variant="secondary" disabled className="self-start lg:self-stretch">
-            Télécharger l’attestation de détention (bientôt)
+            {t('attestationCta')}
           </Button>
         </div>
 
         {/* COLONNE DROITE — historique mensuel (légende + timeline). */}
         <div className="flex flex-col gap-3">
           <Heading level="h2" className="text-[18px]">
-            Historique mensuel
+            {t('historyTitle')}
           </Heading>
-          <ContributionsTimeline years={data.years} />
+          <ContributionsTimeline
+            years={data.years}
+            labels={{
+              legend: {
+                paid: t('timeline.legend.paid'),
+                pending: t('timeline.legend.pending'),
+                late: t('timeline.legend.late'),
+                exempt: t('timeline.legend.exempt'),
+                upcoming: t('timeline.legend.upcoming'),
+              },
+              monthInitials: t.raw('timeline.monthInitials') as readonly string[],
+              legendLabel: t('timeline.legendLabel'),
+              historyLabel: t('timeline.historyLabel'),
+              emptyTitle: t('timeline.emptyTitle'),
+              emptyDescription: t('timeline.emptyDescription'),
+            }}
+          />
         </div>
       </div>
     </div>
