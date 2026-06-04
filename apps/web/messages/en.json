@@ -1,0 +1,22 @@
+{
+  "common": {
+    "retry": "Try again",
+    "back": "Back",
+    "continue": "Continue",
+    "or": "OR",
+    "close": "Close",
+    "refreshing": "Refreshing…",
+    "dataSafe": "Your data stays safe."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This page doesn’t exist or has been moved. No worries, we’ll take you back to familiar ground.",
+    "backToDashboard": "Back to dashboard"
+  },
+  "errors": {
+    "auth": {
+      "title": "We couldn't load the sign-in. Try again?",
+      "body": "No worries, your account is safe."
+    }
+  }
+}

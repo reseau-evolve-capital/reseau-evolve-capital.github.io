@@ -1,0 +1,22 @@
+{
+  "common": {
+    "retry": "Réessayer",
+    "back": "Retour",
+    "continue": "Continuer",
+    "or": "OU",
+    "close": "Fermer",
+    "refreshing": "Actualisation…",
+    "dataSafe": "Tes données restent en sécurité."
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "description": "Cette page n’existe pas ou a été déplacée. Pas d’inquiétude, on te ramène en terrain connu.",
+    "backToDashboard": "Retour au tableau de bord"
+  },
+  "errors": {
+    "auth": {
+      "title": "On n'a pas pu charger la connexion. Réessaie ?",
+      "body": "Aucune inquiétude, ton compte est en sécurité."
+    }
+  }
+}
