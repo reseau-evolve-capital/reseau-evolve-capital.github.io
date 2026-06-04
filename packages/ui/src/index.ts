@@ -41,6 +41,7 @@ export * from './molecules/DataRow'
 export * from './molecules/FilterBar'
 export * from './molecules/InviteForm'
 export * from './molecules/MemberActionsMenu'
+export * from './molecules/Toast'
 // Molecules auth + onboarding
 export * from './molecules/ProgressHeader'
 export * from './molecules/ConsentRow'

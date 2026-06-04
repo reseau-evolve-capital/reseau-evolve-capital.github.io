@@ -76,6 +76,20 @@ describe('SyncBanner — interactions', () => {
     )
     expect(getByText(/Rate limit atteint/)).toBeTruthy()
   })
+
+  it('le bouton Actualiser est rendu inline (à droite du libellé, justify-between)', () => {
+    const { container } = render(<SyncBanner syncedAt={SYNCED} userRole="treasurer" />)
+    // Layout inline restauré (réf DSH-008) : pas d'empilement mt-2, ligne justify-between.
+    expect(container.querySelector('.justify-between')).toBeTruthy()
+    expect(container.querySelector('.mt-2')).toBeNull()
+  })
+
+  it('le bouton Actualiser est en cursor-pointer (a11y)', () => {
+    const { getByRole } = render(<SyncBanner syncedAt={SYNCED} userRole="treasurer" />)
+    expect(getByRole('button', { name: 'Actualiser les données' }).className).toContain(
+      'cursor-pointer'
+    )
+  })
 })
 
 describe('SyncBanner — accessibilité (jest-axe)', () => {

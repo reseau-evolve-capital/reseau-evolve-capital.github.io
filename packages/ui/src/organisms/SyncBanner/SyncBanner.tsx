@@ -6,7 +6,11 @@
 // Les membres ne le voient jamais (return null). Le bouton déclenche une sync serveur
 // rate-limitée (429). En cas d'erreur, on affiche un message inline discret (pas de
 // système de toast dans apps/web) — jamais de rouge brand agressif.
-// Réf : DSH-008, CLAUDE.md (a11y AA, états error explicites, copy FR, tokens — zéro hex).
+//
+// Depuis NTF-006 : SyncBanner est un PRÉRÉGLAGE de l'organisme générique Banner (variante
+// « sync »). L'API publique (SyncBannerProps, SyncRole) et tous les comportements existants
+// sont conservés : visibilité par rôle, bouton actualiser min-h 44, spinner, errorMessage
+// inline, gabarits de copy. Réf : DSH-008, NTF-006, CLAUDE.md.
 
 import * as React from 'react'
 
@@ -14,7 +18,7 @@ import { formatRelativeTime } from '@evolve/utils'
 
 import { Icon } from '../../atoms/Icon'
 import { Spinner } from '../../atoms/Spinner'
-import { cn } from '../../lib/cn'
+import { Banner } from '../Banner'
 
 export type SyncRole = 'member' | 'treasurer' | 'president' | 'network_admin'
 
@@ -55,39 +59,44 @@ export function SyncBanner({
 }: SyncBannerProps) {
   if (!PRIVILEGED.includes(userRole)) return null
 
-  return (
-    <div
-      className={cn(
-        'flex flex-col gap-1 bg-neutral-100 border border-border rounded-[10px] px-4 py-2',
-        className
-      )}
-    >
-      <div className="flex items-center justify-between gap-3">
-        <span className="flex items-center gap-2 text-[13px] text-text-sec">
-          <Icon name="RefreshCw" size={16} aria-hidden="true" />
-          {syncedAtTemplate(syncedAt ? formatRelativeTime(syncedAt) : neverSyncedLabel)}
-        </span>
-        <button
-          type="button"
-          onClick={() => onSync?.()}
-          disabled={!canSync || isSyncing}
-          aria-label={refreshAriaLabel}
-          aria-busy={isSyncing}
-          className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 min-h-[44px] text-[13px] font-semibold text-text border border-border disabled:opacity-50 focus-visible:shadow-[var(--sh-glow)] outline-none"
-        >
-          {isSyncing ? (
-            <Spinner size={16} />
-          ) : (
-            <Icon name="RefreshCw" size={16} aria-hidden="true" />
-          )}
-          {refreshLabel}
-        </button>
-      </div>
+  const label = syncedAtTemplate(syncedAt ? formatRelativeTime(syncedAt) : neverSyncedLabel)
+
+  // Le message inline d'erreur reste DISCRET (text-ter), pas de variante « error » bruyante :
+  // on conserve la variante « sync » et on rend le message sous le libellé via le slot actions.
+  const message = (
+    <span className="flex flex-col gap-1">
+      <span>{label}</span>
       {errorMessage ? (
-        <p role="status" className="text-[12px] text-text-ter">
+        <span role="status" className="text-[12px] text-text-ter">
           {errorMessage}
-        </p>
+        </span>
       ) : null}
-    </div>
+    </span>
+  )
+
+  const refreshButton = (
+    <button
+      type="button"
+      onClick={() => onSync?.()}
+      disabled={!canSync || isSyncing}
+      aria-label={refreshAriaLabel}
+      aria-busy={isSyncing}
+      className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 min-h-[44px] text-[13px] font-semibold text-text border border-border cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 focus-visible:shadow-[var(--sh-glow)] outline-none"
+    >
+      {isSyncing ? <Spinner size={16} /> : <Icon name="RefreshCw" size={16} aria-hidden="true" />}
+      {refreshLabel}
+    </button>
+  )
+
+  // Layout inline (réf DSH-008) : libellé à gauche, bouton « Actualiser » à droite, sur une
+  // même ligne. Restauré via l'option actionsLayout="inline" du Banner générique.
+  return (
+    <Banner
+      variant="sync"
+      message={message}
+      actions={refreshButton}
+      actionsLayout="inline"
+      {...(className !== undefined ? { className } : {})}
+    />
   )
 }
