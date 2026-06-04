@@ -68,3 +68,47 @@ jobs:
             exit 1
           fi
           echo "TrendBadge conforme"
+
+  build:
+    name: Build apps/web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Polices commerciales MADE Tommy Soft : exclues du dépôt par licence
+      # (packages/design-system/.gitignore). globals.css les référence en @font-face url(),
+      # que Turbopack résout au build → un checkout propre échouerait. On génère des stubs
+      # vides UNIQUEMENT pour valider la compilation (pas la fidélité typo). À remplacer le
+      # jour où les polices sont fournies au build (secret CI / artefact privé). Voir
+      # packages/design-system/LICENSES/MADE-TommySoft.md.
+      - name: Stub des polices sous licence (validation de build only)
+        run: |
+          mkdir -p packages/design-system/assets/fonts
+          for w in Black Bold ExtraBold Light Medium Regular; do
+            f="packages/design-system/assets/fonts/MADE-TommySoft-$w.otf"
+            [ -f "$f" ] || touch "$f"
+          done
+
+      # Build de l'app membre. Toutes les routes sont dynamiques (server-rendered on
+      # demand) → aucun appel Supabase au build : des valeurs publiques de remplacement
+      # suffisent à valider la compilation (next-intl, tokens, RSC) sans secrets.
+      - name: Build (apps/web)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_SITE_URL: https://example.com
+        run: pnpm turbo build --filter=@evolve/web
