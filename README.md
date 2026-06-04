@@ -16,6 +16,38 @@ packages/
   utils/          ← Fonctions pures (formatEUR, formatPct, formatDate)
 ```
 
+## Fonctionnalités principales (fonctionnelles)
+
+L'app membre `apps/web` (branche `feat/monorepo`) couvre aujourd'hui (V0) :
+
+**Authentification & onboarding**
+
+- Connexion par **lien magique** (sans mot de passe), réservée aux emails **invités** (allowlist).
+- **Onboarding** en 3 étapes (identité → coordonnées → consentements RGPD/annuaire) + **tour guidé**.
+
+**Espace membre**
+
+- **Tableau de bord** : quote-part, indicateurs (détention, total cotisé, statut cotisation), bandeau de synchronisation.
+- **Portefeuille du club** : positions, **donut** de répartition sectorielle, tri/filtre, valorisation live (avec repli sur le snapshot).
+- **Mes cotisations** : frise mensuelle par statut, indicateurs, alerte de retard.
+
+**Espace trésorier** (rôles trésorier / président / admin réseau)
+
+- **Tableau de bord club** (KPIs, alerte impayés, **synchronisation manuelle**), **Membres** (liste, filtre impayés, colonne Accès), **Cotisations** (frise club, filtre par membre).
+- **Invitations** : génération d'un **lien d'accès nominatif valable 72 h** (à copier/transmettre), renvoyer, révoquer ; statuts En attente / Acceptée / Expirée / Révoquée. **À l'acceptation, l'invité devient automatiquement membre actif du club.**
+- **Contrôle d'accès** : **bloquer / débloquer** un membre (motif facultatif, réversible, par club) ; le membre bloqué voit un écran **« Accès suspendu »**.
+
+**Internationalisation & thème**
+
+- **FR par défaut**, bascule **EN** via sélecteur (cookie `NEXT_LOCALE`, sans changement d'URL).
+- Bascule de **thème clair / sombre**.
+
+**Socle technique**
+
+- Monorepo pnpm + Turborepo, Next.js 16 (App Router), Supabase Postgres avec **RLS sur toutes les tables**, Google Sheets comme source de vérité V0 synchronisée dans Postgres.
+
+> Guide d'utilisation détaillé (membres & trésoriers) : [`docs/GUIDE_UTILISATION.md`](./docs/GUIDE_UTILISATION.md).
+
 ## Prérequis
 
 - Node 20+ (`nvm use 20` ou `fnm use 20`)
