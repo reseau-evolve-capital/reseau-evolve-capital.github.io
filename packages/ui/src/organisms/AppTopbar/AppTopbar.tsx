@@ -39,6 +39,8 @@ export interface AppTopbarProps {
   dateLabel?: string
   /** Slot pour le bouton de bascule de thème (ex. `<ThemeToggle />`). */
   themeToggle?: React.ReactNode
+  /** Slot pour le sélecteur de langue (ex. `<LocaleSwitcher />`), avant le thème. */
+  localeSwitcher?: React.ReactNode
   /** Affiche le logo sur mobile (la sidebar étant cachée). Défaut true. */
   showLogoOnMobile?: boolean
   /** URL du logo de marque (l'app injecte `/logo.jpg`). Fallback SVG si absent. */
@@ -66,6 +68,7 @@ export function AppTopbar({
   syncLabel,
   dateLabel,
   themeToggle,
+  localeSwitcher,
   showLogoOnMobile = true,
   logoSrc,
   labels,
@@ -103,7 +106,7 @@ export function AppTopbar({
         ) : null}
       </div>
 
-      {/* Droite : date, slot thème, menu utilisateur. */}
+      {/* Droite : date, langue, thème, menu utilisateur. */}
       <div className="flex items-center gap-2 md:gap-3">
         {dateLabel ? (
           <span className="hidden md:inline-flex rounded-full border border-border px-3 py-1 text-[13px] text-text-sec">
@@ -111,6 +114,7 @@ export function AppTopbar({
           </span>
         ) : null}
 
+        {localeSwitcher}
         {themeToggle}
 
         <DropdownMenu.Root>

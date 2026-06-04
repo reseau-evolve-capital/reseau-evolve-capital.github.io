@@ -24,6 +24,7 @@ export * from './atoms/Logo'
 export * from './atoms/ProgressBar'
 export * from './atoms/AvatarUpload'
 export * from './atoms/ThemeToggle'
+export * from './atoms/LocaleSwitcher'
 // Molecules
 export * from './molecules/EmptyState'
 export * from './molecules/SparklineMini'
