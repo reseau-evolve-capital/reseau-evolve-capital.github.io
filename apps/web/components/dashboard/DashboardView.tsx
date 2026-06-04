@@ -100,13 +100,16 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
           Données mises à jour {formatRelativeTime(data.syncedAt)}.
         </p>
       )}
-      <SyncBanner
-        syncedAt={data.syncedAt}
-        userRole={data.member.role}
-        isSyncing={sync.isPending}
-        onSync={() => sync.mutate()}
-        errorMessage={syncError}
-      />
+      {/* Le statut de sync est déjà porté par la topbar du shell sur desktop. */}
+      <div className="md:hidden">
+        <SyncBanner
+          syncedAt={data.syncedAt}
+          userRole={data.member.role}
+          isSyncing={sync.isPending}
+          onSync={() => sync.mutate()}
+          errorMessage={syncError}
+        />
+      </div>
       <DashboardHero
         netMarketValue={data.netMarketValue}
         syncedAt={data.syncedAt}

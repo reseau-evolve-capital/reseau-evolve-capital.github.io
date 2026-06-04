@@ -2,21 +2,25 @@
 //
 // Garde-fous :
 //   - authentification via session cookie Supabase → 401
-//   - résolution du club : ?club_id=… sinon dernière adhésion active → 404 si aucun
+//   - résolution du club : ?club_id=… sinon dernière adhésion active → 404 SI AUCUN CLUB
 //   - RLS isole les données par auth.uid() (policy positions: club member read)
-//   - aucune position active → 404 (état empty côté UI)
+//   - club existant mais SANS position active → 200 avec un PortfolioData vide
+//     (`positions: []`). C'est un état nominal (portefeuille vide), pas une erreur :
+//     renvoyer 404 ici polluait la console (FIX-API-001). Le 404 est réservé au
+//     club introuvable ; l'UI dégrade le portefeuille vide vers l'EmptyState.
+//   - vraie erreur de chargement (throw getPortfolioData) → 500
 //
 // IMPORTANT : le client Supabase est créé avec createServerClient (session cookie).
 // JAMAIS de service-role ici — la RLS doit s'appliquer.
 //
-// Réf : PFT-004, ARCHITECTURE.md §1, DATA_MODEL.md §2, CLAUDE.md (RLS).
+// Réf : PFT-004, FIX-API-001, ARCHITECTURE.md §1, DATA_MODEL.md §2, CLAUDE.md (RLS).
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
 import { createServerClient } from '@evolve/data'
 
-import { getPortfolioData, type PortfolioData } from '@/lib/data/portfolio'
+import { getMemberRole, getPortfolioData, type PortfolioData } from '@/lib/data/portfolio'
 
 export const runtime = 'nodejs'
 
@@ -55,8 +59,16 @@ export async function GET(request: Request): Promise<NextResponse> {
   } catch {
     return NextResponse.json({ error: 'Erreur de chargement.' }, { status: 500 })
   }
+
+  // Club existant mais sans position active → portefeuille vide (état nominal).
+  // On renvoie 200 avec un PortfolioData VALIDE (`positions: []`, totaux implicites à 0,
+  // pas de NaN/undefined) plutôt qu'un 404 trompeur. L'UI dégrade vers l'EmptyState.
   if (!data) {
-    return NextResponse.json({ error: 'Données indisponibles.' }, { status: 404 })
+    const userRole = await getMemberRole(supabase, auth.user.id, clubId)
+    const empty: PortfolioData = { clubId, positions: [], syncedAt: null, userRole }
+    return NextResponse.json(empty, {
+      headers: { 'Cache-Control': 'private, no-store' },
+    })
   }
 
   return NextResponse.json(data, {

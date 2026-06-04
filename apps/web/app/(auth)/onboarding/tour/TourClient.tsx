@@ -2,7 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { OnboardingShell, CarouselSlider, SlideCard, Button, Link } from '@evolve/ui'
+import {
+  OnboardingShell,
+  ProgressHeader,
+  CarouselSlider,
+  SlideCard,
+  Button,
+  Link,
+} from '@evolve/ui'
 
 const slides = [
   {
@@ -31,6 +38,9 @@ export function TourClient() {
 
   return (
     <OnboardingShell
+      // Le tour est la dernière partie de l'étape 03 du fil d'onboarding (réf desktop :
+      // « ÉTAPE 03 / 03 »), cohérent avec step-3 (consentements) → indicateur 3/3.
+      header={<ProgressHeader step={3} total={3} />}
       footer={
         <div className="flex flex-col items-center gap-3">
           <Button

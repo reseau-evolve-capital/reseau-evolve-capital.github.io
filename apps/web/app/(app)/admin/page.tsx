@@ -17,9 +17,5 @@ export default async function AdminPage() {
 
   const summary = await getClubSummary(supabase, ctx.clubId, ctx.role)
 
-  return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-6">
-      <AdminDashboardView initialData={summary} />
-    </div>
-  )
+  return <AdminDashboardView initialData={summary} />
 }

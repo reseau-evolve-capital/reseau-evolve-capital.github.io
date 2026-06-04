@@ -1,5 +1,5 @@
-import { LoginForm } from './LoginForm'
+import { LoginScreen } from './LoginScreen'
 
 export default function LoginPage() {
-  return <LoginForm />
+  return <LoginScreen />
 }

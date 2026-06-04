@@ -25,9 +25,7 @@ export default async function DashboardPage() {
 
   const initialData = m?.club_id ? await getDashboardData(supabase, auth.user.id, m.club_id) : null
 
-  return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6">
-      <DashboardView initialData={initialData} />
-    </div>
-  )
+  // Le layout (app) fournit padding + centrage + max-w-[1280px] : pas de wrapper ici
+  // (sinon double largeur/padding + niveau DOM en trop qui décale le conteneur tactile).
+  return <DashboardView initialData={initialData} />
 }

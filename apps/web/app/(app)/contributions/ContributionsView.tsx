@@ -90,6 +90,10 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
 
   const pill = STATUS_PILL[data.status]
 
+  // SyncBanner ne s'affiche que pour les rôles ≥ trésorier (cf. SyncBanner). On reproduit la
+  // garde ici pour ne pas réserver un wrapper vide (et son gap) côté membre sur mobile.
+  const showSyncBanner = data.userRole !== 'member'
+
   return (
     <div className="flex flex-col gap-6" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
       {refreshing && (
@@ -107,58 +111,77 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
         </div>
       </div>
 
-      {/* SyncBanner : masqué pour les membres (rôle « member ») ; visible ≥ trésorier. */}
-      <SyncBanner
-        syncedAt={data.syncedAt}
-        userRole={data.userRole}
-        isSyncing={sync.isPending}
-        onSync={() => sync.mutate()}
-        errorMessage={syncError}
-      />
-
-      {data.status === 'late' && (
-        <div
-          role="alert"
-          className="flex items-start gap-3 rounded-[10px] border border-data-warning bg-data-warning-50 p-4"
-        >
-          <Icon name="TriangleAlert" size={20} className="text-data-warning" aria-hidden="true" />
-          <div className="flex flex-col gap-1">
-            <Text className="font-semibold">
-              Tu as un retard de cotisation de {formatEUR(data.amountDue)}.
-            </Text>
-            <Text variant="caption" color="text-sec" className="normal-case tracking-normal">
-              Rapproche-toi du trésorier de ton club pour régulariser ta situation.
-            </Text>
-          </div>
+      {/* SyncBanner : masqué pour les membres (rôle « member ») ; visible ≥ trésorier.
+          Sur desktop (≥ md), la topbar du shell porte déjà le statut sync → on masque le
+          bandeau in-content pour éviter le doublon. Conservé sur mobile (pas de topbar sync). */}
+      {showSyncBanner && (
+        <div className="md:hidden">
+          <SyncBanner
+            syncedAt={data.syncedAt}
+            userRole={data.userRole}
+            isSyncing={sync.isPending}
+            onSync={() => sync.mutate()}
+            errorMessage={syncError}
+          />
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KPICard title="Total cotisé" value={data.totalContributed} format="eur" />
-        <KPICard title="Nombre de mois" value={data.monthsCount} format="raw" />
-        <KPICard title="Quote-part" value={data.detentionPct} format="pct" />
-      </div>
+      {/* Layout : empilé en mobile, 2 colonnes en desktop (stats à gauche, historique à droite). */}
+      <div className="flex flex-col gap-6 lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-6 lg:items-start">
+        {/* COLONNE GAUCHE — situation, KPIs, pénalités, CTA attestation. */}
+        <div className="flex flex-col gap-4">
+          {data.status === 'late' && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 rounded-[10px] border border-data-warning bg-data-warning-50 p-4"
+            >
+              <Icon
+                name="TriangleAlert"
+                size={20}
+                className="text-data-warning"
+                aria-hidden="true"
+              />
+              <div className="flex flex-col gap-1">
+                <Text className="font-semibold">
+                  Tu as un retard de cotisation de {formatEUR(data.amountDue)}.
+                </Text>
+                <Text variant="caption" color="text-sec" className="normal-case tracking-normal">
+                  Rapproche-toi du trésorier de ton club pour régulariser ta situation.
+                </Text>
+              </div>
+            </div>
+          )}
 
-      <div className="rounded-[10px] border border-border bg-card p-4">
-        <Text className="font-semibold">Pénalités</Text>
-        <Text color="text-sec" className="mt-1 block">
-          {data.penalties > 0
-            ? `${formatEUR(data.penalties)} de pénalités en cours.`
-            : 'Aucune pénalité en cours.'}
-        </Text>
-      </div>
+          {/* KPIs : 3 colonnes en mobile/tablette, empilés en desktop (colonne étroite). */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1">
+            <KPICard title="Total cotisé" value={data.totalContributed} format="eur" />
+            <KPICard title="Nombre de mois" value={data.monthsCount} format="raw" />
+            <KPICard title="Quote-part" value={data.detentionPct} format="pct" />
+          </div>
 
-      <div className="flex flex-col gap-3">
-        <Heading level="h2" className="text-[18px]">
-          Historique mensuel
-        </Heading>
-        <ContributionsTimeline years={data.years} />
-      </div>
+          <div className="rounded-[10px] border border-border bg-card p-4">
+            <Text className="font-semibold">Pénalités</Text>
+            <Text color="text-sec" className="mt-1 block">
+              {data.penalties > 0
+                ? `${formatEUR(data.penalties)} de pénalités en cours.`
+                : 'Aucune pénalité en cours.'}
+            </Text>
+          </div>
 
-      {/* Génération PDF de l'attestation reportée à la V1 (décision E-COT). */}
-      <Button variant="secondary" disabled className="self-start">
-        Télécharger l’attestation de détention (bientôt)
-      </Button>
+          {/* Génération PDF de l'attestation reportée à la V1 (décision E-COT). */}
+          <Button variant="secondary" disabled className="self-start lg:self-stretch">
+            Télécharger l’attestation de détention (bientôt)
+          </Button>
+        </div>
+
+        {/* COLONNE DROITE — historique mensuel (légende + timeline). */}
+        <div className="flex flex-col gap-3">
+          <Heading level="h2" className="text-[18px]">
+            Historique mensuel
+          </Heading>
+          <ContributionsTimeline years={data.years} />
+        </div>
+      </div>
     </div>
   )
 }

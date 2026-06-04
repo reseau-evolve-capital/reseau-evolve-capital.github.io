@@ -48,6 +48,24 @@ export interface PortfolioData {
   userRole: MemberRole
 }
 
+/** Résout le rôle du membre courant dans un club (RLS filtre par auth.uid()).
+ *  Fallback 'member' si aucune adhésion active trouvée. Utilisé pour construire
+ *  un PortfolioData vide cohérent côté route quand le club n'a aucune position. */
+export async function getMemberRole(
+  supabase: ServerClient,
+  userId: string,
+  clubId: string
+): Promise<MemberRole> {
+  const { data: membership } = await supabase
+    .from('memberships')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('club_id', clubId)
+    .eq('is_active', true)
+    .maybeSingle<Pick<MembershipRow, 'role'>>()
+  return membership?.role ?? 'member'
+}
+
 /** Charge les positions actives + rôle membre + fraîcheur du club. RLS filtre par club_id.
  *  Retourne null si aucune position active (état empty). */
 export async function getPortfolioData(
@@ -67,13 +85,7 @@ export async function getPortfolioData(
   if (error) throw error
   if (!rows || rows.length === 0) return null
 
-  const { data: membership } = await supabase
-    .from('memberships')
-    .select('role')
-    .eq('user_id', userId)
-    .eq('club_id', clubId)
-    .eq('is_active', true)
-    .maybeSingle<Pick<MembershipRow, 'role'>>()
+  const userRole = await getMemberRole(supabase, userId, clubId)
 
   // `synced_at` n'est pas dans le Pick PositionRow — cast unique sur le résultat de la query.
   const typedRows = rows as PositionRowWithSync[]
@@ -92,7 +104,7 @@ export async function getPortfolioData(
     clubId,
     positions,
     syncedAt,
-    userRole: membership?.role ?? 'member',
+    userRole,
   }
 }
 

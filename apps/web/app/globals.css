@@ -1,10 +1,21 @@
-/* @import "@evolve/design-system/styles/index.css"; */
-/* Décommenté dans FND-005 une fois le design-system créé */
+/* Entrée CSS unique de l'app membre.
+   En Tailwind v4, `@import "tailwindcss"` + `@theme` + `@source` doivent vivre
+   dans la MÊME entrée traitée pour que les utilitaires token-dépendants soient émis.
+   `index.css` (design-system) apporte tailwindcss + tokens + le bloc @theme ;
+   les `@source` ci-dessous disent où scanner les classes utilisées. */
+@import "@evolve/design-system/styles/index.css";
 
-/* Scan des classes Tailwind dans les composants @evolve/ui */
+/* Classes Tailwind utilisées par @evolve/ui et par l'app elle-même.
+   Résolus relativement à ce fichier (apps/web/app/). */
 @source "../../../packages/ui/src";
+@source "../app";
+@source "../components";
 
 body {
   margin: 0;
   padding: 0;
+  font-family: var(--font-body);
+  /* Surface de page + couleur de texte de base pilotées par le thème (clair/sombre) */
+  background-color: var(--color-bg-page);
+  color: var(--color-text);
 }

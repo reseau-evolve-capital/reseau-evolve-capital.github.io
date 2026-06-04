@@ -28,9 +28,7 @@ export default async function PortfolioPage() {
 
   const initialData = m?.club_id ? await getPortfolioData(supabase, auth.user.id, m.club_id) : null
 
-  return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-6">
-      <PortfolioView initialData={initialData} />
-    </div>
-  )
+  // Le layout (app) fournit déjà padding + centrage + max-w-[1280px] ; pas de wrapper
+  // supplémentaire qui briderait la grille 3 colonnes desktop du PortfolioView.
+  return <PortfolioView initialData={initialData} />
 }

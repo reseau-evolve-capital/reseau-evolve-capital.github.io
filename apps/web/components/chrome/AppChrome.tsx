@@ -1,32 +1,83 @@
 'use client'
-// Chrome applicatif câblé pour les écrans (app) : branche le `<Link>` Next, calcule
-// l'onglet actif depuis `usePathname()` et gère la déconnexion via Supabase.
+// Chrome applicatif câblé pour les écrans (app).
 //
-// Deux composants client distincts (et NON un objet de JSX renvoyé à un composant
-// serveur) pour respecter la frontière RSC : `AppChromeHeader` (en-tête + menu)
-// et `AppChromeBottom` (barre mobile).
+// Shell desktop fidèle à la réf : SIDEBAR gauche (nav + carte CLUB ACTIF) +
+// TOPBAR (sync + date + toggle thème + menu utilisateur). Sur mobile : la sidebar
+// et la topbar sync/date se masquent, la TOPBAR montre logo + menu, et la BottomNav
+// (3 onglets, décision V0) prend le relais de la navigation.
+//
+// Composants client distincts pour respecter la frontière RSC : la sidebar et la
+// topbar reçoivent leurs données (user, club, sync, date) depuis le layout serveur.
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { AppHeader, BottomNav, type AppHeaderUser, type NavItem } from '@evolve/ui'
+import {
+  Sidebar,
+  AppTopbar,
+  BottomNav,
+  ThemeToggle,
+  type AppHeaderUser,
+  type NavItem,
+  type SidebarClub,
+} from '@evolve/ui'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/dashboard', icon: 'LayoutDashboard' },
+/** Nav latérale desktop — libellés alignés sur la réf. */
+const SIDEBAR_ITEMS: NavItem[] = [
+  { label: 'Tableau de bord', href: '/dashboard', icon: 'LayoutDashboard' },
+  { label: 'Portefeuille du club', href: '/portfolio', icon: 'ChartPie' },
+  { label: 'Mes cotisations', href: '/contributions', icon: 'Calendar' },
+  { label: 'Réseau des clubs', href: '#', icon: 'Waypoints', disabled: true },
+]
+
+/** BottomNav mobile — 3 onglets (décision V0), libellés courts. */
+const BOTTOM_ITEMS: NavItem[] = [
+  { label: 'Tableau', href: '/dashboard', icon: 'LayoutDashboard' },
   { label: 'Portefeuille', href: '/portfolio', icon: 'ChartPie' },
   { label: 'Cotisations', href: '/contributions', icon: 'Calendar' },
 ]
 
-/** Détermine l'onglet actif : préfixe du pathname courant. */
-function resolveActiveHref(pathname: string | null): string {
-  if (!pathname) return NAV_ITEMS[0]!.href
-  const match = NAV_ITEMS.find(
-    (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
+/** Onglet actif : correspondance exacte ou préfixe du pathname courant. */
+function resolveActiveHref(pathname: string | null, items: NavItem[]): string {
+  const fallback = items[0]?.href ?? '/dashboard'
+  if (!pathname) return fallback
+  const match = items.find(
+    (item) => !item.disabled && (pathname === item.href || pathname.startsWith(`${item.href}/`))
   )
-  return match?.href ?? NAV_ITEMS[0]!.href
+  return match?.href ?? fallback
 }
 
-export function AppChromeHeader({ user, isStaff }: { user: AppHeaderUser; isStaff: boolean }) {
+export function AppChromeSidebar({
+  isStaff,
+  clubActif,
+}: {
+  isStaff: boolean
+  clubActif?: SidebarClub
+}) {
   const pathname = usePathname()
+  const items: NavItem[] = isStaff
+    ? [...SIDEBAR_ITEMS, { label: 'Espace trésorier', href: '/admin', icon: 'ShieldCheck' }]
+    : SIDEBAR_ITEMS
+  return (
+    <Sidebar
+      items={items}
+      activeHref={resolveActiveHref(pathname, items)}
+      linkComponent={Link}
+      clubActif={clubActif}
+    />
+  )
+}
+
+export function AppChromeTopbar({
+  user,
+  isStaff,
+  syncLabel,
+  dateLabel,
+}: {
+  user: AppHeaderUser
+  isStaff: boolean
+  syncLabel?: string
+  dateLabel?: string
+}) {
   const router = useRouter()
   const supabase = useSupabase()
 
@@ -36,9 +87,7 @@ export function AppChromeHeader({ user, isStaff }: { user: AppHeaderUser; isStaf
   }
 
   return (
-    <AppHeader
-      items={NAV_ITEMS}
-      activeHref={resolveActiveHref(pathname)}
+    <AppTopbar
       user={user}
       linkComponent={Link}
       canAccessAdmin={isStaff}
@@ -47,6 +96,9 @@ export function AppChromeHeader({ user, isStaff }: { user: AppHeaderUser; isStaf
       onLogout={() => {
         void handleLogout()
       }}
+      syncLabel={syncLabel}
+      dateLabel={dateLabel}
+      themeToggle={<ThemeToggle />}
     />
   )
 }
@@ -54,6 +106,10 @@ export function AppChromeHeader({ user, isStaff }: { user: AppHeaderUser; isStaf
 export function AppChromeBottom() {
   const pathname = usePathname()
   return (
-    <BottomNav items={NAV_ITEMS} activeHref={resolveActiveHref(pathname)} linkComponent={Link} />
+    <BottomNav
+      items={BOTTOM_ITEMS}
+      activeHref={resolveActiveHref(pathname, BOTTOM_ITEMS)}
+      linkComponent={Link}
+    />
   )
 }

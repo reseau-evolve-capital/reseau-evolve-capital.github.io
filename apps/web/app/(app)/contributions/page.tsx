@@ -30,9 +30,6 @@ export default async function ContributionsPage() {
     ? await getContributionsData(supabase, auth.user.id, m.club_id)
     : null
 
-  return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6">
-      <ContributionsView initialData={initialData} />
-    </div>
-  )
+  // Largeur/padding gérés par le layout (app) ; le 2 colonnes desktop vit dans la vue.
+  return <ContributionsView initialData={initialData} />
 }

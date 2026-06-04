@@ -222,6 +222,35 @@ export async function getClubMembers(
   })
 }
 
+/** Priorité d'agrégation d'un statut mensuel au niveau CLUB : on remonte le plus
+ *  « actionnable » (retard > en attente > payé > exempté) pour la cellule du mois. */
+const MONTH_STATUS_RANK: Record<MonthStatus, number> = { late: 4, due: 3, paid: 2, exempt: 1 }
+
+/** Agrège les mois en doublon par période (année+mois) en une seule entrée.
+ *  Vue club « tous les membres » : la requête renvoie 1 ligne par membre ET par mois ;
+ *  la timeline (1 cellule/mois) exige des périodes uniques (sinon clés React dupliquées
+ *  + cellules ×N). Statut = le plus actionnable ; montant cumulé ; `paidAt` indéterminé
+ *  en agrégat. No-op quand il n'y a qu'une ligne par mois (vue filtrée par membre). */
+function aggregateMonthsByPeriod(months: MonthInput[]): MonthInput[] {
+  const byPeriod = new Map<string, MonthInput>()
+  for (const m of months) {
+    const key = `${m.year}-${m.month}`
+    const prev = byPeriod.get(key)
+    if (!prev) {
+      byPeriod.set(key, { ...m })
+      continue
+    }
+    byPeriod.set(key, {
+      year: m.year,
+      month: m.month,
+      amount: prev.amount + m.amount,
+      status: MONTH_STATUS_RANK[m.status] > MONTH_STATUS_RANK[prev.status] ? m.status : prev.status,
+      paidAt: null,
+    })
+  }
+  return [...byPeriod.values()]
+}
+
 /** Timeline + stats des cotisations du club (tous membres), filtrable par membership.
  *  Réutilise buildTimelineYears (contributions.ts). RLS « cm: treasurer read ». */
 export async function getClubContributionsTimeline(
@@ -256,7 +285,9 @@ export async function getClubContributionsTimeline(
     paidAt: r.paid_at,
   }))
   return {
-    years: buildTimelineYears(months),
+    // Timeline = périodes uniques (agrégées au niveau club si « tous les membres »).
+    years: buildTimelineYears(aggregateMonthsByPeriod(months)),
+    // Stats = tous les versements individuels (total/nombre/moyenne du club).
     stats: computeContribStats(months.map((m) => m.amount)),
   }
 }
