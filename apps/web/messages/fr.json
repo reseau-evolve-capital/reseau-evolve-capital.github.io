@@ -151,6 +151,10 @@
         "title": "Le réseau",
         "body": "Échange avec les membres du réseau Evolve Capital et développe des synergies au sein de la communauté."
       }
+    },
+    "invitedWelcome": {
+      "badge": "Vous avez été invité",
+      "text": "Bienvenue ! Finalisez votre profil pour accéder à votre espace."
     }
   },
   "dashboard": {
@@ -375,7 +379,42 @@
         "description": "Ce club n'a pas encore de membre correspondant à ce filtre."
       },
       "sortLabel": "Trier par {column}{direction, select, asc {, tri croissant} desc {, tri décroissant} other {}}",
-      "detentionBarLabel": "Quote-part de {name}"
+      "detentionBarLabel": "Quote-part de {name}",
+      "access": {
+        "column": "Accès",
+        "active": "Actif",
+        "locked": "Bloqué",
+        "invited": "Invité",
+        "actions": {
+          "lock": "Bloquer l'accès",
+          "unlock": "Débloquer",
+          "viewProfile": "Voir la fiche",
+          "menu": "Actions"
+        },
+        "lockModal": {
+          "title": "Bloquer l'accès de {name} ?",
+          "description": "Cette personne sera déconnectée immédiatement et ne pourra plus accéder à l'espace membre jusqu'au déblocage. Cette action est réversible.",
+          "reasonLabel": "Raison (optionnel)",
+          "reasonPlaceholder": "Choisir une raison",
+          "reasons": {
+            "unpaid": "Impayé",
+            "left": "Départ du club",
+            "suspended": "Suspendu temporairement",
+            "other": "Autre"
+          },
+          "otherPlaceholder": "Précisez la raison…",
+          "cancel": "Annuler",
+          "confirm": "Bloquer l'accès"
+        },
+        "unlockModal": {
+          "title": "Débloquer l'accès de {name} ?",
+          "description": "Le membre pourra de nouveau accéder à l'espace membre.",
+          "confirm": "Débloquer"
+        },
+        "lockSuccess": "Accès bloqué.",
+        "unlockSuccess": "Accès rétabli.",
+        "error": "Action impossible."
+      }
     },
     "cotisations": {
       "title": "Cotisations du club",
@@ -394,7 +433,55 @@
     "meta": {
       "title": "Admin — Evolve Capital",
       "cotisationsTitle": "Cotisations — Admin Evolve Capital",
-      "membersTitle": "Membres — Admin Evolve Capital"
+      "membersTitle": "Membres — Admin Evolve Capital",
+      "invitationsTitle": "Invitations — Admin Evolve Capital"
+    },
+    "tabs": {
+      "dashboard": "Tableau de bord",
+      "members": "Membres",
+      "cotisations": "Cotisations",
+      "invitations": "Invitations",
+      "navLabel": "Navigation espace trésorier"
+    },
+    "invitations": {
+      "title": "Invitations",
+      "subtitle": "Invite de nouveaux membres au club. Chaque lien d'accès est nominatif et expire automatiquement.",
+      "inviteCta": "Inviter un membre",
+      "form": {
+        "placeholder": "email@exemple.fr",
+        "submit": "Envoyer l'invitation",
+        "note": "Un lien valable 72 h sera envoyé à cette adresse.",
+        "success": "Invitation créée. Copiez le lien d'accès ci-dessous.",
+        "errorInvalid": "Adresse email invalide.",
+        "errorDuplicate": "Une invitation est déjà en attente pour cet email.",
+        "errorGeneric": "Impossible de créer l'invitation."
+      },
+      "columns": {
+        "email": "Email",
+        "sentAt": "Date d'envoi",
+        "expiresAt": "Expire le",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "En attente",
+        "accepted": "Acceptée",
+        "expired": "Expirée",
+        "revoked": "Révoquée"
+      },
+      "actions": {
+        "resend": "Renvoyer l'invitation",
+        "revoke": "Révoquer l'invitation",
+        "copyLink": "Copier le lien",
+        "linkCopied": "Lien copié"
+      },
+      "empty": {
+        "title": "Aucune invitation.",
+        "description": "Invitez votre premier membre pour démarrer."
+      },
+      "linkLabel": "Lien d'accès (à transmettre au membre)",
+      "linkNote": "L'envoi automatique par email arrivera prochainement.",
+      "tableLabel": "Liste des invitations"
     }
   },
   "errors": {
@@ -424,6 +511,9 @@
       },
       "cotisations": {
         "title": "On n'a pas pu charger les cotisations du club. Réessaie ?"
+      },
+      "invitations": {
+        "title": "Impossible de charger les invitations."
       }
     },
     "nav": {
@@ -434,5 +524,12 @@
     "title": "Page introuvable",
     "description": "Cette page n’existe pas ou a été déplacée. Pas d’inquiétude, on te ramène en terrain connu.",
     "backToDashboard": "Retour au tableau de bord"
+  },
+  "accessSuspended": {
+    "metaTitle": "Accès suspendu — Evolve Capital",
+    "title": "Votre accès a été suspendu.",
+    "description": "Votre trésorier a temporairement suspendu votre accès à l'espace membre. Cela peut être dû à une cotisation en attente ou à un autre motif. Contactez-le pour en savoir plus et rétablir votre accès.",
+    "contactCta": "Contacter mon trésorier",
+    "signOut": "Me déconnecter"
   }
 }

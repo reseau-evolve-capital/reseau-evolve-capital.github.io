@@ -151,6 +151,10 @@
         "title": "The network",
         "body": "Connect with members of the Evolve Capital network and build synergies within the community."
       }
+    },
+    "invitedWelcome": {
+      "badge": "You've been invited",
+      "text": "Welcome! Complete your profile to access your space."
     }
   },
   "dashboard": {
@@ -375,7 +379,42 @@
         "description": "This club has no member matching this filter yet."
       },
       "sortLabel": "Sort by {column}{direction, select, asc {, ascending} desc {, descending} other {}}",
-      "detentionBarLabel": "{name}'s stake"
+      "detentionBarLabel": "{name}'s stake",
+      "access": {
+        "column": "Access",
+        "active": "Active",
+        "locked": "Locked",
+        "invited": "Invited",
+        "actions": {
+          "lock": "Lock access",
+          "unlock": "Unlock",
+          "viewProfile": "View profile",
+          "menu": "Actions"
+        },
+        "lockModal": {
+          "title": "Lock access for {name}?",
+          "description": "This person will be signed out immediately and won't be able to access the member area until unlocked. This action is reversible.",
+          "reasonLabel": "Reason (optional)",
+          "reasonPlaceholder": "Choose a reason",
+          "reasons": {
+            "unpaid": "Unpaid",
+            "left": "Left the club",
+            "suspended": "Temporarily suspended",
+            "other": "Other"
+          },
+          "otherPlaceholder": "Specify the reason…",
+          "cancel": "Cancel",
+          "confirm": "Lock access"
+        },
+        "unlockModal": {
+          "title": "Unlock access for {name}?",
+          "description": "The member will be able to access the member area again.",
+          "confirm": "Unlock"
+        },
+        "lockSuccess": "Access locked.",
+        "unlockSuccess": "Access restored.",
+        "error": "Action failed."
+      }
     },
     "cotisations": {
       "title": "Club contributions",
@@ -394,7 +433,55 @@
     "meta": {
       "title": "Admin — Evolve Capital",
       "cotisationsTitle": "Contributions — Admin Evolve Capital",
-      "membersTitle": "Members — Admin Evolve Capital"
+      "membersTitle": "Members — Admin Evolve Capital",
+      "invitationsTitle": "Invitations — Evolve Capital Admin"
+    },
+    "tabs": {
+      "dashboard": "Dashboard",
+      "members": "Members",
+      "cotisations": "Contributions",
+      "invitations": "Invitations",
+      "navLabel": "Treasurer area navigation"
+    },
+    "invitations": {
+      "title": "Invitations",
+      "subtitle": "Invite new members to the club. Each access link is personal and expires automatically.",
+      "inviteCta": "Invite a member",
+      "form": {
+        "placeholder": "email@example.com",
+        "submit": "Send invitation",
+        "note": "A link valid for 72 h will be sent to this address.",
+        "success": "Invitation created. Copy the access link below.",
+        "errorInvalid": "Invalid email address.",
+        "errorDuplicate": "An invitation is already pending for this email.",
+        "errorGeneric": "Could not create the invitation."
+      },
+      "columns": {
+        "email": "Email",
+        "sentAt": "Sent on",
+        "expiresAt": "Expires on",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "actions": {
+        "resend": "Resend invitation",
+        "revoke": "Revoke invitation",
+        "copyLink": "Copy link",
+        "linkCopied": "Link copied"
+      },
+      "empty": {
+        "title": "No invitations.",
+        "description": "Invite your first member to get started."
+      },
+      "linkLabel": "Access link (share it with the member)",
+      "linkNote": "Automatic email delivery is coming soon.",
+      "tableLabel": "Invitations list"
     }
   },
   "errors": {
@@ -424,6 +511,9 @@
       },
       "cotisations": {
         "title": "We couldn't load the club contributions. Try again?"
+      },
+      "invitations": {
+        "title": "Could not load invitations."
       }
     },
     "nav": {
@@ -434,5 +524,12 @@
     "title": "Page not found",
     "description": "This page doesn't exist or has been moved. No worries, we'll bring you back to familiar ground.",
     "backToDashboard": "Back to dashboard"
+  },
+  "accessSuspended": {
+    "metaTitle": "Access suspended — Evolve Capital",
+    "title": "Your access has been suspended.",
+    "description": "Your treasurer has temporarily suspended your access to the member area. This may be due to an outstanding contribution or another reason. Contact them to learn more and restore your access.",
+    "contactCta": "Contact my treasurer",
+    "signOut": "Sign out"
   }
 }
