@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react'
-import { expect, userEvent, within } from 'storybook/test'
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { MembersList, type MemberRow } from './MembersList'
 
 const MEMBERS: MemberRow[] = [
@@ -12,6 +12,7 @@ const MEMBERS: MemberRow[] = [
     detentionPct: 0.18,
     monthsCount: 24,
     status: 'ok',
+    accessStatus: 'active',
   },
   {
     id: '2',
@@ -22,6 +23,7 @@ const MEMBERS: MemberRow[] = [
     detentionPct: 0.05,
     monthsCount: 12,
     status: 'late',
+    accessStatus: 'locked',
   },
   {
     id: '3',
@@ -32,6 +34,7 @@ const MEMBERS: MemberRow[] = [
     detentionPct: 0.03,
     monthsCount: 8,
     status: 'pending',
+    accessStatus: 'active',
   },
 ]
 
@@ -86,5 +89,31 @@ export const Empty: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     await expect(canvas.getByText('Aucun membre')).toBeInTheDocument()
+  },
+}
+
+/** Avec callbacks d'accès (ADM-007) : colonne « Accès » + menu d'actions « ··· ». */
+export const WithActions: Story = {
+  args: {
+    members: MEMBERS,
+    onLockMember: fn(),
+    onUnlockMember: fn(),
+    onViewMember: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const body = within(canvasElement.ownerDocument.body)
+
+    // En-tête « Accès » présent
+    await expect(canvas.getByRole('columnheader', { name: 'Accès' })).toBeInTheDocument()
+    // Pastilles d'accès
+    await expect(canvas.getAllByRole('status', { name: 'Actif' }).length).toBeGreaterThan(0)
+    await expect(canvas.getByRole('status', { name: 'Bloqué' })).toBeInTheDocument()
+
+    // Ouvre le menu d'actions de la 1re ligne (AFOUDAH, actif) → « Bloquer l'accès »
+    const triggers = canvas.getAllByRole('button', { name: 'Actions' })
+    await userEvent.click(triggers[0]!)
+    await userEvent.click(await body.findByRole('menuitem', { name: /Bloquer l'accès/i }))
+    await waitFor(() => expect(args.onLockMember).toHaveBeenCalledTimes(1))
   },
 }

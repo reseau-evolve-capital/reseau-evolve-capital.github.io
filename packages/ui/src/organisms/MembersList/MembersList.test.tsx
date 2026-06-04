@@ -1,8 +1,18 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { axe, toHaveNoViolations } from 'jest-axe'
 import { MembersList, type MemberRow } from './MembersList'
 
 expect.extend(toHaveNoViolations)
+
+// Radix DropdownMenu (menu d'actions) s'appuie sur des API pointer absentes de jsdom.
+beforeAll(() => {
+  if (!Element.prototype.hasPointerCapture) Element.prototype.hasPointerCapture = () => false
+  if (!Element.prototype.setPointerCapture) Element.prototype.setPointerCapture = () => undefined
+  if (!Element.prototype.releasePointerCapture)
+    Element.prototype.releasePointerCapture = () => undefined
+  if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => undefined
+})
 
 const MEMBERS: MemberRow[] = [
   {
@@ -14,6 +24,7 @@ const MEMBERS: MemberRow[] = [
     detentionPct: 0.18,
     monthsCount: 24,
     status: 'ok',
+    accessStatus: 'active',
   },
   {
     id: '2',
@@ -24,6 +35,7 @@ const MEMBERS: MemberRow[] = [
     detentionPct: 0.05,
     monthsCount: 12,
     status: 'late',
+    accessStatus: 'locked',
   },
   {
     id: '3',
@@ -34,6 +46,7 @@ const MEMBERS: MemberRow[] = [
     detentionPct: 0.03,
     monthsCount: 8,
     status: null,
+    accessStatus: 'active',
   },
 ]
 
@@ -78,6 +91,53 @@ describe('MembersList — rendu', () => {
   it('état vide → EmptyState « Aucun membre »', () => {
     render(<MembersList members={[]} />)
     expect(screen.getByText('Aucun membre')).toBeInTheDocument()
+  })
+})
+
+describe('MembersList — colonne Accès (ADM-007)', () => {
+  it('rend l’en-tête « Accès » juste après « Statut »', () => {
+    render(<MembersList members={MEMBERS} />)
+    const headers = screen.getAllByRole('columnheader').map((h) => h.textContent)
+    const statutIdx = headers.indexOf('Statut')
+    const accesIdx = headers.indexOf('Accès')
+    expect(statutIdx).toBeGreaterThan(-1)
+    expect(accesIdx).toBe(statutIdx + 1)
+  })
+
+  it('rend une pastille d’accès par membre (Actif / Bloqué)', () => {
+    render(<MembersList members={MEMBERS} />)
+    expect(screen.getByRole('status', { name: 'Bloqué' })).toBeInTheDocument()
+    expect(screen.getAllByRole('status', { name: 'Actif' }).length).toBe(2)
+  })
+
+  it('rétro-compatible : sans callback d’accès, AUCUN menu d’actions', () => {
+    render(<MembersList members={MEMBERS} />)
+    expect(screen.queryByRole('button', { name: 'Actions' })).toBeNull()
+  })
+
+  it('avec callbacks : menu « ··· » par ligne + onLockMember(row)', async () => {
+    const u = userEvent.setup()
+    const onLockMember = vi.fn()
+    render(<MembersList members={MEMBERS} onLockMember={onLockMember} onViewMember={() => {}} />)
+    const triggers = screen.getAllByRole('button', { name: 'Actions' })
+    expect(triggers).toHaveLength(3)
+    // 1re ligne (tri desc total) = AFOUDAH, accessStatus active → « Bloquer l'accès »
+    await u.click(triggers[0]!)
+    await u.click(await screen.findByRole('menuitem', { name: /Bloquer l'accès/i }))
+    expect(onLockMember).toHaveBeenCalledTimes(1)
+    expect(onLockMember.mock.calls[0]![0]).toMatchObject({ fullName: 'AFOUDAH Ruben' })
+  })
+
+  it('ligne bloquée : le menu propose « Débloquer » → onUnlockMember(row)', async () => {
+    const u = userEvent.setup()
+    const onUnlockMember = vi.fn()
+    render(<MembersList members={MEMBERS} onUnlockMember={onUnlockMember} />)
+    // BAMBA Inès (locked) est la 2e ligne (total 1200, tri desc)
+    const triggers = screen.getAllByRole('button', { name: 'Actions' })
+    await u.click(triggers[1]!)
+    await u.click(await screen.findByRole('menuitem', { name: /Débloquer/i }))
+    expect(onUnlockMember).toHaveBeenCalledTimes(1)
+    expect(onUnlockMember.mock.calls[0]![0]).toMatchObject({ fullName: 'BAMBA Inès' })
   })
 })
 
