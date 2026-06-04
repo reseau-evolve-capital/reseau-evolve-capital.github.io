@@ -276,7 +276,11 @@
   "contributions": {
     "title": "Mes cotisations",
     "historyTitle": "Historique mensuel",
-    "attestationCta": "Télécharger l’attestation de détention (bientôt)",
+    "attestation": {
+      "cta": "Télécharger l’attestation de détention",
+      "loading": "Génération en cours…",
+      "error": "La génération de l’attestation a échoué. Réessaie ?"
+    },
     "status": {
       "ok": "Situation régulière",
       "pending": "En attente",

@@ -276,7 +276,11 @@
   "contributions": {
     "title": "My contributions",
     "historyTitle": "Monthly history",
-    "attestationCta": "Download holding certificate (soon)",
+    "attestation": {
+      "cta": "Download holding certificate",
+      "loading": "Generating…",
+      "error": "Certificate generation failed. Try again?"
+    },
     "status": {
       "ok": "Up to date",
       "pending": "Pending",

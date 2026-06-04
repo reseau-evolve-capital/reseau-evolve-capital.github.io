@@ -44,8 +44,43 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
   const { data, isError } = useContributions(initialData)
   const queryClient = useQueryClient()
   const [refreshing, setRefreshing] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [attestationError, setAttestationError] = useState<string | null>(null)
   const startY = useRef<number | null>(null)
   const sync = useSyncStatus(data?.clubId ?? null)
+
+  // Télécharge le PDF d'attestation : fetch → blob → ancre temporaire (filename depuis l'en-tête).
+  // En l'absence de ToastProvider monté dans apps/web, l'erreur est surfacée inline sous le CTA.
+  async function downloadAttestation() {
+    if (downloading) return
+    setAttestationError(null)
+    setDownloading(true)
+    try {
+      const clubId = data?.clubId
+      const qs = clubId ? `?clubId=${encodeURIComponent(clubId)}` : ''
+      const res = await fetch(`/api/attestation/detention${qs}`, {
+        headers: { Accept: 'application/pdf' },
+      })
+      if (!res.ok) throw new Error('attestation_failed')
+      const blob = await res.blob()
+      // Filename depuis Content-Disposition, fallback déterministe.
+      const disposition = res.headers.get('Content-Disposition') ?? ''
+      const match = /filename="?([^"]+)"?/.exec(disposition)
+      const filename = match?.[1] ?? 'attestation-detention.pdf'
+      const objectUrl = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = objectUrl
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(objectUrl)
+    } catch {
+      setAttestationError(t('attestation.error'))
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   async function refresh() {
     setRefreshing(true)
@@ -168,10 +203,31 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
             </Text>
           </div>
 
-          {/* Génération PDF de l'attestation reportée à la V1 (décision E-COT). */}
-          <Button variant="secondary" disabled className="self-start lg:self-stretch">
-            {t('attestationCta')}
-          </Button>
+          {/* CTA actif — télécharge l'attestation de détention en PDF (NTF-004).
+              loading + erreur inline (apps/web ne monte pas de ToastProvider → fallback gracieux). */}
+          <div className="flex flex-col gap-2 lg:self-stretch">
+            <Button
+              variant="secondary"
+              onClick={() => void downloadAttestation()}
+              disabled={downloading}
+              className="self-start lg:self-stretch"
+            >
+              {downloading ? (
+                <span className="inline-flex items-center gap-2">
+                  <Spinner size={16} /> {t('attestation.loading')}
+                </span>
+              ) : (
+                t('attestation.cta')
+              )}
+            </Button>
+            {attestationError && (
+              <div role="alert">
+                <Text variant="caption" className="text-data-warning-strong">
+                  {attestationError}
+                </Text>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* COLONNE DROITE — historique mensuel (légende + timeline). */}
