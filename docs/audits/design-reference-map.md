@@ -1,0 +1,125 @@
+# Design Reference Map — Evolve Capital (app membre `apps/web`)
+
+> **Artefact persistant.** Carte « écran d'export ↔ route de l'app » + notes de direction graphique.
+> Source de vérité graphique : `REC/standalone-exports/*.html` (auto-suffisants, rendus hors-ligne).
+> Source de vérité fonctionnelle : `REC/Phase2_Handoff/docs/screens/*`, `design.md`, tickets `BACKLOG_E-*`.
+> Réutilisable par les futurs audits ET les sessions d'implémentation. **Mettre à jour, ne pas régénérer.**
+>
+> Dernière mise à jour : 2026-06-02 (audit initial). Captures de réf sous `docs/audits/shots/ref-*`.
+
+## Fondations / tokens (réf : `ref-foundations-fullpage.jpeg`)
+
+- **Typo** : `MADE Tommy Soft` (Black 900 / Bold 700) pour les héros & gros chiffres (`text.display`, `text.h1`) ; `Plus Jakarta Sans` pour le corps ; `IBM Plex Mono` pour les refs/labels techniques (uppercase, letter-spacing large, ex `TA QUOTE-PART`, `SYNCHRONISÉ IL Y A 14 MIN`, symboles boursiers).
+- **Couleurs** :
+  - `brand.yellow` (+ `brand.yellow.light`) = accent unique (logo, onglet actif, surlignage de mot, puce de notif, timeline cotisations « payé »).
+  - `brand.red` (#E93E3A) = **branding uniquement, JAMAIS une perte**.
+  - `data.positive` (vert) = gain / variation positive (TrendBadge, sparkline).
+  - `data.negative` (#C53030, rouge sombre ≠ brand.red) = perte / impayé / retard.
+  - `data.neutral` (gris), `data.warning` (orange).
+  - Neutres 12 steps ; surfaces : fond application (≈ N-50/blanc cassé), carte (`surface.card`), carte élevée, overlay.
+- **Radius** : `sm` 6px · `md` 10px · `lg` 14px. **Ombres** : `card` · `popover` · `modal` (douces, diffuses). **Motion** : `ease.fast` 120ms · `std` 200ms · `slow` 320ms · `decelerate` ; sparkline draw-on 500ms ; apparition fade+translateY. `prefers-reduced-motion` à respecter.
+- **Grille** : Base 4. Container desktop 1280 (max), 12 colonnes ; mobile 4 col. Breakpoint membre prioritaire = **375×812**.
+- **Light + Dark (RÉFLEXE D'AUDIT)** : la plupart des exports exposent un **toggle LIGHT/DARK** (en haut de page, et parfois un sélecteur CLAIR/SOMBRE _intégré à chaque écran_ — ex. login desktop ; les deux pilotent le même état). **Avant de conclure une comparaison rendu↔réf, basculer light ET dark** (`browser_click` sur le bouton DARK) : un écran capturé par défaut peut être dans l'autre thème → faux positif. Capturer les deux quand l'écran supporte les deux thèmes. Le **dashboard desktop de réf** est capturé en DARK ; mobile en LIGHT. Si l'app livrée est Light-only, ne pas flaguer l'absence de dark mode comme bug (à confirmer) — mais le **toggle clair/sombre fait partie de l'intention** des écrans de connexion desktop.
+
+---
+
+## Écrans authentifiés (espace membre)
+
+### `/dashboard` — Tableau de bord membre (P0)
+
+- **Réf** : `ref-mobile-dashboard.jpeg`, `ref-desktop-dashboard.jpeg` (`Dashboard - Standalone.html`).
+- **Structure mobile** (ordre vertical) : header logo + avatar → ligne mono `● SYNCHRONISÉ IL Y A 14 MIN` → label `TA QUOTE-PART` → **hero chiffre** (`65 574,87 €`, Tommy Soft Black, € en gris) → TrendBadge vert `↑ +1,2 % · +773 €` + `hier · 17.04` → **sparkline 30j** vert dégradé (axes `19 MARS / 30 J / 18 AVR`) → card **Statut cotisation** (badge `✓ Régulière`, prochaine échéance) → card **Portefeuille du club** (TrendBadge, gros chiffre `1,23 M€`, club + `voir le détail →`) → **BottomNav**.
+- **Desktop** : sidebar gauche (logo, nav `Tableau de bord`/`Portefeuille du club`/`Mes cotisations`/`Réseau des clubs`/`Profil`, onglet actif = pastille jaune, carte « CLUB ACTIF » en bas) ; topbar `SYNCHRONISÉ…` + date + avatar ; colonne centrale hero + bloc `ÉVOLUTION · 30 JOURS` avec **toggle 7J/30J/90J/1A/MAX** + grand graphe ; colonne droite empilée : Statut cotisation, Portefeuille du club (mini-barres mensuelles), Annonces du club (`V1`).
+- **Direction graphique** : hero énorme prioritaire (« quote-part en 3 secondes »), data.positive sur variations, aucun rouge brand. AAA ≥ 7:1 sur le hero ; `aria-live` sur la valeur ; h1 = « Ta quote-part ».
+- **Décisions V0 actées (mémoire — NE PAS flaguer)** : variation/sparkline volontairement non alimentées en V0 ; book value ; **BottomNav 3 onglets** (la réf en montre 5 → écart attendu, pas un bug).
+
+### `/portfolio` — Portefeuille du club
+
+- **Réf** : `ref-mobile-portfolio.jpeg`, `ref-desktop-portfolio.jpeg` (Screens / Screens-Desktop, écran D/A).
+- **Desktop** : 3 colonnes — sidebar nav | colonne filtres (`SECTEUR` : Tous/Tech/Santé/Autres avec compteurs ; `DEVISE` : EUR/USD/DKK cases cochées + compteurs ; carte `DERNIÈRE SYNC`) | centre : titre `Portefeuille` + sous-titre club·positions, **hero valeur** `1 234 568 €` + TrendBadge `↑ +0,8 % · +9 820 € AUJOURD'HUI`, **table 8 colonnes triables** (Titre · Symbole · Parts · PRU · Cours · Valeur · Gain/Loss · Alloc., flèches de tri `↕`), badges secteur (TECH/SANTÉ/AUTRES) ; footer `Affiche 8 sur 15 — voir toutes` + `HISTORIQUE DES TRANSACTIONS →` | colonne droite : `RÉPARTITION SECTORIELLE` **donut 3 secteurs** (centre « 15 positions / 3 secteurs »), légende Tech 72 % / Santé 15 % / Autres 13 %, carte `GAIN / PERTE TOTAL` (vert).
+- **Mobile** : hero 40px (< 54 du dashboard), donut 3 secteurs, liste de positions (cartes), **LVMH en perte rendu en `data.negative`** (cas test du rouge dataviz). BottomNav.
+- **Direction graphique** : densité tabulaire maîtrisée, mono pour symboles/chiffres, tri visible. Perte = data.negative jamais brand.red.
+- **Décisions V0 actées** : donut/filtre **par SECTEUR** ; valo live + fallback snapshot ; `pct÷100`.
+
+### `/contributions` — Mes cotisations
+
+- **Réf** : `ref-mobile-contributions.jpeg`, `ref-desktop-contributions.jpeg` (écran E/B).
+- **Desktop** : 2 colonnes — gauche stats : carte `✓ SITUATION RÉGULIÈRE` (« Tu es à jour », prochaine échéance), KPI `TOTAL COTISÉ` 28 000 €, `NOMBRE DE MOIS` 103, `QUOTE-PART` 8,99 %, encart « Aucune pénalité en cours », CTA `TÉLÉCHARGER L'ATTESTATION DE DÉTENTION` (badge `V1`) ; droite : `HISTORIQUE MENSUEL · 9 ANNÉES`, **timeline années × 12 mois** (labels JAN…DÉC), légende `Payé / En cours / Retard / Exempté / À venir`, cases **jaune Evolve** pour payé (pas vert), case noire = mois courant en cours, case orange `!` = retard, grisé = exempté/à venir, note `Règle en vigueur depuis janvier 2023`.
+- **Mobile** : « Mes cotisations », situation régulière + 3 KPI + timeline annuelle en jaune Evolve.
+- **Direction graphique** : timeline = jaune Evolve (PAS vert GitHub) — explicite dans la note de réf. CTA attestation `V1`.
+- **Décisions V0 actées (mémoire)** : suit **l'écran 04** (≠ backlog) ; PDF attestation → V1 ; email → E-NTF ; organism `ContributionsTimeline` réutilise `CotisationMonth`. Dette connue : tap-target 24px < 44px.
+
+---
+
+## Parcours d'entrée & onboarding
+
+### `/login` — Magic link
+
+- **Réf** : `ref-mobile-login.jpeg` (écran A, mobile) + **`ref-desktop-login.jpeg`** (+ `ref-desktop-login-dark.jpeg`) — desktop ajouté via `Login & Onboarding - Desktop-standalone.html` (2026-06-03).
+- **Structure mobile** : logo centré → `ESPACE MEMBRE` → hero « Bienvenue dans ton espace **Evolve**. » (mot surligné jaune) → microtexte rassurant → `EMAIL` + champ → CTA sombre `RECEVOIR MON LIEN →` → microtexte `Lien valable 15 min. Aucun mot de passe, aucun spam.` → `OU` → bouton outline `SE CONNECTER AVEC UNE PASSKEY` (`V1`) → `Besoin d'aide ?`.
+- **Structure desktop (split 2 panneaux)** : panneau gauche **sombre (toujours)** = marque (`RÉSEAU DE CLUBS D'INVESTISSEMENT`, hero « Rends visible ce que ton club construit ensemble. » mot surligné jaune, viz réseau de clubs, stats bas `4 CLUBS · 48 MEMBRES · 1,2 M€`) ; panneau droit **thémé** = `ESPACE MEMBRE · CONNEXION` + hero « Bienvenue. » + form (EMAIL, `RECEVOIR MON LIEN →`, microtexte 15 min, `OU`, passkey `V1`, « Première venue ? … en savoir plus ») + **toggle CLAIR/SOMBRE intégré** en haut-droite + lien `Besoin d'aide ?`.
+- **Note** : passkey `V1` → absence attendue. Toggle clair/sombre = intention de l'écran desktop.
+
+### `/login/check-email` — Lien envoyé
+
+- **Réf** : `ref-mobile-check-email.jpeg` (écran B, mobile) + **`ref-desktop-check-email.jpeg`** (desktop, même split + toggle).
+- **Structure** : `CONNEXION SANS MOT DE PASSE`, check animé, email masqué `l***@…`, actions `Renvoyer (45 s)` / `Changer`, encart « rien reçu ? ».
+
+### `/login/verify` — Vérification du token (transitoire)
+
+- **Pas d'export** (écran technique de redirection). Réf = `design.md` / bonnes pratiques : état loading explicite, message d'erreur humain si token invalide/expiré, pas de page blanche.
+
+### `/onboarding/step-1` — Profil
+
+- **Réf** : `ref-mobile-onboarding-step1.jpeg`, `ref-desktop-onboarding-step1.jpeg`.
+- **Structure** : step indicator Evolve (`ÉTAPE 01 / 03` mobile ; rail gauche 3 étapes + promesse « 3 minutes » desktop), avatar upload, 3 champs (prénom/nom requis, téléphone facultatif, grille 2 col), CTA actif `CONTINUER →`. Desktop : form centré max-w 640, rail droit pour citation.
+
+### `/onboarding/step-2` — Consentement
+
+- **Réf** : `ref-mobile-onboarding-step2.jpeg`, `ref-desktop-onboarding-step2.jpeg`.
+- **Structure** : `ÉTAPE 02 / 03`, 3 cases à cocher (2 requises + 1 optionnelle annuaire), liens « lire » discrets alignés à droite, **CTA en état disabled explicite** tant que les requises ne sont pas cochées (card 640, colonne 480).
+
+### `/onboarding/step-3` & `/onboarding/tour` — Tour guidé
+
+- **Réf** : `ref-mobile-onboarding-step3.jpeg`, `ref-desktop-onboarding-step3.jpeg`, **`ref-desktop-onboarding-step3-tour.jpeg`** (écran C3 « Step 3 · Tour guidé » du nouveau fichier desktop).
+- **Structure** : `ÉTAPE 03 / 03`, **carrousel 3 slides** (visuels géométriques Brand Yellow + N-900), 3 dots, CTA `Accéder à mon espace`, sous-lien `Passer le tour`. Desktop : slide active 640px, slides latérales en peek 50 %, CTA 280px.
+- **Mapping réel constaté (Phase 2)** : dans l'app, `/onboarding/step-3` = écran de **consentements** (checkboxes RGPD/annuaire) avec `ÉTAPE 3/3`, puis redirige vers `/onboarding/tour` = **carrousel** (sans indicateur d'étape). La réf desktop, elle, montre l'étape 3 = **le carrousel** étiqueté « ÉTAPE 3 / 3 ». → cohérence du fil d'étape à corriger sur `/tour` (cf. AUDIT F9). NB la réf desktop sépare aussi Step 2 = « Consentements » (≠ découpage de l'app).
+
+> **Onboarding desktop** : `ref-desktop-onboarding-step1/2/3*.jpeg` proviennent désormais aussi de `Login & Onboarding - Desktop-standalone.html` (login + check-email + step 1/2/3 desktop, avec toggle CLAIR/SOMBRE).
+
+---
+
+## Espace trésorier / admin (SANS équivalent dans les exports)
+
+### `/admin`, `/admin/members`, `/admin/cotisations`
+
+- **Aucun artboard** dans `standalone-exports`. Audit basé sur : `design.md`, tokens/fondations communes, et critères d'acceptation `BACKLOG_E-ADM`. Attendu : **cohérence inter-écrans** (mêmes tokens, sidebar, mono labels, cartes, tables, EmptyState/ErrorState) avec les écrans membres.
+- **Décisions V0 actées (mémoire S7)** : 1er chemin multi-membres (listes + RLS treasurer) ; impayé = `late`/`pending` ∨ `amount_due>0` ; garde RSC par-club + middleware any-club ; CSV → V1 ; ADM-004 réutilise `SyncBanner` ; seul organism = `MembersList`. Dette : `Switch` 0×0 dans apps/web (design-system `@import` commenté).
+
+### ADM-007 — Accès & invitations (réf : `Admin - Accès & Invitations-standalone.html`)
+
+- **Réfs** : `ref-adm007-standalone-{light,dark}.jpeg` (4 écrans, toggle LIGHT/DARK). Source de vérité visuelle des écrans ADM-007.
+- **`/admin/invitations`** : barre d'onglets admin (`AdminTabs` : Tableau de bord · Membres · Cotisations · Invitations) + titre/sous-titre + `InviteForm` inline (email + « Envoyer l'invitation » + note 72 h) + `InvitationsTable` (Email · Date d'envoi · Expire le · Statut · Actions). Badges statut (`InvitationStatusBadge`) : En attente (ambre) / Acceptée (vert) / Expirée (gris) / Révoquée (rouge, email barré). Actions Renvoyer/Révoquer désactivées selon statut. **Lien copiable** affiché après création/renvoi (V0 sans envoi auto → E-NTF).
+- **`/admin/members`** : colonne **Accès** après Statut (`AccessBadge` : Actif vert / Bloqué rouge+cadenas) + menu `···` (`MemberActionsMenu` : Bloquer/Débloquer + Voir la fiche → `/admin/cotisations?membre=`). Modale `LockMemberModal` (raison optionnelle, action réversible). **Voir la fiche dédiée + historique d'accès = V1.**
+- **`/acces-suspendu`** (public, hors chrome) : `SuspendedScreen` **toujours sombre** (rupture volontaire — `data-theme="dark"` forcé au niveau `<html>` par la route, car un `data-theme` imbriqué ne suffit pas : `--color-bg` est résolu à `:root`). Cadenas ouvert + halo jaune, CTA `mailto:` trésorier, lien « Me déconnecter » (Server Action). Desktop + 375 responsive.
+- **Déviations assumées vs standalone** : (1) colonne Accès `/admin/members` n'émet QUE Actif/Bloqué — **pas de badge « Invité »** (décision §5.3 : les invités vivent dans `/admin/invitations`, le membership n'existe qu'à l'acceptation) ; `AccessBadge` supporte quand même `invited` pour fidélité. (2) L'app réutilise la sidebar membre + lien « Espace trésorier » → la nav admin du standalone (sidebar dédiée) est rendue en **barre d'onglets** en tête de contenu. (3) Lien d'invitation **copiable** (pas d'email auto V0). (4) Membre invité ⇒ accès app (allowlist) mais **pas de membership** tant qu'un staff ne l'ajoute pas (dashboard « Données non disponibles ») — provisioning membre = **follow-up**.
+- **Contraste AA** : l'ambre vif `--data-warning` (#D97706) sur tint clair échouait WCAG AA (2.92:1) → token `--data-warning-strong` (#92400E clair / #FCD34D sombre) pour le TEXTE (Badge warning, Pill cotisation-late, AccessBadge invited). Détecté par axe E2E (jsdom ne mesure pas le contraste).
+- **Gotcha schéma** : `memberships` a 2 FK vers `users` (`user_id` + `locked_by`) → embeds PostgREST `users` désambiguïsés (`users!memberships_user_id_fkey`). Toute FK vers `users(id)` est `ON UPDATE CASCADE` (re-key au login).
+
+---
+
+## Routes sans équivalent graphique (audit sur bonnes pratiques)
+
+| Route                         | Réf                                      | Approche d'audit                                           |
+| ----------------------------- | ---------------------------------------- | ---------------------------------------------------------- |
+| `/` (root)                    | Placeholder « WIP »                      | Hors-périmètre design ; noter seulement si exposé en prod. |
+| `/login/verify`               | —                                        | États loading/erreur, pas de page blanche.                 |
+| `/admin*`                     | —                                        | `design.md` + cohérence inter-écrans + tickets ADM.        |
+| `404` (route morte ex `/zzz`) | Aucun 404 custom trouvé dans les exports | `design.md` + bonne pratique : `not-found.tsx` custom.     |
+| error/global-error states     | —                                        | Fallback humain, pas de stack.                             |
+
+## Constats structurels relevés dès la recon (à confirmer en Phase 2)
+
+- `apps/web/app/not-found.tsx` **absent** → 404 = page Next par défaut (candidat **bug objectif**).
+- `apps/web/app/global-error.tsx` **absent** ; pas d'`error.tsx` racine ni sur `(auth)` (les segments `(app)/*` en ont chacun un).
+- Warning Next 16 : `middleware` déprécié → renommer en `proxy` (déjà noté en dette Sprint 3).
