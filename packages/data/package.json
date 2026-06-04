@@ -7,21 +7,27 @@
     ".": "./src/index.ts",
     "./supabase/client": "./src/supabase/client.ts",
     "./supabase/server": "./src/supabase/server.ts",
-    "./prices": "./src/prices/index.ts"
+    "./prices": "./src/prices/index.ts",
+    "./emails": "./src/emails/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "dependencies": {
+    "@evolve/design-system": "workspace:*",
     "@evolve/types": "workspace:*",
     "@evolve/utils": "workspace:*",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.0.8",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.0.0",
     "googleapis": "^144.0.0",
+    "react": "^19",
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@types/react": "^19",
     "typescript": "^5",
     "vitest": "^2.0.0"
   }

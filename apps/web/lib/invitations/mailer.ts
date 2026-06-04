@@ -2,8 +2,8 @@
 //
 // V0 : aucun provider email applicatif (l'auto-send est l'épopée E-NTF, non construite).
 // L'impl par défaut NE FAIT RIEN ; le lien d'invitation est renvoyé à l'UI et copié-collé par
-// le trésorier. Brancher Sweego/Resend plus tard = implémenter cette interface et la retourner
-// dans getInvitationMailer(), SANS toucher aux Server Actions.
+// le trésorier. Brancher Brevo plus tard (cf. E-NTF / NTF-001) = implémenter cette interface
+// et la retourner dans getInvitationMailer(), SANS toucher aux Server Actions.
 
 export interface InvitationEmail {
   to: string
@@ -24,7 +24,7 @@ export class NoopInvitationMailer implements InvitationMailer {
   }
 }
 
-/** Point d'extension E-NTF : retourner ici un mailer réel (Sweego) quand il sera branché. */
+/** Point d'extension E-NTF : retourner ici un mailer réel (Brevo) quand il sera branché. */
 export function getInvitationMailer(): InvitationMailer {
   return new NoopInvitationMailer()
 }

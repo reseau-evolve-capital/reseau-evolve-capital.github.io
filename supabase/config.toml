@@ -220,7 +220,7 @@ web3 = 30
 # secret = ""
 
 # En dev, les emails sont capturés par Mailpit (http://127.0.0.1:54324) — aucun SMTP externe n'est configuré.
-# Le SMTP de production (Sweego) est une prérequis PROD uniquement et n'est pas déclaré ici.
+# Le SMTP de production (Brevo) est une prérequis PROD uniquement et n'est pas déclaré ici.
 [auth.email]
 # Allow/disallow new user signups via email to your project.
 enable_signup = true
@@ -238,15 +238,23 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
+# SMTP de production — Brevo (NTF-001).
+# ⚠️ LAISSÉ COMMENTÉ EN LOCAL : la stack Supabase CLI capte tous les emails via
+# Inbucket/Mailpit (voir [inbucket] plus haut). N'activer ce bloc QU'EN PROD
+# (variables BREVO_* injectées par l'environnement Vercel/Supabase, jamais
+# committées — cf. apps/web/.env.example).
+# Brevo : relais SMTP authentifié par clé (smtp-relay.brevo.com:587).
+#   - sender = expéditeur transactionnel (from)         → noreply@mail.evolve-capital.fr
+#   - admin_email sert d'adresse de réponse (reply_to)  → support@evolve-capital.fr
 # [auth.email.smtp]
 # enabled = true
-# host = "smtp.sendgrid.net"
+# host = "env(BREVO_SMTP_HOST)"          # smtp-relay.brevo.com
 # port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# user = "env(BREVO_SMTP_USER)"          # identifiant SMTP Brevo
+# pass = "env(BREVO_SMTP_KEY)"           # clé SMTP Brevo (server-only)
+# sender_name = "Evolve Capital"
+# sender_email = "noreply@mail.evolve-capital.fr"   # from
+# admin_email = "support@evolve-capital.fr"         # reply_to
 
 # Uncomment to customize email template
 # [auth.email.template.invite]
