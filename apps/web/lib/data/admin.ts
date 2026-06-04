@@ -20,6 +20,16 @@ type MembershipRow = Database['public']['Tables']['memberships']['Row']
 export type MemberRole = Database['public']['Enums']['member_role']
 export type ContributionStatus = Database['public']['Enums']['contribution_status']
 export type MonthStatus = Database['public']['Enums']['month_status']
+export type AccessStatus = Database['public']['Enums']['member_access_status']
+export type AccessEventAction = Database['public']['Enums']['access_event_action']
+
+/** Un événement du journal d'accès d'un membre (verrou/déverrou). RLS staff. */
+export interface AccessEvent {
+  id: string
+  action: AccessEventAction
+  reason: string | null
+  createdAt: string
+}
 
 const STAFF_ROLES: readonly MemberRole[] = ['treasurer', 'president', 'network_admin']
 export function isStaffRole(role: unknown): role is MemberRole {
@@ -40,6 +50,7 @@ export interface ClubMember {
   amountDue: number
   isUnpaid: boolean
   isActive: boolean
+  accessStatus: AccessStatus // 'active' | 'locked' (verrou par-club, ADM-007)
 }
 
 export interface ClubSummary {
@@ -170,7 +181,9 @@ export async function getClubMembers(
   const [{ data: memberships, error: mErr }, { data: contribs, error: cErr }] = await Promise.all([
     supabase
       .from('memberships')
-      .select('id, user_id, role, is_active, joined_at, users!inner(full_name, email)')
+      .select(
+        'id, user_id, role, is_active, joined_at, access_status, users!inner(full_name, email)'
+      )
       .eq('club_id', clubId)
       .returns<
         {
@@ -179,6 +192,7 @@ export async function getClubMembers(
           role: MemberRole
           is_active: boolean
           joined_at: string
+          access_status: AccessStatus
           users: { full_name: string; email: string }
         }[]
       >(),
@@ -218,8 +232,31 @@ export async function getClubMembers(
       amountDue,
       isUnpaid: isUnpaid(status, amountDue),
       isActive: m.is_active,
+      accessStatus: m.access_status,
     }
   })
+}
+
+/** Journal d'accès (verrou/déverrou) d'un membre — fiche membre. RLS « access events: staff read ». */
+export async function getMemberAccessLog(
+  supabase: ServerClient,
+  membershipId: string
+): Promise<AccessEvent[]> {
+  const { data, error } = await supabase
+    .from('member_access_events')
+    .select('id, action, reason, created_at')
+    .eq('membership_id', membershipId)
+    .order('created_at', { ascending: false })
+    .returns<
+      { id: string; action: AccessEventAction; reason: string | null; created_at: string }[]
+    >()
+  if (error) throw error
+  return (data ?? []).map((e) => ({
+    id: e.id,
+    action: e.action,
+    reason: e.reason,
+    createdAt: e.created_at,
+  }))
 }
 
 /** Priorité d'agrégation d'un statut mensuel au niveau CLUB : on remonte le plus

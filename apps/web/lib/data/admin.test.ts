@@ -23,6 +23,7 @@ const mk = (over: Partial<ClubMember>): ClubMember => ({
   amountDue: 0,
   isUnpaid: false,
   isActive: true,
+  accessStatus: 'active',
   ...over,
 })
 

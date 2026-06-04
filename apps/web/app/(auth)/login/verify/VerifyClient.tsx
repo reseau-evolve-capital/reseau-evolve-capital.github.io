@@ -7,9 +7,19 @@ import { useSupabase } from '@/components/providers/SupabaseProvider'
 
 interface Props {
   tokenHash: string | null
+  /** Type d'OTP à vérifier : 'email' (magic-link signInWithOtp) ou 'magiclink' (lien d'invitation). */
+  otpType?: string | null
+  /** Première connexion via une invitation → propage ?invited à l'onboarding (accueil dédié). */
+  invited?: boolean
 }
 
-export function VerifyClient({ tokenHash }: Props) {
+// Le flux invitation (ADM-007) génère un lien via admin.generateLink({ type: 'magiclink' }) →
+// son hashed_token se vérifie avec type 'magiclink'. Le flux nominal (signInWithOtp) utilise 'email'.
+function resolveOtpType(t: string | null | undefined): 'email' | 'magiclink' {
+  return t === 'magiclink' ? 'magiclink' : 'email'
+}
+
+export function VerifyClient({ tokenHash, otpType, invited = false }: Props) {
   const t = useTranslations('login.verify')
   const router = useRouter()
   const supabase = useSupabase()
@@ -22,7 +32,7 @@ export function VerifyClient({ tokenHash }: Props) {
     ;(async () => {
       const { error: verr } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
-        type: 'email',
+        type: resolveOtpType(otpType),
       })
       if (cancelled) return
       if (verr) {
@@ -39,13 +49,17 @@ export function VerifyClient({ tokenHash }: Props) {
         .maybeSingle()
 
       if (cancelled) return
-      router.replace(profile?.onboarding_completed ? '/dashboard' : '/onboarding/step-1')
+      if (profile?.onboarding_completed) {
+        router.replace('/dashboard')
+      } else {
+        router.replace(invited ? '/onboarding/step-1?invited=1' : '/onboarding/step-1')
+      }
     })()
 
     return () => {
       cancelled = true
     }
-  }, [tokenHash, supabase, router])
+  }, [tokenHash, otpType, invited, supabase, router])
 
   if (error) {
     return (
