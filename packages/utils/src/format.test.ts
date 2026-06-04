@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatEUR, formatPct, formatDate, formatMonth } from './format'
+import { formatEUR, formatPct, formatDate, formatDateLong, formatMonth } from './format'
 
 describe('formatEUR', () => {
   it('formate un montant décimal', () => {
@@ -54,5 +54,23 @@ describe('formatMonth', () => {
   it('formate mois + année', () => {
     const result = formatMonth(new Date('2026-05-01T12:00:00'))
     expect(result).toContain('2026')
+  })
+})
+
+describe('locale-aware (I18N-001) — FR par défaut, EN sur demande', () => {
+  it('formatEUR : FR par défaut (€ en suffixe) vs en-US (€ en préfixe)', () => {
+    expect(formatEUR(1234.5)).toMatch(/€$/) // "1 234,50 €"
+    const en = formatEUR(1234.5, 'en-US')
+    expect(en).toMatch(/^€/) // "€1,234.50"
+    expect(en).toContain('1,234.50')
+  })
+  it('formatPct : séparateur décimal localisé', () => {
+    expect(formatPct(0.0123)).toContain(',') // "+1,23 %"
+    expect(formatPct(0.0123, { locale: 'en-US' })).toContain('.') // "+1.23%"
+  })
+  it('formatDateLong : jour de semaine localisé', () => {
+    const d = new Date('2026-04-24T12:00:00')
+    expect(formatDateLong(d)).toContain('avril')
+    expect(formatDateLong(d, 'en-US')).toContain('April')
   })
 })

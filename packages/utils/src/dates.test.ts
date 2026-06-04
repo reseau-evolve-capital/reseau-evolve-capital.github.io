@@ -60,4 +60,10 @@ describe('formatRelativeTime', () => {
   it('entrée invalide → "—"', () => {
     expect(formatRelativeTime('pas une date', now)).toBe('—')
   })
+  it('locale en → format abrégé anglais', () => {
+    expect(formatRelativeTime(new Date('2026-05-31T11:59:30Z'), now, 'en-US')).toBe('just now')
+    expect(formatRelativeTime(new Date('2026-05-31T11:46:00Z'), now, 'en-US')).toBe('14 min ago')
+    expect(formatRelativeTime(new Date('2026-05-31T10:00:00Z'), now, 'en-US')).toBe('2 h ago')
+    expect(formatRelativeTime(new Date('2026-05-28T12:00:00Z'), now, 'en-US')).toBe('3 d ago')
+  })
 })

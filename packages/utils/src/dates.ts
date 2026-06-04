@@ -46,18 +46,26 @@ export function parseFrMonth(
   return { year: Number(m[2]), month }
 }
 
-/** Date passée → "à l'instant" | "il y a 14 min" | "il y a 2 h" | "il y a 3 j".
- *  Entrée invalide → "—". `now` injectable pour les tests. */
-export function formatRelativeTime(input: Date | string | number, now: Date = new Date()): string {
+/** Date passée → "à l'instant" | "il y a 14 min" | "il y a 2 h" | "il y a 3 j" (FR) ;
+ *  "just now" | "14 min ago" | "2 h ago" | "3 d ago" (autres locales, ex. en).
+ *  Entrée invalide → "—". `now` injectable pour les tests ; `locale` défaut fr-FR
+ *  (rendu FR byte-identique). On garde le format abrégé maison (Intl.RelativeTimeFormat
+ *  donnerait « il y a 5 minutes », pas « il y a 5 min »). */
+export function formatRelativeTime(
+  input: Date | string | number,
+  now: Date = new Date(),
+  locale = 'fr-FR'
+): string {
   const d = input instanceof Date ? input : new Date(input)
   if (isNaN(d.getTime())) return '—'
   const diffMs = now.getTime() - d.getTime()
   const sec = Math.max(0, Math.floor(diffMs / 1000))
-  if (sec < 60) return "à l'instant"
+  const fr = locale.startsWith('fr')
+  if (sec < 60) return fr ? "à l'instant" : 'just now'
   const min = Math.floor(sec / 60)
-  if (min < 60) return `il y a ${min} min`
+  if (min < 60) return fr ? `il y a ${min} min` : `${min} min ago`
   const h = Math.floor(min / 60)
-  if (h < 24) return `il y a ${h} h`
+  if (h < 24) return fr ? `il y a ${h} h` : `${h} h ago`
   const j = Math.floor(h / 24)
-  return `il y a ${j} j`
+  return fr ? `il y a ${j} j` : `${j} d ago`
 }
