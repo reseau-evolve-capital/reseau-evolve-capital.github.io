@@ -181,8 +181,10 @@ export async function getClubMembers(
   const [{ data: memberships, error: mErr }, { data: contribs, error: cErr }] = await Promise.all([
     supabase
       .from('memberships')
+      // FK explicite : depuis ADM-007, memberships a 2 FK vers users (user_id + locked_by) →
+      // l'embed doit lever l'ambiguïté (sinon PGRST201).
       .select(
-        'id, user_id, role, is_active, joined_at, access_status, users!inner(full_name, email)'
+        'id, user_id, role, is_active, joined_at, access_status, users!memberships_user_id_fkey!inner(full_name, email)'
       )
       .eq('club_id', clubId)
       .returns<

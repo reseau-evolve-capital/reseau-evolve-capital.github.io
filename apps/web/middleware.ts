@@ -56,6 +56,17 @@ export async function middleware(request: NextRequest) {
     return redirectWithCookies(new URL('/login', request.url), response())
   }
 
+  // Verrou d'accès (ADM-007) : un membre dont TOUTES les adhésions actives sont verrouillées
+  // est redirigé vers /acces-suspendu — vérifié à CHAQUE requête protégée (pas seulement au login).
+  // current_user_access_blocked() est SECURITY DEFINER (migration 016). /acces-suspendu n'étant
+  // pas un préfixe protégé, il n'est jamais redirigé ici → pas de boucle.
+  if (user && PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
+    const { data: blocked } = await supabase.rpc('current_user_access_blocked')
+    if (blocked) {
+      return redirectWithCookies(new URL('/acces-suspendu', request.url), response())
+    }
+  }
+
   // /admin uniquement : le user doit être staff (trésorier / président / network_admin).
   // user_is_staff() est une fonction SECURITY DEFINER en DB (migration 014),
   // appelable uniquement par les utilisateurs authentifiés.

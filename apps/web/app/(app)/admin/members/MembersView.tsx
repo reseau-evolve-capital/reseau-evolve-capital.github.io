@@ -1,15 +1,21 @@
 'use client'
 
-// Vue membres (ADM-003). Filtre « impayé » en URL state (nuqs) ; le tri vit dans MembersList.
-// MembersList reste présentationnel → on lui passe la liste déjà filtrée + mappée (MemberRow).
-// Réf : E-ADM, CLAUDE.md (a11y, formatage @evolve/utils).
+// Vue membres (ADM-003 + ADM-007). Filtre « impayé » en URL state (nuqs) ; tri dans MembersList.
+// Colonne Accès + menu d'actions (Bloquer/Débloquer/Voir la fiche) câblés aux Server Actions
+// (RPC staff-scopées). « Voir la fiche » réutilise /admin/cotisations filtré par membre (V0 :
+// le détail membre dédié + historique d'accès est un follow-up). MembersList reste présentationnel.
+// Réf : E-ADM, ADM-007, CLAUDE.md (a11y, formatage @evolve/utils).
 
+import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { useQueryState, parseAsBoolean } from 'nuqs'
 import { useTranslations } from 'next-intl'
-import { MembersList, Heading, Switch, type MemberRow } from '@evolve/ui'
+import { MembersList, Heading, Switch, LockMemberModal, type MemberRow } from '@evolve/ui'
 import type { ClubMember } from '@/lib/data/admin'
 import { filterMembers } from '@/lib/data/admin'
 import { useClubMembers, type ClubMembersPayload } from '@/lib/hooks/useClubMembers'
+import { lockMemberAction, unlockMemberAction } from '../actions'
 
 /** ClubMember (data) → MemberRow (présentationnel). */
 function toRow(m: ClubMember): MemberRow {
@@ -22,6 +28,7 @@ function toRow(m: ClubMember): MemberRow {
     detentionPct: m.detentionPct,
     monthsCount: m.monthsCount,
     status: m.status,
+    accessStatus: m.accessStatus,
   }
 }
 
@@ -29,10 +36,31 @@ const FILTER_ID = 'filter-impayes'
 
 export function MembersView({ initialData }: { initialData: ClubMembersPayload }) {
   const t = useTranslations('admin')
+  const router = useRouter()
+  const queryClient = useQueryClient()
   const { data, isError } = useClubMembers(initialData)
   const [onlyUnpaid, setOnlyUnpaid] = useQueryState('impayes', parseAsBoolean.withDefault(false))
+  const [isPending, startTransition] = useTransition()
+  // Modale partagée blocage/déblocage ; null = fermée.
+  const [modal, setModal] = useState<{ member: MemberRow; mode: 'lock' | 'unlock' } | null>(null)
 
   const filtered = filterMembers(data.members, onlyUnpaid)
+
+  function handleConfirm(reason: string | null) {
+    const current = modal
+    if (!current) return
+    startTransition(async () => {
+      const res =
+        current.mode === 'lock'
+          ? await lockMemberAction(current.member.id, reason)
+          : await unlockMemberAction(current.member.id)
+      if (res.ok) {
+        // Invalide tout le préfixe ['admin', …] (membres + KPIs) → refetch RLS treasurer.
+        await queryClient.invalidateQueries({ queryKey: ['admin'] })
+        setModal(null)
+      }
+    })
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -43,7 +71,6 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
         {/*
           Accessibilité : <label htmlFor> + id sur le Switch (Radix passe id au <button> DOM).
           Playwright getByLabel('Afficher seulement les membres en impayé') fonctionne via ce lien.
-          onCheckedChange : (checked: boolean) => void — API Radix via SwitchProps.
         */}
         <div className="flex items-center gap-2">
           <Switch
@@ -63,6 +90,9 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
       )}
       <MembersList
         members={filtered.map(toRow)}
+        onLockMember={(m) => setModal({ member: m, mode: 'lock' })}
+        onUnlockMember={(m) => setModal({ member: m, mode: 'unlock' })}
+        onViewMember={(m) => router.push(`/admin/cotisations?membre=${m.id}`)}
         labels={{
           columns: {
             fullName: t('members.columns.fullName'),
@@ -71,6 +101,7 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             detentionPct: t('members.columns.detentionPct'),
             monthsCount: t('members.columns.monthsCount'),
             status: t('members.columns.status'),
+            access: t('members.access.column'),
           },
           roles: {
             member: t('members.roles.member'),
@@ -84,6 +115,16 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             late: t('members.statuses.late'),
             exempt: t('members.statuses.exempt'),
           },
+          access: {
+            active: t('members.access.active'),
+            locked: t('members.access.locked'),
+          },
+          actions: {
+            trigger: t('members.access.actions.menu'),
+            lock: t('members.access.actions.lock'),
+            unlock: t('members.access.actions.unlock'),
+            viewProfile: t('members.access.actions.viewProfile'),
+          },
           emptyTitle: t('members.empty.title'),
           emptyDescription: t('members.empty.description'),
           tableLabel: t('members.tableLabel'),
@@ -92,6 +133,36 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
           detentionBarLabel: (name) => t('members.detentionBarLabel', { name }),
         }}
       />
+      {modal && (
+        <LockMemberModal
+          open
+          onOpenChange={(o) => {
+            if (!o) setModal(null)
+          }}
+          memberName={modal.member.fullName}
+          mode={modal.mode}
+          isPending={isPending}
+          onConfirm={handleConfirm}
+          labels={{
+            lockTitle: (name) => t('members.access.lockModal.title', { name }),
+            unlockTitle: (name) => t('members.access.unlockModal.title', { name }),
+            lockDescription: t('members.access.lockModal.description'),
+            unlockDescription: t('members.access.unlockModal.description'),
+            reasonLabel: t('members.access.lockModal.reasonLabel'),
+            reasonPlaceholder: t('members.access.lockModal.reasonPlaceholder'),
+            reasons: {
+              unpaid: t('members.access.lockModal.reasons.unpaid'),
+              left_club: t('members.access.lockModal.reasons.left'),
+              suspended: t('members.access.lockModal.reasons.suspended'),
+              other: t('members.access.lockModal.reasons.other'),
+            },
+            otherPlaceholder: t('members.access.lockModal.otherPlaceholder'),
+            cancel: t('members.access.lockModal.cancel'),
+            confirmLock: t('members.access.lockModal.confirm'),
+            confirmUnlock: t('members.access.unlockModal.confirm'),
+          }}
+        />
+      )}
     </div>
   )
 }

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { z } from 'zod'
-import { OnboardingShell, ProgressHeader, FormField, Input, Button } from '@evolve/ui'
+import { OnboardingShell, ProgressHeader, FormField, Input, Button, Badge } from '@evolve/ui'
 import { useOnboardingStore } from '@/lib/stores/onboarding'
 
 // Téléphone facultatif (F8) : accepté vide ; si rempli, format souple international.
@@ -18,7 +18,7 @@ const phoneSchema = z
   .optional()
   .or(z.literal(''))
 
-export function Step1Form() {
+export function Step1Form({ invited = false }: { invited?: boolean }) {
   const router = useRouter()
   const t = useTranslations('onboarding')
   const tCommon = useTranslations('common')
@@ -75,6 +75,12 @@ export function Step1Form() {
         </Button>
       }
     >
+      {invited && (
+        <div className="mb-4 flex flex-col gap-1.5 rounded-[10px] border border-border bg-brand-yellow-light p-3">
+          <Badge variant="brand">{t('invitedWelcome.badge')}</Badge>
+          <p className="font-body text-[13px] text-text-sec">{t('invitedWelcome.text')}</p>
+        </div>
+      )}
       <form id="step1" onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
         <FormField label={t('step1.firstname')} required>
           {({ id, ...ariaProps }) => (

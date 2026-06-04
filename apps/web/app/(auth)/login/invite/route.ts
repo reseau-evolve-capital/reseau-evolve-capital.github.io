@@ -41,9 +41,11 @@ export async function GET(request: Request): Promise<Response> {
   const hashed = link?.properties?.hashed_token
   if (linkErr || !hashed) return backToLogin('error')
 
+  // Le hashed_token d'un generateLink('magiclink') se vérifie avec verifyOtp type 'email'
+  // (recette éprouvée du flux magic-link Supabase). On réutilise tel quel /login/verify.
   const verifyUrl = new URL('/login/verify', siteOrigin())
   verifyUrl.searchParams.set('token_hash', hashed)
-  verifyUrl.searchParams.set('type', 'magiclink')
+  verifyUrl.searchParams.set('type', 'email')
   verifyUrl.searchParams.set('invited', '1')
   return NextResponse.redirect(verifyUrl)
 }
