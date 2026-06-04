@@ -36,6 +36,7 @@ const LOCKME = {
   fullName: 'LOCKME Tester',
 }
 const INVITE_EMAIL = 'invite.e2e@example.com'
+const PROVISION_EMAIL = 'provision.e2e@example.com'
 
 const BLOCKING = new Set(['critical', 'serious'])
 
@@ -89,13 +90,14 @@ async function seedLockMe(): Promise<void> {
 /** Supprime LOCKME + l'invitation de test (par EMAIL → robuste au re-key login). */
 async function cleanup(): Promise<void> {
   await withDb(async (sql) => {
-    await sql`DELETE FROM invitations WHERE club_id = ${SEED_CLUB_ID}::uuid AND lower(email) = ${INVITE_EMAIL}`
-    await sql`DELETE FROM memberships WHERE user_id IN (SELECT id FROM users WHERE email = ${LOCKME.email})`
-    await sql`DELETE FROM users WHERE email IN (${LOCKME.email}, ${INVITE_EMAIL})`
+    await sql`DELETE FROM invitations WHERE club_id = ${SEED_CLUB_ID}::uuid AND lower(email) IN (${INVITE_EMAIL}, ${PROVISION_EMAIL})`
+    // memberships des users de test (PROVISION : adhésion provisionnée à l'acceptation) — par EMAIL.
+    await sql`DELETE FROM memberships WHERE user_id IN (SELECT id FROM users WHERE email IN (${LOCKME.email}, ${PROVISION_EMAIL}))`
+    await sql`DELETE FROM users WHERE email IN (${LOCKME.email}, ${INVITE_EMAIL}, ${PROVISION_EMAIL})`
     // Supprime aussi l'entrée auth.users : sinon, à la connexion suivante, handle_new_user
     // (AFTER INSERT) ne se redéclenche pas → public.users.id ne serait pas re-keyé sur l'uuid
     // GoTrue → mismatch auth.uid()/profil. Garantit l'idempotence entre runs (comme global-setup).
-    await sql`DELETE FROM auth.users WHERE lower(email) IN (${LOCKME.email}, ${INVITE_EMAIL})`
+    await sql`DELETE FROM auth.users WHERE lower(email) IN (${LOCKME.email}, ${INVITE_EMAIL}, ${PROVISION_EMAIL})`
   })
 }
 
@@ -154,6 +156,33 @@ test('invitations : invite → lien copiable + ligne en attente → révoque', a
   // Révocation → statut « Révoquée ».
   await row.getByRole('button', { name: /Révoquer/ }).click()
   await expect(row.getByText('Révoquée')).toBeVisible()
+})
+
+test('invitation acceptée → adhésion provisionnée dans le club', async ({ page }) => {
+  // 1. Le trésorier invite un nouvel email et récupère le lien d'accès affiché.
+  await loginAsSeedMember(page)
+  await page.goto('/admin/invitations')
+  await page.getByRole('textbox', { name: /Adresse e-mail/i }).fill(PROVISION_EMAIL)
+  await page.getByRole('button', { name: "Envoyer l'invitation", exact: true }).click()
+  const link = await page.locator('input[readonly]').inputValue()
+  expect(link).toMatch(/\/login\/invite\?token=/)
+
+  // 2. L'invité (déconnecté) ouvre le lien → acceptation → onboarding « invité ».
+  await page.context().clearCookies()
+  await page.goto(link)
+  await expect(page).toHaveURL(/\/onboarding\/step-1/, { timeout: 15_000 })
+
+  // 3. L'adhésion a été provisionnée (membre actif du club de l'invitation).
+  const rows = await withDb(
+    (sql) => sql`
+      SELECT m.role::text AS role, m.status::text AS status
+        FROM memberships m JOIN users u ON u.id = m.user_id
+       WHERE lower(u.email) = ${PROVISION_EMAIL} AND m.club_id = ${SEED_CLUB_ID}::uuid
+    `
+  )
+  expect(rows.length).toBe(1)
+  expect(rows[0]?.role).toBe('member')
+  expect(rows[0]?.status).toBe('active')
 })
 
 test('verrou : blocage → /acces-suspendu → déblocage → accès rétabli', async ({ page }) => {
