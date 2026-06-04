@@ -49,3 +49,6 @@ next-env.d.ts
 
 # pnpm (pnpm-lock.yaml est commité intentionnellement pour le CI --frozen-lockfile)
 .playwright-mcp
+
+# Captures de travail jetables (preuves d'audit/debug) — isolées, non versionnées
+docs/_scratch/
