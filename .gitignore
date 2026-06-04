@@ -48,3 +48,4 @@ next-env.d.ts
 .turbo
 
 # pnpm (pnpm-lock.yaml est commité intentionnellement pour le CI --frozen-lockfile)
+.playwright-mcp

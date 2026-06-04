@@ -6,7 +6,7 @@
  * cf. playwright/helpers.ts) et la fixture de seed (test@example.com, « Club E2E »).
  *
  * 7 scénarios :
- *   1. Connexion → dashboard visible (libellé « Ta valorisation nette » + montant €).
+ *   1. Connexion → dashboard visible (libellé « Ta quote-part » + montant €).
  *   2. Données chargées (l'état chargé est asserté robustement ; le skeleton de
  *      loading.tsx est trop fugace pour être capté de façon déterministe — documenté).
  *   3. Données périmées (>2h) → badge « Données mises à jour … » (route /api/dashboard mockée).
@@ -121,14 +121,14 @@ async function triggerClientRefetch(page: Page): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 // Scénario 1 : Connexion → dashboard visible
 // ─────────────────────────────────────────────────────────────────────────────
-test('connexion → dashboard visible (valorisation nette + €)', async ({ page }) => {
+test('connexion → dashboard visible (quote-part + €)', async ({ page }) => {
   // Données déterministes : un montant € non nul garanti, peu importe l'état du seed.
   await mockDashboardRoute(page, makeDashboardData(new Date().toISOString()))
   await loginAsSeedMember(page)
   await page.goto('/dashboard')
   await triggerClientRefetch(page)
 
-  await expect(page.getByText('Ta valorisation nette')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Ta quote-part/i })).toBeVisible()
   // Le montant EUR FR utilise un NBSP : « 12 345,67 € ». On matche le symbole €.
   await expect(page.getByText(/€/).first()).toBeVisible()
 })
@@ -146,7 +146,7 @@ test('données chargées → montant + KPI visibles', async ({ page }) => {
   await page.goto('/dashboard')
   await triggerClientRefetch(page)
 
-  await expect(page.getByText('Ta valorisation nette')).toBeVisible()
+  await expect(page.getByRole('button', { name: /Ta quote-part/i })).toBeVisible()
   await expect(page.getByText('Ma détention')).toBeVisible()
   await expect(page.getByText('Total cotisé')).toBeVisible()
 })
@@ -174,11 +174,12 @@ test('tap Hero → modale « Ta quote-part » ; Escape ferme', async ({ page }) 
   await page.goto('/dashboard')
   await triggerClientRefetch(page)
 
-  // Le Hero est un <button> (onClick fourni) portant le libellé « Ta valorisation nette ».
-  const hero = page.getByRole('button', { name: /Ta valorisation nette/i })
+  // Le Hero est un <button> (onClick fourni) portant le libellé « Ta quote-part ».
+  const hero = page.getByRole('button', { name: /Ta quote-part/i })
   await expect(hero).toBeVisible()
   await hero.click()
 
+  // La modale réutilise aussi le titre « Ta quote-part » → on scope la recherche au dialog.
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByText('Ta quote-part')).toBeVisible()
 
@@ -202,7 +203,7 @@ test.describe('mobile', () => {
     await loginAsSeedMember(page)
     await page.goto('/dashboard')
     // L'écran rend les données de seed (RSC) ; le conteneur tactile est monté.
-    await expect(page.getByText('Ta valorisation nette')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Ta quote-part/i })).toBeVisible()
 
     const callsBefore = probe.count()
 
@@ -234,7 +235,7 @@ test('sans auth → redirect /login', async ({ page, context }) => {
 //
 // @axe-core/playwright n'est pas en devDeps (vérifié) ; on n'ajoute PAS de dépendance
 // dans ce ticket. On assert manuellement les faits a11y clés du dashboard :
-//   - le libellé hero « Ta valorisation nette » est présent (repère de l'écran) ;
+//   - le libellé hero « Ta quote-part » est présent (repère de l'écran) ;
 //   - le montant principal a un nom accessible (aria-label via CurrencyAmount) ;
 //   - le Hero est un bouton focusable au clavier ;
 //   - la BottomNav (mobile) porte un aria-label.
@@ -249,16 +250,17 @@ test.describe('a11y', () => {
     await triggerClientRefetch(page)
 
     // Libellé hero présent.
-    await expect(page.getByText('Ta valorisation nette')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Ta quote-part/i })).toBeVisible()
 
-    // Montant principal avec nom accessible : « 12 345,67 € » (NBSP). aria-label sur le span.
-    await expect(page.getByLabel(/12[\s  ]345,67[\s  ]€/)).toBeVisible()
+    // Montant principal avec nom accessible : le bouton hero est nommé « Ta quote-part :
+    // 12 345,67 € … » (aria-label concis incluant le montant formaté NBSP).
+    await expect(page.getByRole('button', { name: /12[\s  ]345,67[\s  ]€/ })).toBeVisible()
 
     // BottomNav mobile : nav nommée.
     await expect(page.getByRole('navigation', { name: /Navigation mobile/i })).toBeVisible()
 
     // Hero focusable au clavier : c'est un <button>, on peut le focus.
-    const hero = page.getByRole('button', { name: /Ta valorisation nette/i })
+    const hero = page.getByRole('button', { name: /Ta quote-part/i })
     await hero.focus()
     await expect(hero).toBeFocused()
   })

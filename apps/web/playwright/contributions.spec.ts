@@ -222,8 +222,9 @@ test('clic sur une cellule de mois → Popover détail', async ({ page }) => {
   await loginAsSeedMember(page)
   await page.goto('/contributions')
 
-  // Première cellule (années DESC, mois DESC) = avril 2026 « en attente ». Son aria-label réel
-  // est produit par buildMonthAriaLabel (« Avril 2026, en attente »).
+  // On cible le mois d'avril 2026 « en attente » par son aria-label (indépendant de l'ordre
+  // d'affichage). Son aria-label réel est produit par buildMonthAriaLabel (« Avril 2026, en attente »).
+  // NB : l'affichage trie désormais les mois en ascendant (janvier → décembre).
   // CONTOURNEMENT d'un défaut connu (à traiter en COT-008) : les cellules CotisationMonth font
   // 24px (< cible tactile 44px) et la première ligne d'une année peut être occultée par le header
   // d'année `sticky` → `.click()` échoue l'actionability. On déclenche donc le clic via
