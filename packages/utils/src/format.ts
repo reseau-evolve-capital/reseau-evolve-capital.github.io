@@ -47,6 +47,23 @@ export function formatDate(date: Date | string | number): string {
   }
 }
 
+/** Date → "Vendredi 24 avril 2026" (FR long avec jour de semaine, 1ʳᵉ lettre capitalisée) */
+export function formatDateLong(date: Date | string | number): string {
+  try {
+    const d = date instanceof Date ? date : new Date(date)
+    if (isNaN(d.getTime())) return FALLBACK
+    const s = new Intl.DateTimeFormat(FR_LOCALE, {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(d)
+    return s.charAt(0).toUpperCase() + s.slice(1)
+  } catch {
+    return FALLBACK
+  }
+}
+
 /** Date → "mai 2026" (mois + année en minuscule FR) */
 export function formatMonth(date: Date | string | number): string {
   try {
