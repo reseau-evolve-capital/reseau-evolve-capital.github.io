@@ -13,6 +13,8 @@ import { requestMagicLink } from '@/lib/api/auth'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // Lien d'aide → site vitrine public (existant). i18n-ready (copy FR par défaut).
 const HELP_URL = 'https://reseauevolvecapital.com'
+// Logo de marque servi par l'app.
+const LOGO_SRC = '/logo.jpg'
 
 // Panneau marque TOUJOURS sombre : on utilise les tokens NEUTRES (`--n-*`, non
 // surchargés par le mode sombre) plutôt que les tokens sémantiques — un scope
@@ -100,7 +102,7 @@ export function LoginScreen() {
       {/* Panneau marque — TOUJOURS sombre (tokens neutres, indépendants du thème) */}
       <aside className="relative hidden flex-col justify-between bg-neutral-1000 p-10 text-neutral-50 md:flex md:w-[44%] lg:w-[40%] lg:p-12">
         <div className="flex flex-col gap-9">
-          <Logo variant="full" />
+          <Logo variant="full" src={LOGO_SRC} />
           <div className="flex flex-col gap-5">
             <p className="font-mono text-[12px] uppercase tracking-[0.18em] text-brand-yellow">
               Réseau de clubs d&apos;investissement
@@ -141,7 +143,7 @@ export function LoginScreen() {
 
         <div className="flex flex-1 flex-col justify-center">
           <div className="mx-auto w-full max-w-[420px]">
-            <Logo variant="full" className="mb-8 md:hidden" />
+            <Logo variant="full" src={LOGO_SRC} className="mb-8 md:hidden" />
 
             <p className="font-mono text-[12px] uppercase tracking-[0.16em] text-text-ter">
               Espace membre · Connexion

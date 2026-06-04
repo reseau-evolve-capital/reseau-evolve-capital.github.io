@@ -21,6 +21,9 @@ import {
 } from '@evolve/ui'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 
+/** Logo de marque servi par l'app (apps/web/public/logo.jpg). */
+const LOGO_SRC = '/logo.jpg'
+
 /** Nav latérale desktop — libellés alignés sur la réf. */
 const SIDEBAR_ITEMS: NavItem[] = [
   { label: 'Tableau de bord', href: '/dashboard', icon: 'LayoutDashboard' },
@@ -63,6 +66,7 @@ export function AppChromeSidebar({
       activeHref={resolveActiveHref(pathname, items)}
       linkComponent={Link}
       clubActif={clubActif}
+      logoSrc={LOGO_SRC}
     />
   )
 }
@@ -99,6 +103,7 @@ export function AppChromeTopbar({
       syncLabel={syncLabel}
       dateLabel={dateLabel}
       themeToggle={<ThemeToggle />}
+      logoSrc={LOGO_SRC}
     />
   )
 }
