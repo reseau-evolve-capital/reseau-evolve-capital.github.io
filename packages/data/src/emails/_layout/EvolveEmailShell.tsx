@@ -77,7 +77,8 @@ export function EvolveEmailShell({
             <Text style={footerBrand}>Evolve Capital</Text>
             <Text style={footerText}>
               Tu reçois cet email car tu es membre du club{' '}
-              <strong style={footerStrong}>{clubName ?? 'Evolve Capital'}</strong>.
+              <strong style={footerStrong}>{clubName?.trim() ? clubName : 'Evolve Capital'}</strong>
+              .
             </Text>
             {footerNote ? <Text style={footerText}>{footerNote}</Text> : null}
             <Text style={footerText}>{ADRESSE_POSTALE}</Text>

@@ -13,6 +13,8 @@ export { EvolveEmailShell } from './_layout/EvolveEmailShell'
 export type { EvolveEmailShellProps } from './_layout/EvolveEmailShell'
 export { MagicLinkEmail } from './MagicLinkEmail'
 export type { MagicLinkEmailProps } from './MagicLinkEmail'
+export { WelcomeEmail } from './WelcomeEmail'
+export type { WelcomeEmailProps } from './WelcomeEmail'
 
 /** Rend un email React Email en chaîne HTML prête à l'envoi. */
 export function renderEmailHtml(element: ReactElement): Promise<string> {
