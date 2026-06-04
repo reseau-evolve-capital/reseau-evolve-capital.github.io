@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cookies } from 'next/headers'
+import { getTranslations } from 'next-intl/server'
 import { createServerClient } from '@evolve/data'
 import { formatDateLong, formatRelativeTime } from '@evolve/utils'
 import type { SidebarClub } from '@evolve/ui'
@@ -14,6 +15,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // Chargement de l'utilisateur côté serveur (session via cookies — RLS appliquée).
   const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)
+  const t = await getTranslations('nav.shell')
 
   const {
     data: { user: authUser },
@@ -56,17 +58,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         .eq('club_id', membership!.club_id)
         .eq('is_active', true)
 
-      const meta = [count && count > 0 ? `${count} membre${count > 1 ? 's' : ''}` : null, club.city]
+      const meta = [count && count > 0 ? t('clubMembers', { count }) : null, club.city]
         .filter(Boolean)
         .join(' · ')
 
       clubActif = { name: club.name, meta: meta || undefined }
-      if (club.synced_at) syncLabel = `Synchronisé ${formatRelativeTime(club.synced_at)}`
+      if (club.synced_at) syncLabel = t('syncedAt', { time: formatRelativeTime(club.synced_at) })
     }
   }
 
   const user = {
-    fullName: profile?.full_name ?? authUser?.email ?? 'Membre',
+    fullName: profile?.full_name ?? authUser?.email ?? t('userFallback'),
     avatarUrl: profile?.avatar_url ?? null,
   }
   const dateLabel = formatDateLong(new Date())

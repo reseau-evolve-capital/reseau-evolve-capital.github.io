@@ -1,11 +1,15 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
 import { resolveAdminContext, getClubContributionsTimeline, getClubMembers } from '@/lib/data/admin'
 import { AdminCotisationsView } from './AdminCotisationsView'
 import { Forbidden } from '../Forbidden'
 
-export const metadata: Metadata = { title: 'Cotisations — Admin Evolve Capital' }
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('admin.meta')
+  return { title: t('cotisationsTitle') }
+}
 
 export default async function AdminCotisationsPage() {
   const cookieStore = await cookies()

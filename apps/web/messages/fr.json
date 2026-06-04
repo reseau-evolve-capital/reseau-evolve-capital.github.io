@@ -37,6 +37,11 @@
       "toggle": "Basculer le thème",
       "switchToLight": "Activer le mode clair",
       "switchToDark": "Activer le mode sombre"
+    },
+    "shell": {
+      "syncedAt": "Synchronisé {time}",
+      "clubMembers": "{count, plural, one {# membre} other {# membres}}",
+      "userFallback": "Membre"
     }
   },
   "login": {
@@ -177,6 +182,12 @@
       "totalContributed": "Total cotisé",
       "contributionStatus": "Statut cotisation"
     },
+    "statusValue": {
+      "ok": "À jour",
+      "pending": "En attente",
+      "late": "En retard",
+      "exempt": "Exempté"
+    },
     "detail": {
       "title": "Ta quote-part",
       "description": "Elle représente {pct} du portefeuille de {clubName}. Elle évolue selon tes cotisations et la performance des titres.",
@@ -254,7 +265,8 @@
       "gainLossEur": "+/- €",
       "gainLossPct": "+/- %",
       "allocationPct": "% du portefeuille"
-    }
+    },
+    "metaTitle": "Portefeuille — Evolve Capital"
   },
   "contributions": {
     "title": "Mes cotisations",
@@ -304,7 +316,8 @@
       "historyLabel": "Historique des cotisations",
       "emptyTitle": "Aucune cotisation pour l’instant",
       "emptyDescription": "Ta première cotisation apparaîtra ici."
-    }
+    },
+    "metaTitle": "Mes cotisations — Evolve Capital"
   },
   "admin": {
     "staleData": "Impossible d'actualiser les données. Affichage des dernières valeurs connues.",
@@ -376,6 +389,11 @@
         "title": "Aucune cotisation",
         "description": "Aucun versement enregistré pour ce filtre."
       }
+    },
+    "meta": {
+      "title": "Admin — Evolve Capital",
+      "cotisationsTitle": "Cotisations — Admin Evolve Capital",
+      "membersTitle": "Membres — Admin Evolve Capital"
     }
   },
   "errors": {

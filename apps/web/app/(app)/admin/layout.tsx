@@ -1,11 +1,15 @@
 import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
+import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
 import { resolveAdminContext } from '@/lib/data/admin'
 import { Forbidden } from './Forbidden'
 
-export const metadata: Metadata = { title: 'Admin — Evolve Capital' }
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('admin.meta')
+  return { title: t('title') }
+}
 
 // Garde par-club en défense (le middleware garde déjà la session + user_is_staff).
 // Si l'utilisateur n'est trésorier+ dans aucun club → 403 propre, sans fuite d'info.

@@ -37,6 +37,11 @@
       "toggle": "Toggle theme",
       "switchToLight": "Switch to light mode",
       "switchToDark": "Switch to dark mode"
+    },
+    "shell": {
+      "syncedAt": "Synced {time}",
+      "clubMembers": "{count, plural, one {# member} other {# members}}",
+      "userFallback": "Member"
     }
   },
   "login": {
@@ -177,6 +182,12 @@
       "totalContributed": "Total contributed",
       "contributionStatus": "Contribution status"
     },
+    "statusValue": {
+      "ok": "Up to date",
+      "pending": "Pending",
+      "late": "Overdue",
+      "exempt": "Exempt"
+    },
     "detail": {
       "title": "Your stake",
       "description": "It represents {pct} of {clubName}'s portfolio. It evolves with your contributions and the performance of the holdings.",
@@ -254,7 +265,8 @@
       "gainLossEur": "+/- €",
       "gainLossPct": "+/- %",
       "allocationPct": "% of portfolio"
-    }
+    },
+    "metaTitle": "Portfolio — Evolve Capital"
   },
   "contributions": {
     "title": "My contributions",
@@ -304,7 +316,8 @@
       "historyLabel": "Contribution history",
       "emptyTitle": "No contributions yet",
       "emptyDescription": "Your first contribution will appear here."
-    }
+    },
+    "metaTitle": "My contributions — Evolve Capital"
   },
   "admin": {
     "staleData": "Couldn't refresh the data. Showing the last known values.",
@@ -376,6 +389,11 @@
         "title": "No contributions",
         "description": "No payment recorded for this filter."
       }
+    },
+    "meta": {
+      "title": "Admin — Evolve Capital",
+      "cotisationsTitle": "Contributions — Admin Evolve Capital",
+      "membersTitle": "Members — Admin Evolve Capital"
     }
   },
   "errors": {

@@ -16,7 +16,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { DashboardHero, KPICard, EmptyState, Spinner, SyncBanner } from '@evolve/ui'
 import { formatRelativeTime } from '@evolve/utils'
 
-import { contributionStatusLabel, type DashboardData } from '@/lib/data/dashboard'
+import { type DashboardData } from '@/lib/data/dashboard'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
 
@@ -138,7 +138,7 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
         />
         <KPICard
           title={t('kpi.contributionStatus')}
-          value={contributionStatusLabel(data.contribution.status)}
+          value={t(`statusValue.${data.contribution.status}`)}
           format="raw"
           icon="Calendar"
         />

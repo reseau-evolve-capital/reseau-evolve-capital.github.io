@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient, type Database } from '@evolve/data'
 import { getPortfolioData } from '@/lib/data/portfolio'
@@ -6,7 +7,10 @@ import { PortfolioView } from './PortfolioView'
 
 type MembershipRow = Database['public']['Tables']['memberships']['Row']
 
-export const metadata: Metadata = { title: 'Portefeuille — Evolve Capital' }
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('portfolio')
+  return { title: t('metaTitle') }
+}
 
 export default async function PortfolioPage() {
   const cookieStore = await cookies()
