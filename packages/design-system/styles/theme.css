@@ -35,6 +35,7 @@
   --color-data-neutral-50: var(--data-neutral-50);
   --color-data-warning: var(--data-warning);
   --color-data-warning-50: var(--data-warning-50);
+  --color-data-warning-strong: var(--data-warning-strong);
 
   /* Semantic */
   --color-bg: var(--bg);

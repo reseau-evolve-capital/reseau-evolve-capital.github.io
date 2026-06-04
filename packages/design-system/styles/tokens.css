@@ -40,6 +40,9 @@
   --data-neutral-50: #ECECE8;
   --data-warning: #D97706;
   --data-warning-50: #FEF4E6;
+  /* Texte ambre foncé pour AA sur le tint clair (#D97706 sur -50 ≈ 2.9:1 échouait).
+     Réservé au TEXTE (ex. Badge warning) ; l'ambre vif --data-warning reste pour icônes/bordures. */
+  --data-warning-strong: #92400E;
 
   /* Semantic — light mode */
   --bg: var(--n-50);
@@ -107,4 +110,6 @@
   --data-neutral-50: rgba(160, 161, 163, 0.14);
   --data-warning: #F59E0B;
   --data-warning-50: rgba(245, 158, 11, 0.14);
+  /* En sombre, le texte ambre doit être CLAIR (lisible sur fond foncé). */
+  --data-warning-strong: #FCD34D;
 }

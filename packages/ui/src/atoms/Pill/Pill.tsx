@@ -9,7 +9,7 @@ export type PillStatus =
 
 const statusClasses: Record<PillStatus, string> = {
   'cotisation-ok': 'bg-data-positive-50 text-data-positive',
-  'cotisation-late': 'bg-data-warning-50 text-data-warning',
+  'cotisation-late': 'bg-data-warning-50 text-data-warning-strong',
   'cotisation-pending': 'bg-data-neutral-50 text-data-neutral',
   'cotisation-exempt': 'bg-neutral-100 text-text-ter',
 }

@@ -7,7 +7,7 @@ const variantClasses: Record<BadgeVariant, string> = {
   brand: 'bg-brand-yellow text-accent-ink',
   neutral: 'bg-data-neutral-50 text-data-neutral',
   success: 'bg-data-positive-50 text-data-positive',
-  warning: 'bg-data-warning-50 text-data-warning',
+  warning: 'bg-data-warning-50 text-data-warning-strong',
   error: 'bg-data-negative-50 text-data-negative',
 }
 

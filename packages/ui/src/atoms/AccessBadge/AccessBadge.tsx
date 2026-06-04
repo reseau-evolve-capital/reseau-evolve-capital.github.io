@@ -29,7 +29,7 @@ const DEFAULT_LABELS: Required<AccessBadgeLabels> = {
 const textClass: Record<AccessStatus, string> = {
   active: 'text-data-positive',
   locked: 'text-data-negative',
-  invited: 'text-data-warning',
+  invited: 'text-data-warning-strong', // ambre foncé : AA sur fond clair (≠ --data-warning vif)
 }
 
 /** Couleur de la pastille ronde (active/invited) — token de fond plein. */
