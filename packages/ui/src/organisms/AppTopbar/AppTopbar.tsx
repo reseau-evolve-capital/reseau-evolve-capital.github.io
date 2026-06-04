@@ -29,6 +29,8 @@ export interface AppTopbarProps {
   themeToggle?: React.ReactNode
   /** Affiche le logo sur mobile (la sidebar étant cachée). Défaut true. */
   showLogoOnMobile?: boolean
+  /** URL du logo de marque (l'app injecte `/logo.jpg`). Fallback SVG si absent. */
+  logoSrc?: string
   className?: string
 }
 
@@ -51,6 +53,7 @@ export function AppTopbar({
   dateLabel,
   themeToggle,
   showLogoOnMobile = true,
+  logoSrc,
   className,
 }: AppTopbarProps) {
   return (
@@ -66,7 +69,7 @@ export function AppTopbar({
       <div className="flex items-center">
         {showLogoOnMobile ? (
           <div className="md:hidden">
-            <Logo variant="full" />
+            <Logo variant="full" src={logoSrc} />
           </div>
         ) : null}
 

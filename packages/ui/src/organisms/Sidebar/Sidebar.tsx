@@ -17,6 +17,8 @@ export interface SidebarProps {
   linkComponent?: React.ElementType
   /** Carte « Club actif » affichée en bas de la sidebar (optionnel). */
   clubActif?: SidebarClub
+  /** URL du logo de marque (l'app injecte `/logo.jpg`). Fallback SVG si absent. */
+  logoSrc?: string
   className?: string
 }
 
@@ -33,6 +35,7 @@ export function Sidebar({
   activeHref,
   linkComponent: Link = 'a',
   clubActif,
+  logoSrc,
   className,
 }: SidebarProps) {
   return (
@@ -46,7 +49,7 @@ export function Sidebar({
       )}
     >
       <div className="px-2">
-        <Logo variant="full" />
+        <Logo variant="full" src={logoSrc} />
       </div>
 
       <p className="px-3 mt-2 font-mono uppercase tracking-wider text-[11px] text-text-ter">
