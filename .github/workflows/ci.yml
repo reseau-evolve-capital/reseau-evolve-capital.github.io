@@ -89,19 +89,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Polices commerciales MADE Tommy Soft : exclues du dépôt par licence
-      # (packages/design-system/.gitignore). globals.css les référence en @font-face url(),
-      # que Turbopack résout au build → un checkout propre échouerait. On génère des stubs
-      # vides UNIQUEMENT pour valider la compilation (pas la fidélité typo). À remplacer le
-      # jour où les polices sont fournies au build (secret CI / artefact privé). Voir
-      # packages/design-system/LICENSES/MADE-TommySoft.md.
-      - name: Stub des polices sous licence (validation de build only)
-        run: |
-          mkdir -p packages/design-system/assets/fonts
-          for w in Black Bold ExtraBold Light Medium Regular; do
-            f="packages/design-system/assets/fonts/MADE-TommySoft-$w.otf"
-            [ -f "$f" ] || touch "$f"
-          done
+      # Polices commerciales MADE Tommy Soft : exclues du dépôt par licence (repo PUBLIC).
+      # ensure-fonts garantit la présence des .otf (vraies si EVOLVE_FONTS_SRC, sinon stubs
+      # vides → fallback Plus Jakarta Sans au runtime) pour que le build soit reproductible.
+      # Aussi exécuté en predev/prebuild d'apps/web pour les checkouts propres locaux.
+      - name: Garantir les polices (ensure-fonts)
+        run: node scripts/ensure-fonts.mjs
 
       # Build de l'app membre. Toutes les routes sont dynamiques (server-rendered on
       # demand) → aucun appel Supabase au build : des valeurs publiques de remplacement

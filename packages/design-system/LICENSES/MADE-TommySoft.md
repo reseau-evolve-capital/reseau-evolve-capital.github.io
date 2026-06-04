@@ -27,6 +27,20 @@ Les `.otf` sont exclus du repo git. Pour les installer :
    - `MADE-TommySoft-Black.otf` (font-weight: 900)
 3. `pnpm install` puis `pnpm --filter @evolve/ui storybook` pour vérifier
 
+## Build & CI (repo PUBLIC → polices jamais committées)
+
+`fonts.css` référence les `.otf` en `@font-face url()`, résolus AU BUILD par Turbopack :
+un checkout propre (CI GitHub, déploiement, nouveau dev) échouerait sans eux.
+
+`scripts/ensure-fonts.mjs` (exécuté en `predev`/`prebuild` d'apps/web et dans le job CI
+`build`) garantit leur présence :
+
+- `EVOLVE_FONTS_SRC=<dossier>` défini → copie les vraies `.otf` depuis ce dossier (rendu fidèle) ;
+- sinon → stubs vides ⇒ le build passe et le **fallback Plus Jakarta Sans** s'applique au runtime.
+
+**Déploiement avec le vrai rendu** : fournir `EVOLVE_FONTS_SRC` (artefact privé / secret CI),
+jamais via git. En l'absence de licence confirmée, le fallback est le comportement par défaut.
+
 ## Lien
 
 https://madetype.com (à confirmer avec le client)
