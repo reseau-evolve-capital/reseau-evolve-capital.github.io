@@ -26,11 +26,13 @@ EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 -- 1. memberships — colonnes d'accès (additif, par-club)
 --    Un user verrouillé dans un club reste actif ailleurs (cohérent multi-club).
 -- ============================================================
+-- ON UPDATE CASCADE : users.id est re-keyé au 1ᵉʳ login (handle_new_user, migration 014).
+-- Toute FK vers users(id) doit donc cascader sur UPDATE, sinon la re-clé échoue.
 ALTER TABLE memberships
   ADD COLUMN IF NOT EXISTS access_status member_access_status NOT NULL DEFAULT 'active',
   ADD COLUMN IF NOT EXISTS locked_at     TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS locked_reason TEXT,
-  ADD COLUMN IF NOT EXISTS locked_by     UUID REFERENCES users(id) ON DELETE SET NULL;
+  ADD COLUMN IF NOT EXISTS locked_by     UUID REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL;
 
 -- ============================================================
 -- 2. invitations — funnel pré-membre
@@ -41,7 +43,7 @@ CREATE TABLE IF NOT EXISTS invitations (
   email       TEXT NOT NULL,
   token_hash  TEXT NOT NULL UNIQUE,            -- sha256 du token clair (le clair n'est JAMAIS stocké)
   status      invitation_status NOT NULL DEFAULT 'pending',
-  invited_by  UUID REFERENCES users(id) ON DELETE SET NULL,
+  invited_by  UUID REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL,
   invited_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   expires_at  TIMESTAMPTZ NOT NULL DEFAULT (NOW() + INTERVAL '72 hours'),
   accepted_at TIMESTAMPTZ,
@@ -65,7 +67,7 @@ CREATE TABLE IF NOT EXISTS member_access_events (
   membership_id UUID NOT NULL REFERENCES memberships(id) ON DELETE CASCADE,
   action        access_event_action NOT NULL,
   reason        TEXT,
-  actor_id      UUID REFERENCES users(id) ON DELETE SET NULL,
+  actor_id      UUID REFERENCES users(id) ON UPDATE CASCADE ON DELETE SET NULL,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS member_access_events_membership_idx ON member_access_events (membership_id);
