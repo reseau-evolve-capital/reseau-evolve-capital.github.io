@@ -17,6 +17,8 @@ export { WelcomeEmail } from './WelcomeEmail'
 export type { WelcomeEmailProps } from './WelcomeEmail'
 export { SyncErrorEmail } from './SyncErrorEmail'
 export type { SyncErrorEmailProps } from './SyncErrorEmail'
+export { AttestationEmail } from './AttestationEmail'
+export type { AttestationEmailProps, AttestationEmailKpis } from './AttestationEmail'
 
 /** Rend un email React Email en chaîne HTML prête à l'envoi. */
 export function renderEmailHtml(element: ReactElement): Promise<string> {
