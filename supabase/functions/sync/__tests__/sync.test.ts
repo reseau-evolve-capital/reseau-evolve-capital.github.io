@@ -277,13 +277,19 @@ function sameKey(a: Row, b: Row, keys: string[]): boolean {
   return keys.every((k) => a[k] === b[k])
 }
 
-/** Upsert idempotent dans une table : remplace la ligne en conflit, sinon insère. */
+/**
+ * Upsert idempotent dans une table : MERGE la ligne en conflit, sinon insère.
+ * Fidélité Postgres : `ON CONFLICT DO UPDATE SET col=excluded.col` ne touche que
+ * les colonnes fournies par le payload — les colonnes absentes (ex.
+ * clubs.last_error_email_sent_at, géré hors-sync par NTF-003) sont PRÉSERVÉES.
+ * (Un remplacement complet les effacerait à tort à chaque sync.)
+ */
 function upsertRows(table: Row[], incoming: Row[], onConflict: string): void {
   const keys = onConflict.split(',').map((k) => k.trim())
   for (const row of incoming) {
     const idx = table.findIndex((existing) => sameKey(existing, row, keys))
     if (idx >= 0) {
-      table[idx] = { ...row }
+      table[idx] = { ...table[idx], ...row }
     } else {
       table.push({ ...row })
     }
@@ -311,11 +317,13 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
     private op: 'select' | 'upsert' | 'insert' | 'delete' | 'update' = 'select'
     private payload: Row[] = []
     private onConflict = ''
+    private selectCols = ''
 
     constructor(private table: keyof Store) {}
 
-    select(_cols?: string): this {
+    select(cols?: string): this {
       // .select() après un write (upsert/insert) signifie "returning" — on ne réinitialise pas l'op.
+      this.selectCols = cols ?? ''
       return this
     }
     eq(col: string, val: unknown): this {
@@ -397,7 +405,15 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
     private computeSelectData(): unknown {
       const rows = this.rows()
       if (this.table === 'memberships') {
-        // .select('id, user_id, users!inner(full_name)') → on joint le full_name.
+        // Deux formes de select sur memberships :
+        //  - sync : .select('id, user_id, users!inner(full_name)')
+        //  - alerte NTF-003 : .select('users!inner(email)') filtré par role.
+        if (this.selectCols.includes('email')) {
+          return rows.map((m) => {
+            const u = store.users.find((x) => x.id === m.user_id)
+            return { users: { email: (u?.email as string) ?? '' } }
+          })
+        }
         return rows.map((m) => {
           const u = store.users.find((x) => x.id === m.user_id)
           return {
@@ -452,6 +468,11 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
   return { client: client as unknown as SupabaseLike }
 }
 
+/** Enregistre les appels à l'alerte email d'erreur de sync (NTF-003). */
+interface EmailSends {
+  calls: Array<{ clubName: string; errorMessage: string; recipients: string[] }>
+}
+
 /** Construit le handler avec un store donné + readSheet stubbé (optionnellement défaillant). */
 function buildHandler(
   store: Store,
@@ -460,6 +481,7 @@ function buildHandler(
     throwOn?: string
     overrides?: Record<string, string[][]>
     rpcCalls?: RpcCalls
+    emailSends?: EmailSends
   }
 ): (req: Request) => Promise<Response> {
   const mockReadSheet: SyncDeps['readSheet'] = (_sheetId: string, sheetName: string) => {
@@ -472,9 +494,18 @@ function buildHandler(
     return Promise.resolve(cloneSheet(sheetName))
   }
   const { client } = makeMockClient(store, opts?.rpcCalls)
+  const sendSyncErrorEmail: SyncDeps['sendSyncErrorEmail'] = (ctx) => {
+    opts?.emailSends?.calls.push({
+      clubName: ctx.clubName,
+      errorMessage: ctx.errorMessage,
+      recipients: ctx.recipients,
+    })
+    return Promise.resolve()
+  }
   return createSyncHandler({
     createClient: (() => client) as SyncDeps['createClient'],
     readSheet: mockReadSheet,
+    sendSyncErrorEmail,
   })
 }
 
@@ -680,4 +711,133 @@ Deno.test('handler : ordre impératif → PARAMETRAGES avant Base', async () => 
   const idxBase = order.indexOf('Base')
   assert(idxParam >= 0 && idxBase >= 0)
   assert(idxParam < idxBase, 'PARAMETRAGES doit précéder Base')
+})
+
+// ===========================================================================
+// 4. ALERTE EMAIL TRÉSORIERS (NTF-003) — seuil anti-spam 4h
+// ===========================================================================
+
+import {
+  cleanErrorMessage,
+  shouldSendAlert,
+  buildBrevoPayload,
+  ALERT_THROTTLE_MS,
+} from '../syncErrorAlert.ts'
+
+/** Seede un trésorier (user + membership role=treasurer) pour le club courant. */
+function seedTreasurer(store: Store): void {
+  const userId = 'user-treso'
+  store.users.push({ id: userId, email: 'treso@club.fr', full_name: 'Trésorier' })
+  store.memberships.push({
+    id: 'm-treso',
+    user_id: userId,
+    club_id: CLUB_ID,
+    role: 'treasurer',
+    joined_at: '2020-01-01',
+  })
+}
+
+// Helper-level — cleanErrorMessage retire stack/préfixes et garde un texte métier lisible.
+Deno.test('cleanErrorMessage : retire le préfixe feuille/impl. et la stack', () => {
+  assertEquals(
+    cleanErrorMessage('upsert clubs: Colonne "Prix de revient" introuvable\n  at foo (x.ts:1)'),
+    'Colonne "Prix de revient" introuvable'
+  )
+  assertEquals(cleanErrorMessage('Error: timeout réseau'), 'timeout réseau')
+  assertEquals(cleanErrorMessage('   '), 'Erreur inconnue lors de la synchronisation.')
+})
+
+// Helper-level — shouldSendAlert applique strictement la fenêtre de 4h.
+Deno.test('shouldSendAlert : NULL → autorisé ; < 4h → bloqué ; >= 4h → autorisé', () => {
+  const now = new Date('2026-06-05T12:00:00Z')
+  assertEquals(shouldSendAlert(null, now), true)
+  assertEquals(shouldSendAlert(undefined, now), true)
+  // Il y a 3h59 → encore dans la fenêtre → bloqué.
+  const recent = new Date(now.getTime() - (ALERT_THROTTLE_MS - 60_000)).toISOString()
+  assertEquals(shouldSendAlert(recent, now), false)
+  // Il y a 4h01 → fenêtre écoulée → autorisé.
+  const old = new Date(now.getTime() - (ALERT_THROTTLE_MS + 60_000)).toISOString()
+  assertEquals(shouldSendAlert(old, now), true)
+})
+
+// Helper-level — buildBrevoPayload assemble le payload SMTP Brevo attendu.
+Deno.test('buildBrevoPayload : sujet, destinataires et HTML', () => {
+  const payload = buildBrevoPayload(
+    {
+      clubName: 'Cercle Arago',
+      syncTime: new Date('2026-06-05T09:00:00Z'),
+      errorMessage: 'msg',
+      recipients: ['a@x.fr', 'b@x.fr'],
+    },
+    '<html>…</html>'
+  )
+  assertEquals(payload.subject, 'Erreur de synchronisation — Cercle Arago')
+  assertEquals(payload.to, [{ email: 'a@x.fr' }, { email: 'b@x.fr' }])
+  assertEquals(payload.htmlContent, '<html>…</html>')
+})
+
+// Test NTF-003 a — 1re erreur dure + trésorier + last_error_email_sent_at NULL →
+// l'email est envoyé et clubs.last_error_email_sent_at est renseigné.
+Deno.test(
+  'handler : erreur dure + trésorier, seuil non atteint (NULL) → email envoyé + horodatage MAJ',
+  async () => {
+    const store = emptyStore(true)
+    seedTreasurer(store)
+    const emailSends: EmailSends = { calls: [] }
+    // HISTORIQUE throw → erreur dure (errors.length > 0).
+    const handler = buildHandler(store, { throwOn: 'HISTORIQUE', emailSends })
+    const res = await handler(syncRequest(CLUB_ID))
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as SyncResponseBody
+    assertEquals(body.success, false)
+
+    // L'alerte est partie au trésorier (et à lui seul — les membres normaux exclus).
+    assertEquals(emailSends.calls.length, 1)
+    assertEquals(emailSends.calls[0].recipients, ['treso@club.fr'])
+    // Le message transmis est nettoyé (texte métier, pas de préfixe « HISTORIQUE: »).
+    assert(!emailSends.calls[0].errorMessage.startsWith('HISTORIQUE:'))
+    // L'horodatage anti-spam est désormais renseigné sur le club.
+    const club = store.clubs.find((c) => c.id === CLUB_ID)
+    assert(club !== undefined)
+    assert(typeof club.last_error_email_sent_at === 'string')
+  }
+)
+
+// Test NTF-003 b — APRÈS le seuil : last_error_email_sent_at récent (< 4h) →
+// pas de nouvel envoi (anti-spam), même en présence d'une erreur dure.
+Deno.test(
+  'handler : erreur dure mais alerte < 4h → seuil anti-spam → AUCUN nouvel envoi',
+  async () => {
+    const store = emptyStore(true)
+    seedTreasurer(store)
+    // Une alerte a été émise il y a 1h → toujours dans la fenêtre de 4h.
+    const club = store.clubs.find((c) => c.id === CLUB_ID)
+    assert(club !== undefined)
+    club.last_error_email_sent_at = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+    const sentBefore = club.last_error_email_sent_at
+
+    const emailSends: EmailSends = { calls: [] }
+    const handler = buildHandler(store, { throwOn: 'HISTORIQUE', emailSends })
+    const res = await handler(syncRequest(CLUB_ID))
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as SyncResponseBody
+    assertEquals(body.success, false)
+
+    // Seuil non écoulé → aucun email, horodatage inchangé.
+    assertEquals(emailSends.calls.length, 0)
+    assertEquals(club.last_error_email_sent_at, sentBefore)
+  }
+)
+
+// Test NTF-003 c — sync RÉUSSIE (aucune erreur dure) → jamais d'alerte email.
+Deno.test('handler : sync réussie → aucune alerte email', async () => {
+  const store = emptyStore(true)
+  seedTreasurer(store)
+  const emailSends: EmailSends = { calls: [] }
+  const handler = buildHandler(store, { emailSends })
+  const res = await handler(syncRequest(CLUB_ID))
+  assertEquals(res.status, 200)
+  const body = (await res.json()) as SyncResponseBody
+  assertEquals(body.success, true)
+  assertEquals(emailSends.calls.length, 0)
 })

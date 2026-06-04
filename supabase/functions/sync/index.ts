@@ -19,6 +19,8 @@ import type { readSheet as ReadSheetFn } from './readSheet.ts'
 import { createSnapshot } from './snapshot.ts'
 import type { SnapshotStatus } from './snapshot.ts'
 import { alertSentry } from './sentry.ts'
+import { maybeSendSyncErrorAlert } from './syncErrorAlert.ts'
+import type { SendSyncErrorEmail } from './syncErrorAlert.ts'
 import {
   parseParametrages,
   parseBase,
@@ -51,6 +53,12 @@ const bodySchema = z.object({ club_id: z.string().min(1) })
 export interface SyncDeps {
   createClient: typeof createClient
   readSheet: typeof ReadSheetFn
+  /**
+   * Envoi de l'alerte email « erreur de sync » aux trésoriers (NTF-003).
+   * Injecté pour tester le seuil anti-spam 4h SANS réseau ni rendu React Email.
+   * L'entrypoint de production câble la vraie implémentation (rendu + POST Brevo).
+   */
+  sendSyncErrorEmail: SendSyncErrorEmail
 }
 
 // ---- Helpers de réponse ----
@@ -464,6 +472,16 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       })
     }
 
+    // Alerte EMAIL aux trésoriers dès la 1re erreur DURE (NTF-003).
+    // Best-effort + seuil anti-spam 4h géré dans maybeSendSyncErrorAlert :
+    // ne throw jamais, ne change rien à la réponse de sync. On agrège les
+    // messages d'erreur (nettoyés en interne) en un texte métier lisible.
+    if (errors.length > 0) {
+      await maybeSendSyncErrorAlert(supabase, clubId, errors.join(' | '), {
+        sendEmail: deps.sendSyncErrorEmail,
+      })
+    }
+
     // success n'encode QUE les erreurs dures ; warnings est un ajout non-breaking.
     return json({
       success: errors.length === 0,
@@ -481,5 +499,12 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
 // Câble les vraies dépendances (client Supabase réel + readSheet Google Sheets).
 // Démarre le serveur uniquement quand le module est l'entrée principale (pas à l'import en test).
 if (import.meta.main) {
-  Deno.serve(createSyncHandler({ createClient, readSheet }))
+  // Import DYNAMIQUE de l'implémentation Brevo : elle charge React Email +
+  // @evolve/design-system (arbre de deps lourd, non résoluble par `deno test`
+  // sans --sloppy-imports). Le charger ici, hors du chemin testé, garde le
+  // handler et ses tests légers (le faux `sendSyncErrorEmail` est injecté en test).
+  const { sendSyncErrorEmailBrevo } = await import('./sendSyncErrorEmailBrevo.ts')
+  Deno.serve(
+    createSyncHandler({ createClient, readSheet, sendSyncErrorEmail: sendSyncErrorEmailBrevo })
+  )
 }

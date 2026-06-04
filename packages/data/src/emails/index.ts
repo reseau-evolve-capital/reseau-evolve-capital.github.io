@@ -15,6 +15,8 @@ export { MagicLinkEmail } from './MagicLinkEmail'
 export type { MagicLinkEmailProps } from './MagicLinkEmail'
 export { WelcomeEmail } from './WelcomeEmail'
 export type { WelcomeEmailProps } from './WelcomeEmail'
+export { SyncErrorEmail } from './SyncErrorEmail'
+export type { SyncErrorEmailProps } from './SyncErrorEmail'
 
 /** Rend un email React Email en chaîne HTML prête à l'envoi. */
 export function renderEmailHtml(element: ReactElement): Promise<string> {
