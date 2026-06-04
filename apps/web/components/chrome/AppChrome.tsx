@@ -21,6 +21,7 @@ import {
   type SidebarClub,
 } from '@evolve/ui'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
+import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
 
 /** Logo de marque servi par l'app (apps/web/public/logo.jpg). */
 const LOGO_SRC = '/logo.jpg'
@@ -123,6 +124,7 @@ export function AppChromeTopbar({
       }}
       syncLabel={syncLabel}
       dateLabel={dateLabel}
+      localeSwitcher={<LocaleSwitcherClient />}
       themeToggle={
         <ThemeToggle
           toggleLabel={t('themeToggle.toggle')}

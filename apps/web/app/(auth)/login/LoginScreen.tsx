@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl'
 import { useMutation } from '@tanstack/react-query'
 import { Logo, Button, Input, FormField, ThemeToggle, Icon } from '@evolve/ui'
 import { requestMagicLink } from '@/lib/api/auth'
+import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // Lien d'aide → site vitrine public (existant). i18n-ready (copy FR par défaut).
@@ -134,6 +135,7 @@ export function LoginScreen() {
       {/* Panneau formulaire — thémé */}
       <main className="flex flex-1 flex-col px-6 py-6 md:px-12 lg:px-20">
         <div className="flex items-center justify-end gap-3">
+          <LocaleSwitcherClient />
           <ThemeToggle
             toggleLabel={t('themeToggle.toggle')}
             switchToLightLabel={t('themeToggle.switchToLight')}
