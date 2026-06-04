@@ -290,6 +290,53 @@ ON CONFLICT (membership_id, year, month) DO UPDATE
       due_date = EXCLUDED.due_date, paid_at = EXCLUDED.paid_at, synced_at = EXCLUDED.synced_at;
 
 
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 6. ACCÈS & INVITATIONS (ADM-007) — colonne « Accès » /admin/members,
+--    page /admin/invitations, écran /acces-suspendu.
+--    - COLY Marc (déjà impayé) → VERROUILLÉ (access_status='locked', motif 'Impayé')
+--      + un member_access_events 'locked'. → badge « Bloqué » ; s'il se connecte, il est
+--      redirigé vers /acces-suspendu (sa seule adhésion active est verrouillée).
+--    - 4 invitations Club E2E couvrant chaque statut (pending/accepted/expired/revoked).
+--      token_hash = hash factice unique (en prod on stocke un sha256, jamais le clair).
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- 6.1 Verrouille COLY Marc (idempotent : réécrit l'état + un event 'locked').
+UPDATE memberships
+   SET access_status = 'locked'::member_access_status,
+       locked_at     = NOW(),
+       locked_reason = 'Impayé',
+       locked_by     = (SELECT id FROM users WHERE email = 'test@example.com'),
+       updated_at    = NOW()
+ WHERE id = 'cccccccc-0000-0000-0000-000000000003'::uuid;
+
+DELETE FROM member_access_events WHERE membership_id = 'cccccccc-0000-0000-0000-000000000003'::uuid;
+INSERT INTO member_access_events (membership_id, action, reason, actor_id)
+VALUES ('cccccccc-0000-0000-0000-000000000003'::uuid, 'locked'::access_event_action, 'Impayé',
+        (SELECT id FROM users WHERE email = 'test@example.com'));
+
+-- 6.2 Invitations du club (purge ciblée puis ré-insertion des 4 statuts).
+DELETE FROM invitations WHERE club_id = 'aaaaaaaa-0000-0000-0000-000000000001'::uuid;
+INSERT INTO invitations
+  (club_id, email, token_hash, status, invited_by, invited_at, expires_at, accepted_at, revoked_at)
+VALUES
+  ('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'lea.verif@example.com',
+   'verif-hash-pending-0001', 'pending'::invitation_status,
+   (SELECT id FROM users WHERE email='test@example.com'),
+   NOW() - INTERVAL '6 hours', NOW() + INTERVAL '66 hours', NULL, NULL),
+  ('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'marc.verif@example.com',
+   'verif-hash-accepted-0002', 'accepted'::invitation_status,
+   (SELECT id FROM users WHERE email='test@example.com'),
+   NOW() - INTERVAL '5 days', NOW() - INTERVAL '2 days', NOW() - INTERVAL '4 days', NULL),
+  ('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'sophie.verif@example.com',
+   'verif-hash-expired-0003', 'expired'::invitation_status,
+   (SELECT id FROM users WHERE email='test@example.com'),
+   NOW() - INTERVAL '10 days', NOW() - INTERVAL '7 days', NULL, NULL),
+  ('aaaaaaaa-0000-0000-0000-000000000001'::uuid, 'paul.verif@example.com',
+   'verif-hash-revoked-0004', 'revoked'::invitation_status,
+   (SELECT id FROM users WHERE email='test@example.com'),
+   NOW() - INTERVAL '3 days', NOW() + INTERVAL '21 hours', NULL, NOW() - INTERVAL '1 day');
+
+
 COMMIT;
 
 
@@ -316,7 +363,12 @@ COMMIT;
 -- ROLLBACK MANUEL (revenir à l'état seed.sql nominal — NON exécuté par défaut)
 -- =============================================================================
 -- BEGIN;
---   -- Supprime les membres factices (contributions + contribution_months CASCADE).
+--   -- Invitations + déverrouillage COLY (ADM-007).
+--   DELETE FROM invitations WHERE club_id='aaaaaaaa-0000-0000-0000-000000000001'::uuid;
+--   UPDATE memberships SET access_status='active'::member_access_status,
+--          locked_at=NULL, locked_reason=NULL, locked_by=NULL
+--    WHERE id='cccccccc-0000-0000-0000-000000000003'::uuid;
+--   -- Supprime les membres factices (contributions + contribution_months + access_events CASCADE).
 --   DELETE FROM memberships WHERE id IN (
 --     'cccccccc-0000-0000-0000-000000000002'::uuid,
 --     'cccccccc-0000-0000-0000-000000000003'::uuid);

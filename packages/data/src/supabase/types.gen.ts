@@ -193,8 +193,111 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          accepted_at: string | null
+          club_id: string
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_at: string
+          invited_by: string | null
+          revoked_at: string | null
+          status: Database['public']['Enums']['invitation_status']
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          club_id: string
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          revoked_at?: string | null
+          status?: Database['public']['Enums']['invitation_status']
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          club_id?: string
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_at?: string
+          invited_by?: string | null
+          revoked_at?: string | null
+          status?: Database['public']['Enums']['invitation_status']
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'invitations_club_id_fkey'
+            columns: ['club_id']
+            isOneToOne: false
+            referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'invitations_invited_by_fkey'
+            columns: ['invited_by']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      member_access_events: {
+        Row: {
+          action: Database['public']['Enums']['access_event_action']
+          actor_id: string | null
+          created_at: string
+          id: string
+          membership_id: string
+          reason: string | null
+        }
+        Insert: {
+          action: Database['public']['Enums']['access_event_action']
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          membership_id: string
+          reason?: string | null
+        }
+        Update: {
+          action?: Database['public']['Enums']['access_event_action']
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          membership_id?: string
+          reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'member_access_events_actor_id_fkey'
+            columns: ['actor_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'member_access_events_membership_id_fkey'
+            columns: ['membership_id']
+            isOneToOne: false
+            referencedRelation: 'memberships'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       memberships: {
         Row: {
+          access_status: Database['public']['Enums']['member_access_status']
           club_id: string
           created_at: string
           id: string
@@ -202,12 +305,16 @@ export type Database = {
           joined_at: string
           leave_at: string | null
           leave_with_amount: number | null
+          locked_at: string | null
+          locked_by: string | null
+          locked_reason: string | null
           role: Database['public']['Enums']['member_role']
           status: Database['public']['Enums']['member_status']
           updated_at: string
           user_id: string
         }
         Insert: {
+          access_status?: Database['public']['Enums']['member_access_status']
           club_id: string
           created_at?: string
           id?: string
@@ -215,12 +322,16 @@ export type Database = {
           joined_at: string
           leave_at?: string | null
           leave_with_amount?: number | null
+          locked_at?: string | null
+          locked_by?: string | null
+          locked_reason?: string | null
           role?: Database['public']['Enums']['member_role']
           status?: Database['public']['Enums']['member_status']
           updated_at?: string
           user_id: string
         }
         Update: {
+          access_status?: Database['public']['Enums']['member_access_status']
           club_id?: string
           created_at?: string
           id?: string
@@ -228,6 +339,9 @@ export type Database = {
           joined_at?: string
           leave_at?: string | null
           leave_with_amount?: number | null
+          locked_at?: string | null
+          locked_by?: string | null
+          locked_reason?: string | null
           role?: Database['public']['Enums']['member_role']
           status?: Database['public']['Enums']['member_status']
           updated_at?: string
@@ -239,6 +353,13 @@ export type Database = {
             columns: ['club_id']
             isOneToOne: false
             referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'memberships_locked_by_fkey'
+            columns: ['locked_by']
+            isOneToOne: false
+            referencedRelation: 'users'
             referencedColumns: ['id']
           },
           {
@@ -540,6 +661,24 @@ export type Database = {
       }
     }
     Functions: {
+      accept_invitation: { Args: { p_token_hash: string }; Returns: string }
+      admin_create_invitation: {
+        Args: { p_club_id: string; p_email: string; p_token_hash: string }
+        Returns: string
+      }
+      admin_resend_invitation: {
+        Args: { p_invitation_id: string; p_token_hash: string }
+        Returns: undefined
+      }
+      admin_revoke_invitation: {
+        Args: { p_invitation_id: string }
+        Returns: undefined
+      }
+      admin_set_member_access: {
+        Args: { p_locked: boolean; p_membership_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      current_user_access_blocked: { Args: never; Returns: boolean }
       email_is_invited: { Args: { p_email: string }; Returns: boolean }
       get_user_club_ids: { Args: never; Returns: string[] }
       get_user_role_in_club: {
@@ -550,7 +689,10 @@ export type Database = {
       user_is_staff: { Args: never; Returns: boolean }
     }
     Enums: {
+      access_event_action: 'locked' | 'unlocked'
       contribution_status: 'ok' | 'pending' | 'late' | 'exempt'
+      invitation_status: 'pending' | 'accepted' | 'expired' | 'revoked'
+      member_access_status: 'active' | 'locked'
       member_role: 'member' | 'treasurer' | 'president' | 'network_admin'
       member_status: 'active' | 'left'
       month_status: 'paid' | 'due' | 'late' | 'exempt'
@@ -684,7 +826,10 @@ export const Constants = {
   },
   public: {
     Enums: {
+      access_event_action: ['locked', 'unlocked'],
       contribution_status: ['ok', 'pending', 'late', 'exempt'],
+      invitation_status: ['pending', 'accepted', 'expired', 'revoked'],
+      member_access_status: ['active', 'locked'],
       member_role: ['member', 'treasurer', 'president', 'network_admin'],
       member_status: ['active', 'left'],
       month_status: ['paid', 'due', 'late', 'exempt'],
