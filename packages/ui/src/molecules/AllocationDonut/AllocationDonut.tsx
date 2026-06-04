@@ -9,6 +9,12 @@ export interface AllocationDonutProps {
   data: AllocationItem[]
   totalValue: number
   className?: string
+  /** Libellé sous la valeur totale (centre du donut). Défaut FR. */
+  totalLabel?: string
+  /** Préfixe de l'aria-label du graphique. Défaut FR. */
+  ariaLabelPrefix?: string
+  /** Libellé a11y de la légende. Défaut FR. */
+  legendLabel?: string
 }
 
 // Palette de secteurs = tokens CSS uniquement (jamais de hex — garde CI). Assignée par index ;
@@ -30,11 +36,18 @@ function colorFor(label: string, index: number): string {
 /** Donut d'allocation par secteur. Statique (pas de tooltip interactif). Tokens CSS only.
  *  Le role="img" est placé sur le div conteneur (pas sur PieChart) pour garantir
  *  la détection dans jsdom où Recharts peut wrapper différemment. */
-export function AllocationDonut({ data, totalValue, className }: AllocationDonutProps) {
+export function AllocationDonut({
+  data,
+  totalValue,
+  className,
+  totalLabel = 'Valeur totale',
+  ariaLabelPrefix = 'Allocation du portefeuille : ',
+  legendLabel = "Légende de l'allocation",
+}: AllocationDonutProps) {
   if (!Array.isArray(data) || data.length === 0) return null
 
   const ariaLabel =
-    'Allocation du portefeuille : ' +
+    ariaLabelPrefix +
     data.map((d) => `${d.label} ${formatPct(d.percentage, { showSign: false })}`).join(', ')
 
   return (
@@ -74,13 +87,10 @@ export function AllocationDonut({ data, totalValue, className }: AllocationDonut
           <span className="font-display font-bold text-[18px] text-text [font-feature-settings:'tnum']">
             {formatEUR(totalValue)}
           </span>
-          <span className="text-[12px] text-text-ter">Valeur totale</span>
+          <span className="text-[12px] text-text-ter">{totalLabel}</span>
         </div>
       </div>
-      <ul
-        className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2"
-        aria-label="Légende de l'allocation"
-      >
+      <ul className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2" aria-label={legendLabel}>
         {data.map((d, i) => (
           <li key={d.label} className="flex items-center gap-2 text-[13px] text-text-sec">
             <span

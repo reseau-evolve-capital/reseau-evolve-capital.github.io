@@ -7,12 +7,22 @@ export interface ProgressHeaderProps {
   step: number
   /** Nombre total d'étapes */
   total: number
+  /**
+   * Gabarit du libellé de progression — défaut `(step, total) => `Étape ${step} sur ${total}``.
+   * Sert à la fois au texte affiché et à l'aria-label de la ProgressBar.
+   */
+  formatLabel?: (step: number, total: number) => string
   className?: string
 }
 
 /** En-tête de progression pour les formulaires multi-étapes. Compose ProgressBar. */
-export function ProgressHeader({ step, total, className }: ProgressHeaderProps) {
-  const label = `Étape ${step} sur ${total}`
+export function ProgressHeader({
+  step,
+  total,
+  formatLabel = (s, t) => `Étape ${s} sur ${t}`,
+  className,
+}: ProgressHeaderProps) {
+  const label = formatLabel(step, total)
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>

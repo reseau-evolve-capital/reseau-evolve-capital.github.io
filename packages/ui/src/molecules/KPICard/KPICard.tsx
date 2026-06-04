@@ -15,6 +15,8 @@ export interface KPICardProps {
   icon?: IconName
   isLoading?: boolean
   className?: string
+  /** Libellé du lien « voir détail ». Défaut FR. */
+  detailLabel?: string
 }
 
 function renderValue(value: number | string, format: NonNullable<KPICardProps['format']>): string {
@@ -32,6 +34,7 @@ export function KPICard({
   icon,
   isLoading = false,
   className,
+  detailLabel = 'Voir détail',
 }: KPICardProps) {
   return (
     <div
@@ -64,7 +67,7 @@ export function KPICard({
               href={href}
               className="text-[13px] font-semibold text-text border-b border-accent pb-px hover:bg-accent hover:text-accent-ink hover:px-1.5 hover:py-0.5 hover:border-0 hover:rounded-sm transition-all duration-[150ms]"
             >
-              Voir détail
+              {detailLabel}
             </a>
           )}
         </div>

@@ -10,6 +10,13 @@ export interface CarouselSliderProps {
   active: number
   /** Appelé quand l'index actif change */
   onActiveChange: (index: number) => void
+  /** aria-label de la région carrousel — défaut "Présentation" */
+  regionAriaLabel?: string
+  /**
+   * Gabarit de l'aria-label de chaque slide — défaut `(index, count) => `Slide ${index} sur ${count}``.
+   * `index` est 1-indexé, `count` est le nombre total de slides.
+   */
+  slideAriaLabel?: (index: number, count: number) => string
   className?: string
 }
 
@@ -18,7 +25,14 @@ export interface CarouselSliderProps {
  * Naviguable au clavier (←/→) et via CarouselDots.
  * L'état `active` est entièrement contrôlé depuis le parent.
  */
-export function CarouselSlider({ slides, active, onActiveChange, className }: CarouselSliderProps) {
+export function CarouselSlider({
+  slides,
+  active,
+  onActiveChange,
+  regionAriaLabel = 'Présentation',
+  slideAriaLabel = (index, count) => `Slide ${index} sur ${count}`,
+  className,
+}: CarouselSliderProps) {
   const trackRef = useRef<HTMLDivElement>(null)
 
   function go(i: number) {
@@ -45,7 +59,7 @@ export function CarouselSlider({ slides, active, onActiveChange, className }: Ca
     <div
       role="region"
       aria-roledescription="carousel"
-      aria-label="Présentation"
+      aria-label={regionAriaLabel}
       className={cn('flex w-full min-w-0 flex-col gap-4', className)}
       onKeyDown={onKey}
       tabIndex={0}
@@ -59,7 +73,7 @@ export function CarouselSlider({ slides, active, onActiveChange, className }: Ca
             key={i}
             role="group"
             aria-roledescription="slide"
-            aria-label={`Slide ${i + 1} sur ${slides.length}`}
+            aria-label={slideAriaLabel(i + 1, slides.length)}
             className="w-full shrink-0 snap-center"
           >
             {slide}

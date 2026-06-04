@@ -10,6 +10,20 @@ export interface SidebarClub {
   meta?: string
 }
 
+/** Libellés textuels externalisables (i18n). Défauts FR si non fournis. */
+export interface SidebarLabels {
+  /** Sur-titre de la zone de navigation. Défaut : « Espace membre ». */
+  section?: string
+  /** `aria-label` du `<nav>`. Défaut : « Navigation principale ». */
+  navLabel?: string
+  /** Texte sr-only de la pastille de notification. Défaut : « notification ». */
+  notification?: string
+  /** Badge des entrées désactivées (V1 à venir). Défaut : « Bientôt ». */
+  soon?: string
+  /** Titre de la carte club. Défaut : « Club actif ». */
+  clubTitle?: string
+}
+
 export interface SidebarProps {
   items: NavItem[]
   activeHref: string
@@ -19,6 +33,8 @@ export interface SidebarProps {
   clubActif?: SidebarClub
   /** URL du logo de marque (l'app injecte `/logo.jpg`). Fallback SVG si absent. */
   logoSrc?: string
+  /** Libellés textuels (i18n). Chaque clé absente retombe sur son défaut FR. */
+  labels?: SidebarLabels
   className?: string
 }
 
@@ -36,8 +52,15 @@ export function Sidebar({
   linkComponent: Link = 'a',
   clubActif,
   logoSrc,
+  labels,
   className,
 }: SidebarProps) {
+  const sectionLabel = labels?.section ?? 'Espace membre'
+  const navLabel = labels?.navLabel ?? 'Navigation principale'
+  const notificationLabel = labels?.notification ?? 'notification'
+  const soonLabel = labels?.soon ?? 'Bientôt'
+  const clubTitleLabel = labels?.clubTitle ?? 'Club actif'
+
   return (
     <aside
       className={cn(
@@ -53,10 +76,10 @@ export function Sidebar({
       </div>
 
       <p className="px-3 mt-2 font-mono uppercase tracking-wider text-[11px] text-text-ter">
-        Espace membre
+        {sectionLabel}
       </p>
 
-      <nav aria-label="Navigation principale" className="flex flex-col gap-1">
+      <nav aria-label={navLabel} className="flex flex-col gap-1">
         {items.map((item) => {
           const active = item.href === activeHref
 
@@ -67,7 +90,7 @@ export function Sidebar({
               {item.notif ? (
                 <>
                   <span className="h-2 w-2 rounded-full bg-data-negative" aria-hidden="true" />
-                  <span className="sr-only">notification</span>
+                  <span className="sr-only">{notificationLabel}</span>
                 </>
               ) : null}
             </>
@@ -86,7 +109,7 @@ export function Sidebar({
                 <Icon name={item.icon} size={20} aria-hidden="true" />
                 <span className="flex-1">{item.label}</span>
                 <span className="font-mono uppercase tracking-wider text-[10px] text-text-ter">
-                  Bientôt
+                  {soonLabel}
                 </span>
               </span>
             )
@@ -114,7 +137,9 @@ export function Sidebar({
 
       {clubActif ? (
         <div className="mt-auto border border-border rounded-[10px] p-3">
-          <p className="font-mono uppercase tracking-wider text-[11px] text-text-ter">Club actif</p>
+          <p className="font-mono uppercase tracking-wider text-[11px] text-text-ter">
+            {clubTitleLabel}
+          </p>
           <p className="mt-1 font-semibold text-text text-[14px]">{clubActif.name}</p>
           {clubActif.meta ? <p className="text-text-sec text-[12px]">{clubActif.meta}</p> : null}
         </div>

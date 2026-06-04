@@ -14,10 +14,36 @@ import type { PortfolioPosition } from '@evolve/types'
 import { Badge } from '../../atoms/Badge'
 import { cn } from '../../lib/cn'
 
+/** Libellés des statistiques de la modale + a11y. Défauts FR byte-exacts. */
+export interface PositionDetailModalLabels {
+  quantity?: string
+  pru?: string
+  livePrice?: string
+  currentValue?: string
+  gainLossEur?: string
+  gainLossPct?: string
+  allocationPct?: string
+  /** aria-label du bouton fermer. */
+  close?: string
+}
+
+const DEFAULT_LABELS: Required<PositionDetailModalLabels> = {
+  quantity: 'Quantité',
+  pru: 'PRU',
+  livePrice: 'Cours',
+  currentValue: 'Valeur totale',
+  gainLossEur: '+/- €',
+  gainLossPct: '+/- %',
+  allocationPct: '% du portefeuille',
+  close: 'Fermer',
+}
+
 export interface PositionDetailModalProps {
   position: PortfolioPosition | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  /** Chaînes user-facing/a11y (i18n). Tout défaut est FR. */
+  labels?: PositionDetailModalLabels
 }
 
 /** Ligne de statistique : label discret + valeur en chiffres tabulaires. */
@@ -42,7 +68,13 @@ function Stat({ label, value, className }: { label: string; value: string; class
  * Affiche les stats clés : quantité, PRU, cours live, valeur totale, +/- € et %, % du portefeuille.
  * Aucune sparkline en V0 (pas d'historique par position).
  */
-export function PositionDetailModal({ position, open, onOpenChange }: PositionDetailModalProps) {
+export function PositionDetailModal({
+  position,
+  open,
+  onOpenChange,
+  labels,
+}: PositionDetailModalProps) {
+  const t = { ...DEFAULT_LABELS, ...labels }
   // Calcul sûr même quand position est null (Dialog.Root doit toujours être rendu).
   const isLoss = position ? position.gainLossPct < 0 : false
   const perfColor = isLoss ? 'text-data-negative' : 'text-data-positive'
@@ -76,24 +108,32 @@ export function PositionDetailModal({ position, open, onOpenChange }: PositionDe
 
               {/* Grille de stats — sector non affiché en V0 (catégorie via Badge suffit pour la modale). */}
               <div className="mt-6 grid grid-cols-2 md:grid-cols-3 gap-5">
-                <Stat label="Quantité" value={String(position.quantity)} />
-                <Stat label="PRU" value={position.pru == null ? '—' : formatEUR(position.pru)} />
+                <Stat label={t.quantity} value={String(position.quantity)} />
+                <Stat label={t.pru} value={position.pru == null ? '—' : formatEUR(position.pru)} />
                 <Stat
-                  label="Cours"
+                  label={t.livePrice}
                   value={position.livePrice == null ? '—' : formatEUR(position.livePrice)}
                 />
-                <Stat label="Valeur totale" value={formatEUR(position.currentValue)} />
-                <Stat label="+/- €" value={formatEUR(position.gainLossEur)} className={perfColor} />
-                <Stat label="+/- %" value={formatPct(position.gainLossPct)} className={perfColor} />
+                <Stat label={t.currentValue} value={formatEUR(position.currentValue)} />
                 <Stat
-                  label="% du portefeuille"
+                  label={t.gainLossEur}
+                  value={formatEUR(position.gainLossEur)}
+                  className={perfColor}
+                />
+                <Stat
+                  label={t.gainLossPct}
+                  value={formatPct(position.gainLossPct)}
+                  className={perfColor}
+                />
+                <Stat
+                  label={t.allocationPct}
                   value={formatPct(position.allocationPct, { showSign: false })}
                 />
               </div>
 
               {/* Bouton fermer — min 44×44px, focus-visible glow token */}
               <Dialog.Close
-                aria-label="Fermer"
+                aria-label={t.close}
                 className="absolute top-4 right-4 min-h-[44px] min-w-[44px] flex items-center justify-center text-text-ter focus-visible:shadow-[var(--sh-glow)] outline-none rounded-md"
               >
                 ✕

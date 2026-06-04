@@ -9,6 +9,12 @@ export type Theme = 'light' | 'dark'
 const STORAGE_KEY = 'ec-theme'
 
 export interface ThemeToggleProps {
+  /** `aria-label` du placeholder (avant montage). Défaut FR : « Basculer le thème ». */
+  toggleLabel?: string
+  /** `aria-label` quand le thème sombre est actif (action : passer en clair). Défaut FR : « Activer le mode clair ». */
+  switchToLightLabel?: string
+  /** `aria-label` quand le thème clair est actif (action : passer en sombre). Défaut FR : « Activer le mode sombre ». */
+  switchToDarkLabel?: string
   className?: string
 }
 
@@ -23,7 +29,12 @@ export interface ThemeToggleProps {
  * déjà `data-theme` avant peinture), on rend un placeholder stable jusqu'au
  * montage, puis on lit l'état réel depuis le DOM dans un `useEffect`.
  */
-export function ThemeToggle({ className }: ThemeToggleProps) {
+export function ThemeToggle({
+  toggleLabel = 'Basculer le thème',
+  switchToLightLabel = 'Activer le mode clair',
+  switchToDarkLabel = 'Activer le mode sombre',
+  className,
+}: ThemeToggleProps) {
   const [mounted, setMounted] = React.useState(false)
   const [isDark, setIsDark] = React.useState(false)
 
@@ -62,7 +73,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
   // Placeholder stable avant montage : même balise/dimensions, icône neutre.
   if (!mounted) {
     return (
-      <button type="button" aria-label="Basculer le thème" className={baseClassName} disabled>
+      <button type="button" aria-label={toggleLabel} className={baseClassName} disabled>
         <Icon name="SunMoon" size={20} aria-hidden="true" />
       </button>
     )
@@ -73,7 +84,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       type="button"
       onClick={toggle}
       aria-pressed={isDark}
-      aria-label={isDark ? 'Activer le mode clair' : 'Activer le mode sombre'}
+      aria-label={isDark ? switchToLightLabel : switchToDarkLabel}
       className={baseClassName}
     >
       <Icon name={isDark ? 'Sun' : 'Moon'} size={20} aria-hidden="true" />

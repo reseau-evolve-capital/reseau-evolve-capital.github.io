@@ -28,6 +28,14 @@ export interface SyncBannerProps {
   /** Message d'erreur inline (ex: rate-limit 429). Affiché en discret, jamais en rouge brand. */
   errorMessage?: string | null
   className?: string
+  /** Gabarit du libellé « synchronisé » : reçoit le temps relatif déjà formaté (ou le fallback). Défaut FR. */
+  syncedAtTemplate?: (relativeTime: string) => string
+  /** Fallback affiché quand syncedAt est null. Défaut « — ». */
+  neverSyncedLabel?: string
+  /** Libellé du bouton d'actualisation. Défaut FR. */
+  refreshLabel?: string
+  /** aria-label du bouton d'actualisation. Défaut FR. */
+  refreshAriaLabel?: string
 }
 
 const PRIVILEGED: readonly SyncRole[] = ['treasurer', 'president', 'network_admin']
@@ -40,6 +48,10 @@ export function SyncBanner({
   onSync,
   errorMessage = null,
   className,
+  syncedAtTemplate = (relativeTime) => `Synchronisé ${relativeTime}`,
+  neverSyncedLabel = '—',
+  refreshLabel = 'Actualiser',
+  refreshAriaLabel = 'Actualiser les données',
 }: SyncBannerProps) {
   if (!PRIVILEGED.includes(userRole)) return null
 
@@ -53,13 +65,13 @@ export function SyncBanner({
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2 text-[13px] text-text-sec">
           <Icon name="RefreshCw" size={16} aria-hidden="true" />
-          Synchronisé {syncedAt ? formatRelativeTime(syncedAt) : '—'}
+          {syncedAtTemplate(syncedAt ? formatRelativeTime(syncedAt) : neverSyncedLabel)}
         </span>
         <button
           type="button"
           onClick={() => onSync?.()}
           disabled={!canSync || isSyncing}
-          aria-label="Actualiser les données"
+          aria-label={refreshAriaLabel}
           aria-busy={isSyncing}
           className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 min-h-[44px] text-[13px] font-semibold text-text border border-border disabled:opacity-50 focus-visible:shadow-[var(--sh-glow)] outline-none"
         >
@@ -68,7 +80,7 @@ export function SyncBanner({
           ) : (
             <Icon name="RefreshCw" size={16} aria-hidden="true" />
           )}
-          Actualiser
+          {refreshLabel}
         </button>
       </div>
       {errorMessage ? (

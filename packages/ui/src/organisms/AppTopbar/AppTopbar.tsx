@@ -7,6 +7,18 @@ import { Logo } from '../../atoms/Logo'
 import { cn } from '../../lib/cn'
 import type { AppHeaderUser } from '../AppHeader'
 
+/** Libellés textuels externalisables (i18n). Défauts FR si non fournis. */
+export interface AppTopbarLabels {
+  /** `aria-label` du trigger du menu. Défaut : « Menu utilisateur ». */
+  userMenu?: string
+  /** Entrée admin du menu. Défaut : « Espace trésorier ». */
+  admin?: string
+  /** Entrée profil du menu. Défaut : « Profil ». */
+  profile?: string
+  /** Entrée déconnexion du menu. Défaut : « Déconnexion ». */
+  logout?: string
+}
+
 export interface AppTopbarProps {
   user: AppHeaderUser
   /**
@@ -31,6 +43,8 @@ export interface AppTopbarProps {
   showLogoOnMobile?: boolean
   /** URL du logo de marque (l'app injecte `/logo.jpg`). Fallback SVG si absent. */
   logoSrc?: string
+  /** Libellés textuels (i18n). Chaque clé absente retombe sur son défaut FR. */
+  labels?: AppTopbarLabels
   className?: string
 }
 
@@ -54,8 +68,14 @@ export function AppTopbar({
   themeToggle,
   showLogoOnMobile = true,
   logoSrc,
+  labels,
   className,
 }: AppTopbarProps) {
+  const userMenuLabel = labels?.userMenu ?? 'Menu utilisateur'
+  const adminLabel = labels?.admin ?? 'Espace trésorier'
+  const profileLabel = labels?.profile ?? 'Profil'
+  const logoutLabel = labels?.logout ?? 'Déconnexion'
+
   return (
     <header
       className={cn(
@@ -95,7 +115,7 @@ export function AppTopbar({
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger
-            aria-label="Menu utilisateur"
+            aria-label={userMenuLabel}
             className={cn(
               'inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full',
               'transition-shadow duration-[150ms]',
@@ -124,7 +144,7 @@ export function AppTopbar({
                   )}
                 >
                   <Icon name="ShieldCheck" size={16} aria-hidden="true" />
-                  <span>Espace trésorier</span>
+                  <span>{adminLabel}</span>
                 </DropdownMenu.Item>
               ) : null}
               <DropdownMenu.Item
@@ -136,7 +156,7 @@ export function AppTopbar({
                 )}
               >
                 <Icon name="User" size={16} aria-hidden="true" />
-                <span>Profil</span>
+                <span>{profileLabel}</span>
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 onSelect={() => onLogout?.()}
@@ -147,7 +167,7 @@ export function AppTopbar({
                 )}
               >
                 <Icon name="LogOut" size={16} aria-hidden="true" />
-                <span>Déconnexion</span>
+                <span>{logoutLabel}</span>
               </DropdownMenu.Item>
             </DropdownMenu.Content>
           </DropdownMenu.Portal>

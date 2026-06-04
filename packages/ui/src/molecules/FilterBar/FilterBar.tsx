@@ -12,6 +12,21 @@ export interface FilterBarProps {
   onSortChange: (sort: PortfolioSort) => void
   onDirChange: (dir: PortfolioDir) => void
   className?: string
+  /** Libellés des options de tri. Défauts FR ; fusionnés clé par clé. */
+  sortLabels?: Partial<Record<PortfolioSort, string>>
+  /** Libellés a11y / pills (groupe, « Tous », tri, ordre). Défauts FR ; fusionnés clé par clé. */
+  labels?: Partial<{
+    /** aria-label du groupe de filtres. */
+    group: string
+    /** Pill « tous les secteurs ». */
+    all: string
+    /** Label a11y du select de tri (sr-only). */
+    sortBy: string
+    /** aria-label du bouton quand l'ordre est croissant. */
+    ascending: string
+    /** aria-label du bouton quand l'ordre est décroissant. */
+    descending: string
+  }>
 }
 
 const SORT_LABEL: Record<PortfolioSort, string> = {
@@ -19,6 +34,14 @@ const SORT_LABEL: Record<PortfolioSort, string> = {
   name: 'Nom',
   performance: 'Performance',
 }
+
+const DEFAULT_LABELS = {
+  group: 'Filtres du portefeuille',
+  all: 'Tous',
+  sortBy: 'Trier par',
+  ascending: 'Ordre croissant',
+  descending: 'Ordre décroissant',
+} as const
 
 function SectorPill({
   active,
@@ -57,17 +80,21 @@ export function FilterBar({
   onSortChange,
   onDirChange,
   className,
+  sortLabels,
+  labels,
 }: FilterBarProps) {
   const sortId = React.useId()
+  const sortLabel: Record<PortfolioSort, string> = { ...SORT_LABEL, ...sortLabels }
+  const l = { ...DEFAULT_LABELS, ...labels }
   return (
     <div
       role="group"
-      aria-label="Filtres du portefeuille"
+      aria-label={l.group}
       className={cn('flex flex-wrap items-center gap-3 bg-card-sub p-3 rounded-[10px]', className)}
     >
       <div className="flex flex-wrap gap-2">
         <SectorPill active={sector == null} onClick={() => onSectorChange(null)}>
-          Tous
+          {l.all}
         </SectorPill>
         {sectors.map((s) => (
           <SectorPill key={s} active={sector === s} onClick={() => onSectorChange(s)}>
@@ -78,7 +105,7 @@ export function FilterBar({
 
       <div className="ml-auto flex items-center gap-2">
         <label className="sr-only" htmlFor={sortId}>
-          Trier par
+          {l.sortBy}
         </label>
         <select
           id={sortId}
@@ -89,13 +116,13 @@ export function FilterBar({
         >
           {(Object.keys(SORT_LABEL) as PortfolioSort[]).map((k) => (
             <option key={k} value={k}>
-              {SORT_LABEL[k]}
+              {sortLabel[k]}
             </option>
           ))}
         </select>
         <button
           type="button"
-          aria-label={dir === 'asc' ? 'Ordre croissant' : 'Ordre décroissant'}
+          aria-label={dir === 'asc' ? l.ascending : l.descending}
           onClick={() => onDirChange(dir === 'asc' ? 'desc' : 'asc')}
           className="inline-flex items-center justify-center text-[13px] rounded-[8px] border border-border bg-card px-2.5 py-1.5 text-text focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)] min-h-[44px] min-w-[44px]"
         >

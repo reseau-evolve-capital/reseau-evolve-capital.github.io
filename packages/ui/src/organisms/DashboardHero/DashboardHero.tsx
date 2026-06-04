@@ -17,6 +17,14 @@ export interface DashboardHeroProps {
   isLoading?: boolean
   onClick?: () => void
   className?: string
+  /** Libellé du hero. Défaut FR. */
+  label?: string
+  /** Suffixe a11y ajouté au nom accessible quand le hero est cliquable. Défaut FR. */
+  detailLabel?: string
+  /** Gabarit du nom accessible : reçoit le montant déjà formaté (NBSP fr-FR). Défaut FR. */
+  accessibleNameTemplate?: (formattedAmount: string) => string
+  /** Gabarit du texte « mis à jour » : reçoit le temps relatif déjà formaté. Défaut FR. */
+  syncedAtTemplate?: (relativeTime: string) => string
 }
 
 export function DashboardHero({
@@ -27,6 +35,10 @@ export function DashboardHero({
   isLoading = false,
   onClick,
   className,
+  label = 'Ta quote-part',
+  detailLabel = ', voir le détail',
+  accessibleNameTemplate = (formattedAmount) => `Ta quote-part : ${formattedAmount}`,
+  syncedAtTemplate = (relativeTime) => `Mis à jour ${relativeTime}`,
 }: DashboardHeroProps) {
   if (isLoading) {
     return <Skeleton height={128} radius="14px" className={cn(className)} />
@@ -35,7 +47,8 @@ export function DashboardHero({
   const Wrapper: React.ElementType = onClick ? 'button' : 'div'
   // Nom accessible CONCIS et formaté FR (sinon le bouton concatène tout son contenu —
   // libellé + montant brut + « mis à jour » — ce qui est verbeux et lit « 12345.67 »).
-  const accessibleName = `Ta quote-part : ${formatEUR(netMarketValue)}${onClick ? ', voir le détail' : ''}`
+  const baseAccessibleName = accessibleNameTemplate(formatEUR(netMarketValue))
+  const accessibleName = `${baseAccessibleName}${onClick ? detailLabel : ''}`
 
   return (
     <>
@@ -49,7 +62,7 @@ export function DashboardHero({
         )}
       >
         <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-sec">
-          Ta quote-part
+          {label}
         </p>
         <CurrencyAmount amount={netMarketValue} size="xl" className="mt-2" />
         {variation && (
@@ -59,7 +72,7 @@ export function DashboardHero({
         )}
         {syncedAt && (
           <p className="mt-1 text-[12px] text-text-ter">
-            Mis à jour {formatRelativeTime(syncedAt)}
+            {syncedAtTemplate(formatRelativeTime(syncedAt))}
           </p>
         )}
         {historicalData && historicalData.length >= 2 && (
@@ -68,7 +81,7 @@ export function DashboardHero({
       </Wrapper>
       {/* Région live HORS du bouton : annonce la valeur (formatée) sans alourdir le nom du bouton. */}
       <span aria-live="polite" className="sr-only">
-        {`Ta quote-part : ${formatEUR(netMarketValue)}`}
+        {baseAccessibleName}
       </span>
     </>
   )

@@ -13,6 +13,14 @@ export interface AvatarUploadProps {
   error?: string
   /** Affiche l'état d'envoi en cours */
   isUploading?: boolean
+  /** aria-label du bouton de dépôt — défaut "Ajouter une photo de profil (optionnel)" */
+  uploadAriaLabel?: string
+  /** Libellé de l'état vide sous l'icône appareil photo — défaut "Photo" */
+  emptyLabel?: string
+  /** Libellé texte affiché pendant l'envoi — défaut "Envoi…" */
+  uploadingLabel?: string
+  /** aria-label du spinner d'envoi — défaut "Envoi en cours" */
+  uploadingAriaLabel?: string
   className?: string
 }
 
@@ -21,6 +29,10 @@ export function AvatarUpload({
   onFileSelected,
   error,
   isUploading,
+  uploadAriaLabel = 'Ajouter une photo de profil (optionnel)',
+  emptyLabel = 'Photo',
+  uploadingLabel = 'Envoi…',
+  uploadingAriaLabel = 'Envoi en cours',
   className,
 }: AvatarUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -48,7 +60,7 @@ export function AvatarUpload({
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={onDrop}
-        aria-label="Ajouter une photo de profil (optionnel)"
+        aria-label={uploadAriaLabel}
         className={cn(
           'relative grid h-[120px] w-[120px] place-items-center overflow-hidden rounded-full',
           'border-2 border-dashed border-border text-text-ter',
@@ -64,7 +76,7 @@ export function AvatarUpload({
         {!previewUrl && !isUploading && (
           <span className="flex flex-col items-center gap-1 select-none text-text-ter">
             <Icon name="Camera" size={20} aria-hidden="true" />
-            <span className="text-[12px]">Photo</span>
+            <span className="text-[12px]">{emptyLabel}</span>
           </span>
         )}
 
@@ -75,8 +87,8 @@ export function AvatarUpload({
             className="absolute inset-0 grid place-items-center rounded-full bg-card/70"
           >
             <span className="flex flex-col items-center gap-1 text-text-ter select-none">
-              <Spinner size={20} aria-label="Envoi en cours" />
-              <span className="text-[12px]">Envoi…</span>
+              <Spinner size={20} aria-label={uploadingAriaLabel} />
+              <span className="text-[12px]">{uploadingLabel}</span>
             </span>
           </span>
         )}

@@ -19,6 +19,8 @@ export interface BottomNavProps {
   activeHref: string
   /** Composant lien injecté par l'app (ex: Next `<Link>`). Par défaut `<a>`. */
   linkComponent?: React.ElementType
+  /** `aria-label` du `<nav>` (i18n). Défaut FR : « Navigation mobile ». */
+  navLabel?: string
   className?: string
 }
 
@@ -31,11 +33,12 @@ export function BottomNav({
   items,
   activeHref,
   linkComponent: Link = 'a',
+  navLabel = 'Navigation mobile',
   className,
 }: BottomNavProps) {
   return (
     <nav
-      aria-label="Navigation mobile"
+      aria-label={navLabel}
       className={cn(
         'md:hidden fixed bottom-0 left-0 right-0 z-40 h-20',
         'bg-card border-t border-border',
