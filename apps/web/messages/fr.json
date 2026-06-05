@@ -643,6 +643,26 @@
     "description": "Cette page n’existe pas ou a été déplacée. Pas d’inquiétude, on te ramène en terrain connu.",
     "backToDashboard": "Retour au tableau de bord"
   },
+  "profile": {
+    "metaTitle": "Mon profil — Evolve Capital",
+    "title": "Mon profil",
+    "subtitle": "Tes informations de membre.",
+    "unknownName": "Membre",
+    "editHint": "L’édition de ton profil arrive bientôt. Pour corriger une information, contacte ton trésorier.",
+    "fields": {
+      "email": "Email",
+      "phone": "Téléphone",
+      "club": "Club",
+      "role": "Rôle",
+      "joinedAt": "Membre depuis"
+    },
+    "roles": {
+      "member": "Membre",
+      "treasurer": "Trésorier",
+      "president": "Président",
+      "network_admin": "Administrateur réseau"
+    }
+  },
   "accessSuspended": {
     "metaTitle": "Accès suspendu — Evolve Capital",
     "title": "Votre accès a été suspendu.",

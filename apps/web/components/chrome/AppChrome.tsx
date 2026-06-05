@@ -118,7 +118,7 @@ export function AppChromeTopbar({
       linkComponent={Link}
       canAccessAdmin={isStaff}
       onAdmin={() => router.push('/admin')}
-      onProfile={() => router.push('/onboarding')}
+      onProfile={() => router.push('/profil')}
       onLogout={() => {
         void handleLogout()
       }}
