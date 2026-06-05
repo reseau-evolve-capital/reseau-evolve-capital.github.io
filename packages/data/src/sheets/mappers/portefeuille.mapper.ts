@@ -1,4 +1,4 @@
-import type { PortefeuilleRowDTO, PositionUpsert } from '../../types/sheets'
+import type { PortefeuilleRowDTO, PositionUpsert, AggregateUpsert } from '../../types/sheets'
 
 /** Sépare les positions réelles des lignes d'agrégat (symbol vide → snapshot). */
 export function mapPortefeuilleRows(
@@ -44,4 +44,29 @@ export function mapPortefeuilleRows(
     })
   }
   return { positions, aggregateRows }
+}
+
+/**
+ * Mappe les lignes d'agrégat (PortefeuilleRowDTO à symbole vide) vers des AggregateUpsert
+ * persistables dans `portfolio_aggregates`. Filtre les lignes au libellé (`name`) vide :
+ * la clé onConflict est (club_id, label), un label vide n'a pas de sens et créerait des
+ * collisions. Le matching se fait par LABEL (col A), jamais par index.
+ */
+export function mapAggregateRows(
+  aggregateRows: PortefeuilleRowDTO[],
+  clubId: string
+): AggregateUpsert[] {
+  const result: AggregateUpsert[] = []
+  for (const row of aggregateRows) {
+    const label = (row.name ?? '').trim()
+    if (label === '') continue
+    result.push({
+      club_id: clubId,
+      label,
+      market_value: row.marketValue,
+      book_value: row.bookValue,
+      allocation_pct: row.allocationPct,
+    })
+  }
+  return result
 }

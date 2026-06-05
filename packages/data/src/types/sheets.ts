@@ -152,6 +152,14 @@ export interface PositionUpsert {
   stop_loss_value: number | null
   take_profit_value: number | null
 }
+export interface AggregateUpsert {
+  club_id: string
+  /** Libellé brut de la ligne d'agrégat (col A), ex. « Portefeuille », « Provision ». Clé onConflict avec club_id. */
+  label: string
+  market_value: number | null
+  book_value: number | null
+  allocation_pct: number | null
+}
 export interface TransactionUpsert {
   club_id: string
   type: 'buy' | 'sell' | 'dividend' | 'coupon' | 'other'

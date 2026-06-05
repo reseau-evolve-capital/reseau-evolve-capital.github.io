@@ -418,6 +418,53 @@ export type Database = {
           },
         ]
       }
+      portfolio_aggregates: {
+        Row: {
+          allocation_pct: number | null
+          book_value: number | null
+          club_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          market_value: number | null
+          synced_at: string
+          updated_at: string
+        }
+        Insert: {
+          allocation_pct?: number | null
+          book_value?: number | null
+          club_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          market_value?: number | null
+          synced_at: string
+          updated_at?: string
+        }
+        Update: {
+          allocation_pct?: number | null
+          book_value?: number | null
+          club_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          market_value?: number | null
+          synced_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'portfolio_aggregates_club_id_fkey'
+            columns: ['club_id']
+            isOneToOne: false
+            referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       positions: {
         Row: {
           allocation_pct: number | null

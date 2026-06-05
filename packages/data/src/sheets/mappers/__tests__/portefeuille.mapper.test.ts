@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mapPortefeuilleRows } from '../portefeuille.mapper'
+import { mapPortefeuilleRows, mapAggregateRows } from '../portefeuille.mapper'
 import type { PortefeuilleRowDTO } from '../../../types/sheets'
 
 const CLUB = '11111111-1111-1111-1111-111111111111'
@@ -72,5 +72,48 @@ describe('mapPortefeuilleRows', () => {
     )
     expect(positions).toHaveLength(2)
     expect(aggregateRows).toHaveLength(1)
+  })
+})
+
+describe('mapAggregateRows', () => {
+  it('mappe label/valeurs et porte le club_id', () => {
+    const { aggregateRows } = mapPortefeuilleRows(
+      [
+        makeRow({
+          symbol: '',
+          name: 'Portefeuille',
+          marketValue: 12000,
+          bookValue: 9000,
+          allocationPct: 100,
+        }),
+      ],
+      CLUB
+    )
+    const out = mapAggregateRows(aggregateRows, CLUB)
+    expect(out).toEqual([
+      {
+        club_id: CLUB,
+        label: 'Portefeuille',
+        market_value: 12000,
+        book_value: 9000,
+        allocation_pct: 100,
+      },
+    ])
+  })
+
+  it('écarte les lignes au libellé (name) vide ou espaces (clé onConflict label)', () => {
+    const { aggregateRows } = mapPortefeuilleRows(
+      [makeRow({ symbol: '', name: '' }), makeRow({ symbol: '', name: '   ' })],
+      CLUB
+    )
+    expect(mapAggregateRows(aggregateRows, CLUB)).toHaveLength(0)
+  })
+
+  it('trim le libellé', () => {
+    const { aggregateRows } = mapPortefeuilleRows(
+      [makeRow({ symbol: '', name: '  Provision  ' })],
+      CLUB
+    )
+    expect(mapAggregateRows(aggregateRows, CLUB)[0]!.label).toBe('Provision')
   })
 })

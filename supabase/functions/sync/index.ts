@@ -37,7 +37,10 @@ import type { ClubOfficers } from '../../../packages/data/src/sheets/mappers/par
 import { normalizeName } from '../../../packages/data/src/sheets/normalizeName.ts'
 import { mapBaseRowToMember } from '../../../packages/data/src/sheets/mappers/base.mapper.ts'
 import { resolveBaseEmail } from '../../../packages/data/src/sheets/mappers/baseEmailResolution.ts'
-import { mapPortefeuilleRows } from '../../../packages/data/src/sheets/mappers/portefeuille.mapper.ts'
+import {
+  mapPortefeuilleRows,
+  mapAggregateRows,
+} from '../../../packages/data/src/sheets/mappers/portefeuille.mapper.ts'
 import { mapHistoriqueRows } from '../../../packages/data/src/sheets/mappers/historique.mapper.ts'
 import { mapCotisationsRows } from '../../../packages/data/src/sheets/mappers/cotisations.mapper.ts'
 import { mapDetailsCotisationsRows } from '../../../packages/data/src/sheets/mappers/detailsCotisations.mapper.ts'
@@ -450,6 +453,31 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
           .eq('is_active', true)
           .lt('synced_at', synced_at)
         if (deactErr) throw new Error(`deactivate positions: ${deactErr.message}`)
+      }
+      // AGRÉGATS (C2) — persiste les lignes à symbole vide (« Portefeuille », « Provision »,
+      // « Solde : … ») dans portfolio_aggregates pour que l'app lise le TOTAL et les soldes par
+      // label. Même logique de réconciliation que les positions : upsert par (club_id, label) avec
+      // ce synced_at, puis désactivation des labels au synced_at antérieur (absents de la matrice).
+      // Matching TOUJOURS par label (jamais par index).
+      {
+        const aggregates = mapAggregateRows(aggregateRows, clubId).map((a) => ({
+          ...a,
+          is_active: true,
+          synced_at,
+        }))
+        if (aggregates.length > 0) {
+          const { error: aggErr } = await supabase
+            .from('portfolio_aggregates')
+            .upsert(aggregates, { onConflict: 'club_id,label' })
+          if (aggErr) throw new Error(`upsert portfolio_aggregates: ${aggErr.message}`)
+        }
+        const { error: aggDeactErr } = await supabase
+          .from('portfolio_aggregates')
+          .update({ is_active: false })
+          .eq('club_id', clubId)
+          .eq('is_active', true)
+          .lt('synced_at', synced_at)
+        if (aggDeactErr) throw new Error(`deactivate portfolio_aggregates: ${aggDeactErr.message}`)
       }
       const status: SnapshotStatus = droppedPositions.length > 0 ? 'partial' : 'success'
       const note =
