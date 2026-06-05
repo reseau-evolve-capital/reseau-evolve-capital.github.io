@@ -195,10 +195,15 @@ SUPABASE_SERVICE_ROLE_KEY="…" make db-sync CLUB_ID=<uuid-du-club>
 
 Le script `scripts/sync-sheets.mjs` affiche la réponse (`success`, `synced_sheets`, `errors`, `warnings`, `snapshots`) et **sort en code ≠ 0 s'il y a des erreurs dures**. Ordre d'import imposé : **PARAMETRAGES → Base → Portefeuille → HISTORIQUE → COTISATIONS → Details cotisations** (Base d'abord car sa colonne email est la clé de matching).
 
-> ⚠ **Bug connu (bloque la sync live, à corriger)** : l'Edge Function `sync` ne boote pas dans le runtime Deno —
-> `packages/utils/src/index.ts` ré-exporte `./format` etc. **sans extension `.ts`**, que Deno refuse
-> (`Module not found … Maybe add a '.ts' extension`). `make db-set-sheet` et le déclencheur fonctionnent ;
-> c'est le worker `sync` qui échoue (`BOOT_ERROR`). Fix prévu dans le sprint pré-prod (voir reste-à-faire).
+> ✅ **Boot Deno corrigé** (commit `fix(supabase): débloque le boot deno…`) : le worker `sync` démarre et importe
+> la vraie matrice (vérifié : 30 membres, 151 transactions). 3 feuilles restent à **réconcilier matrice ↔ schéma**
+> (suivi pré-prod) :
+>
+> - **PARAMETRAGES** → `clubs.country` est `NOT NULL` mais la feuille ne fournit pas de pays (défaut/colonne nullable à décider).
+> - **Portefeuille** → onglet introuvable (`Unable to parse range "Portefeuille!…"`) : nom d'onglet réel ≠ « Portefeuille » (vérifier le nom dans ta matrice).
+> - **COTISATIONS / Details cotisations** → requête memberships↔users ambiguë (2 FK) : embed à désambiguïser (même correctif que ADM-007).
+>
+> Base (membres) et HISTORIQUE s'importent ; le mécanisme de lecture Sheets→Postgres est prouvé.
 
 **Vérifier l'import en DB** (Studio → SQL) :
 
