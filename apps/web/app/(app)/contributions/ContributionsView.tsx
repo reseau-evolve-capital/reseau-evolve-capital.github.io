@@ -210,13 +210,13 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
           </div>
 
           {/* CTA actif — télécharge l'attestation de détention en PDF (NTF-004).
-              loading + erreur inline (apps/web ne monte pas de ToastProvider → fallback gracieux). */}
+              Feedback via toast (ToastProvider monté au layout) + erreur inline persistante. */}
           <div className="flex flex-col gap-2 lg:self-stretch">
             <Button
               variant="secondary"
               onClick={() => void downloadAttestation()}
               disabled={downloading}
-              className="self-start lg:self-stretch"
+              className="min-h-[44px] self-start lg:self-stretch"
             >
               {downloading ? (
                 <span className="inline-flex items-center gap-2">
