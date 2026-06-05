@@ -77,8 +77,8 @@ const LEGEND_SWATCHES: ReadonlyArray<{ key: LegendKey; swatch: string }> = [
   { key: 'paid', swatch: 'bg-brand-yellow' },
   // pending : mois courant en attente.
   { key: 'pending', swatch: 'bg-data-neutral-50' },
-  // late : retard (data-warning, jamais le rouge brand).
-  { key: 'late', swatch: 'bg-data-warning-50' },
+  // late : retard (ROUGE dataviz data-negative, jamais le rouge brand #E93E3A).
+  { key: 'late', swatch: 'bg-data-negative-50' },
   // exempt : dispensé de cotisation.
   { key: 'exempt', swatch: 'bg-neutral-100 opacity-50' },
   // À venir : mois futurs, non rendus dans la grille → swatch « vide » bordé.

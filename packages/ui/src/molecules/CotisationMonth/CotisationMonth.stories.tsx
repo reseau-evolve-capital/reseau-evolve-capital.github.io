@@ -33,6 +33,16 @@ export const Late: Story = {
     'aria-label': 'Avril 2026 en retard',
     size: 'md',
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const cell = canvas.getByRole('button', { name: 'Avril 2026 en retard' })
+    // « Retard » = ROUGE dataviz (data-negative), jamais l'ambre data-warning
+    // ni le rouge brand (#E93E3A réservé au branding).
+    expect(cell.className).toContain('bg-data-negative-50')
+    expect(cell.className).not.toContain('bg-data-warning')
+    // Cible tactile : padding mobile (≥44px) replié sur sm (rendu compact 24px).
+    expect(cell.className).toContain('p-2.5')
+  },
 }
 
 export const Pending: Story = {

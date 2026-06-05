@@ -39,7 +39,8 @@ export function KPICard({
   return (
     <div
       className={cn(
-        'bg-card border border-border rounded-[10px] p-6 shadow-[var(--sh-card)]',
+        // Padding responsive : compact en mobile (p-4), aéré dès sm (p-6).
+        'bg-card border border-border rounded-[10px] p-4 sm:p-6 shadow-[var(--sh-card)]',
         'transition-[border-color,transform,box-shadow] duration-[150ms]',
         'hover:border-border-strong md:hover:scale-[1.01]',
         'focus-within:shadow-[var(--sh-glow)] motion-reduce:transition-none motion-reduce:hover:scale-100',
@@ -54,7 +55,7 @@ export function KPICard({
       {isLoading ? (
         <Skeleton height="28px" width="66%" />
       ) : (
-        <p className="font-display font-[800] text-[28px] leading-none tracking-[-0.02em] text-text [font-feature-settings:'tnum','lnum']">
+        <p className="font-display font-[800] text-[22px] sm:text-[28px] leading-none tracking-[-0.02em] text-text [font-feature-settings:'tnum','lnum']">
           {renderValue(value, format)}
         </p>
       )}
