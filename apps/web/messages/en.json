@@ -515,15 +515,16 @@
     },
     "invitations": {
       "title": "Invitations",
-      "subtitle": "Invite new members to the club. Each access link is personal and expires automatically.",
+      "subtitle": "Give app access to a club member. Each access link is personal and expires automatically.",
       "inviteCta": "Invite a member",
       "form": {
         "placeholder": "email@example.com",
-        "submit": "Send invitation",
-        "note": "A link valid for 72 h will be sent to this address.",
+        "submit": "Generate access link",
+        "note": "The email must belong to a club member. A copyable link, valid for 72 h, will be generated.",
         "success": "Invitation created. Copy the access link below.",
         "errorInvalid": "Invalid email address.",
         "errorDuplicate": "An invitation is already pending for this email.",
+        "errorNotMember": "This email does not match any club member.",
         "errorGeneric": "Could not create the invitation."
       },
       "columns": {
@@ -550,7 +551,10 @@
         "description": "Invite your first member to get started."
       },
       "linkLabel": "Access link (share it with the member)",
-      "linkNote": "Automatic email delivery is coming soon.",
+      "linkToCopyLabel": "Link to copy and share with the member",
+      "linkNote": "No email was sent. Copy this link and share it with the member yourself.",
+      "deliveredLabel": "Invitation sent by email",
+      "deliveredNote": "An email with this link was sent to the member. You can also copy it above.",
       "tableLabel": "Invitations list"
     },
     "settings": {

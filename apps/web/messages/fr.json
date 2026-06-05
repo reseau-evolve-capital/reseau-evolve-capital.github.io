@@ -515,15 +515,16 @@
     },
     "invitations": {
       "title": "Invitations",
-      "subtitle": "Invite de nouveaux membres au club. Chaque lien d'accès est nominatif et expire automatiquement.",
+      "subtitle": "Donne l'accès à l'application à un membre du club. Chaque lien d'accès est nominatif et expire automatiquement.",
       "inviteCta": "Inviter un membre",
       "form": {
         "placeholder": "email@exemple.fr",
-        "submit": "Envoyer l'invitation",
-        "note": "Un lien valable 72 h sera envoyé à cette adresse.",
+        "submit": "Générer le lien d'accès",
+        "note": "L'email doit être celui d'un membre du club. Un lien à copier, valable 72 h, sera généré.",
         "success": "Invitation créée. Copiez le lien d'accès ci-dessous.",
         "errorInvalid": "Adresse email invalide.",
         "errorDuplicate": "Une invitation est déjà en attente pour cet email.",
+        "errorNotMember": "Cet email ne correspond à aucun membre du club.",
         "errorGeneric": "Impossible de créer l'invitation."
       },
       "columns": {
@@ -550,7 +551,10 @@
         "description": "Invitez votre premier membre pour démarrer."
       },
       "linkLabel": "Lien d'accès (à transmettre au membre)",
-      "linkNote": "L'envoi automatique par email arrivera prochainement.",
+      "linkToCopyLabel": "Lien à copier et transmettre au membre",
+      "linkNote": "Aucun email n'a été envoyé. Copiez ce lien et transmettez-le au membre vous-même.",
+      "deliveredLabel": "Invitation envoyée par email",
+      "deliveredNote": "Un email contenant ce lien a été envoyé au membre. Vous pouvez aussi le copier ci-dessus.",
       "tableLabel": "Liste des invitations"
     },
     "settings": {

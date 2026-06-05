@@ -41,11 +41,14 @@ export function InvitationsView({ initialData }: { initialData: ClubInvitationsP
   const [isPending, startTransition] = useTransition()
   const [formError, setFormError] = useState<string | null>(null)
   const [link, setLink] = useState<string | null>(null)
+  // En V0 le mailer est no-op : `delivered=false` → on affiche « lien à copier », pas « envoyé ».
+  const [delivered, setDelivered] = useState(false)
   const [copied, setCopied] = useState(false)
 
   function mapError(code: string): string {
     if (code === 'invalid_email') return t('form.errorInvalid')
     if (code === 'duplicate') return t('form.errorDuplicate')
+    if (code === 'not_member') return t('form.errorNotMember')
     return t('form.errorGeneric')
   }
 
@@ -60,6 +63,7 @@ export function InvitationsView({ initialData }: { initialData: ClubInvitationsP
       const res = await createInvitationAction(email)
       if (res.ok) {
         setLink(res.link)
+        setDelivered(res.delivered)
         await invalidate()
       } else {
         setFormError(mapError(res.error))
@@ -73,6 +77,7 @@ export function InvitationsView({ initialData }: { initialData: ClubInvitationsP
       const res = await resendInvitationAction(id)
       if (res.ok) {
         setLink(res.link)
+        setDelivered(res.delivered)
         await invalidate()
       }
     })
@@ -121,7 +126,11 @@ export function InvitationsView({ initialData }: { initialData: ClubInvitationsP
           role="status"
           className="flex flex-col gap-2 rounded-[10px] border border-border bg-card p-4"
         >
-          <Text className="text-[13px] font-semibold">{t('linkLabel')}</Text>
+          {/* V0 (delivered=false) : aucun email n'a été envoyé → on annonce un « lien à copier »,
+              jamais « envoyé ». Quand un provider sera branché (delivered=true), on confirme l'envoi. */}
+          <Text className="text-[13px] font-semibold">
+            {delivered ? t('deliveredLabel') : t('linkToCopyLabel')}
+          </Text>
           <div className="flex flex-wrap items-center gap-2">
             <input
               readOnly
@@ -135,7 +144,9 @@ export function InvitationsView({ initialData }: { initialData: ClubInvitationsP
               {copied ? t('actions.linkCopied') : t('actions.copyLink')}
             </Button>
           </div>
-          <Text className="text-[12px] text-text-ter">{t('linkNote')}</Text>
+          <Text className="text-[12px] text-text-ter">
+            {delivered ? t('deliveredNote') : t('linkNote')}
+          </Text>
         </div>
       )}
 

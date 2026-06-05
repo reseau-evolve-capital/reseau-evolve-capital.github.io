@@ -17,8 +17,14 @@ import { newInviteToken, hashInviteToken, inviteUrl } from '@/lib/invitations/to
 
 /** Résultat sans payload (lock/unlock/revoke). */
 export type ActionResult = { ok: true } | { ok: false; error: string }
-/** Résultat avec payload (create/resend renvoient le lien clair à copier). */
-export type ActionResultWith<T> = ({ ok: true } & T) | { ok: false; error: string }
+/**
+ * Résultat de création/renvoi d'invitation. `delivered` distingue « email réellement envoyé »
+ * (provider branché) de « lien à copier » (V0 : mailer no-op). Tant que delivered=false, l'UI
+ * affiche le lien à transmettre manuellement plutôt qu'un faux « envoyé ».
+ */
+export type InvitationActionResult =
+  | { ok: true; link: string; delivered: boolean }
+  | { ok: false; error: string }
 
 async function serverClient() {
   return createServerClient(await cookies())
@@ -31,13 +37,32 @@ function mapPgError(code: string | undefined): string {
   if (code === '23505') return 'duplicate' // unique_violation : email/invitation déjà utilisé
   if (code === '42501') return 'forbidden' // insufficient_privilege : RAISE « staff requis »
   if (code === '22023') return 'invalid' // invalid_parameter_value : email/pays/plafond invalide
+  if (code === 'P0002') return 'not_member' // B5 : RAISE « email hors club » (migration 031)
   return 'unknown'
 }
 
-/** Inviter un email : crée l'allowlist + l'invitation pending, renvoie le lien clair (copier-coller). */
-export async function createInvitationAction(
-  rawEmail: string
-): Promise<ActionResultWith<{ link: string }>> {
+/**
+ * Tente l'envoi email de l'invitation. Renvoie `true` SEULEMENT si un provider a réellement
+ * délivré le message. En V0 le mailer est un no-op ({ delivered: false }) → on retourne false et
+ * l'UI affiche « lien à copier ». Un échec d'envoi (exception du provider) n'est PAS fatal : le
+ * lien reste exploitable manuellement, donc on retombe sur false sans faire échouer l'action.
+ */
+async function tryDeliverInvitation(to: string, link: string): Promise<boolean> {
+  try {
+    const res = await getInvitationMailer().send({ to, inviteUrl: link })
+    return res.delivered
+  } catch {
+    // L'envoi a échoué (provider indisponible) — le lien reste valide et copiable. Pas fatal.
+    return false
+  }
+}
+
+/**
+ * Inviter un email : crée l'invitation pending pour un MEMBRE du club (B5 — la RPC refuse tout
+ * email hors club, code 'not_member'), puis tente l'envoi. Renvoie toujours le lien clair et
+ * `delivered` (faux en V0) pour que l'UI distingue « envoyé » de « lien à copier ».
+ */
+export async function createInvitationAction(rawEmail: string): Promise<InvitationActionResult> {
   const email = rawEmail.trim().toLowerCase()
   if (!emailSchema.safeParse(email).success) return { ok: false, error: 'invalid_email' }
 
@@ -58,15 +83,14 @@ export async function createInvitationAction(
   if (error) return { ok: false, error: mapPgError(error.code) }
 
   const link = inviteUrl(token)
-  // V0 : mailer no-op (le lien est surfacé dans l'UI). E-NTF branchera l'envoi réel.
-  await getInvitationMailer().send({ to: email, inviteUrl: link })
-  return { ok: true, link }
+  const delivered = await tryDeliverInvitation(email, link)
+  return { ok: true, link, delivered }
 }
 
 /** Renvoyer : régénère le token (invalide l'ancien), remet 72 h, renvoie le nouveau lien. */
 export async function resendInvitationAction(
   invitationId: string
-): Promise<ActionResultWith<{ link: string }>> {
+): Promise<InvitationActionResult> {
   const supabase = await serverClient()
   const {
     data: { user },
@@ -79,7 +103,12 @@ export async function resendInvitationAction(
     p_token_hash: hashInviteToken(token),
   })
   if (error) return { ok: false, error: mapPgError(error.code) }
-  return { ok: true, link: inviteUrl(token) }
+
+  const link = inviteUrl(token)
+  // L'email du destinataire n'est pas renvoyé par la RPC resend ; en V0 le mailer est no-op de
+  // toute façon. Quand un provider sera branché, resend relira l'email de l'invitation pour livrer.
+  const delivered = false
+  return { ok: true, link, delivered }
 }
 
 /** Révoquer une invitation en attente. */
