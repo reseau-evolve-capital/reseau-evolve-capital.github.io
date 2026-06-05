@@ -306,17 +306,11 @@ function buildColumns(
       header: columnLabels.access,
       enableSorting: false,
       cell: (c) => {
-        // Membre sorti : l'accès reste sémantiquement « actif » (aucune sémantique modifiée),
-        // mais on atténue visuellement la pastille pour rester cohérent avec la ligne grisée
-        // (F2/F4). L'opacité n'est qu'un signal secondaire — le libellé du badge demeure lisible.
-        const left = c.row.original.membershipStatus === 'left'
-        return (
-          <AccessBadge
-            status={c.getValue()}
-            labels={accessLabels}
-            className={left ? 'opacity-60' : undefined}
-          />
-        )
+        // Membre sorti : l'atténuation visuelle est portée par la LIGNE grisée (bg-card-sub/40 +
+        // nom en text-text-sec, cf. F4). On ne baisse PAS l'opacité du badge d'accès : `opacity-60`
+        // faisait chuter le vert « Actif » (#0A7A4D) à ~2.46:1 sur la carte claire → échec AA.
+        // Le badge reste donc à pleine lisibilité (contraste AA conservé).
+        return <AccessBadge status={c.getValue()} labels={accessLabels} />
       },
     }),
   ]

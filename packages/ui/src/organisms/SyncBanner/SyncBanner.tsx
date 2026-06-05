@@ -34,6 +34,8 @@ export interface SyncBannerProps {
   className?: string
   /** Gabarit du libellé « synchronisé » : reçoit le temps relatif déjà formaté (ou le fallback). Défaut FR. */
   syncedAtTemplate?: (relativeTime: string) => string
+  /** Locale BCP-47 du temps relatif (« il y a 1 h » vs « 1 h ago »). Défaut 'fr-FR'. */
+  locale?: string
   /** Fallback affiché quand syncedAt est null. Défaut « — ». */
   neverSyncedLabel?: string
   /** Libellé du bouton d'actualisation. Défaut FR. */
@@ -56,10 +58,13 @@ export function SyncBanner({
   neverSyncedLabel = '—',
   refreshLabel = 'Actualiser',
   refreshAriaLabel = 'Actualiser les données',
+  locale = 'fr-FR',
 }: SyncBannerProps) {
   if (!PRIVILEGED.includes(userRole)) return null
 
-  const label = syncedAtTemplate(syncedAt ? formatRelativeTime(syncedAt) : neverSyncedLabel)
+  const label = syncedAtTemplate(
+    syncedAt ? formatRelativeTime(syncedAt, undefined, locale) : neverSyncedLabel
+  )
 
   // B4 : le message d'erreur passe sur le token NÉGATIF lisible (text-data-negative, AA-safe
   // light ET dark — jamais le rouge brand #E93E3A réservé au branding) au lieu du gris discret
