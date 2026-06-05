@@ -13,7 +13,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:rls": "vitest run src/supabase/__tests__/rls-isolation.test.ts"
   },
   "dependencies": {
     "@evolve/design-system": "workspace:*",
