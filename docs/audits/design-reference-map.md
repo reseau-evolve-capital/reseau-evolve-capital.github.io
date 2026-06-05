@@ -5,7 +5,7 @@
 > Source de vérité fonctionnelle : `REC/Phase2_Handoff/docs/screens/*`, `design.md`, tickets `BACKLOG_E-*`.
 > Réutilisable par les futurs audits ET les sessions d'implémentation. **Mettre à jour, ne pas régénérer.**
 >
-> Dernière mise à jour : 2026-06-02 (audit initial). Captures de réf sous `docs/audits/shots/ref-*`.
+> Dernière mise à jour : 2026-06-05 (Sprint E-NTF : feedback in-app, emails, attestation). Captures de réf sous `docs/audits/shots/ref-*`.
 
 ## Fondations / tokens (réf : `ref-foundations-fullpage.jpeg`)
 
@@ -123,3 +123,39 @@
 - `apps/web/app/not-found.tsx` **absent** → 404 = page Next par défaut (candidat **bug objectif**).
 - `apps/web/app/global-error.tsx` **absent** ; pas d'`error.tsx` racine ni sur `(auth)` (les segments `(app)/*` en ont chacun un).
 - Warning Next 16 : `middleware` déprécié → renommer en `proxy` (déjà noté en dette Sprint 3).
+
+---
+
+## Notifications, emails & attestation (E-NTF — Sprint 8)
+
+> Source de vérité visuelle : 3 nouveaux exports (toggle LIGHT/DARK) servis sur `:8770`.
+> Emails et PDF ne se rendent pas comme une page d'app : QA = HTML rendu (React Email) / PDF→image confrontés à l'export.
+
+### Système de feedback in-app (réf : `Feedback System (standalone).html`)
+
+- **Artefacts code** : `packages/ui/src/molecules/Toast/*` (`Toast`, `ToastProvider`/`useToast`), `packages/ui/src/organisms/Banner/*`, `SyncBanner` refactoré sur `Banner`. Monté dans `apps/web/app/(app)/layout.tsx` (région `aria-live` globale).
+- **Toasts** (NTF-006) : 4 variantes (success/info/warning/error), auto-dismiss par variante (`error` persistant), barre de compte à rebours (`motion-reduce:hidden`), action UPPERCASE colorée, icône chipée 32×32, pile **bas-centre mobile / bas-droite desktop**, `aria-live` polite (assertive sur error), Escape, cibles 44×44, focus glow. `info` = accent **brand.yellow** (pas data-neutral).
+- **Bannières** : `Banner` générique (info/success/warning/error/sync), dismissible optionnel, slot actions (`inline`/`stacked`). Centre de notifs persistant + cloche = **V1 (NTF-007)**.
+- **Règle couleur** : succès=data-positive, erreur=data-negative, warning=data-warning(+texte data-warning-strong), info=brand.yellow ; **jamais brand.red** pour un état.
+
+### Emails transactionnels (réf : `Emails Transactionnels (standalone).html`)
+
+- **Artefacts code** : `packages/data/src/emails/` — `_layout/EvolveEmailShell` (shell commun : bandeau accent, logo, conteneur 600px, footer RGPD) + `MagicLinkEmail` (NTF-001), `WelcomeEmail` (NTF-002), `SyncErrorEmail` (NTF-003), `AttestationEmail` (NTF-005). Rendu via `renderEmailHtml`. Couleurs depuis le **pont tokens TS** `@evolve/design-system` (miroir de `tokens.css`, contextes non-Tailwind).
+- **Émetteurs** : magic link via SMTP custom Supabase (Brevo en prod, Mailpit/Inbucket en local) ; welcome/sync-error/attestation via Edge Functions → **API Brevo `/v3/smtp/email`** (rendu React Email en import `npm:`/dynamique côté Deno). `BREVO_*` server-only.
+- **Direction graphique** : emails **clair par défaut** (mode sombre laissé aux clients mail, aucune image de fond) ; CTA jaune brand (encre #231F20, 10.36:1 AAA) ; footer RGPD réutilisable ; warning sync = data-warning, jamais brand.red.
+
+### Attestation de détention — PDF (réf : `Attestation de Detention (standalone).html`)
+
+- **Artefacts code** : `packages/data/src/pdf/` — `AttestationDetention.tsx` (`@react-pdf/renderer`, A4 portrait) + `attestation.mapper.ts` (mapper pur, fallback `—`) + `renderAttestationPdf`. Route Node `apps/web/app/api/attestation/detention/route.ts` (session + RLS). CTA actif sur `/contributions` (`ContributionsView`, blob+download, toast succès/erreur).
+- **Structure** : en-tête (logo, « Attestation de détention », DOCUMENT OFFICIEL, réf, date) ; identité ; **4 chiffres clés** (parts % · cotisation € · quote-part € · valorisation €) ; **3 compléments** (invest. année · capacité restante · effort mois) ; pied « généré automatiquement … ne nécessite pas de signature » + n° de réf + **QR** ; bandeau Evolve. Tokens via le pont TS, format via `@evolve/utils`, jamais brand.red sur un chiffre.
+- **Envoi auto mensuel** (NTF-005) : `pg_cron` (5 du mois) → Edge `send-monthly-attestations` (PDF en pièce jointe base64, idempotent par période via `attestation_sends`).
+
+### Journal des arbitrages / divergences assumées (E-NTF)
+
+- **Vérif backend = Mailpit + envoi capté** (décision owner) ; magic link auto via Supabase Auth, emails Edge vérifiés par rendu HTML + Vitest (pas de creds Brevo en local).
+- **CTA attestation câblé ACTIF** (décision owner), pas en flag désactivé.
+- **NTF-006 info = brand.yellow** (corrigé : la 1re passe sortait du gris data-neutral) — conforme à l'export ; icône chipée + barre de compte à rebours + action UPPERCASE ajoutées en passe de correction QA ; bug `cursor:default` (preflight Tailwind v4) corrigé sur tous les cliquables.
+- **NTF-005 `period`** : le composant convertit le format canonique `YYYY-MM` (cron) en libellé FR « avril 2026 ».
+- **Lacunes data attestation** (follow-ups data NON bloquants, V0 = `—`) : n° de compte courtier (`clubs.broker_account_ref` absent), plafond annuel / capacité restante d'investissement, adresse postale membre (V1 `users.postal_address`), bloc dirigeants. QR pointe `/verifier/{ref}` — **route de vérification à implémenter en V1**.
+- **Limites de rendu assumées** : emails sans dark (intention V0) ; PDF Helvetica ne rend pas U+202F → espaces fines remappées en espace normale pour le PDF (formatEUR reste canonique ailleurs) ; bandeau email dégradé avec fallback solide pour Outlook.
+- **Dette a11y connue conservée** : tap-target CTA contributions 40px < 44px (dette S6, hors périmètre E-NTF) ; chip glyphe toast 20px dans chip 32px (atome `Icon` limité à 16/20/24) ; pas de token `brand-yellow-50` → surface info via opacité `/16` (suivi design-system).
