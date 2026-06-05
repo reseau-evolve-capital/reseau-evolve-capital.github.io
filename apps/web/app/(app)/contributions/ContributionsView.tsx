@@ -22,6 +22,7 @@ import {
   Icon,
   Button,
   Spinner,
+  useToast,
 } from '@evolve/ui'
 import { formatEUR } from '@evolve/utils'
 
@@ -40,6 +41,7 @@ const STATUS_PILL: Record<ContributionStatus, PillStatus> = {
 export function ContributionsView({ initialData }: { initialData: ContributionsData | null }) {
   const t = useTranslations('contributions')
   const tc = useTranslations('common')
+  const toast = useToast()
   // Tous les hooks AVANT tout early return (règle des hooks React).
   const { data, isError } = useContributions(initialData)
   const queryClient = useQueryClient()
@@ -50,7 +52,7 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
   const sync = useSyncStatus(data?.clubId ?? null)
 
   // Télécharge le PDF d'attestation : fetch → blob → ancre temporaire (filename depuis l'en-tête).
-  // En l'absence de ToastProvider monté dans apps/web, l'erreur est surfacée inline sous le CTA.
+  // Succès/erreur surfacés via toast (ToastProvider monté au layout) + message inline persistant.
   async function downloadAttestation() {
     if (downloading) return
     setAttestationError(null)
@@ -75,8 +77,12 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
       a.click()
       a.remove()
       URL.revokeObjectURL(objectUrl)
+      // Confirmation éphémère (le téléchargement n'est pas toujours visible selon le navigateur).
+      toast.success({ title: t('attestation.success') })
     } catch {
+      // Toast d'erreur + message inline persistant (role=alert) pour l'accessibilité.
       setAttestationError(t('attestation.error'))
+      toast.error({ title: t('attestation.error') })
     } finally {
       setDownloading(false)
     }

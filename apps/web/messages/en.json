@@ -279,7 +279,8 @@
     "attestation": {
       "cta": "Download holding certificate",
       "loading": "Generating…",
-      "error": "Certificate generation failed. Try again?"
+      "error": "Certificate generation failed. Try again?",
+      "success": "Certificate downloaded."
     },
     "status": {
       "ok": "Up to date",

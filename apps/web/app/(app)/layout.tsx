@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server'
 import { createServerClient } from '@evolve/data'
 import { formatDateLong, formatRelativeTime } from '@evolve/utils'
 import type { SidebarClub } from '@evolve/ui'
+import { ToastProvider } from '@evolve/ui'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
 import { AppChromeSidebar, AppChromeTopbar, AppChromeBottom } from '@/components/chrome/AppChrome'
@@ -76,21 +77,25 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   return (
     <QueryProvider>
       <SupabaseProvider>
-        <div className="md:flex md:min-h-screen">
-          <AppChromeSidebar isStaff={isStaff} clubActif={clubActif} />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <AppChromeTopbar
-              user={user}
-              isStaff={isStaff}
-              syncLabel={syncLabel}
-              dateLabel={dateLabel}
-            />
-            <main className="flex-1 px-4 pb-24 pt-6 md:px-8 md:pb-10 md:pt-8">
-              <div className="mx-auto w-full max-w-[1280px]">{children}</div>
-            </main>
+        {/* ToastProvider (NTF-006) : feedback in-app éphémère, région aria-live rendue
+            par-dessus tout le chrome. useToast() est dispo dans tout l'espace membre. */}
+        <ToastProvider>
+          <div className="md:flex md:min-h-screen">
+            <AppChromeSidebar isStaff={isStaff} clubActif={clubActif} />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <AppChromeTopbar
+                user={user}
+                isStaff={isStaff}
+                syncLabel={syncLabel}
+                dateLabel={dateLabel}
+              />
+              <main className="flex-1 px-4 pb-24 pt-6 md:px-8 md:pb-10 md:pt-8">
+                <div className="mx-auto w-full max-w-[1280px]">{children}</div>
+              </main>
+            </div>
           </div>
-        </div>
-        <AppChromeBottom />
+          <AppChromeBottom />
+        </ToastProvider>
       </SupabaseProvider>
     </QueryProvider>
   )

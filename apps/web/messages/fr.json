@@ -279,7 +279,8 @@
     "attestation": {
       "cta": "Télécharger l’attestation de détention",
       "loading": "Génération en cours…",
-      "error": "La génération de l’attestation a échoué. Réessaie ?"
+      "error": "La génération de l’attestation a échoué. Réessaie ?",
+      "success": "Attestation téléchargée."
     },
     "status": {
       "ok": "Situation régulière",
