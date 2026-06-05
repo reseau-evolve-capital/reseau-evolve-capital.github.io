@@ -31,6 +31,7 @@ import {
 
 import { mapParametragesToClub } from '../../../packages/data/src/sheets/mappers/parametrages.mapper.ts'
 import { mapBaseRowToMember } from '../../../packages/data/src/sheets/mappers/base.mapper.ts'
+import { resolveBaseEmail } from '../../../packages/data/src/sheets/mappers/baseEmailResolution.ts'
 import { mapPortefeuilleRows } from '../../../packages/data/src/sheets/mappers/portefeuille.mapper.ts'
 import { mapHistoriqueRows } from '../../../packages/data/src/sheets/mappers/historique.mapper.ts'
 import { mapCotisationsRows } from '../../../packages/data/src/sheets/mappers/cotisations.mapper.ts'
@@ -82,16 +83,28 @@ async function loadMembershipLookups(
   // Désambiguïsation : memberships a DEUX FK vers users (user_id et locked_by,
   // cf. ADM-007). On qualifie l'embed par le nom de la contrainte du user_id pour
   // lever l'erreur PostgREST « more than one relationship was found ».
+  // On charge aussi email + email_is_placeholder du user : la résolution Base
+  // (resolveBaseEmail) en a besoin pour réutiliser l'email existant sans l'écraser
+  // quand la feuille est vide. Les lookups cotisations ignorent simplement ces champs.
   const { data, error } = await supabase
     .from('memberships')
-    .select('id, user_id, users!memberships_user_id_fkey!inner(full_name)')
+    .select(
+      'id, user_id, users!memberships_user_id_fkey!inner(full_name, email, email_is_placeholder)'
+    )
     .eq('club_id', clubId)
   if (error) throw new Error(`Chargement memberships échoué: ${error.message}`)
-  type Row = { id: string; user_id: string; users: { full_name: string } | { full_name: string }[] }
+  type UserEmbed = { full_name: string; email: string | null; email_is_placeholder: boolean }
+  type Row = { id: string; user_id: string; users: UserEmbed | UserEmbed[] }
   return (data ?? []).map((r: Row) => {
     // La jointure peut être typée objet ou tableau selon la version du client : on normalise.
     const u = Array.isArray(r.users) ? r.users[0] : r.users
-    return { id: r.id, user_id: r.user_id, full_name: u?.full_name ?? '' }
+    return {
+      id: r.id,
+      user_id: r.user_id,
+      full_name: u?.full_name ?? '',
+      email: u?.email ?? null,
+      email_is_placeholder: u?.email_is_placeholder ?? false,
+    }
   })
 }
 
@@ -211,12 +224,23 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     await runSheet('Base', async () => {
       const raw = await deps.readSheet(sheetId, 'Base')
       const rows = parseBase(raw)
+      // RÈGLE — « l'email n'est réécrit QUE si la feuille fournit un email non vide ».
+      // On charge l'état DB AVANT de construire les upserts : pour une ligne sans email en
+      // source, resolveBaseEmail réutilise l'email ACTUEL du membre (placeholder OU vrai email
+      // saisi par l'admin) comme clé onConflict — l'email n'est jamais écrasé, pas de doublon.
+      const existingMemberships = await loadMembershipLookups(supabase, clubId)
       const users: UserUpsert[] = []
       const membershipByEmail = new Map<string, MembershipUpsert>()
       const rowErrors: string[] = []
       for (const row of rows) {
         try {
-          const { user, membership } = mapBaseRowToMember(row, clubId)
+          const { user, membership, sheetEmailEmpty } = mapBaseRowToMember(row, clubId)
+          // Résolution DB-aware : feuille vide → email existant réutilisé (non écrasé) ;
+          // homonymes → repli placeholder + warning ; nouveau → placeholder.
+          const resolved = resolveBaseEmail(user, sheetEmailEmpty, existingMemberships)
+          if (resolved.warning) warnings.push(`Base: ${resolved.warning}`)
+          user.email = resolved.email
+          user.email_is_placeholder = resolved.email_is_placeholder
           users.push(user)
           membershipByEmail.set(user.email, membership)
         } catch (e) {

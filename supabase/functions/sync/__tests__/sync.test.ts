@@ -571,9 +571,11 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
       if (this.table === 'memberships') {
         // Deux formes de select sur memberships (embed qualifié par memberships_user_id_fkey
         // car memberships a 2 FK vers users — user_id et locked_by, cf. ADM-007) :
-        //  - sync : .select('id, user_id, users!memberships_user_id_fkey!inner(full_name)')
-        //  - alerte NTF-003 : .select('users!memberships_user_id_fkey!inner(email)') filtré par role.
-        if (this.selectCols.includes('email')) {
+        //  - sync (lookup) : .select('id, user_id, users!…(full_name, email, email_is_placeholder)')
+        //  - alerte NTF-003 : .select('users!…(email)') filtré par role (PAS de full_name).
+        // On discrimine sur `full_name` : seul le lookup sync le demande. (Les DEUX
+        // sélectionnent `email` depuis le fix « ne pas écraser l'email », d'où ce changement.)
+        if (!this.selectCols.includes('full_name')) {
           return rows.map((m) => {
             const u = store.users.find((x) => x.id === m.user_id)
             return { users: { email: (u?.email as string) ?? '' } }
@@ -584,7 +586,11 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
           return {
             id: m.id,
             user_id: m.user_id,
-            users: { full_name: (u?.full_name as string) ?? '' },
+            users: {
+              full_name: (u?.full_name as string) ?? '',
+              email: (u?.email as string) ?? '',
+              email_is_placeholder: (u?.email_is_placeholder as boolean) ?? false,
+            },
           }
         })
       }

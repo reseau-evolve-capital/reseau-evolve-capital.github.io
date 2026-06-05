@@ -25,11 +25,16 @@ function placeholderEmail(fullName: string, clubId: string): string {
  *     email_is_placeholder = false. On ne perd pas l'info ; de toute façon un email
  *     hors allowlist ne reçoit pas de magic link.
  * Le mapper ne throw plus sur l'email (seul un statut inconnu reste bloquant).
+ *
+ * `sheetEmailEmpty` signale que la feuille ne fournit PAS d'email pour cette ligne. Le mapper
+ * reste PUR (il ne connaît pas la DB) : il expose juste ce drapeau. La résolution DB-aware
+ * (réutiliser l'email existant plutôt que d'écraser) vit dans `resolveBaseEmail`
+ * (cf. baseEmailResolution.ts), appelée par l'Edge Function `sync`.
  */
 export function mapBaseRowToMember(
   row: BaseRowDTO,
   clubId: string
-): { user: UserUpsert; membership: MembershipUpsert } {
+): { user: UserUpsert; membership: MembershipUpsert; sheetEmailEmpty: boolean } {
   const fullName = row.fullName.trim()
   const rawEmail = row.email.trim().toLowerCase()
   const emailIsPlaceholder = rawEmail === ''
@@ -48,6 +53,7 @@ export function mapBaseRowToMember(
   const isActive = rawStatus === 'Membre actif'
 
   return {
+    sheetEmailEmpty: emailIsPlaceholder,
     user: {
       email,
       full_name: fullName,

@@ -40,6 +40,12 @@ describe('mapBaseRowToMember', () => {
   it('email présent → email_is_placeholder = false', () => {
     expect(mapBaseRowToMember(row, CLUB).user.email_is_placeholder).toBe(false)
   })
+  it('email présent → sheetEmailEmpty = false (la feuille fournit un email)', () => {
+    expect(mapBaseRowToMember(row, CLUB).sheetEmailEmpty).toBe(false)
+  })
+  it('email VIDE → sheetEmailEmpty = true (signal pour resolveBaseEmail)', () => {
+    expect(mapBaseRowToMember({ ...row, email: '   ' }, CLUB).sheetEmailEmpty).toBe(true)
+  })
   it('email malformé (non vide) → conservé tel quel, PAS de placeholder', () => {
     // Principe "aucune perte" : on garde l'info brute (trim+lowercase), flag false.
     // Il ne recevra de toute façon pas de magic link (hors allowlist).

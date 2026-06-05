@@ -176,4 +176,12 @@ export interface MembershipLookup {
   id: string
   user_id: string
   full_name: string
+  /**
+   * Email ACTUEL du user en base. Optionnel : la résolution Base (resolveBaseEmail) en a
+   * besoin pour réutiliser l'email existant quand la feuille est vide ; les lookups cotisations
+   * ne s'en servent pas. `loadMembershipLookups` le peuple toujours.
+   */
+  email?: string | null
+  /** Drapeau placeholder du user en base (cf. note ci-dessus). */
+  email_is_placeholder?: boolean
 }

@@ -1,5 +1,6 @@
 export { readSheet } from './sheets/client'
 export { mapBaseRowToMember } from './sheets/mappers/base.mapper'
+export { resolveBaseEmail, normalizeName } from './sheets/mappers/baseEmailResolution'
 export { mapParametragesToClub } from './sheets/mappers/parametrages.mapper'
 export { mapPortefeuilleRows } from './sheets/mappers/portefeuille.mapper'
 export { mapHistoriqueRows } from './sheets/mappers/historique.mapper'
