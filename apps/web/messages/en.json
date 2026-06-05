@@ -399,6 +399,31 @@
         "badge": "Left",
         "since": "Left on {date}"
       },
+      "email": {
+        "missing": "Missing email",
+        "action": "Set email",
+        "modal": {
+          "title": "Set email for {name}",
+          "description": "This member was imported without an email (typically someone who left). Enter their real email: it will be used to link them to their account. No access is opened automatically.",
+          "emailLabel": "Email address",
+          "emailPlaceholder": "first.last@example.com",
+          "emailHelp": "The email you enter replaces the placeholder and is preserved on syncs.",
+          "cancel": "Cancel",
+          "confirm": "Save",
+          "close": "Close"
+        },
+        "errors": {
+          "duplicate": "This email is already used by another member.",
+          "invalid": "Invalid email format."
+        },
+        "toast": {
+          "successTitle": "Email saved",
+          "successMessage": "The member's email has been updated.",
+          "errorTitle": "Action failed",
+          "errorMessage": "Something went wrong. Please try again.",
+          "forbiddenMessage": "You don't have permission to edit this member."
+        }
+      },
       "access": {
         "column": "Access",
         "active": "Active",

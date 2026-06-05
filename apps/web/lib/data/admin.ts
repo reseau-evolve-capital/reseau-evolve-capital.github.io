@@ -47,6 +47,9 @@ export interface ClubMember {
   userId: string
   fullName: string
   email: string
+  /** true = email synthétique généré à l'import (membre Base sans email, cf. migration 026).
+   *  L'UI masque alors le placeholder et propose de renseigner le vrai email. */
+  emailIsPlaceholder: boolean
   role: MemberRole
   totalContributed: number
   detentionPct: number // fraction 0..1
@@ -94,6 +97,12 @@ export function isUnpaid(status: ContributionStatus | null, amountDue: number): 
 
 export function countUnpaid(members: ClubMember[]): number {
   return members.reduce((n, m) => (m.isUnpaid ? n + 1 : n), 0)
+}
+
+/** Email affichable d'un membre : `null` si l'email est un placeholder synthétique
+ *  (l'UI affiche alors « Email manquant »), sinon l'email réel. Voir migration 026. */
+export function displayableEmail(email: string, emailIsPlaceholder: boolean): string | null {
+  return emailIsPlaceholder ? null : email
 }
 
 export function clubTotalContributed(members: ClubMember[]): number {
@@ -213,7 +222,7 @@ export async function getClubMembers(
       // On lit TOUTES les lignes du club (actifs ET sortis) : pas de filtre is_active/status.
       // Les membres sortis (Base « Date de sortie » → status `left`) doivent rester visibles.
       .select(
-        'id, user_id, role, is_active, joined_at, status, leave_at, access_status, users!memberships_user_id_fkey!inner(full_name, email)'
+        'id, user_id, role, is_active, joined_at, status, leave_at, access_status, users!memberships_user_id_fkey!inner(full_name, email, email_is_placeholder)'
       )
       .eq('club_id', clubId)
       .returns<
@@ -226,7 +235,7 @@ export async function getClubMembers(
           status: MemberStatus
           leave_at: string | null
           access_status: AccessStatus
-          users: { full_name: string; email: string }
+          users: { full_name: string; email: string; email_is_placeholder: boolean }
         }[]
       >(),
     supabase
@@ -257,6 +266,7 @@ export async function getClubMembers(
       userId: m.user_id,
       fullName: m.users.full_name,
       email: m.users.email,
+      emailIsPlaceholder: m.users.email_is_placeholder,
       role: m.role,
       totalContributed: Number(c?.total_contributed ?? 0),
       detentionPct: Number(c?.detention_pct ?? 0),

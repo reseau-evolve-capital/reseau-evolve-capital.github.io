@@ -16,12 +16,14 @@ import {
   Heading,
   Switch,
   LockMemberModal,
+  EditMemberEmailModal,
   SelectRoot,
   SelectTrigger,
   SelectValue,
   SelectPortal,
   SelectContent,
   SelectItem,
+  useToast,
   type MemberRow,
 } from '@evolve/ui'
 import type { ClubMember, MemberStateFilter } from '@/lib/data/admin'
@@ -32,7 +34,7 @@ import {
   ACTIVE_MEMBER_LIMIT,
 } from '@/lib/data/admin'
 import { useClubMembers, type ClubMembersPayload } from '@/lib/hooks/useClubMembers'
-import { lockMemberAction, unlockMemberAction } from '../actions'
+import { lockMemberAction, unlockMemberAction, updateMemberEmailAction } from '../actions'
 
 /** ClubMember (data) → MemberRow (présentationnel). */
 function toRow(m: ClubMember): MemberRow {
@@ -40,6 +42,7 @@ function toRow(m: ClubMember): MemberRow {
     id: m.id,
     fullName: m.fullName,
     email: m.email,
+    emailIsPlaceholder: m.emailIsPlaceholder,
     role: m.role,
     totalContributed: m.totalContributed,
     detentionPct: m.detentionPct,
@@ -56,6 +59,7 @@ const STATE_VALUES = ['all', 'active', 'left'] as const
 
 export function MembersView({ initialData }: { initialData: ClubMembersPayload }) {
   const t = useTranslations('admin')
+  const toast = useToast()
   const router = useRouter()
   const queryClient = useQueryClient()
   const { data, isError } = useClubMembers(initialData)
@@ -67,6 +71,10 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
   const [isPending, startTransition] = useTransition()
   // Modale partagée blocage/déblocage ; null = fermée.
   const [modal, setModal] = useState<{ member: MemberRow; mode: 'lock' | 'unlock' } | null>(null)
+  // Modale d'édition d'email (membre importé sans email) ; null = fermée.
+  const [emailModal, setEmailModal] = useState<MemberRow | null>(null)
+  // Erreur inline de la modale email (ex. « email déjà utilisé »), réinitialisée à l'ouverture.
+  const [emailError, setEmailError] = useState<string | null>(null)
 
   // Comptage des actifs (sur TOUS les membres, indépendant des filtres) vs limite légale.
   const activeCount = countActiveMembers(data.members)
@@ -87,6 +95,41 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
         // Invalide tout le préfixe ['admin', …] (membres + KPIs) → refetch RLS treasurer.
         await queryClient.invalidateQueries({ queryKey: ['admin'] })
         setModal(null)
+      }
+    })
+  }
+
+  /** Renseigner / corriger l'email d'un membre → updateMemberEmailAction (RPC staff). */
+  function handleEmailSubmit(email: string) {
+    const member = emailModal
+    if (!member) return
+    setEmailError(null)
+    startTransition(async () => {
+      const res = await updateMemberEmailAction(member.id, email)
+      if (res.ok) {
+        toast.success({
+          title: t('members.email.toast.successTitle'),
+          message: t('members.email.toast.successMessage'),
+        })
+        await queryClient.invalidateQueries({ queryKey: ['admin'] })
+        router.refresh()
+        setEmailModal(null)
+      } else if (res.error === 'duplicate') {
+        // Erreur attendue → message inline dans la modale (l'utilisateur peut corriger).
+        setEmailError(t('members.email.errors.duplicate'))
+      } else if (res.error === 'invalid') {
+        setEmailError(t('members.email.errors.invalid'))
+      } else if (res.error === 'forbidden' || res.error === 'unauthorized') {
+        toast.error({
+          title: t('members.email.toast.errorTitle'),
+          message: t('members.email.toast.forbiddenMessage'),
+        })
+        setEmailModal(null)
+      } else {
+        toast.error({
+          title: t('members.email.toast.errorTitle'),
+          message: t('members.email.toast.errorMessage'),
+        })
       }
     })
   }
@@ -159,6 +202,10 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
         onLockMember={(m) => setModal({ member: m, mode: 'lock' })}
         onUnlockMember={(m) => setModal({ member: m, mode: 'unlock' })}
         onViewMember={(m) => router.push(`/admin/cotisations?membre=${m.id}`)}
+        onEditMemberEmail={(m) => {
+          setEmailError(null)
+          setEmailModal(m)
+        }}
         labels={{
           columns: {
             fullName: t('members.columns.fullName'),
@@ -190,7 +237,9 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             lock: t('members.access.actions.lock'),
             unlock: t('members.access.actions.unlock'),
             viewProfile: t('members.access.actions.viewProfile'),
+            editEmail: t('members.email.action'),
           },
+          emailMissing: t('members.email.missing'),
           emptyTitle: t('members.empty.title'),
           emptyDescription: t('members.empty.description'),
           tableLabel: t('members.tableLabel'),
@@ -228,6 +277,31 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             cancel: t('members.access.lockModal.cancel'),
             confirmLock: t('members.access.lockModal.confirm'),
             confirmUnlock: t('members.access.unlockModal.confirm'),
+          }}
+        />
+      )}
+      {emailModal && (
+        <EditMemberEmailModal
+          open
+          onOpenChange={(o) => {
+            if (!o) {
+              setEmailModal(null)
+              setEmailError(null)
+            }
+          }}
+          memberName={emailModal.fullName}
+          isPending={isPending}
+          {...(emailError ? { error: emailError } : {})}
+          onConfirm={handleEmailSubmit}
+          labels={{
+            title: (name) => t('members.email.modal.title', { name }),
+            description: t('members.email.modal.description'),
+            emailLabel: t('members.email.modal.emailLabel'),
+            emailPlaceholder: t('members.email.modal.emailPlaceholder'),
+            emailHelp: t('members.email.modal.emailHelp'),
+            cancel: t('members.email.modal.cancel'),
+            confirm: t('members.email.modal.confirm'),
+            close: t('members.email.modal.close'),
           }}
         />
       )}

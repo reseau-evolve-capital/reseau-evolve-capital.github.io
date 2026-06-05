@@ -3,6 +3,7 @@ import {
   isUnpaid,
   countUnpaid,
   clubTotalContributed,
+  displayableEmail,
   sortMembers,
   filterMembers,
   filterByMemberState,
@@ -18,6 +19,7 @@ const mk = (over: Partial<ClubMember>): ClubMember => ({
   userId: 'u1',
   fullName: 'AAA Alice',
   email: 'alice@x.fr',
+  emailIsPlaceholder: false,
   role: 'member',
   totalContributed: 1000,
   detentionPct: 0.1,
@@ -60,6 +62,15 @@ describe('countUnpaid', () => {
   })
   it('renvoie 0 sur liste vide', () => {
     expect(countUnpaid([])).toBe(0)
+  })
+})
+
+describe('displayableEmail', () => {
+  it('renvoie l’email réel quand ce n’est pas un placeholder', () => {
+    expect(displayableEmail('alice@x.fr', false)).toBe('alice@x.fr')
+  })
+  it('renvoie null quand l’email est un placeholder (à masquer)', () => {
+    expect(displayableEmail('sans-email.alice@club.local', true)).toBeNull()
   })
 })
 

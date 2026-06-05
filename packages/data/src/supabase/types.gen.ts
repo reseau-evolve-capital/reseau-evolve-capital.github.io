@@ -753,6 +753,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      update_member_email: {
+        Args: { p_email: string; p_membership_id: string }
+        Returns: undefined
+      }
       user_is_staff: { Args: never; Returns: boolean }
       verify_attestation: {
         Args: { p_reference: string }

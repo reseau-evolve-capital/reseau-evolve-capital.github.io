@@ -399,6 +399,31 @@
         "badge": "Sorti",
         "since": "Sorti le {date}"
       },
+      "email": {
+        "missing": "Email manquant",
+        "action": "Renseigner l'email",
+        "modal": {
+          "title": "Renseigner l'email de {name}",
+          "description": "Ce membre a été importé sans email (typiquement un sortant). Renseignez son email réel : il sera utilisé pour le rattacher à son compte. Aucun accès n'est ouvert automatiquement.",
+          "emailLabel": "Adresse email",
+          "emailPlaceholder": "prenom.nom@exemple.fr",
+          "emailHelp": "L'email saisi remplace le placeholder et est préservé lors des synchronisations.",
+          "cancel": "Annuler",
+          "confirm": "Enregistrer",
+          "close": "Fermer"
+        },
+        "errors": {
+          "duplicate": "Cet email est déjà utilisé par un autre membre.",
+          "invalid": "Format d'email invalide."
+        },
+        "toast": {
+          "successTitle": "Email enregistré",
+          "successMessage": "L'email du membre a été mis à jour.",
+          "errorTitle": "Action impossible",
+          "errorMessage": "Une erreur est survenue. Réessayez.",
+          "forbiddenMessage": "Vous n'avez pas les droits pour modifier ce membre."
+        }
+      },
       "access": {
         "column": "Accès",
         "active": "Actif",

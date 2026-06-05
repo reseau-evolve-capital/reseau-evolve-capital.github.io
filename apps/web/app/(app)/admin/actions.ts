@@ -28,8 +28,9 @@ const emailSchema = z.string().email()
 
 /** Codes Postgres → erreurs métier stables (consommées par l'UI pour un message i18n). */
 function mapPgError(code: string | undefined): string {
-  if (code === '23505') return 'duplicate' // unique_violation : invitation pending déjà existante
+  if (code === '23505') return 'duplicate' // unique_violation : email/invitation déjà utilisé
   if (code === '42501') return 'forbidden' // insufficient_privilege : RAISE « staff requis »
+  if (code === '22023') return 'invalid' // invalid_parameter_value : email/pays/plafond invalide
   return 'unknown'
 }
 
@@ -152,6 +153,34 @@ export async function updateClubSettingsAction(input: ClubSettingsInput): Promis
   }
 
   const { error } = await supabase.rpc('update_club_settings', buildUpdateArgs(ctx.clubId, input))
+  if (error) return { ok: false, error: mapPgError(error.code) }
+  return { ok: true }
+}
+
+/**
+ * Renseigner / corriger l'email d'un membre (typiquement un sortant importé sans email,
+ * cf. migration 026 : email placeholder + email_is_placeholder=true).
+ * La garde staff est dans la RPC `update_member_email` (SECURITY DEFINER, scopée au club
+ * DU membership). On valide aussi le format côté serveur avant l'appel. Le conflit d'unicité
+ * (email déjà utilisé) remonte en erreur `duplicate`. JAMAIS de service-role ici.
+ */
+export async function updateMemberEmailAction(
+  membershipId: string,
+  rawEmail: string
+): Promise<ActionResult> {
+  const email = rawEmail.trim().toLowerCase()
+  if (!emailSchema.safeParse(email).success) return { ok: false, error: 'invalid' }
+
+  const supabase = await serverClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'unauthorized' }
+
+  const { error } = await supabase.rpc('update_member_email', {
+    p_membership_id: membershipId,
+    p_email: email,
+  })
   if (error) return { ok: false, error: mapPgError(error.code) }
   return { ok: true }
 }
