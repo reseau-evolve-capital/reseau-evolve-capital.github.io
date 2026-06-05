@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale } from 'next-intl/server'
+import { Analytics } from '@/components/Analytics'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -37,6 +38,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* NextIntlClientProvider hérite locale + messages de la config de requête
             (rendu dans un Server Component) → dispo pour les composants client. */}
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        {/* Cloudflare Web Analytics (OPS-002) — beacon client, pageviews + SPA.
+            Rend null si le token est absent (dev/CI). Cf. docs/analytics.md. */}
+        <Analytics />
       </body>
     </html>
   )
