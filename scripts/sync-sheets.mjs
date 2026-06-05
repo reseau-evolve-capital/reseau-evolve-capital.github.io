@@ -17,7 +17,7 @@
 //   NEXT_PUBLIC_SUPABASE_URL | SUPABASE_URL      (défaut http://127.0.0.1:54321)
 //   SUPABASE_SERVICE_ROLE_KEY                    (obligatoire — `supabase status -o env`)
 
-import { readFileSync } from 'node:fs'
+import { readFileSync, mkdirSync, writeFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
@@ -96,6 +96,38 @@ try {
     payload = JSON.parse(text)
   } catch {
     payload = text
+  }
+
+  // Log physique du run (debug dans le temps) — dossier gitignoré : contient des
+  // données membres (PII) et le repo est public. Capture la réponse + les snapshots
+  // bruts (raw_data) de cette sync pour pouvoir rejouer/diagnostiquer plus tard.
+  try {
+    const dir = resolve(ROOT, 'sync-logs')
+    mkdirSync(dir, { recursive: true })
+    let snapshots = []
+    try {
+      const snapRes = await fetch(
+        `${baseUrl}/rest/v1/sheet_snapshots?select=sheet_name,status,row_count,checksum,error_message,synced_at,raw_data` +
+          `&club_id=eq.${encodeURIComponent(clubId)}&order=synced_at.desc&limit=12`,
+        { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } }
+      )
+      if (snapRes.ok) snapshots = await snapRes.json()
+    } catch {
+      /* best-effort : un log sans snapshots reste utile */
+    }
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-')
+    const logPath = resolve(dir, `sync-${stamp}.json`)
+    writeFileSync(
+      logPath,
+      JSON.stringify(
+        { timestamp: new Date().toISOString(), club_id: clubId, http_status: res.status, response: payload, snapshots },
+        null,
+        2
+      )
+    )
+    console.log(`\n📝 Log physique : ${logPath.replace(`${ROOT}/`, '')}`)
+  } catch (e) {
+    console.warn(`(log physique non écrit : ${e?.message || e})`)
   }
 
   if (!res.ok) {

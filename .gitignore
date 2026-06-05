@@ -56,3 +56,6 @@ docs/_scratch/
 # Lighthouse CI — rapports générés (uploadés en artefact CI, jamais versionnés)
 /lh-reports/
 .lighthouseci/
+
+# Logs physiques de sync (raw_data des feuilles) — PII membres, jamais versionnés
+/sync-logs/
