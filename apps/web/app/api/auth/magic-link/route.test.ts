@@ -10,7 +10,9 @@ vi.mock('@evolve/data', () => ({
     auth: { signInWithOtp: mocks.signInWithOtp },
   }),
 }))
-vi.mock('next/headers', () => ({ cookies: async () => ({ getAll: () => [], set: () => {} }) }))
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ get: () => undefined, getAll: () => [], set: () => {} }),
+}))
 
 import { POST } from './route'
 
@@ -51,6 +53,8 @@ describe('POST /api/auth/magic-link', () => {
         email: 'test@example.com',
         options: expect.objectContaining({
           emailRedirectTo: expect.stringContaining('/login/verify'),
+          // Locale transmise (défaut 'fr' sans cookie NEXT_LOCALE) → user_metadata.locale.
+          data: { locale: 'fr' },
         }),
       })
     )

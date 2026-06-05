@@ -15,6 +15,7 @@ import { NextResponse } from 'next/server'
 import { z } from 'zod'
 import { createServerClient } from '@evolve/data'
 
+import { defaultLocale, isLocale, LOCALE_COOKIE } from '@/i18n/config'
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rate-limit'
 
 // Upstash fonctionne sur l'edge runtime, mais nodejs est le choix sûr par défaut.
@@ -61,6 +62,11 @@ export async function POST(request: Request): Promise<NextResponse> {
   const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)
 
+  // Locale courante (cookie NEXT_LOCALE, FR par défaut) — alimente user_metadata.locale
+  // pour que l'Auth Hook `send-email` rende l'email magic link dans la bonne langue (A8).
+  const localeCookie = cookieStore.get(LOCALE_COOKIE)?.value
+  const locale = isLocale(localeCookie) ? localeCookie : defaultLocale
+
   // 4. Vérification invitation via le RPC email_is_invited (callable par anon, SECURITY DEFINER).
   // Une erreur infra du RPC ne doit JAMAIS être déguisée en 403 : on renvoie 500.
   const { data: invited, error: rpcError } = await supabase.rpc('email_is_invited', {
@@ -82,9 +88,16 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   // 5. Envoi du lien magique via Supabase Auth.
+  // `data.locale` est persisté dans user_metadata.locale → lu par l'Auth Hook
+  // `send-email` en PROD pour localiser l'email (A8). Sans incidence en local
+  // (le mailer natif + template statique FR ignorent ce metadata).
   const { error: otpError } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${origin()}/login/verify`, shouldCreateUser: true },
+    options: {
+      emailRedirectTo: `${origin()}/login/verify`,
+      shouldCreateUser: true,
+      data: { locale },
+    },
   })
   if (otpError) {
     // Capture Sentry (no-op sans DSN). Pas d'email en clair : seulement le domaine.
