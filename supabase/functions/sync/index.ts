@@ -499,12 +499,16 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
 // Câble les vraies dépendances (client Supabase réel + readSheet Google Sheets).
 // Démarre le serveur uniquement quand le module est l'entrée principale (pas à l'import en test).
 if (import.meta.main) {
-  // Import DYNAMIQUE de l'implémentation Brevo : elle charge React Email +
-  // @evolve/design-system (arbre de deps lourd, non résoluble par `deno test`
-  // sans --sloppy-imports). Le charger ici, hors du chemin testé, garde le
-  // handler et ses tests légers (le faux `sendSyncErrorEmail` est injecté en test).
-  const { sendSyncErrorEmailBrevo } = await import('./sendSyncErrorEmailBrevo.ts')
-  Deno.serve(
-    createSyncHandler({ createClient, readSheet, sendSyncErrorEmail: sendSyncErrorEmailBrevo })
-  )
+  // Rendu Brevo chargé PARESSEUSEMENT et via un specifier OPAQUE (variable).
+  // Raison : `sendSyncErrorEmailBrevo` tire React Email + @evolve/design-system
+  // (`.tsx`/JSX) — un arbre que le graphe de boot Deno pré-résoudrait s'il voyait
+  // un `import()` à littéral, échouant en BOOT_ERROR. En différant l'import à
+  // l'envoi RÉEL d'un email d'erreur (rare) et en masquant le specifier, l'arbre
+  // sort du graphe de boot : le chemin de lecture Sheets démarre sans lui.
+  const sendSyncErrorEmail: SendSyncErrorEmail = async (ctx) => {
+    const brevoSpec = './sendSyncErrorEmailBrevo.ts'
+    const { sendSyncErrorEmailBrevo } = await import(brevoSpec)
+    return sendSyncErrorEmailBrevo(ctx)
+  }
+  Deno.serve(createSyncHandler({ createClient, readSheet, sendSyncErrorEmail }))
 }
