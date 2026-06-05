@@ -1,5 +1,5 @@
 .PHONY: dev dev-web dev-vitrine build lint typecheck test test-e2e storybook \
-        db-start db-stop db-migrate db-reset db-types db-sync \
+        db-start db-stop db-migrate db-reset db-types db-set-sheet db-sync \
         docker-build docker-up docker-down \
         clean help
 
@@ -48,6 +48,9 @@ db-reset:
 
 db-types:
 	supabase gen types typescript --local > packages/data/src/supabase/types.gen.ts
+
+db-set-sheet:
+	node scripts/set-sheet-id.mjs $(CLUB_ID)
 
 db-sync:
 	node scripts/sync-sheets.mjs $(CLUB_ID)

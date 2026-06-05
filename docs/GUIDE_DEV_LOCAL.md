@@ -162,16 +162,18 @@ L'étape 6 injecte des données à la main. Pour tester le **vrai flux produit**
    base64 -i service-account.json | tr -d '\n'    # → valeur de GOOGLE_SA_KEY_BASE64
    ```
 2. **Partage ta matrice** Google Sheets (en lecture) avec le `client_email` du service account.
-3. Crée `supabase/functions/.env` (gitignoré) avec le secret :
+3. Crée `supabase/functions/.env` (gitignoré) avec le secret **et l'id de ta matrice** :
    ```bash
    GOOGLE_SA_KEY_BASE64=<la_valeur_base64_ci-dessus>
+   SHEET_ID=<id de ta matrice>      # dans l'URL Google : .../spreadsheets/d/<SHEET_ID>/edit
    ```
-4. Renseigne le `sheet_id` du club en DB (Studio → SQL, ou psql). Le seed met un placeholder `sheet-e2e` :
-   ```sql
-   UPDATE clubs SET sheet_id = '<ID_DE_TA_MATRICE>'
-   WHERE id = 'aaaaaaaa-0000-0000-0000-000000000001';
-   -- l'ID est dans l'URL : .../spreadsheets/d/<ID_DE_TA_MATRICE>/edit
+4. Pose le `sheet_id` sur le club **automatiquement** (lit `SHEET_ID` de l'env — plus de SQL à la main) :
+   ```bash
+   SUPABASE_SERVICE_ROLE_KEY="$(supabase status -o env | grep -i service_role | cut -d= -f2 | tr -d '\"')" \
+     make db-set-sheet                    # club seed (aaaaaaaa-…-0001, cf. supabase/seed.sql)
+   # autre club : make db-set-sheet CLUB_ID=<uuid>
    ```
+   > L'UUID `aaaaaaaa-0000-0000-0000-000000000001` est celui du club « Club E2E » créé par `supabase/seed.sql` — c'est la cible par défaut, rien à recopier.
 
 **À chaque sync :**
 
@@ -180,6 +182,8 @@ L'étape 6 injecte des données à la main. Pour tester le **vrai flux produit**
 supabase start -x vector,logflare
 
 # Terminal B : servir les Edge Functions avec le secret Google
+#   (⚠ le runtime auto de `supabase start` ne charge PAS supabase/functions/.env →
+#    il FAUT ce `functions serve --env-file` pour que GOOGLE_SA_KEY_BASE64 soit présent)
 supabase functions serve --env-file supabase/functions/.env
 
 # Terminal C : déclencher le sync (récupère la clé service_role automatiquement)
@@ -190,6 +194,11 @@ SUPABASE_SERVICE_ROLE_KEY="…" make db-sync CLUB_ID=<uuid-du-club>
 ```
 
 Le script `scripts/sync-sheets.mjs` affiche la réponse (`success`, `synced_sheets`, `errors`, `warnings`, `snapshots`) et **sort en code ≠ 0 s'il y a des erreurs dures**. Ordre d'import imposé : **PARAMETRAGES → Base → Portefeuille → HISTORIQUE → COTISATIONS → Details cotisations** (Base d'abord car sa colonne email est la clé de matching).
+
+> ⚠ **Bug connu (bloque la sync live, à corriger)** : l'Edge Function `sync` ne boote pas dans le runtime Deno —
+> `packages/utils/src/index.ts` ré-exporte `./format` etc. **sans extension `.ts`**, que Deno refuse
+> (`Module not found … Maybe add a '.ts' extension`). `make db-set-sheet` et le déclencheur fonctionnent ;
+> c'est le worker `sync` qui échoue (`BOOT_ERROR`). Fix prévu dans le sprint pré-prod (voir reste-à-faire).
 
 **Vérifier l'import en DB** (Studio → SQL) :
 
