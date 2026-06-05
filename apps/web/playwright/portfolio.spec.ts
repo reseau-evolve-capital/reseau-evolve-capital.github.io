@@ -41,6 +41,7 @@ function row(
   return {
     category: 'Actions',
     sector: 'Technologie',
+    typologie: 'Offensif',
     quantity: 10,
     pump: 100,
     market_price_eur: 180,
@@ -90,6 +91,11 @@ const PORTFOLIO: PortfolioData = {
       sector: 'Industrie',
       market_value: 8000,
     }),
+  ],
+  // Total affiché (C1) = ligne d'agrégat « Portefeuille » + soldes (C2bis).
+  aggregates: [
+    { label: 'Portefeuille', market_value: 701627, book_value: null, allocation_pct: 100 },
+    { label: 'Provision', market_value: 1500, book_value: null, allocation_pct: null },
   ],
 }
 

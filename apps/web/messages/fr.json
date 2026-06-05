@@ -238,6 +238,8 @@
     "filters": {
       "group": "Filtres du portefeuille",
       "all": "Tous",
+      "typologie": "Typologie",
+      "typologyAll": "Toutes",
       "sortBy": "Trier par",
       "ascending": "Ordre croissant",
       "descending": "Ordre décroissant"
@@ -247,6 +249,9 @@
       "totalValue": "Valeur totale",
       "ariaPrefix": "Allocation du portefeuille : ",
       "legend": "Légende de l'allocation"
+    },
+    "balances": {
+      "title": "Provisions et soldes"
     },
     "table": {
       "columns": {

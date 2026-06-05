@@ -32,11 +32,18 @@ import {
   Heading,
   useToast,
 } from '@evolve/ui'
-import { OTHER_SECTOR_LABEL } from '@evolve/types'
 import type { PortfolioPosition, PortfolioSort, PortfolioDir } from '@evolve/types'
 import { formatEUR, formatPct, formatRelativeTime } from '@evolve/utils'
 
-import { buildPortfolio, filterAndSort, type PortfolioData } from '@/lib/data/portfolio'
+import {
+  buildPortfolio,
+  filterAndSort,
+  availableSectors,
+  availableTypologies,
+  totalFromAggregates,
+  balanceAggregates,
+  type PortfolioData,
+} from '@/lib/data/portfolio'
 import { usePortfolio } from '@/lib/hooks/usePortfolio'
 import { useLivePrices } from '@/lib/hooks/useLivePrices'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
@@ -63,28 +70,32 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
 
   // État de filtre/tri persistant dans l'URL (partageable). parseAsString → string | null.
   const [sector, setSector] = useQueryState('sector', parseAsString)
+  const [typo, setTypo] = useQueryState('typo', parseAsString)
   const [sort, setSort] = useQueryState('sort', parseAsStringEnum(SORTS).withDefault('value'))
   const [dir, setDir] = useQueryState('dir', parseAsStringEnum(DIRS).withDefault('desc'))
 
   const rows = useMemo(() => data?.positions ?? [], [data?.positions])
+  const aggregates = useMemo(() => data?.aggregates ?? [], [data?.aggregates])
   const symbols = useMemo(() => rows.map((r) => r.symbol), [rows])
   const { data: prices } = useLivePrices(symbols)
 
   const built = useMemo(() => buildPortfolio(rows, prices ?? {}), [rows, prices])
-  const sectors = useMemo(
-    () => [
-      ...new Set(
-        built.positions.map((p) =>
-          p.sector && p.sector.trim() !== '' ? p.sector : OTHER_SECTOR_LABEL
-        )
-      ),
-    ],
-    [built.positions]
-  )
+  const sectors = useMemo(() => availableSectors(built.positions), [built.positions])
+  const typologies = useMemo(() => availableTypologies(built.positions), [built.positions])
   const visible = useMemo(
-    () => filterAndSort(built.positions, sector, sort, dir),
-    [built.positions, sector, sort, dir]
+    () => filterAndSort(built.positions, sector, sort, dir, typo),
+    [built.positions, sector, sort, dir, typo]
   )
+
+  // TOTAL affiché (C1) : ligne d'agrégat « Portefeuille » (col G) si persistée, sinon fallback
+  // sur la somme des valos live des positions (jamais d'écran vide). Les valos PAR position
+  // restent affichées telles quelles dans le tableau.
+  const totalValue = useMemo(
+    () => totalFromAggregates(aggregates) ?? built.totalValue,
+    [aggregates, built.totalValue]
+  )
+  // Soldes (Provision, Soldes courts/longs termes…) : tout agrégat hors « Portefeuille ».
+  const balances = useMemo(() => balanceAggregates(aggregates), [aggregates])
 
   // Gain/perte total du portefeuille (somme des +/- € de toutes les positions, hors filtre).
   const totalGainLoss = useMemo(
@@ -196,14 +207,29 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
           'lg:grid lg:grid-cols-[240px_minmax(0,1fr)_300px] lg:grid-rows-[auto_auto] lg:items-start lg:gap-x-6 lg:gap-y-5'
         }
       >
-        {/* En-tête centre : titre + sous-titre + hero valeur totale + gain/perte (TrendBadge). */}
-        <header className="flex flex-col gap-2 lg:col-start-2 lg:row-start-1">
+        {/* En-tête centre : titre + sous-titre + hero valeur totale + gain/perte (TrendBadge).
+            Mobile (< lg) : STICKY sous la topbar (h-16) avec fond opaque + z-index, pour garder la
+            valo visible pendant que les positions défilent. Desktop : statique dans la grille. */}
+        <header
+          className={
+            'flex min-w-0 flex-col gap-2 ' +
+            'sticky top-16 z-10 -mx-4 bg-bg px-4 py-3 sm:-mx-6 sm:px-6 ' +
+            'lg:static lg:top-auto lg:z-auto lg:mx-0 lg:bg-transparent lg:px-0 lg:py-0 ' +
+            'lg:col-start-2 lg:row-start-1'
+          }
+        >
           <Heading level="h1" className="text-[20px]">
             {t('title')}
           </Heading>
           <p className="text-[13px] text-text-sec">{subtitle}</p>
           <div className="mt-1 flex flex-wrap items-baseline gap-3">
-            <CurrencyAmount amount={built.totalValue} size="xl" className="block" />
+            {/* C1 : total = ligne d'agrégat « Portefeuille » (fallback somme live).
+                C5c : taille réduite < sm pour ne pas déborder en 375px (xl = 40px → 32px). */}
+            <CurrencyAmount
+              amount={totalValue}
+              size="xl"
+              className="block max-w-full text-[32px] sm:text-[56px]"
+            />
             <TrendBadge
               direction={totalDir}
               value={formatEUR(totalGainLoss)}
@@ -215,14 +241,17 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
         {/* Colonne gauche : filtres secteur/tri (FilterBar, state nuqs inchangé) + dernière sync. */}
         <aside
           aria-label={t('filtersRegion')}
-          className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:row-span-2"
+          className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:self-stretch"
         >
           <FilterBar
             sectors={sectors}
             sector={sector}
+            typologies={typologies}
+            typologie={typo}
             sort={sort}
             dir={dir}
             onSectorChange={(s) => void setSector(s)}
+            onTypologyChange={(tp) => void setTypo(tp)}
             onSortChange={(s) => void setSort(s)}
             onDirChange={(d) => void setDir(d)}
             sortLabels={{
@@ -233,12 +262,17 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
             labels={{
               group: t('filters.group'),
               all: t('filters.all'),
+              typologie: t('filters.typologie'),
+              typologyAll: t('filters.typologyAll'),
               sortBy: t('filters.sortBy'),
               ascending: t('filters.ascending'),
               descending: t('filters.descending'),
             }}
           />
-          <div className="flex flex-col gap-1 rounded-[10px] border border-border bg-card-sub px-3 py-2">
+          {/* C4 : carte « dernière sync » poussée en BAS de la colonne (mt-auto sur l'aside pleine
+              hauteur lg:row-span-2). C5a : MASQUÉE < lg (le SyncBanner du haut couvre déjà le mobile,
+              anti-doublon) → hidden lg:flex. */}
+          <div className="mt-auto hidden flex-col gap-1 rounded-[10px] border border-border bg-card-sub px-3 py-2 lg:flex">
             <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter">
               {t('lastSync')}
             </span>
@@ -262,12 +296,38 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
             </h3>
             <AllocationDonut
               data={built.allocation}
-              totalValue={built.totalValue}
+              totalValue={totalValue}
               totalLabel={t('allocation.totalValue')}
               ariaLabelPrefix={t('allocation.ariaPrefix')}
               legendLabel={t('allocation.legend')}
             />
           </section>
+          {/* C2bis : Provision + soldes (col A = libellé DB en FR, col G = valeur). Fallback « — » si null. */}
+          {balances.length > 0 && (
+            <section
+              aria-labelledby="balances-title"
+              className="flex flex-col gap-2 rounded-[10px] border border-border bg-card-sub px-4 py-3"
+            >
+              <h3
+                id="balances-title"
+                className="font-display text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter"
+              >
+                {t('balances.title')}
+              </h3>
+              <dl className="flex flex-col gap-1.5">
+                {balances.map((b) => (
+                  <div key={b.label} className="flex items-baseline justify-between gap-3">
+                    <dt className="text-[13px] text-text-sec">{b.label}</dt>
+                    <dd className="text-[13px] font-medium text-text [font-feature-settings:'tnum']">
+                      {b.market_value != null && Number.isFinite(b.market_value)
+                        ? formatEUR(b.market_value)
+                        : '—'}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
           <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-card-sub px-4 py-3">
             <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter">
               {t('totalGainLoss')}

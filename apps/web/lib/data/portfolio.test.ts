@@ -1,5 +1,15 @@
 import { describe, it, expect } from 'vitest'
-import { buildPortfolio, filterAndSort, type PositionRow } from './portfolio'
+import {
+  buildPortfolio,
+  filterAndSort,
+  availableSectors,
+  availableTypologies,
+  totalFromAggregates,
+  balanceAggregates,
+  normalizeAggregateLabel,
+  type PositionRow,
+  type PortfolioAggregate,
+} from './portfolio'
 import type { PortfolioPosition } from '@evolve/types'
 
 const row = (over: Partial<PositionRow>): PositionRow => ({
@@ -8,6 +18,7 @@ const row = (over: Partial<PositionRow>): PositionRow => ({
   symbol: 'NASDAQ:META',
   category: 'Actions',
   sector: 'Technologie',
+  typologie: 'Offensif',
   quantity: 10,
   pump: 100,
   market_price_eur: 180,
@@ -90,6 +101,7 @@ describe('filterAndSort', () => {
     symbol: 'B',
     category: 'Actions',
     sector: 'Tech',
+    typologie: 'Offensif',
     quantity: 1,
     pru: 1,
     livePrice: 1,
@@ -116,5 +128,98 @@ describe('filterAndSort', () => {
   })
   it('trie par performance desc', () => {
     expect(filterAndSort(list, null, 'performance', 'desc')[0]!.gainLossPct).toBe(0.1)
+  })
+
+  it('filtre par typologie (vide → "Autres")', () => {
+    const typed = [
+      mk({ id: '1', typologie: 'Offensif' }),
+      mk({ id: '2', typologie: 'Défensif' }),
+      mk({ id: '3', typologie: null }),
+      mk({ id: '4', typologie: '   ' }),
+    ]
+    expect(filterAndSort(typed, null, 'value', 'desc', 'Offensif').map((p) => p.id)).toEqual(['1'])
+    expect(
+      filterAndSort(typed, null, 'value', 'desc', 'Autres')
+        .map((p) => p.id)
+        .sort()
+    ).toEqual(['3', '4'])
+  })
+
+  it('filtre combiné secteur ∧ typologie', () => {
+    const data = [
+      mk({ id: '1', sector: 'Tech', typologie: 'Offensif' }),
+      mk({ id: '2', sector: 'Tech', typologie: 'Défensif' }),
+      mk({ id: '3', sector: 'Santé', typologie: 'Offensif' }),
+    ]
+    expect(filterAndSort(data, 'Tech', 'value', 'desc', 'Offensif').map((p) => p.id)).toEqual(['1'])
+  })
+})
+
+describe('availableSectors / availableTypologies', () => {
+  const mk = (over: Partial<PortfolioPosition>): PortfolioPosition => ({
+    id: '1',
+    name: 'X',
+    symbol: 'X',
+    category: null,
+    sector: 'Tech',
+    typologie: 'Offensif',
+    quantity: 1,
+    pru: 1,
+    livePrice: 1,
+    currentValue: 1,
+    gainLossEur: 0,
+    gainLossPct: 0,
+    allocationPct: 0,
+    isLive: true,
+    ...over,
+  })
+  it('déduplique et replie vide → "Autres"', () => {
+    const list = [
+      mk({ id: '1', sector: 'Tech', typologie: 'Offensif' }),
+      mk({ id: '2', sector: 'Tech', typologie: null }),
+      mk({ id: '3', sector: '', typologie: 'Défensif' }),
+    ]
+    expect(availableSectors(list)).toEqual(['Tech', 'Autres'])
+    expect(availableTypologies(list)).toEqual(['Offensif', 'Autres', 'Défensif'])
+  })
+})
+
+describe('agrégats (total + soldes)', () => {
+  const agg = (over: Partial<PortfolioAggregate>): PortfolioAggregate => ({
+    label: 'Provision',
+    market_value: 500,
+    book_value: null,
+    allocation_pct: null,
+    ...over,
+  })
+
+  it('normalise le label (accents, casse, espaces)', () => {
+    expect(normalizeAggregateLabel('  Portefeuille  ')).toBe('portefeuille')
+    expect(normalizeAggregateLabel('Solde : opérations  courts')).toBe('solde : operations courts')
+  })
+
+  it('totalFromAggregates retourne la valeur de « Portefeuille » (match insensible)', () => {
+    const list = [
+      agg({ label: 'Provision', market_value: 500 }),
+      agg({ label: 'PORTEFEUILLE', market_value: 12000 }),
+    ]
+    expect(totalFromAggregates(list)).toBe(12000)
+  })
+
+  it('totalFromAggregates → null si absent ou valeur non finie', () => {
+    expect(totalFromAggregates([agg({ label: 'Provision' })])).toBeNull()
+    expect(totalFromAggregates([agg({ label: 'Portefeuille', market_value: null })])).toBeNull()
+  })
+
+  it('balanceAggregates exclut « Portefeuille » et garde le reste', () => {
+    const list = [
+      agg({ label: 'Portefeuille', market_value: 12000 }),
+      agg({ label: 'Provision', market_value: 500 }),
+      agg({ label: 'Solde : opérations courts termes', market_value: 300 }),
+    ]
+    expect(balanceAggregates(list).map((a) => a.label)).toEqual([
+      'Provision',
+      'Solde : opérations courts termes',
+    ])
   })
 })

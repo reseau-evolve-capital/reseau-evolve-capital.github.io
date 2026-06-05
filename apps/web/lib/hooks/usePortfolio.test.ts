@@ -14,6 +14,7 @@ const sample: PortfolioData = {
       symbol: 'NASDAQ:META',
       category: 'Actions',
       sector: 'Technologie',
+      typologie: 'Offensif',
       quantity: 10,
       pump: 100,
       market_price_eur: 180,
@@ -24,6 +25,9 @@ const sample: PortfolioData = {
       gain_loss_pct: 80,
     },
   ],
+  aggregates: [
+    { label: 'Portefeuille', market_value: 1800, book_value: 1000, allocation_pct: 100 },
+  ],
 }
 
 /** PortfolioData « vide » tel que renvoyé par la route pour un club sans position (FIX-API-001). */
@@ -32,6 +36,7 @@ const empty: PortfolioData = {
   userRole: 'member',
   syncedAt: null,
   positions: [],
+  aggregates: [],
 }
 
 function mockFetch(init: { status: number; body?: unknown }) {

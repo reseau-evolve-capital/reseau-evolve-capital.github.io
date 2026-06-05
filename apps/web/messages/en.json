@@ -238,6 +238,8 @@
     "filters": {
       "group": "Portfolio filters",
       "all": "All",
+      "typologie": "Type",
+      "typologyAll": "All",
       "sortBy": "Sort by",
       "ascending": "Ascending order",
       "descending": "Descending order"
@@ -247,6 +249,9 @@
       "totalValue": "Total value",
       "ariaPrefix": "Portfolio allocation: ",
       "legend": "Allocation legend"
+    },
+    "balances": {
+      "title": "Provisions and balances"
     },
     "table": {
       "columns": {

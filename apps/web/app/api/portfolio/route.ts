@@ -65,7 +65,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   // pas de NaN/undefined) plutôt qu'un 404 trompeur. L'UI dégrade vers l'EmptyState.
   if (!data) {
     const userRole = await getMemberRole(supabase, auth.user.id, clubId)
-    const empty: PortfolioData = { clubId, positions: [], syncedAt: null, userRole }
+    const empty: PortfolioData = { clubId, positions: [], aggregates: [], syncedAt: null, userRole }
     return NextResponse.json(empty, {
       headers: { 'Cache-Control': 'private, no-store' },
     })
