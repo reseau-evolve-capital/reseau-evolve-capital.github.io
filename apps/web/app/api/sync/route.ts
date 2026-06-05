@@ -11,6 +11,7 @@
 //
 // Réf : ARCHITECTURE.md §1, DATA_MODEL.md §3 (helpers RLS), CLAUDE.md (conventions sync).
 
+import * as Sentry from '@sentry/nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -82,6 +83,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     body: { club_id },
   })
   if (invokeError) {
+    // Capture Sentry (no-op sans DSN). Contexte non nominatif : club_id + user.id + rôle.
+    Sentry.captureException(invokeError, {
+      tags: { sync_error: true, endpoint: '/api/sync', role },
+      user: { id: user.id },
+      extra: { club_id },
+    })
     return NextResponse.json({ error: 'La synchronisation a échoué.' }, { status: 502 })
   }
 

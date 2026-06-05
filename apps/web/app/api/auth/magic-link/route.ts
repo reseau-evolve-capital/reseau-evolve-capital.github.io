@@ -9,6 +9,7 @@
 //
 // Réf : ARCHITECTURE.md §1, DATA_MODEL.md, CLAUDE.md (conventions auth).
 
+import * as Sentry from '@sentry/nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -25,6 +26,13 @@ function clientIp(request: Request): string {
   const fwd = request.headers.get('x-forwarded-for')
   if (fwd) return fwd.split(',')[0]?.trim() || 'unknown'
   return request.headers.get('x-real-ip') ?? 'unknown'
+}
+
+// Email = donnée personnelle : on n'envoie JAMAIS l'adresse en clair à Sentry. On ne
+// remonte que le DOMAINE (utile pour diagnostiquer un souci SMTP/DNS) — jamais la partie locale.
+function emailDomain(email: string): string {
+  const at = email.lastIndexOf('@')
+  return at >= 0 ? email.slice(at + 1) : 'unknown'
 }
 
 // L'origin pour emailRedirectTo ne doit JAMAIS provenir d'un header attaquant-contrôlé
@@ -59,6 +67,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     p_email: email,
   })
   if (rpcError) {
+    // Capture Sentry (no-op sans DSN). Pas d'email en clair : seulement le domaine.
+    Sentry.captureException(rpcError, {
+      tags: { endpoint: '/api/auth/magic-link', step: 'email_is_invited' },
+      extra: { email_domain: emailDomain(email) },
+    })
     return NextResponse.json({ error: "Erreur de vérification de l'email." }, { status: 500 })
   }
   if (!invited) {
@@ -74,6 +87,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     options: { emailRedirectTo: `${origin()}/login/verify`, shouldCreateUser: true },
   })
   if (otpError) {
+    // Capture Sentry (no-op sans DSN). Pas d'email en clair : seulement le domaine.
+    Sentry.captureException(otpError, {
+      tags: { endpoint: '/api/auth/magic-link', step: 'signInWithOtp' },
+      extra: { email_domain: emailDomain(email) },
+    })
     return NextResponse.json({ error: "Impossible d'envoyer le lien." }, { status: 502 })
   }
 

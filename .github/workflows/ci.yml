@@ -104,6 +104,12 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
           NEXT_PUBLIC_SITE_URL: https://example.com
+          # Sentry (OPS-001) : upload des source maps si le secret est défini, sinon
+          # withSentryConfig skip silencieusement (NEXT_PUBLIC_SENTRY_DSN absent → no-op,
+          # SENTRY_AUTH_TOKEN absent → pas d'upload). Le build ne casse jamais sans secret.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         run: pnpm turbo build --filter=@evolve/web
 
   commitlint:

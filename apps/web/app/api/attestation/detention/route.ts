@@ -13,6 +13,7 @@
 //
 // Réf : NTF-004, DATA_MODEL.md §2.6/§2.7/§2.4, CLAUDE.md (RLS, jamais de service-role côté membre).
 
+import * as Sentry from '@sentry/nextjs'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 
@@ -217,7 +218,13 @@ export async function GET(request: Request): Promise<NextResponse> {
         'Cache-Control': 'private, no-store',
       },
     })
-  } catch {
+  } catch (error) {
+    // Capture Sentry (no-op sans DSN). Contexte non nominatif : user.id + club_id + période.
+    Sentry.captureException(error, {
+      tags: { endpoint: '/api/attestation/detention' },
+      user: { id: userId },
+      extra: { club_id: clubId, period },
+    })
     return NextResponse.json({ error: 'Erreur de génération.' }, { status: 500 })
   }
 }
