@@ -10,8 +10,8 @@
 // Règles CLAUDE.md respectées :
 //   - États sémantiques via tokens : succès=data-positive, erreur=data-negative,
 //     warning=data-warning (TEXTE = data-warning-strong, AA-safe), info=accent brand.yellow,
-//     sync=neutre. Le rouge brand n'est JAMAIS utilisé pour un état (le jaune l'est : c'est
-//     l'accent légitime de la marque).
+//     sync=surface neutre THÉMÉE (bg-card-sub + bg-border, bascule light/dark). Le rouge brand
+//     n'est JAMAIS utilisé pour un état (le jaune l'est : c'est l'accent légitime de la marque).
 //   - Zéro hex en dur : uniquement des classes utilitaires thémées (light + dark via data-theme).
 //   - error → role="alert"/aria-live="assertive" ; autres → role="status"/aria-live="polite".
 //   - Bouton fermer ≥ 44×44px, focus visible (--sh-glow), aria-label explicite.
@@ -75,10 +75,12 @@ const VARIANT_STYLES: Record<BannerVariant, VariantStyle> = {
     title: 'text-data-negative',
   },
   sync: {
+    // C5b : tokens SÉMANTIQUES thémés (≠ neutres bruts bg-neutral-100/200 qui ne
+    // basculaient jamais en dark). bg-card-sub + bg-border flippent via [data-theme="dark"].
     icon: 'RefreshCw',
-    container: 'bg-neutral-100 border-border',
+    container: 'bg-card-sub border-border',
     iconColor: 'text-text-sec',
-    chip: 'bg-neutral-200',
+    chip: 'bg-border',
     title: 'text-text',
   },
 }

@@ -78,6 +78,16 @@ describe('Banner — fidélité visuelle (réf « Feedback System »)', () => {
     expect(container.querySelector('.text-data-neutral')).toBeNull()
   })
 
+  it('variante sync → surface thémée (bg-card-sub) et chip bg-border, PAS de neutres bruts (C5b)', () => {
+    const { container } = render(<Banner variant="sync" message="Synchronisé il y a 35 minutes" />)
+    // C5b : le conteneur et le chip utilisent des tokens sémantiques qui basculent en dark
+    // (≠ bg-neutral-100/bg-neutral-200 jamais redéfinis en [data-theme="dark"]).
+    expect(container.querySelector('.bg-card-sub')).toBeTruthy()
+    expect(container.querySelector('.bg-border')).toBeTruthy()
+    expect(container.querySelector('.bg-neutral-100')).toBeNull()
+    expect(container.querySelector('.bg-neutral-200')).toBeNull()
+  })
+
   it('l’icône est « chipée » : chip 32×32 (h-8 w-8) à fond teinté', () => {
     const { container } = render(<Banner variant="success" message="OK" />)
     const chip = container.querySelector('.h-8.w-8')

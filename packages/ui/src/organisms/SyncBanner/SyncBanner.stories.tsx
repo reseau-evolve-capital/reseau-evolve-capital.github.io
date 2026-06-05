@@ -57,9 +57,21 @@ export const NeverSynced: Story = {
   args: { syncedAt: null },
 }
 
-/** Erreur de rate-limit (429) affichée inline, en discret. */
+/** Erreur de rate-limit (429) affichée inline sur token négatif lisible (B4), role=alert. */
 export const RateLimited: Story = {
   args: {
     errorMessage: 'Rate limit atteint. Réessaie dans quelques minutes.',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    // B4 : l'erreur est annoncée en assertif (role=alert), plus en simple status discret.
+    await expect(canvas.getByRole('alert')).toBeTruthy()
+  },
+}
+
+/** Échec de synchronisation : message d'erreur visible (token négatif), distinct du gris discret. */
+export const SyncFailed: Story = {
+  args: {
+    errorMessage: 'La synchronisation a échoué. Réessaie ?',
   },
 }

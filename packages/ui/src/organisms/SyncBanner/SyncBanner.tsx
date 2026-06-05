@@ -4,8 +4,8 @@
 //
 // Visible uniquement pour les rôles ≥ trésorier (treasurer | president | network_admin).
 // Les membres ne le voient jamais (return null). Le bouton déclenche une sync serveur
-// rate-limitée (429). En cas d'erreur, on affiche un message inline discret (pas de
-// système de toast dans apps/web) — jamais de rouge brand agressif.
+// rate-limitée (429). En cas d'erreur, on affiche un message inline sur token NÉGATIF
+// lisible (text-data-negative, AA-safe light/dark) — jamais le rouge brand #E93E3A.
 //
 // Depuis NTF-006 : SyncBanner est un PRÉRÉGLAGE de l'organisme générique Banner (variante
 // « sync »). L'API publique (SyncBannerProps, SyncRole) et tous les comportements existants
@@ -29,7 +29,7 @@ export interface SyncBannerProps {
   canSync?: boolean
   isSyncing?: boolean
   onSync?: () => void
-  /** Message d'erreur inline (ex: rate-limit 429). Affiché en discret, jamais en rouge brand. */
+  /** Message d'erreur inline (ex: rate-limit 429). Affiché sur token négatif lisible, jamais en rouge brand. */
   errorMessage?: string | null
   className?: string
   /** Gabarit du libellé « synchronisé » : reçoit le temps relatif déjà formaté (ou le fallback). Défaut FR. */
@@ -61,13 +61,20 @@ export function SyncBanner({
 
   const label = syncedAtTemplate(syncedAt ? formatRelativeTime(syncedAt) : neverSyncedLabel)
 
-  // Le message inline d'erreur reste DISCRET (text-ter), pas de variante « error » bruyante :
-  // on conserve la variante « sync » et on rend le message sous le libellé via le slot actions.
+  // B4 : le message d'erreur passe sur le token NÉGATIF lisible (text-data-negative, AA-safe
+  // light ET dark — jamais le rouge brand #E93E3A réservé au branding) au lieu du gris discret
+  // text-text-ter d'avant. role="alert"/aria-live="assertive" pour l'annoncer (≠ status poli).
+  // On conserve la variante « sync » du conteneur (l'erreur sync n'est pas bloquante) mais
+  // le message lui-même devient clairement visible.
   const message = (
     <span className="flex flex-col gap-1">
       <span>{label}</span>
       {errorMessage ? (
-        <span role="status" className="text-[12px] text-text-ter">
+        <span
+          role="alert"
+          aria-live="assertive"
+          className="text-[12px] font-medium text-data-negative"
+        >
           {errorMessage}
         </span>
       ) : null}

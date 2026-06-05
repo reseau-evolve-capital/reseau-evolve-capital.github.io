@@ -77,6 +77,21 @@ describe('SyncBanner — interactions', () => {
     expect(getByText(/Rate limit atteint/)).toBeTruthy()
   })
 
+  it('errorMessage → token NÉGATIF lisible (text-data-negative) + role=alert (B4)', () => {
+    const { getByText } = render(
+      <SyncBanner
+        syncedAt={SYNCED}
+        userRole="treasurer"
+        errorMessage="La synchronisation a échoué."
+      />
+    )
+    const error = getByText('La synchronisation a échoué.')
+    // B4 : plus de gris discret text-text-ter → token négatif, et annoncé en assertif.
+    expect(error.className).toContain('text-data-negative')
+    expect(error.className).not.toContain('text-text-ter')
+    expect(error.getAttribute('role')).toBe('alert')
+  })
+
   it('le bouton Actualiser est rendu inline (à droite du libellé, justify-between)', () => {
     const { container } = render(<SyncBanner syncedAt={SYNCED} userRole="treasurer" />)
     // Layout inline restauré (réf DSH-008) : pas d'empilement mt-2, ligne justify-between.
