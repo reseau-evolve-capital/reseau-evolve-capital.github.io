@@ -52,33 +52,38 @@ export async function generateMagicLink(email: string = SEED_EMAIL): Promise<str
 /**
  * Authentifie la `page` comme le membre de seed et la pose sur une route déjà chargée.
  * Le seed a `onboarding_completed=false` (réinitialisé par global-setup), donc le premier
- * verify atterrit sur /onboarding/step-1. On force l'accès direct au dashboard ensuite :
- * une fois la session GoTrue posée (cookies), `/dashboard` est servi par le middleware.
+ * verify atterrit sur /onboarding/step-1.
  *
- * On NE traverse PAS l'onboarding ici (couvert par auth.spec.ts) : pour le dashboard,
- * la session suffit. On marque l'onboarding terminé en amont via global-setup n'est pas
- * possible (il remet false) ; on s'appuie donc sur le fait que le middleware autorise
- * /dashboard dès qu'une session valide existe, indépendamment de onboarding_completed
- * (la redirection onboarding ne concerne que l'absence de session ou un user non invité).
+ * On NE traverse PAS l'onboarding ici (couvert par auth.spec.ts) : ces specs ciblent
+ * l'espace membre (dashboard, portefeuille, etc.). Depuis A1, le middleware redirige TOUT
+ * membre non-onboardé vers /onboarding/step-1 à chaque requête protégée. On marque donc
+ * l'onboarding terminé EN DB juste après login (clé email : le re-key handle_new_user a
+ * déjà changé public.users.id), puis on charge le dashboard directement.
  */
 export async function loginAsSeedMember(page: Page): Promise<void> {
   const token = await generateMagicLink(SEED_EMAIL)
   await page.goto(`/login/verify?token_hash=${token}&type=email`)
-  // verify pose la session puis route le user. On attend d'avoir quitté /login/verify.
+  // verify (route handler serveur) pose la session puis route le user. Le membre de seed
+  // n'étant pas onboardé, il atterrit sur /onboarding/step-1 ; on attend d'avoir quitté /login/verify.
   await page.waitForURL((url) => !url.pathname.startsWith('/login/verify'), { timeout: 20_000 })
 
-  // generate_link déclenche handle_new_user : public.users.id est re-keyé sur l'UUID GoTrue
-  // runtime (la FK memberships CASCADE suit). La vue matérialisée member_quote_part, rafraîchie
-  // au global-setup sur l'UUID de seed, ne reflète alors plus l'id courant → le RSC du dashboard
-  // verrait un état empty. On la rafraîchit ici pour que `initialData` (RSC) soit non-null.
-  await refreshQuotePartView()
+  // Marquer l'onboarding terminé (sinon le guard A1 renvoie sur /onboarding à chaque navigation).
+  // Par email : handle_new_user a re-keyé public.users.id sur l'UUID GoTrue runtime.
+  // member_quote_part est désormais une VUE (migration 030), recalculée à chaque requête et
+  // qui suit la cascade de re-key user_id : aucun REFRESH nécessaire pour que le RSC du
+  // dashboard ait des données.
+  await completeOnboardingFor(SEED_EMAIL)
+
+  // Charger le dashboard : la session + l'onboarding terminé autorisent l'accès.
+  await page.goto('/dashboard')
+  await page.waitForURL(/\/dashboard/, { timeout: 20_000 })
 }
 
-/** Rafraîchit la vue matérialisée member_quote_part (post-login, voir loginAsSeedMember). */
-export async function refreshQuotePartView(): Promise<void> {
+/** Marque onboarding_completed=true pour un membre (par email, clé stable au re-key). */
+export async function completeOnboardingFor(email: string = SEED_EMAIL): Promise<void> {
   const sql = postgres(DB_URL, { max: 1 })
   try {
-    await sql`REFRESH MATERIALIZED VIEW member_quote_part`
+    await sql`UPDATE public.users SET onboarding_completed = true WHERE email = ${email}`
   } finally {
     await sql.end()
   }

@@ -11,7 +11,7 @@
 
 import { test, expect } from '@playwright/test'
 
-import { generateMagicLink } from './helpers'
+import { generateMagicLink, completeOnboardingFor } from './helpers'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scénario 1 : /dashboard sans session → redirect /login
@@ -75,16 +75,17 @@ test('flow complet login → onboarding → dashboard', async ({ page }) => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Scénario 4 : token expiré/invalide → erreur + retour au login
+// Scénario 4 : token expiré/invalide → écran « lien expiré » + retour au login
 // ─────────────────────────────────────────────────────────────────────────────
 test('token expiré → erreur + retour au login', async ({ page }) => {
   await page.goto('/login/verify?token_hash=invalide&type=email')
 
-  // VerifyClient affiche le message d'erreur si verifyOtp échoue
-  await expect(page.getByText(/ce lien a expiré/i)).toBeVisible({ timeout: 10_000 })
+  // Le route handler serveur échoue l'échange et redirige vers l'écran brandé /login/verify/expired
+  await expect(page).toHaveURL(/\/login\/verify\/expired/, { timeout: 10_000 })
+  await expect(page.getByText(/ce lien a expiré/i)).toBeVisible()
 
-  // Bouton retour au login
-  await page.getByRole('button', { name: /retour au login/i }).click()
+  // Lien retour au login
+  await page.getByRole('link', { name: /retour au login/i }).click()
   await expect(page).toHaveURL(/\/login$/)
 })
 
@@ -97,6 +98,9 @@ test('/admin en tant que member → /dashboard', async ({ page }) => {
   await page.goto(`/login/verify?token_hash=${token}&type=email`)
   // Attendre d'être dans onboarding ou dashboard (le user a peut-être déjà onboardé dans test 3)
   await page.waitForURL(/\/(onboarding|dashboard)/, { timeout: 15_000 })
+
+  // Marquer l'onboarding terminé : sinon le guard A1 redirige /admin → /onboarding (avant le check staff).
+  await completeOnboardingFor('test@example.com')
 
   // Accéder à /admin → doit être redirigé vers /dashboard (role member, pas staff)
   await page.goto('/admin')

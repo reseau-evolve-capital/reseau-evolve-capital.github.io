@@ -64,10 +64,9 @@ export default async function globalSetup() {
              updated_at       = NOW()
     `
 
-    // 4. Rafraîchir la vue matérialisée pour que le RSC du dashboard ait des données
-    //    (initialData non-null). CONCURRENTLY impossible hors transaction implicite ici ;
-    //    le REFRESH simple suffit en setup (pas de lecteurs concurrents).
-    await sql`REFRESH MATERIALIZED VIEW member_quote_part`
+    // 4. member_quote_part est désormais une VUE simple (security_invoker, migration 030),
+    //    recalculée à chaque requête : aucun REFRESH nécessaire. (L'ancien REFRESH MATERIALIZED
+    //    VIEW échouait depuis la conversion en vue — la fixture n'a plus à le faire.)
   } finally {
     await sql.end()
   }
