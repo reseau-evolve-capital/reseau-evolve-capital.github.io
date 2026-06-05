@@ -11,28 +11,13 @@
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
 import { z } from 'zod'
 import { createServerClient } from '@evolve/data'
 
+import { checkRateLimit, rateLimitedResponse } from '@/lib/rate-limit'
+
 // Upstash fonctionne sur l'edge runtime, mais nodejs est le choix sûr par défaut.
 export const runtime = 'nodejs'
-
-// Init paresseuse du rate-limiter : on NE construit PAS le client au niveau module,
-// car `Redis.fromEnv()` lève une erreur à l'import si les variables Upstash sont absentes
-// (ce qui casserait `next build` et le dev/CI sans Upstash configuré).
-// Retourne null quand les variables d'env manquent — le handler décide alors du fail-open.
-let ratelimit: Ratelimit | null = null
-let ratelimitWarned = false
-function getRatelimit(): Ratelimit | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
-  ratelimit ??= new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(5, '10 m'),
-  })
-  return ratelimit
-}
 
 const bodySchema = z.object({ email: z.string().email() })
 
@@ -58,22 +43,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Email invalide.' }, { status: 400 })
   }
 
-  // 2. Rate limit : 5 requêtes / 10 min par IP.
-  // FAIL-OPEN : si le limiter n'est pas configuré (dev/CI sans Upstash), on saute
-  // la vérification plutôt que de bloquer un utilisateur légitime. Un défaut de config
-  // du limiter ne doit pas dégrader le service ; on log un avertissement une seule fois.
-  const limiter = getRatelimit()
-  if (limiter) {
-    const { success } = await limiter.limit(`magic-link:${clientIp(request)}`)
-    if (!success) {
-      return NextResponse.json(
-        { error: 'Trop de tentatives. Réessaie dans quelques minutes.' },
-        { status: 429 }
-      )
-    }
-  } else if (!ratelimitWarned) {
-    ratelimitWarned = true
-    console.warn('Rate-limit désactivé : variables Upstash absentes.')
+  // 2. Rate limit : 5 requêtes / 10 min par IP (fail-open géré par le helper).
+  const rl = await checkRateLimit('magicLink', clientIp(request))
+  if (!rl.allowed) {
+    return rateLimitedResponse(rl.retryAfterSeconds)
   }
 
   // 3. Client Supabase serveur (session via cookies — cookies() est async en Next.js 16).

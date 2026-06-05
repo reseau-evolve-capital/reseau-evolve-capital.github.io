@@ -25,6 +25,8 @@ import {
   type AttestationPositionInput,
 } from '@evolve/data/pdf'
 
+import { checkRateLimit, rateLimitedResponse } from '@/lib/rate-limit'
+
 export const runtime = 'nodejs'
 
 /** Slugifie le nom du club pour le filename (ascii, kebab). */
@@ -56,6 +58,13 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
   }
   const userId = auth.user.id
+
+  // Rate limit : 30 req / 5 min par user (génération PDF coûteuse) — fail-open via le helper.
+  // Clé par user id (route authentifiée) plutôt qu'IP : isole chaque membre derrière un NAT/partage d'IP.
+  const rl = await checkRateLimit('attestation', userId)
+  if (!rl.allowed) {
+    return rateLimitedResponse(rl.retryAfterSeconds)
+  }
 
   const url = new URL(request.url)
   const rawPeriod = url.searchParams.get('period')

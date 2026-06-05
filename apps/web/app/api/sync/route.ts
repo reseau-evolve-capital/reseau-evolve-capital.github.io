@@ -13,29 +13,14 @@
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
 import { z } from 'zod'
 
 import { createServerClient } from '@evolve/data'
 
+import { checkRateLimit, rateLimitedResponse } from '@/lib/rate-limit'
+
 // Upstash fonctionne sur l'edge runtime, mais nodejs est le choix sûr par défaut.
 export const runtime = 'nodejs'
-
-// Init paresseuse du rate-limiter : on NE construit PAS le client au niveau module,
-// car `Redis.fromEnv()` lève une erreur à l'import si les variables Upstash sont absentes
-// (ce qui casserait `next build` et le dev/CI sans Upstash configuré).
-// Retourne null quand les variables d'env manquent — le handler décide alors du fail-open.
-let ratelimit: Ratelimit | null = null
-let ratelimitWarned = false
-function getRatelimit(): Ratelimit | null {
-  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null
-  ratelimit ??= new Ratelimit({
-    redis: Redis.fromEnv(),
-    limiter: Ratelimit.slidingWindow(1, '5 m'),
-  })
-  return ratelimit
-}
 
 const bodySchema = z.object({
   club_id: z.string().min(1),
@@ -86,22 +71,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Rôle insuffisant (trésorier minimum).' }, { status: 403 })
   }
 
-  // 5. Rate limit : 1 requête / 5 min par couple (club, utilisateur).
-  // FAIL-OPEN : si le limiter n'est pas configuré (dev/CI sans Upstash), on saute
-  // la vérification plutôt que de bloquer un trésorier légitime. Un défaut de config
-  // du limiter ne doit pas dégrader le service ; on log un avertissement une seule fois.
-  const limiter = getRatelimit()
-  if (limiter) {
-    const { success } = await limiter.limit(`sync:${club_id}:${user.id}`)
-    if (!success) {
-      return NextResponse.json(
-        { error: 'Trop de tentatives. Réessaie dans quelques minutes.' },
-        { status: 429 }
-      )
-    }
-  } else if (!ratelimitWarned) {
-    ratelimitWarned = true
-    console.warn('Rate-limit désactivé : variables Upstash absentes.')
+  // 5. Rate limit : 1 requête / 5 min par couple (club, utilisateur) (fail-open géré par le helper).
+  const rl = await checkRateLimit('sync', `${club_id}:${user.id}`)
+  if (!rl.allowed) {
+    return rateLimitedResponse(rl.retryAfterSeconds)
   }
 
   // 6. Invocation de l'Edge Function `sync`.

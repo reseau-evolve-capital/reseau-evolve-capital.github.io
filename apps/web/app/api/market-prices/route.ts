@@ -7,10 +7,19 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
 import { getPricesWithFallback } from '@evolve/data/prices'
 
+import { checkRateLimit, rateLimitedResponse } from '@/lib/rate-limit'
+
 export const runtime = 'nodejs'
 
 /** Borne le nombre de symboles par requête (protège le quota des providers). */
 const MAX_SYMBOLS = 50
+
+/** Première IP du chaîne x-forwarded-for, sinon x-real-ip, sinon « unknown ». */
+function clientIp(request: Request): string {
+  const fwd = request.headers.get('x-forwarded-for')
+  if (fwd) return fwd.split(',')[0]?.trim() || 'unknown'
+  return request.headers.get('x-real-ip') ?? 'unknown'
+}
 
 export async function GET(request: Request): Promise<NextResponse> {
   // Auth : la route consomme un quota provider → réservée aux membres connectés.
@@ -18,6 +27,12 @@ export async function GET(request: Request): Promise<NextResponse> {
   const supabase = createServerClient(cookieStore)
   const { data: auth } = await supabase.auth.getUser()
   if (!auth.user) return NextResponse.json({ error: 'Non authentifié.' }, { status: 401 })
+
+  // Rate limit : 60 req / min par IP (protège le quota provider) — fail-open via le helper.
+  const rl = await checkRateLimit('marketPrices', clientIp(request))
+  if (!rl.allowed) {
+    return rateLimitedResponse(rl.retryAfterSeconds)
+  }
 
   const { searchParams } = new URL(request.url)
   const raw = searchParams.get('symbols')
