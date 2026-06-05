@@ -30,6 +30,7 @@ import {
   EmptyState,
   Spinner,
   Heading,
+  useToast,
 } from '@evolve/ui'
 import { OTHER_SECTOR_LABEL } from '@evolve/types'
 import type { PortfolioPosition, PortfolioSort, PortfolioDir } from '@evolve/types'
@@ -53,6 +54,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   // Tous les hooks AVANT tout early return (règle des hooks React).
   const t = useTranslations('portfolio')
   const tCommon = useTranslations('common')
+  const toast = useToast()
   const { data, isError } = usePortfolio(initialData)
   const queryClient = useQueryClient()
   const [refreshing, setRefreshing] = useState(false)
@@ -96,7 +98,17 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
     return cost > 0 ? totalGainLoss / cost : 0
   }, [built.totalValue, totalGainLoss])
 
-  const sync = useSyncStatus(data?.clubId ?? null)
+  // Feedback de sync centralisé dans le hook (toast succès/warning/erreur). Le rate-limit (429)
+  // reste affiché inline dans le SyncBanner via sync.isError (pas de toast).
+  const sync = useSyncStatus(data?.clubId ?? null, {
+    toast,
+    labels: {
+      successTitle: t('sync.success'),
+      warningTitle: t('sync.warning'),
+      warningMessage: t('sync.warningMessage'),
+      errorTitle: t('sync.failed'),
+    },
+  })
 
   async function refresh() {
     setRefreshing(true)
@@ -137,7 +149,8 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
     )
   }
 
-  // Pas de système de toast dans apps/web → erreur de sync surfacée en inline dans le bandeau.
+  // Rate-limit (429) surfacé INLINE dans le bandeau ; les autres feedbacks (succès/warning/échec)
+  // passent par le toast centralisé du hook useSyncStatus.
   const syncError = sync.isError
     ? sync.error.message === 'rate_limited'
       ? t('sync.rateLimited')

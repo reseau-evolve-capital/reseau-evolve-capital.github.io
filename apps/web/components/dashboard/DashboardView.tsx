@@ -13,7 +13,7 @@ import { useTranslations } from 'next-intl'
 
 import { useQueryClient } from '@tanstack/react-query'
 
-import { DashboardHero, KPICard, EmptyState, Spinner, SyncBanner } from '@evolve/ui'
+import { DashboardHero, KPICard, EmptyState, Spinner, SyncBanner, useToast } from '@evolve/ui'
 import { formatRelativeTime } from '@evolve/utils'
 
 import { type DashboardData } from '@/lib/data/dashboard'
@@ -27,6 +27,7 @@ const STALE_MS = 2 * 60 * 60 * 1000 // 2h
 export function DashboardView({ initialData }: { initialData: DashboardData | null }) {
   const t = useTranslations('dashboard')
   const tCommon = useTranslations('common')
+  const toast = useToast()
   // Tous les hooks AVANT tout early return (règle des hooks React) : `data` peut être null
   // sur les états error/empty, donc useSyncStatus reçoit clubId nullable de façon sûre.
   const { data, isError } = useDashboard(initialData)
@@ -34,7 +35,17 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
   const [refreshing, setRefreshing] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
   const startY = useRef<number | null>(null)
-  const sync = useSyncStatus(data?.clubId ?? null)
+  // Feedback de sync centralisé dans le hook (toast succès/warning/erreur). Le rate-limit (429)
+  // reste affiché inline dans le SyncBanner via sync.isError (pas de toast).
+  const sync = useSyncStatus(data?.clubId ?? null, {
+    toast,
+    labels: {
+      successTitle: t('sync.success'),
+      warningTitle: t('sync.warning'),
+      warningMessage: t('sync.warningMessage'),
+      errorTitle: t('sync.failed'),
+    },
+  })
   // `Date.now()` est impur en render (react-hooks/purity) : on capture "maintenant" dans un effet.
   // Le setState passe par un rAF pour éviter un setState synchrone dans le corps de l'effet
   // (react-hooks/set-state-in-effect) — il s'exécute après le commit, hors render.
@@ -81,7 +92,8 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
   const stale =
     now != null && data?.syncedAt ? now - new Date(data.syncedAt).getTime() > STALE_MS : false
 
-  // Pas de système de toast dans apps/web → erreur de sync surfacée en inline dans le bandeau.
+  // Rate-limit (429) surfacé INLINE dans le bandeau ; les autres feedbacks (succès/warning/échec)
+  // passent par le toast centralisé du hook useSyncStatus.
   const syncError = sync.isError
     ? sync.error.message === 'rate_limited'
       ? t('sync.rateLimited')

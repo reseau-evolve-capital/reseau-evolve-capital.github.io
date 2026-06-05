@@ -169,7 +169,10 @@
     },
     "sync": {
       "rateLimited": "Rate limit atteint. Réessaie dans quelques minutes.",
-      "failed": "La synchronisation a échoué. Réessaie ?"
+      "failed": "La synchronisation a échoué. Réessaie ?",
+      "success": "Synchronisation réussie",
+      "warning": "Synchronisé avec des anomalies",
+      "warningMessage": "Certaines lignes ont été ignorées."
     },
     "stale": "Données mises à jour {time}.",
     "hero": {
@@ -222,7 +225,10 @@
       "syncedAt": "Synchronisé {time}",
       "neverSynced": "—",
       "refresh": "Actualiser",
-      "refreshAria": "Actualiser les données"
+      "refreshAria": "Actualiser les données",
+      "success": "Synchronisation réussie",
+      "warning": "Synchronisé avec des anomalies",
+      "warningMessage": "Certaines lignes ont été ignorées."
     },
     "sort": {
       "value": "Valeur",
@@ -313,7 +319,10 @@
     },
     "sync": {
       "rateLimited": "Rate limit atteint. Réessaie dans quelques minutes.",
-      "failed": "La synchronisation a échoué. Réessaie ?"
+      "failed": "La synchronisation a échoué. Réessaie ?",
+      "success": "Synchronisation réussie",
+      "warning": "Synchronisé avec des anomalies",
+      "warningMessage": "Certaines lignes ont été ignorées."
     },
     "timeline": {
       "legend": {
@@ -347,7 +356,10 @@
       "title": "Espace trésorier",
       "syncError": {
         "rateLimited": "Rate limit atteint. Réessaie dans quelques minutes.",
-        "failed": "La synchronisation a échoué. Réessaie ?"
+        "failed": "La synchronisation a échoué. Réessaie ?",
+        "success": "Synchronisation réussie",
+        "warning": "Synchronisé avec des anomalies",
+        "warningMessage": "Certaines lignes ont été ignorées."
       },
       "unpaidAlert": "{count, plural, =1 {1 membre est en situation d’impayé.} other {# membres sont en situation d’impayé.}}",
       "kpi": {

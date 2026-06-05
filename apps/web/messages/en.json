@@ -169,7 +169,10 @@
     },
     "sync": {
       "rateLimited": "Rate limit reached. Try again in a few minutes.",
-      "failed": "Sync failed. Try again?"
+      "failed": "Sync failed. Try again?",
+      "success": "Sync complete",
+      "warning": "Synced with warnings",
+      "warningMessage": "Some rows were skipped."
     },
     "stale": "Data updated {time}.",
     "hero": {
@@ -222,7 +225,10 @@
       "syncedAt": "Synced {time}",
       "neverSynced": "—",
       "refresh": "Refresh",
-      "refreshAria": "Refresh data"
+      "refreshAria": "Refresh data",
+      "success": "Sync complete",
+      "warning": "Synced with warnings",
+      "warningMessage": "Some rows were skipped."
     },
     "sort": {
       "value": "Value",
@@ -313,7 +319,10 @@
     },
     "sync": {
       "rateLimited": "Rate limit reached. Try again in a few minutes.",
-      "failed": "Sync failed. Try again?"
+      "failed": "Sync failed. Try again?",
+      "success": "Sync complete",
+      "warning": "Synced with warnings",
+      "warningMessage": "Some rows were skipped."
     },
     "timeline": {
       "legend": {
@@ -347,7 +356,10 @@
       "title": "Treasurer area",
       "syncError": {
         "rateLimited": "Rate limit reached. Try again in a few minutes.",
-        "failed": "Sync failed. Try again?"
+        "failed": "Sync failed. Try again?",
+        "success": "Sync complete",
+        "warning": "Synced with warnings",
+        "warningMessage": "Some rows were skipped."
       },
       "unpaidAlert": "{count, plural, =1 {1 member is in arrears.} other {# members are in arrears.}}",
       "kpi": {

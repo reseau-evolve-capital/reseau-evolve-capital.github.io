@@ -5,7 +5,7 @@
 // pour l'alerte (jamais brand-red). Réf : E-ADM, CLAUDE.md (a11y, formatage @evolve/utils).
 
 import { useTranslations } from 'next-intl'
-import { KPICard, SyncBanner, Heading, Text, Icon } from '@evolve/ui'
+import { KPICard, SyncBanner, Heading, Text, Icon, useToast } from '@evolve/ui'
 
 import type { ClubSummary } from '@/lib/data/admin'
 import { useClubSummary } from '@/lib/hooks/useClubSummary'
@@ -13,8 +13,19 @@ import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
 
 export function AdminDashboardView({ initialData }: { initialData: ClubSummary }) {
   const t = useTranslations('admin')
+  const toast = useToast()
   const { data, isError } = useClubSummary(initialData)
-  const sync = useSyncStatus(data.clubId)
+  // Feedback de sync centralisé dans le hook (toast succès/warning/erreur). Le rate-limit (429)
+  // reste affiché inline dans le SyncBanner via sync.isError (pas de toast).
+  const sync = useSyncStatus(data.clubId, {
+    toast,
+    labels: {
+      successTitle: t('dashboard.syncError.success'),
+      warningTitle: t('dashboard.syncError.warning'),
+      warningMessage: t('dashboard.syncError.warningMessage'),
+      errorTitle: t('dashboard.syncError.failed'),
+    },
+  })
 
   const syncError = sync.isError
     ? sync.error.message === 'rate_limited'

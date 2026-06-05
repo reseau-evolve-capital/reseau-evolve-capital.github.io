@@ -49,7 +49,17 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
   const [downloading, setDownloading] = useState(false)
   const [attestationError, setAttestationError] = useState<string | null>(null)
   const startY = useRef<number | null>(null)
-  const sync = useSyncStatus(data?.clubId ?? null)
+  // Feedback de sync centralisé dans le hook (toast succès/warning/erreur). Le rate-limit (429)
+  // reste affiché inline dans le SyncBanner via sync.isError (pas de toast).
+  const sync = useSyncStatus(data?.clubId ?? null, {
+    toast,
+    labels: {
+      successTitle: t('sync.success'),
+      warningTitle: t('sync.warning'),
+      warningMessage: t('sync.warningMessage'),
+      errorTitle: t('sync.failed'),
+    },
+  })
 
   // Télécharge le PDF d'attestation : fetch → blob → ancre temporaire (filename depuis l'en-tête).
   // Succès/erreur surfacés via toast (ToastProvider monté au layout) + message inline persistant.
@@ -122,7 +132,8 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
     )
   }
 
-  // Pas de système de toast dans apps/web → erreur de sync surfacée en inline dans le bandeau.
+  // Rate-limit (429) surfacé INLINE dans le bandeau ; les autres feedbacks (succès/warning/échec)
+  // passent par le toast centralisé du hook useSyncStatus.
   const syncError = sync.isError
     ? sync.error.message === 'rate_limited'
       ? t('sync.rateLimited')

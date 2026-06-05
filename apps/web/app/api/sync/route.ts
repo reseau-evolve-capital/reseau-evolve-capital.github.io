@@ -6,8 +6,10 @@
 //   - authentification via session cookie Supabase → 401
 //   - contrôle de rôle via RPC get_user_role_in_club (trésorier mini) → 403
 //   - rate limit Upstash : 1 requête / 5 min par couple (club_id, user) → 429
-//   - invocation de l'Edge Function → 502 en cas d'échec
-//   - succès : relecture de clubs.synced_at → 200 { success, last_synced_at }
+//   - invocation de l'Edge Function → 502 en cas d'échec de TRANSPORT (invokeError)
+//   - lecture du corps `data` de l'Edge (B3) : l'Edge renvoie TOUJOURS 200, même quand
+//     success:false. On reflète le VRAI data.success + on propage errors[]/warnings[].
+//   - réponse : relecture de clubs.synced_at → 200 { success, last_synced_at, errors, warnings }
 //
 // Réf : ARCHITECTURE.md §1, DATA_MODEL.md §3 (helpers RLS), CLAUDE.md (conventions sync).
 
@@ -33,6 +35,21 @@ type AllowedRole = (typeof ALLOWED_ROLES)[number]
 
 function isAllowedRole(role: unknown): role is AllowedRole {
   return typeof role === 'string' && (ALLOWED_ROLES as readonly string[]).includes(role)
+}
+
+// Corps renvoyé par l'Edge Function `sync` (champs pertinents pour le feedback client).
+// L'Edge répond TOUJOURS 200 ; `success` n'encode QUE les erreurs DURES, `warnings` est
+// un ajout non-breaking. On lit défensivement (Edge non typée côté client).
+interface SyncEdgeResult {
+  success?: boolean
+  errors?: unknown
+  warnings?: unknown
+}
+
+/** Normalise un champ en tableau de strings non vides (l'Edge renvoie string[], mais on est défensif). */
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((v): v is string => typeof v === 'string' && v.length > 0)
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -79,9 +96,12 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   // 6. Invocation de l'Edge Function `sync`.
-  const { error: invokeError } = await supabase.functions.invoke('sync', {
-    body: { club_id },
-  })
+  //    invokeError = échec de TRANSPORT (réseau, fonction injoignable) → 502.
+  //    Sinon l'Edge répond 200 mais peut contenir success:false + errors[] : on lit le corps.
+  const { data: invokeData, error: invokeError } = await supabase.functions.invoke<SyncEdgeResult>(
+    'sync',
+    { body: { club_id } }
+  )
   if (invokeError) {
     // Capture Sentry (no-op sans DSN). Contexte non nominatif : club_id + user.id + rôle.
     Sentry.captureException(invokeError, {
@@ -92,11 +112,20 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'La synchronisation a échoué.' }, { status: 502 })
   }
 
-  // 7. Relecture de la date de dernière sync.
+  // 7. Lecture du corps de l'Edge (B3). success absent → on suppose un échec partiel non signalé.
+  const errors = toStringArray(invokeData?.errors)
+  const warnings = toStringArray(invokeData?.warnings)
+  const success = invokeData?.success === true && errors.length === 0
+
+  // 8. Relecture de la date de dernière sync (best-effort, ne bloque pas la réponse).
   const { data: club } = await supabase.from('clubs').select('synced_at').eq('id', club_id).single()
 
+  // On répond TOUJOURS 200 (le transport a réussi) en reflétant le vrai état métier :
+  // le client décide du feedback (succès / warning / erreur) à partir de ces champs.
   return NextResponse.json({
-    success: true,
+    success,
     last_synced_at: club?.synced_at ?? null,
+    errors,
+    warnings,
   })
 }
