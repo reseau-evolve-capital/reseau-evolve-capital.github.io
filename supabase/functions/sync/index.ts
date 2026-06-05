@@ -615,22 +615,11 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     // Post-sync.
     // ===========================================================================
 
-    // Rafraîchissement de la vue matérialisée.
-    // On ne bloque le refresh que sur les erreurs DURES (errors[]) : une feuille en
-    // échec dur laisse des données incohérentes (ex. positions importées mais Base en
-    // échec), recalculer les quote-parts produirait des chiffres faux → on laisse la MV
-    // sur son dernier état cohérent et on attend la prochaine sync.
-    // En revanche, des WARNINGS seuls (lignes en quarantaine, membres non résolus) ne
-    // bloquent PAS le refresh : la feuille a importé l'essentiel, et une Sheet réelle a
-    // presque toujours quelques lignes sales — sinon la MV ne se rafraîchirait jamais.
-    if (errors.length === 0) {
-      try {
-        const { error } = await supabase.rpc('refresh_member_quote_part')
-        if (error) throw new Error(error.message)
-      } catch (e) {
-        errors.push(`refresh_member_quote_part: ${errMsg(e)}`)
-      }
-    }
+    // member_quote_part est désormais une VUE normale (migration 030), toujours à jour : il
+    // n'y a plus de vue matérialisée à rafraîchir post-sync. L'ancien appel RPC
+    // refresh_member_quote_part() a été retiré ici (la fonction subsiste en no-op idempotent
+    // côté DB pour ne casser aucun appelant résiduel). Les quote-parts reflètent immédiatement
+    // les données importées (memberships LEFT JOIN contributions) sans étape de refresh.
 
     // Horodatage de la dernière sync du club.
     // Le client Supabase renvoie les erreurs dans { error } (il ne throw pas) : on

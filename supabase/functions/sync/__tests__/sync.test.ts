@@ -412,6 +412,7 @@ interface Store {
   users: Row[]
   memberships: Row[]
   positions: Row[]
+  portfolio_aggregates: Row[]
   transactions: Row[]
   contributions: Row[]
   contribution_months: Row[]
@@ -424,6 +425,8 @@ function emptyStore(seedClub: boolean): Store {
     users: [],
     memberships: [],
     positions: [],
+    // Agrégats portefeuille (Provision, Soldes, « Portefeuille ») — persistés depuis LOT C.
+    portfolio_aggregates: [],
     transactions: [],
     contributions: [],
     contribution_months: [],
@@ -672,8 +675,8 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
       return new QueryBuilder(table)
     },
     rpc(name: string, _args?: unknown) {
-      // refresh_member_quote_part / get_user_role_in_club → no-op succès.
-      // On enregistre le nom pour permettre aux tests de vérifier que le refresh a eu lieu.
+      // Tout RPC → no-op succès. On enregistre le nom : la sync ne déclenche plus aucun RPC
+      // (member_quote_part est une vue, migration 030) — les tests vérifient cette absence.
       rpcCalls?.names.push(name)
       return Promise.resolve({ data: null, error: null })
     },
@@ -793,8 +796,9 @@ Deno.test('handler : sync complète → 200, success=true, 6 feuilles synchronis
   for (const name of SHEET_ORDER) {
     assertEquals(body.snapshots[name].status, 'success')
   }
-  // Une sync propre rafraîchit bien la MV des quote-parts.
-  assert(rpcCalls.names.includes('refresh_member_quote_part'))
+  // member_quote_part est une VUE normale (migration 030) : plus de refresh de MV post-sync.
+  // On vérifie que l'appel RPC obsolète a bien été retiré (aucun RPC déclenché par la sync).
+  assert(!rpcCalls.names.includes('refresh_member_quote_part'))
 })
 
 // Test 2 — idempotence : 2 syncs successives → même état final en DB.
@@ -837,46 +841,42 @@ Deno.test('handler : idempotence → 2 syncs produisent le même état final', a
 
 // Test 3 — erreur DURE : HISTORIQUE.readSheet throw → exception attrapée par runSheet →
 //          snapshot failed + errors[], MAIS les feuilles suivantes (COTISATIONS, Details)
-//          passent. success=false et le refresh de la MV est SAUTÉ (gate sur errors durs).
-Deno.test(
-  'handler : erreur dure (HISTORIQUE throw) → snapshot failed, sync continue, MV non rafraîchie',
-  async () => {
-    const store = emptyStore(true)
-    const rpcCalls: RpcCalls = { names: [] }
-    const handler = buildHandler(store, { throwOn: 'HISTORIQUE', rpcCalls })
-    const res = await handler(syncRequest(CLUB_ID))
-    assertEquals(res.status, 200) // le handler répond toujours 200 ; success encode l'échec
-    const body = (await res.json()) as SyncResponseBody
+//          passent. success=false ; la sync n'abort pas.
+Deno.test('handler : erreur dure (HISTORIQUE throw) → snapshot failed, sync continue', async () => {
+  const store = emptyStore(true)
+  const rpcCalls: RpcCalls = { names: [] }
+  const handler = buildHandler(store, { throwOn: 'HISTORIQUE', rpcCalls })
+  const res = await handler(syncRequest(CLUB_ID))
+  assertEquals(res.status, 200) // le handler répond toujours 200 ; success encode l'échec
+  const body = (await res.json()) as SyncResponseBody
 
-    assertEquals(body.success, false)
-    // HISTORIQUE échoue : snapshot failed + entrée errors (DURE), absente de synced_sheets.
-    assert(body.errors.some((e) => e.startsWith('HISTORIQUE:')))
-    assert(!body.synced_sheets.includes('HISTORIQUE'))
-    assertEquals(body.snapshots['HISTORIQUE'].status, 'failed')
+  assertEquals(body.success, false)
+  // HISTORIQUE échoue : snapshot failed + entrée errors (DURE), absente de synced_sheets.
+  assert(body.errors.some((e) => e.startsWith('HISTORIQUE:')))
+  assert(!body.synced_sheets.includes('HISTORIQUE'))
+  assertEquals(body.snapshots['HISTORIQUE'].status, 'failed')
 
-    // Les feuilles AVANT et APRÈS HISTORIQUE restent synchronisées (pas d'abort).
-    assert(body.synced_sheets.includes('PARAMETRAGES'))
-    assert(body.synced_sheets.includes('Base'))
-    assert(body.synced_sheets.includes('Portefeuille'))
-    assert(body.synced_sheets.includes('COTISATIONS'))
-    assert(body.synced_sheets.includes('Details cotisations'))
-    assertEquals(body.snapshots['COTISATIONS'].status, 'success')
-    assertEquals(body.snapshots['Details cotisations'].status, 'success')
-    // Les données des autres feuilles sont bien en base.
-    assertEquals(store.users.length, 2)
-    assertEquals(store.positions.length, 1)
-    // Erreur DURE → le refresh de la MV est sauté (gate errors.length === 0).
-    assert(!rpcCalls.names.includes('refresh_member_quote_part'))
-  }
-)
+  // Les feuilles AVANT et APRÈS HISTORIQUE restent synchronisées (pas d'abort).
+  assert(body.synced_sheets.includes('PARAMETRAGES'))
+  assert(body.synced_sheets.includes('Base'))
+  assert(body.synced_sheets.includes('Portefeuille'))
+  assert(body.synced_sheets.includes('COTISATIONS'))
+  assert(body.synced_sheets.includes('Details cotisations'))
+  assertEquals(body.snapshots['COTISATIONS'].status, 'success')
+  assertEquals(body.snapshots['Details cotisations'].status, 'success')
+  // Les données des autres feuilles sont bien en base.
+  assertEquals(store.users.length, 2)
+  assertEquals(store.positions.length, 1)
+  // member_quote_part est une VUE (migration 030) : aucun RPC de refresh, quelle que soit l'issue.
+  assert(!rpcCalls.names.includes('refresh_member_quote_part'))
+})
 
 // Test 3bis — quarantaine MOLLE : une ligne Portefeuille à quantité illisible est écartée
 //             AVANT l'upsert → snapshot 'partial', la mauvaise ligne absente du store,
 //             les lignes valides présentes. C'est une anomalie RÉCUPÉRABLE : pas d'erreur
-//             dure (success=true), la note va dans warnings[] + snapshot.error_message,
-//             et la MV est tout de même rafraîchie.
+//             dure (success=true), la note va dans warnings[] + snapshot.error_message.
 Deno.test(
-  'handler : quarantaine Portefeuille (quantité illisible) → warning, snapshot partial, MV rafraîchie',
+  'handler : quarantaine Portefeuille (quantité illisible) → warning, snapshot partial',
   async () => {
     const store = emptyStore(true)
     const rpcCalls: RpcCalls = { names: [] }
@@ -913,8 +913,8 @@ Deno.test(
     const snap = store.sheet_snapshots.find((s) => s.sheet_name === 'Portefeuille')
     assert(snap !== undefined)
     assert(String(snap.error_message ?? '').includes('BADQ'))
-    // Malgré le warning, la MV est rafraîchie (gate sur erreurs DURES uniquement).
-    assert(rpcCalls.names.includes('refresh_member_quote_part'))
+    // member_quote_part est une VUE (migration 030) : aucun RPC de refresh post-sync.
+    assert(!rpcCalls.names.includes('refresh_member_quote_part'))
   }
 )
 
@@ -1138,6 +1138,37 @@ Deno.test('handler : position fantôme (absente de la matrice) désactivée', as
   assertEquals(ghost.is_active, false)
   // Une seule position ACTIVE reste (AAPL).
   assertEquals(store.positions.filter((p) => p.is_active === true).length, 1)
+})
+
+// Test C2 — les lignes d'agrégat (symbole vide) sont persistées dans portfolio_aggregates,
+// et un agrégat fantôme absent de la matrice courante est désactivé (même réconciliation que B2).
+Deno.test('handler : agrégats portefeuille persistés + agrégat fantôme désactivé', async () => {
+  const store = emptyStore(true)
+  // Agrégat « démo » ANCIEN encore actif, absent de la matrice courante → doit être désactivé.
+  store.portfolio_aggregates.push({
+    id: 'agg-ghost',
+    club_id: CLUB_ID,
+    label: 'Vieux solde',
+    market_value: 42,
+    is_active: true,
+    synced_at: '2000-01-01T00:00:00.000Z',
+  })
+  const handler = buildHandler(store)
+  const res = await handler(syncRequest(CLUB_ID))
+  assertEquals(res.status, 200)
+  const body = (await res.json()) as SyncResponseBody
+  assertEquals(body.success, true)
+  // La ligne d'agrégat « TOTAL » de la fixture (symbole vide) est persistée et active.
+  // (La fixture minimale n'a pas de colonne valeur G → market_value null ; la persistance
+  // du LABEL et la réconciliation is_active sont l'objet du test ; la valeur live est couverte
+  // par la vérif DB du lead sur la vraie matrice : Portefeuille=721 100,78.)
+  const total = store.portfolio_aggregates.find((a) => a.label === 'TOTAL')
+  assert(total !== undefined)
+  assertEquals(total.is_active, true)
+  // L'agrégat fantôme absent de la matrice est désactivé (historique conservé, pas de delete).
+  const ghost = store.portfolio_aggregates.find((a) => a.label === 'Vieux solde')
+  assert(ghost !== undefined)
+  assertEquals(ghost.is_active, false)
 })
 
 // ===========================================================================
