@@ -9,11 +9,28 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
-import { useQueryState, parseAsBoolean } from 'nuqs'
+import { useQueryState, parseAsBoolean, parseAsStringEnum } from 'nuqs'
 import { useTranslations } from 'next-intl'
-import { MembersList, Heading, Switch, LockMemberModal, type MemberRow } from '@evolve/ui'
-import type { ClubMember } from '@/lib/data/admin'
-import { filterMembers } from '@/lib/data/admin'
+import {
+  MembersList,
+  Heading,
+  Switch,
+  LockMemberModal,
+  SelectRoot,
+  SelectTrigger,
+  SelectValue,
+  SelectPortal,
+  SelectContent,
+  SelectItem,
+  type MemberRow,
+} from '@evolve/ui'
+import type { ClubMember, MemberStateFilter } from '@/lib/data/admin'
+import {
+  filterMembers,
+  filterByMemberState,
+  countActiveMembers,
+  ACTIVE_MEMBER_LIMIT,
+} from '@/lib/data/admin'
 import { useClubMembers, type ClubMembersPayload } from '@/lib/hooks/useClubMembers'
 import { lockMemberAction, unlockMemberAction } from '../actions'
 
@@ -29,10 +46,13 @@ function toRow(m: ClubMember): MemberRow {
     monthsCount: m.monthsCount,
     status: m.status,
     accessStatus: m.accessStatus,
+    membershipStatus: m.membershipStatus,
+    leaveAt: m.leaveAt,
   }
 }
 
 const FILTER_ID = 'filter-impayes'
+const STATE_VALUES = ['all', 'active', 'left'] as const
 
 export function MembersView({ initialData }: { initialData: ClubMembersPayload }) {
   const t = useTranslations('admin')
@@ -40,11 +60,20 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
   const queryClient = useQueryClient()
   const { data, isError } = useClubMembers(initialData)
   const [onlyUnpaid, setOnlyUnpaid] = useQueryState('impayes', parseAsBoolean.withDefault(false))
+  const [memberState, setMemberState] = useQueryState(
+    'etat',
+    parseAsStringEnum<MemberStateFilter>([...STATE_VALUES]).withDefault('all')
+  )
   const [isPending, startTransition] = useTransition()
   // Modale partagée blocage/déblocage ; null = fermée.
   const [modal, setModal] = useState<{ member: MemberRow; mode: 'lock' | 'unlock' } | null>(null)
 
-  const filtered = filterMembers(data.members, onlyUnpaid)
+  // Comptage des actifs (sur TOUS les membres, indépendant des filtres) vs limite légale.
+  const activeCount = countActiveMembers(data.members)
+  const atLimit = activeCount >= ACTIVE_MEMBER_LIMIT
+
+  // Filtres composés : état d'adhésion (tous/actifs/sortis) puis impayé.
+  const filtered = filterMembers(filterByMemberState(data.members, memberState), onlyUnpaid)
 
   function handleConfirm(reason: string | null) {
     const current = modal
@@ -65,22 +94,59 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Heading level="h1" className="text-[20px]">
-          {t('members.title')}
-        </Heading>
-        {/*
-          Accessibilité : <label htmlFor> + id sur le Switch (Radix passe id au <button> DOM).
-          Playwright getByLabel('Afficher seulement les membres en impayé') fonctionne via ce lien.
-        */}
-        <div className="flex items-center gap-2">
-          <Switch
-            id={FILTER_ID}
-            checked={onlyUnpaid}
-            onCheckedChange={(v) => void setOnlyUnpaid(v)}
-          />
-          <label htmlFor={FILTER_ID} className="text-[14px] text-text-sec cursor-pointer">
-            {t('members.filterUnpaid')}
-          </label>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <Heading level="h1" className="text-[20px]">
+            {t('members.title')}
+          </Heading>
+          {/*
+            Compteur d'actifs vs limite légale (20). role="status" → annoncé aux AT.
+            Warning doux (token data-warning-strong, AA) si la limite est atteinte/dépassée.
+          */}
+          <span
+            role="status"
+            className={`text-[14px] font-semibold ${
+              atLimit ? 'text-data-warning-strong' : 'text-text-sec'
+            }`}
+          >
+            {t('members.activeCount', { count: activeCount, limit: ACTIVE_MEMBER_LIMIT })}
+            {atLimit && (
+              <span className="ml-1 font-normal text-text-ter">
+                {t('members.activeLimitReached')}
+              </span>
+            )}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-4">
+          {/* Filtre d'état d'adhésion (tous / actifs / sortis). aria-label → getByLabel(). */}
+          <SelectRoot
+            value={memberState}
+            onValueChange={(v) => void setMemberState(v as MemberStateFilter)}
+          >
+            <SelectTrigger aria-label={t('members.stateFilter.label')} className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectPortal>
+              <SelectContent>
+                <SelectItem value="all">{t('members.stateFilter.all')}</SelectItem>
+                <SelectItem value="active">{t('members.stateFilter.active')}</SelectItem>
+                <SelectItem value="left">{t('members.stateFilter.left')}</SelectItem>
+              </SelectContent>
+            </SelectPortal>
+          </SelectRoot>
+          {/*
+            Accessibilité : <label htmlFor> + id sur le Switch (Radix passe id au <button> DOM).
+            Playwright getByLabel('Afficher seulement les membres en impayé') fonctionne via ce lien.
+          */}
+          <div className="flex items-center gap-2">
+            <Switch
+              id={FILTER_ID}
+              checked={onlyUnpaid}
+              onCheckedChange={(v) => void setOnlyUnpaid(v)}
+            />
+            <label htmlFor={FILTER_ID} className="text-[14px] text-text-sec cursor-pointer">
+              {t('members.filterUnpaid')}
+            </label>
+          </div>
         </div>
       </div>
       {isError && (
@@ -131,6 +197,8 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
           sortLabel: (column, direction) =>
             t('members.sortLabel', { column, direction: direction || 'none' }),
           detentionBarLabel: (name) => t('members.detentionBarLabel', { name }),
+          leftBadge: t('members.left.badge'),
+          leftSince: (date) => t('members.left.since', { date }),
         }}
       />
       {modal && (

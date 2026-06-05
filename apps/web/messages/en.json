@@ -387,6 +387,18 @@
       },
       "sortLabel": "Sort by {column}{direction, select, asc {, ascending} desc {, descending} other {}}",
       "detentionBarLabel": "{name}'s stake",
+      "activeCount": "{count}/{limit} active members",
+      "activeLimitReached": "(limit reached)",
+      "stateFilter": {
+        "label": "Filter by status",
+        "all": "All members",
+        "active": "Active members",
+        "left": "Members who left"
+      },
+      "left": {
+        "badge": "Left",
+        "since": "Left on {date}"
+      },
       "access": {
         "column": "Access",
         "active": "Active",

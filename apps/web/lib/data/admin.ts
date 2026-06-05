@@ -22,6 +22,11 @@ export type ContributionStatus = Database['public']['Enums']['contribution_statu
 export type MonthStatus = Database['public']['Enums']['month_status']
 export type AccessStatus = Database['public']['Enums']['member_access_status']
 export type AccessEventAction = Database['public']['Enums']['access_event_action']
+/** Statut d'adhésion (≠ accessStatus) : « Membre actif » → active, « Membre sorti » → left (base.mapper). */
+export type MemberStatus = Database['public']['Enums']['member_status']
+
+/** Limite légale de membres ACTIFS par club (au-delà : club non conforme). */
+export const ACTIVE_MEMBER_LIMIT = 20
 
 /** Un événement du journal d'accès d'un membre (verrou/déverrou). RLS staff. */
 export interface AccessEvent {
@@ -50,6 +55,10 @@ export interface ClubMember {
   amountDue: number
   isUnpaid: boolean
   isActive: boolean
+  /** Statut d'adhésion : `left` = membre sorti du club (Base « Date de sortie » remplie). */
+  membershipStatus: MemberStatus
+  /** Date de sortie (ISO `YYYY-MM-DD`) si membre sorti, sinon null. */
+  leaveAt: string | null
   accessStatus: AccessStatus // 'active' | 'locked' (verrou par-club, ADM-007)
 }
 
@@ -93,6 +102,24 @@ export function clubTotalContributed(members: ClubMember[]): number {
 
 export function filterMembers(members: ClubMember[], onlyUnpaid: boolean): ClubMember[] {
   return onlyUnpaid ? members.filter((m) => m.isUnpaid) : members
+}
+
+/** Filtre par état d'adhésion : tous / actifs uniquement / sortis uniquement. */
+export type MemberStateFilter = 'all' | 'active' | 'left'
+export function filterByMemberState(members: ClubMember[], state: MemberStateFilter): ClubMember[] {
+  switch (state) {
+    case 'active':
+      return members.filter((m) => m.membershipStatus === 'active')
+    case 'left':
+      return members.filter((m) => m.membershipStatus === 'left')
+    case 'all':
+      return members
+  }
+}
+
+/** Nombre de membres ACTIFS (statut d'adhésion `active`), pour le suivi de la limite légale. */
+export function countActiveMembers(members: ClubMember[]): number {
+  return members.reduce((n, m) => (m.membershipStatus === 'active' ? n + 1 : n), 0)
 }
 
 export type MemberSortKey = 'name' | 'total' | 'detention' | 'months'
@@ -164,7 +191,7 @@ export async function getClubSummary(
   const portfolioValue = (positions.data ?? []).reduce((s, p) => s + Number(p.market_value ?? 0), 0)
   return {
     clubId,
-    activeMembers: members.filter((m) => m.isActive).length,
+    activeMembers: countActiveMembers(members),
     portfolioValue,
     totalContributed: clubTotalContributed(members),
     unpaidCount: countUnpaid(members),
@@ -183,8 +210,10 @@ export async function getClubMembers(
       .from('memberships')
       // FK explicite : depuis ADM-007, memberships a 2 FK vers users (user_id + locked_by) →
       // l'embed doit lever l'ambiguïté (sinon PGRST201).
+      // On lit TOUTES les lignes du club (actifs ET sortis) : pas de filtre is_active/status.
+      // Les membres sortis (Base « Date de sortie » → status `left`) doivent rester visibles.
       .select(
-        'id, user_id, role, is_active, joined_at, access_status, users!memberships_user_id_fkey!inner(full_name, email)'
+        'id, user_id, role, is_active, joined_at, status, leave_at, access_status, users!memberships_user_id_fkey!inner(full_name, email)'
       )
       .eq('club_id', clubId)
       .returns<
@@ -192,8 +221,10 @@ export async function getClubMembers(
           id: string
           user_id: string
           role: MemberRole
-          is_active: boolean
+          is_active: boolean | null
           joined_at: string
+          status: MemberStatus
+          leave_at: string | null
           access_status: AccessStatus
           users: { full_name: string; email: string }
         }[]
@@ -233,7 +264,10 @@ export async function getClubMembers(
       status,
       amountDue,
       isUnpaid: isUnpaid(status, amountDue),
-      isActive: m.is_active,
+      // is_active est GENERATED (status = 'active') mais nullable au type → on s'aligne sur status.
+      isActive: m.status === 'active',
+      membershipStatus: m.status,
+      leaveAt: m.leave_at,
       accessStatus: m.access_status,
     }
   })

@@ -5,8 +5,11 @@ import {
   clubTotalContributed,
   sortMembers,
   filterMembers,
+  filterByMemberState,
+  countActiveMembers,
   computeContribStats,
   isStaffRole,
+  ACTIVE_MEMBER_LIMIT,
   type ClubMember,
 } from './admin'
 
@@ -23,6 +26,8 @@ const mk = (over: Partial<ClubMember>): ClubMember => ({
   amountDue: 0,
   isUnpaid: false,
   isActive: true,
+  membershipStatus: 'active',
+  leaveAt: null,
   accessStatus: 'active',
   ...over,
 })
@@ -77,6 +82,40 @@ describe('filterMembers', () => {
   it('renvoie tout quand onlyUnpaid=false', () => {
     const members = [mk({ id: 'a', isUnpaid: true }), mk({ id: 'b' })]
     expect(filterMembers(members, false)).toHaveLength(2)
+  })
+})
+
+describe('filterByMemberState', () => {
+  const active = mk({ id: 'a', membershipStatus: 'active' })
+  const left = mk({ id: 'b', membershipStatus: 'left', leaveAt: '2023-12-31' })
+  it('« all » renvoie actifs ET sortis', () => {
+    expect(filterByMemberState([active, left], 'all').map((m) => m.id)).toEqual(['a', 'b'])
+  })
+  it('« active » ne garde que les actifs', () => {
+    expect(filterByMemberState([active, left], 'active').map((m) => m.id)).toEqual(['a'])
+  })
+  it('« left » ne garde que les sortis', () => {
+    expect(filterByMemberState([active, left], 'left').map((m) => m.id)).toEqual(['b'])
+  })
+})
+
+describe('countActiveMembers', () => {
+  it('compte les membres au statut d’adhésion active', () => {
+    const members = [
+      mk({ membershipStatus: 'active' }),
+      mk({ membershipStatus: 'left' }),
+      mk({ membershipStatus: 'active' }),
+    ]
+    expect(countActiveMembers(members)).toBe(2)
+  })
+  it('un membre sorti ne compte jamais comme actif', () => {
+    expect(countActiveMembers([mk({ membershipStatus: 'left', leaveAt: '2024-01-01' })])).toBe(0)
+  })
+  it('renvoie 0 sur liste vide', () => {
+    expect(countActiveMembers([])).toBe(0)
+  })
+  it('la limite légale est de 20', () => {
+    expect(ACTIVE_MEMBER_LIMIT).toBe(20)
   })
 })
 

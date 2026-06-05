@@ -387,6 +387,18 @@
       },
       "sortLabel": "Trier par {column}{direction, select, asc {, tri croissant} desc {, tri décroissant} other {}}",
       "detentionBarLabel": "Quote-part de {name}",
+      "activeCount": "{count}/{limit} membres actifs",
+      "activeLimitReached": "(limite atteinte)",
+      "stateFilter": {
+        "label": "Filtrer par état",
+        "all": "Tous les membres",
+        "active": "Membres actifs",
+        "left": "Membres sortis"
+      },
+      "left": {
+        "badge": "Sorti",
+        "since": "Sorti le {date}"
+      },
       "access": {
         "column": "Accès",
         "active": "Actif",
