@@ -7,9 +7,10 @@ import {
   createColumnHelper,
   type SortingState,
 } from '@tanstack/react-table'
-import { formatEUR, formatPct } from '@evolve/utils'
+import { formatEUR, formatPct, formatDate } from '@evolve/utils'
 import { AccessBadge, type AccessStatus, type AccessBadgeLabels } from '../../atoms/AccessBadge'
 import { Badge, type BadgeVariant } from '../../atoms/Badge'
+import { Icon } from '../../atoms/Icon'
 import { Pill, type PillStatus } from '../../atoms/Pill'
 import { ProgressBar } from '../../atoms/ProgressBar'
 import { EmptyState } from '../../molecules/EmptyState'
@@ -20,6 +21,8 @@ export type MemberRoleKey = 'member' | 'treasurer' | 'president' | 'network_admi
 export type MemberContribStatus = 'ok' | 'pending' | 'late' | 'exempt'
 /** Statut d'accès d'un membre à l'espace (ADM-007). apps/web ne passe que active|locked. */
 export type MemberAccessStatus = Extract<AccessStatus, 'active' | 'locked'>
+/** Statut d'adhésion : `left` = membre sorti du club. */
+export type MemberMembershipStatus = 'active' | 'left'
 
 /** Ligne membre consommée par la table (déjà mappée par apps/web). */
 export interface MemberRow {
@@ -33,6 +36,10 @@ export interface MemberRow {
   status: MemberContribStatus | null
   /** Statut d'accès à l'espace membre (ADM-007). */
   accessStatus: MemberAccessStatus
+  /** Statut d'adhésion (membre sorti vs actif). Défaut `active` si omis. */
+  membershipStatus?: MemberMembershipStatus
+  /** Date de sortie (ISO ou Date), affichée pour les membres sortis. */
+  leaveAt?: string | null
 }
 
 /** Libellés des en-têtes de colonnes (aussi injectés dans l'aria-label de tri). */
@@ -69,6 +76,10 @@ export interface MembersListLabels {
   sortLabel?: (column: string, direction: 'asc' | 'desc' | false) => string
   /** aria-label de la barre de quote-part « Quote-part de {nom} ». */
   detentionBarLabel?: (name: string) => string
+  /** Libellé du badge « Membre sorti » (défaut FR « Sorti »). */
+  leftBadge?: string
+  /** Texte « Sorti le {date} » sous le nom d'un membre sorti. `date` est déjà formatée. */
+  leftSince?: (date: string) => string
 }
 
 export interface MembersListProps {
@@ -126,6 +137,8 @@ const DEFAULT_COLUMN_LABELS: MembersListColumnLabels = {
 const DEFAULT_EMPTY_TITLE = 'Aucun membre'
 const DEFAULT_EMPTY_DESCRIPTION = "Ce club n'a pas encore de membre correspondant à ce filtre."
 const DEFAULT_TABLE_LABEL = 'Membres du club'
+const DEFAULT_LEFT_BADGE = 'Sorti'
+const defaultLeftSince: NonNullable<MembersListLabels['leftSince']> = (date) => `Sorti le ${date}`
 
 const defaultSortLabel: NonNullable<MembersListLabels['sortLabel']> = (column, direction) =>
   `Trier par ${column}${
@@ -147,6 +160,12 @@ interface ActionsConfig {
   onViewProfile?: (member: MemberRow) => void
 }
 
+/** Libellés liés au statut « membre sorti ». */
+interface LeftLabels {
+  badge: string
+  since: (date: string) => string
+}
+
 /** Construit les colonnes avec les libellés fournis (défauts FR). */
 function buildColumns(
   columnLabels: MembersListColumnLabels,
@@ -154,17 +173,39 @@ function buildColumns(
   statusLabels: Record<MemberContribStatus, string>,
   accessLabels: Pick<AccessBadgeLabels, 'active' | 'locked'>,
   detentionBarLabel: (name: string) => string,
+  leftLabels: LeftLabels,
   actions: ActionsConfig
 ) {
   const baseColumns = [
     col.accessor('fullName', {
       header: columnLabels.fullName,
-      cell: (c) => (
-        <div className="flex flex-col">
-          <span className="font-semibold text-text">{c.getValue()}</span>
-          <span className="text-[12px] text-text-ter">{c.row.original.email}</span>
-        </div>
-      ),
+      cell: (c) => {
+        const left = c.row.original.membershipStatus === 'left'
+        const leaveAt = c.row.original.leaveAt
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex flex-wrap items-center gap-1.5">
+              {/* Nom atténué pour un membre sorti (la couleur seule n'est jamais le seul signal). */}
+              <span className={cn('font-semibold', left ? 'text-text-sec' : 'text-text')}>
+                {c.getValue()}
+              </span>
+              {left && (
+                // Badge neutre + icône « LogOut » : perceptible sans la couleur (texte + icône).
+                <Badge variant="neutral">
+                  <Icon name="LogOut" size={16} className="mr-1 h-3.5 w-3.5" aria-hidden="true" />
+                  {leftLabels.badge}
+                </Badge>
+              )}
+            </div>
+            <span className="text-[12px] text-text-ter">{c.row.original.email}</span>
+            {left && leaveAt && (
+              <span className="text-[12px] text-text-ter">
+                {leftLabels.since(formatDate(leaveAt))}
+              </span>
+            )}
+          </div>
+        )
+      },
     }),
     col.accessor('role', {
       header: columnLabels.role,
@@ -267,6 +308,13 @@ export function MembersList({
   const detentionBarLabel = labels?.detentionBarLabel ?? defaultDetentionBarLabel
   const sortLabel = labels?.sortLabel ?? defaultSortLabel
   const tableLabel = labels?.tableLabel ?? DEFAULT_TABLE_LABEL
+  const leftLabels = React.useMemo<LeftLabels>(
+    () => ({
+      badge: labels?.leftBadge ?? DEFAULT_LEFT_BADGE,
+      since: labels?.leftSince ?? defaultLeftSince,
+    }),
+    [labels?.leftBadge, labels?.leftSince]
+  )
 
   // Le menu d'actions n'apparaît que si au moins un callback d'accès est fourni
   // (rétro-compatibilité : sans callbacks, on garde la pastille sans le menu).
@@ -275,19 +323,28 @@ export function MembersList({
 
   const columns = React.useMemo(
     () =>
-      buildColumns(columnLabels, roleLabels, statusLabels, accessLabels, detentionBarLabel, {
-        enabled: actionsEnabled,
-        labels: actionsLabels,
-        onLock: onLockMember,
-        onUnlock: onUnlockMember,
-        onViewProfile: onViewMember,
-      }),
+      buildColumns(
+        columnLabels,
+        roleLabels,
+        statusLabels,
+        accessLabels,
+        detentionBarLabel,
+        leftLabels,
+        {
+          enabled: actionsEnabled,
+          labels: actionsLabels,
+          onLock: onLockMember,
+          onUnlock: onUnlockMember,
+          onViewProfile: onViewMember,
+        }
+      ),
     [
       columnLabels,
       roleLabels,
       statusLabels,
       accessLabels,
       detentionBarLabel,
+      leftLabels,
       actionsEnabled,
       actionsLabels,
       onLockMember,
@@ -373,7 +430,12 @@ export function MembersList({
                 <tr
                   key={row.id}
                   data-testid="member-row"
-                  className="border-b border-border align-middle"
+                  data-member-status={row.original.membershipStatus ?? 'active'}
+                  className={cn(
+                    'border-b border-border align-middle',
+                    // Membre sorti : fond atténué (signal secondaire, jamais le seul — cf. badge + date).
+                    row.original.membershipStatus === 'left' && 'bg-card-sub/40'
+                  )}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="py-3 px-3 first:pl-0 align-middle">

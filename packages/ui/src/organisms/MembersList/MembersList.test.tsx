@@ -141,9 +141,86 @@ describe('MembersList — colonne Accès (ADM-007)', () => {
   })
 })
 
+describe('MembersList — membres sortis', () => {
+  const WITH_LEFT: MemberRow[] = [
+    ...MEMBERS,
+    {
+      id: '4',
+      fullName: 'DIOP Awa',
+      email: 'awa@x.fr',
+      role: 'member',
+      totalContributed: 600,
+      detentionPct: 0.02,
+      monthsCount: 6,
+      status: null,
+      accessStatus: 'active',
+      membershipStatus: 'left',
+      leaveAt: '2023-12-31',
+    },
+  ]
+
+  it('affiche un badge « Sorti » sur un membre sorti (perceptible par texte)', () => {
+    render(<MembersList members={WITH_LEFT} />)
+    expect(screen.getByText('Sorti')).toBeInTheDocument()
+  })
+
+  it('affiche la date de sortie formatée FR sous le membre sorti', () => {
+    render(<MembersList members={WITH_LEFT} />)
+    // formatDate('2023-12-31') → 31/12/2023
+    expect(screen.getByText(/Sorti le\s+31\/12\/2023/)).toBeInTheDocument()
+  })
+
+  it('marque la ligne d’un membre sorti via data-member-status', () => {
+    render(<MembersList members={WITH_LEFT} />)
+    const rows = screen.getAllByTestId('member-row')
+    const leftRow = rows.find((r) => within(r).queryByText('Sorti'))
+    expect(leftRow).toHaveAttribute('data-member-status', 'left')
+  })
+
+  it('ne marque PAS « Sorti » un membre actif (défaut)', () => {
+    render(<MembersList members={MEMBERS} />)
+    expect(screen.queryByText('Sorti')).toBeNull()
+    const rows = screen.getAllByTestId('member-row')
+    rows.forEach((r) => expect(r).toHaveAttribute('data-member-status', 'active'))
+  })
+
+  it('respecte les libellés i18n du badge et de la date', () => {
+    render(
+      <MembersList
+        members={WITH_LEFT}
+        labels={{ leftBadge: 'Left', leftSince: (d) => `Left on ${d}` }}
+      />
+    )
+    expect(screen.getByText('Left')).toBeInTheDocument()
+    expect(screen.getByText('Left on 31/12/2023')).toBeInTheDocument()
+  })
+})
+
 describe('MembersList — accessibilité (jest-axe)', () => {
   it('pas de violations axe', async () => {
     const { container } = render(<MembersList members={MEMBERS} />)
+    const results = await axe(container)
+    expect(results).toHaveNoViolations()
+  })
+
+  it('pas de violations axe avec un membre sorti', async () => {
+    const withLeft: MemberRow[] = [
+      ...MEMBERS,
+      {
+        id: '4',
+        fullName: 'DIOP Awa',
+        email: 'awa@x.fr',
+        role: 'member',
+        totalContributed: 600,
+        detentionPct: 0.02,
+        monthsCount: 6,
+        status: null,
+        accessStatus: 'active',
+        membershipStatus: 'left',
+        leaveAt: '2023-12-31',
+      },
+    ]
+    const { container } = render(<MembersList members={withLeft} />)
     const results = await axe(container)
     expect(results).toHaveNoViolations()
   })

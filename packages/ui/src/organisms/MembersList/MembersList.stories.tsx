@@ -92,6 +92,36 @@ export const Empty: Story = {
   },
 }
 
+/** Avec un membre sorti du club : badge « Sorti », date de sortie et ligne atténuée. */
+export const WithLeftMember: Story = {
+  args: {
+    members: [
+      ...MEMBERS,
+      {
+        id: '4',
+        fullName: 'DIOP Awa',
+        email: 'awa@x.fr',
+        role: 'member',
+        totalContributed: 600,
+        detentionPct: 0.02,
+        monthsCount: 6,
+        status: null,
+        accessStatus: 'active',
+        membershipStatus: 'left',
+        leaveAt: '2023-12-31',
+      },
+    ],
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Sorti')).toBeInTheDocument()
+    await expect(canvas.getByText(/Sorti le\s+31\/12\/2023/)).toBeInTheDocument()
+    const rows = canvas.getAllByTestId('member-row')
+    const leftRow = rows.find((r) => within(r).queryByText('Sorti'))
+    await expect(leftRow).toHaveAttribute('data-member-status', 'left')
+  },
+}
+
 /** Avec callbacks d'accès (ADM-007) : colonne « Accès » + menu d'actions « ··· ». */
 export const WithActions: Story = {
   args: {
