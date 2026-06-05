@@ -50,8 +50,14 @@ describe('mapCotisationsRows', () => {
     expect(unmatched).toContain('INCONNU Personne')
   })
 
-  it('mappe les statuts FR/EN', () => {
+  it('mappe les statuts FR/EN + libellés réels de la matrice', () => {
     const cases: Array<[string, string]> = [
+      // Libellés RÉELS de la feuille Cotisations (col 7)
+      ['Situation régulière', 'ok'],
+      ['Situation irrégulière', 'late'],
+      ['situation reguliere', 'ok'], // sans accent
+      ['SITUATION IRRÉGULIÈRE', 'late'], // casse haute
+      // Rétro-compat libellés historiques
       ['À jour', 'ok'],
       ['ok', 'ok'],
       ['retard', 'late'],
@@ -64,6 +70,24 @@ describe('mapCotisationsRows', () => {
       const { contributions } = mapCotisationsRows([makeRow({ status: input })], CLUB, MEMBERSHIPS)
       expect(contributions[0]!.status).toBe(expected)
     }
+  })
+
+  it('"irrégulière" matché avant "régulière" (sous-chaîne) → late', () => {
+    const { contributions } = mapCotisationsRows(
+      [makeRow({ status: 'Situation irrégulière' })],
+      CLUB,
+      MEMBERSHIPS
+    )
+    expect(contributions[0]!.status).toBe('late')
+  })
+
+  it('"#ERROR!" → pending + collecté dans unknownStatuses, jamais de throw', () => {
+    let res!: ReturnType<typeof mapCotisationsRows>
+    expect(() => {
+      res = mapCotisationsRows([makeRow({ status: '#ERROR!' })], CLUB, MEMBERSHIPS)
+    }).not.toThrow()
+    expect(res.contributions[0]!.status).toBe('pending')
+    expect(res.unknownStatuses).toContain('#ERROR!')
   })
 
   it('statut accentué "exempté" → exempt', () => {
@@ -94,6 +118,35 @@ describe('mapCotisationsRows', () => {
     expect(contributions[0]!.status).toBe('pending')
     expect(unknownStatuses).not.toContain('')
     expect(unknownStatuses).toHaveLength(0)
+  })
+
+  it('detention_pct : pourcentage de la feuille → fraction 0..1 (÷100)', () => {
+    // La feuille fournit "8,99%" → toNumOrNull = 8.99 (côté parser/DTO).
+    const { contributions } = mapCotisationsRows(
+      [makeRow({ detentionPct: 8.99 })],
+      CLUB,
+      MEMBERSHIPS
+    )
+    expect(contributions[0]!.detention_pct).toBeCloseTo(0.0899, 6)
+  })
+
+  it('detention_pct null → 0 (pas de NaN)', () => {
+    const { contributions } = mapCotisationsRows(
+      [makeRow({ detentionPct: null })],
+      CLUB,
+      MEMBERSHIPS
+    )
+    expect(contributions[0]!.detention_pct).toBe(0)
+  })
+
+  it('ligne "TOTAUX" → non matchée (unmatched), jamais émise en contribution', () => {
+    const { contributions, unmatched } = mapCotisationsRows(
+      [makeRow({ fullName: 'TOTAUX' })],
+      CLUB,
+      MEMBERSHIPS
+    )
+    expect(contributions).toHaveLength(0)
+    expect(unmatched).toContain('TOTAUX')
   })
 
   it('valeurs numériques null → 0 (sauf net_market_value)', () => {

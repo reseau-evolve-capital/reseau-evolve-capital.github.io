@@ -149,32 +149,122 @@ Deno.test('parsePortefeuille : symbole vide conservé (ligne d agrégat) + numé
   assertEquals(rows[1].symbol, '') // agrégat : symbole vide préservé pour le mapper
 })
 
-Deno.test('parseHistorique : ordre des colonnes A=Date, B=Type, C=Symbole…', () => {
+Deno.test('parseHistorique : layout RÉEL (col 0 = n° de ligne, date en col 8)', () => {
+  // En-têtes réels relevés dans sheet_snapshots.raw_data de la matrice :
+  // 0="" 1=TYPE 2=QUANTITE 3=TITRES 4=TICKER 5=TYPOLOGIE 6=PRIX D'ACHAT 7=COUT D'ACHAT 8=Date 9=JUSTIFICATIFS
   const raw: string[][] = [
-    ['Date', 'Type', 'Symbole', 'Nom', 'Quantité', 'Prix', 'Total', 'Notes'],
-    ['01/06/2018', 'Achat', 'AAPL', 'Apple', '10', '100', '1000', 'note'],
+    [
+      '',
+      'TYPE',
+      'QUANTITE',
+      'TITRES',
+      'TICKER',
+      'TYPOLOGIE',
+      "PRIX D'ACHAT",
+      "COUT D'ACHAT",
+      'Date',
+      'JUSTIFICATIFS',
+    ],
+    [
+      '1',
+      'Achat',
+      '2500',
+      'ACANTHE DEVELOPPEMENT',
+      'ACAN',
+      'Action',
+      '€0,62',
+      '1547,9',
+      '21/9/2018',
+    ],
+    ['8', 'VENTE', '-64', 'BOIRON', 'BOI', 'ACTIONS', '€33,65', '-€2 153,60', '12/4/2019'],
+    ['6', 'ACHAT', '12', 'FACEBOOK', 'FB', 'ACTIONS', '€136,41', '€1 636,92'], // tableau court : pas de date
   ]
   const rows = parseHistorique(raw)
-  assertEquals(rows.length, 1)
-  assertEquals(rows[0].transactionDate, '01/06/2018')
+  assertEquals(rows.length, 3)
+  // Ligne achat : la date est bien lue en col 8 (PAS le n° de ligne en col 0)
+  assertEquals(rows[0].transactionDate, '21/9/2018')
   assertEquals(rows[0].type, 'Achat')
-  assertEquals(rows[0].symbol, 'AAPL')
-  assertEquals(rows[0].quantity, 10)
+  assertEquals(rows[0].symbol, 'ACAN')
+  assertEquals(rows[0].name, 'ACANTHE DEVELOPPEMENT')
+  assertEquals(rows[0].quantity, 2500)
+  assertEquals(rows[0].price, 0.62) // "€0,62" nettoyé
+  assertEquals(rows[0].total, 1547.9)
+  // Ligne vente : quantité + total négatifs, préfixe € retiré
+  assertEquals(rows[1].quantity, -64)
+  assertEquals(rows[1].price, 33.65)
+  assertEquals(rows[1].total, -2153.6)
+  // Tableau court sans date → transactionDate null (quarantaine douce DB)
+  assertEquals(rows[2].transactionDate, null)
+  assertEquals(rows[2].symbol, 'FB')
 })
 
-Deno.test('parseCotisations : valeur non parsable → null (jamais NaN)', () => {
-  const raw: string[][] = [
-    ['Nom', 'Nb mois', 'Quote-part', 'Pénalités', 'Total', 'Valo', 'Statut', 'Dû'],
-    ['AFOUDAH Ruben', '90', '33,3', '0', '9000', 'NON_NUM', 'À jour', '0'],
-  ]
-  const rows = parseCotisations(raw)
-  assertEquals(rows.length, 1)
-  assertEquals(rows[0].fullName, 'AFOUDAH Ruben')
-  assertEquals(rows[0].monthsCount, 90)
-  assertEquals(rows[0].detentionPct, 33.3)
-  assertEquals(rows[0].netMarketValue, null) // "NON_NUM" → null, pas NaN
-  assertEquals(rows[0].status, 'À jour')
-})
+Deno.test(
+  'parseCotisations : layout RÉEL (statut col 7, montant dû col 8) + #ERROR! → null',
+  () => {
+    // En-têtes réels : 0=nom 1=Nb mois 2=% détention 3=pénalités 4=Total Cotisé
+    // 5=Valeur nette 6=Nb normal (≠ statut) 7=Statut 8=Montant dû 9=Echéancier 10=Gain/Perte 11=Suffixe
+    const raw: string[][] = [
+      [
+        'nom',
+        'Nb de mois cotisés',
+        'Pourcentage de détention',
+        'pénalités dues',
+        'Total Cotisé',
+        'Valeur Boursière nette',
+        'Nb normal de cotisations',
+        'Statut',
+        'Montant dû',
+        'Echéancier',
+        'Gain/Perte',
+        'Suffixe',
+      ],
+      [
+        'AFOUDAH Ruben',
+        '#ERROR!',
+        '8,99%',
+        '',
+        '28 000,00€',
+        '68 153,14€',
+        '95',
+        '#ERROR!',
+        '#ERROR!',
+        '',
+        '40 153,14€',
+        '0,95',
+      ],
+      [
+        'LASKARI Fabien',
+        '#ERROR!',
+        '2,20%',
+        '',
+        '6 855,92€',
+        '16 687,59€',
+        '52',
+        'Situation régulière',
+        '',
+        '',
+        '9 831,67€',
+        '0,97',
+      ],
+      ['TOTAUX', '', '', '', '', '', '', '', '', '', '', ''],
+    ]
+    const rows = parseCotisations(raw)
+    assertEquals(rows.length, 3)
+    // Le statut est lu en col 7 (PAS "95"/"52" de la col 6 "Nb normal")
+    assertEquals(rows[0].status, '#ERROR!')
+    assertEquals(rows[1].status, 'Situation régulière')
+    // #ERROR! numérique → null (jamais NaN, jamais de throw)
+    assertEquals(rows[0].monthsCount, null)
+    assertEquals(rows[0].amountDue, null) // "#ERROR!" en col 8
+    assertEquals(rows[1].amountDue, null) // vide en col 8
+    // % et € nettoyés (le DTO garde le pourcentage brut ; le ÷100 vit dans le mapper)
+    assertEquals(rows[0].detentionPct, 8.99)
+    assertEquals(rows[0].totalContributed, 28000)
+    assertEquals(rows[0].netMarketValue, 68153.14)
+    // Ligne TOTAUX préservée au niveau parser (filtrée par matching nom côté mapper)
+    assertEquals(rows[2].fullName, 'TOTAUX')
+  }
+)
 
 // ===========================================================================
 // 2. CHECKSUM SNAPSHOT (sha256Hex) — déterministe & sensible
@@ -249,13 +339,53 @@ const SHEETS: Readonly<Record<string, readonly (readonly string[])[]>> = Object.
     ['Apple', 'AAPL', 'Action', '10', 'EUR', '1 234,56'],
     ['TOTAL', '', 'Agrégat', '', '', '5 000,00'],
   ]),
+  // Layout RÉEL : col 0 = n° de ligne, type=1, qté=2, nom=3, ticker=4, typo=5, prix=6, coût=7, date=8, justif=9.
   HISTORIQUE: Object.freeze([
-    ['Date', 'Type', 'Symbole', 'Nom', 'Quantité', 'Prix', 'Total', 'Notes'],
-    ['01/06/2018', 'Achat', 'AAPL', 'Apple', '10', '100', '1000', 'note'],
+    [
+      '',
+      'TYPE',
+      'QUANTITE',
+      'TITRES',
+      'TICKER',
+      'TYPOLOGIE',
+      "PRIX D'ACHAT",
+      "COUT D'ACHAT",
+      'Date',
+      'JUSTIFICATIFS',
+    ],
+    ['1', 'Achat', '10', 'Apple', 'AAPL', 'Action', '€100,00', '€1 000,00', '01/06/2018', 'note'],
   ]),
+  // Layout RÉEL : nom=0, nb mois=1, %détention=2, pénalités=3, total=4, valo nette=5,
+  // nb normal=6 (≠ statut), statut=7, montant dû=8, échéancier=9, gain/perte=10, suffixe=11.
   COTISATIONS: Object.freeze([
-    ['Nom', 'Nb mois', 'Quote-part', 'Pénalités', 'Total', 'Valo', 'Statut', 'Dû'],
-    ['AFOUDAH Ruben', '90', '33,3', '0', '9000', '9500', 'À jour', '0'],
+    [
+      'nom',
+      'Nb de mois cotisés',
+      'Pourcentage de détention',
+      'pénalités dues',
+      'Total Cotisé',
+      'Valeur Boursière nette',
+      'Nb normal de cotisations',
+      'Statut',
+      'Montant dû',
+      'Echéancier',
+      'Gain/Perte',
+      'Suffixe',
+    ],
+    [
+      'AFOUDAH Ruben',
+      '90',
+      '33,30%',
+      '0',
+      '9 000,00€',
+      '9 500,00€',
+      '95',
+      'Situation régulière',
+      '0',
+      '',
+      '',
+      '0,95',
+    ],
   ]),
   // Structure réelle (DATA_MODEL §4.4) : col0 = Periode, col1 = en-tête "100"
   // (ignorée), cols 2..n = noms complets de membres. Lignes = montants par période.

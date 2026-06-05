@@ -132,36 +132,51 @@ export function parsePortefeuille(rows: string[][]): PortefeuilleRowDTO[] {
 }
 
 /**
- * HISTORIQUE → HistoriqueRowDTO[] (DATA_MODEL §4.6).
- * Colonnes par index : A Date, B Type, C Symbole, D Nom, E Quantité, F Prix, G Total, H Notes.
+ * HISTORIQUE → HistoriqueRowDTO[].
+ * Layout RÉEL de la matrice (relevé dans sheet_snapshots.raw_data) — la colonne 0
+ * est un n° de ligne, PAS la date :
+ *   0 = n° de ligne (ignoré)   1 = TYPE          2 = QUANTITE       3 = TITRES (nom)
+ *   4 = TICKER (symbole)       5 = TYPOLOGIE     6 = PRIX D'ACHAT   7 = COUT D'ACHAT (total)
+ *   8 = Date                   9 = JUSTIFICATIFS (notes)
+ * Les tableaux « courts » (achats récents) peuvent omettre les colonnes 8/9 → date/notes null,
+ * la transaction tombe alors en quarantaine douce (transaction_date NOT NULL côté DB).
+ * Montants au format FR avec préfixe/suffixe € et signe négatif (ventes) : toNumOrNull nettoie.
  */
 export function parseHistorique(rows: string[][]): HistoriqueRowDTO[] {
   return dataRows(rows).map((row) => ({
-    transactionDate: cellOrNull(row, 0), // A
-    type: cell(row, 1), // B
-    symbol: cellOrNull(row, 2), // C
-    name: cellOrNull(row, 3), // D
-    quantity: toNumOrNull(cell(row, 4)), // E
-    price: toNumOrNull(cell(row, 5)), // F
-    total: toNumOrNull(cell(row, 6)), // G
-    notes: cellOrNull(row, 7), // H
+    type: cell(row, 1), // TYPE (Achat/Vente/…)
+    quantity: toNumOrNull(cell(row, 2)), // QUANTITE (négative sur une vente)
+    name: cellOrNull(row, 3), // TITRES
+    symbol: cellOrNull(row, 4), // TICKER
+    price: toNumOrNull(cell(row, 6)), // PRIX D'ACHAT (€…)
+    total: toNumOrNull(cell(row, 7)), // COUT D'ACHAT (€…, signé)
+    transactionDate: cellOrNull(row, 8), // Date (d/m/yyyy, parfois absente)
+    notes: cellOrNull(row, 9), // JUSTIFICATIFS
   }))
 }
 
 /**
- * COTISATIONS → CotisationsRowDTO[] (synthèse par membre, DATA_MODEL §4.5).
- * Colonnes par index : A Nom, B Nb mois, C Quote-part, D Pénalités, E Total versé,
- * F Valorisation nette, G Statut, H Montant dû.
+ * COTISATIONS → CotisationsRowDTO[] (synthèse par membre).
+ * Layout RÉEL de la matrice (relevé dans sheet_snapshots.raw_data) :
+ *   0 = nom                 1 = Nb de mois cotisés (souvent #ERROR! → null)
+ *   2 = Pourcentage de détention (ex. "8,99%")   3 = pénalités dues
+ *   4 = Total Cotisé (ex. "28 000,00€")           5 = Valeur Boursière nette
+ *   6 = Nb normal de cotisations (numérique — N'EST PAS le statut)
+ *   7 = Statut ("Situation régulière"/"irrégulière", souvent #ERROR! ou vide)
+ *   8 = Montant dû           9 = Echéancier   10 = Gain/Perte   11 = Suffixe
+ * La colonne 6 ("Nb normal") avait été confondue avec le statut : on lit bien 7/8.
+ * Toute cellule sale (#ERROR!, vide, NBSP) passe par toNumOrNull → null, jamais d'exception ;
+ * la ligne « TOTAUX » ne matche aucun membre et tombe en quarantaine douce côté mapper.
  */
 export function parseCotisations(rows: string[][]): CotisationsRowDTO[] {
   return dataRows(rows).map((row) => ({
-    fullName: cell(row, 0), // A
-    monthsCount: toNumOrNull(cell(row, 1)), // B
-    detentionPct: toNumOrNull(cell(row, 2)), // C
-    penalties: toNumOrNull(cell(row, 3)), // D
-    totalContributed: toNumOrNull(cell(row, 4)), // E
-    netMarketValue: toNumOrNull(cell(row, 5)), // F
-    status: cellOrNull(row, 6), // G
-    amountDue: toNumOrNull(cell(row, 7)), // H
+    fullName: cell(row, 0), // nom
+    monthsCount: toNumOrNull(cell(row, 1)), // Nb de mois cotisés
+    detentionPct: toNumOrNull(cell(row, 2)), // Pourcentage de détention
+    penalties: toNumOrNull(cell(row, 3)), // pénalités dues
+    totalContributed: toNumOrNull(cell(row, 4)), // Total Cotisé
+    netMarketValue: toNumOrNull(cell(row, 5)), // Valeur Boursière nette
+    status: cellOrNull(row, 7), // Statut (≠ col 6 "Nb normal")
+    amountDue: toNumOrNull(cell(row, 8)), // Montant dû
   }))
 }
