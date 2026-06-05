@@ -37,8 +37,41 @@ describe('mapBaseRowToMember', () => {
     expect(membership.status).toBe('left')
     expect(membership.leave_at).toBe('2023-11-30')
   })
-  it('email invalide → throw', () => {
-    expect(() => mapBaseRowToMember({ ...row, email: 'pasunemail' }, CLUB)).toThrow(/email/i)
+  it('email présent → email_is_placeholder = false', () => {
+    expect(mapBaseRowToMember(row, CLUB).user.email_is_placeholder).toBe(false)
+  })
+  it('email malformé (non vide) → conservé tel quel, PAS de placeholder', () => {
+    // Principe "aucune perte" : on garde l'info brute (trim+lowercase), flag false.
+    // Il ne recevra de toute façon pas de magic link (hors allowlist).
+    const { user } = mapBaseRowToMember({ ...row, email: ' PasUnEmail ' }, CLUB)
+    expect(user.email).toBe('pasunemail')
+    expect(user.email_is_placeholder).toBe(false)
+  })
+  it('email VIDE → placeholder déterministe + email_is_placeholder = true', () => {
+    const { user } = mapBaseRowToMember({ ...row, fullName: 'OURO SAMA Jalil', email: '' }, CLUB)
+    expect(user.email).toBe(`sans-email.ouro-sama-jalil@${CLUB}.local`)
+    expect(user.email_is_placeholder).toBe(true)
+  })
+  it('email VIDE (espaces seuls) → placeholder', () => {
+    const { user } = mapBaseRowToMember({ ...row, fullName: 'ROSSI Greg', email: '   ' }, CLUB)
+    expect(user.email).toBe(`sans-email.rossi-greg@${CLUB}.local`)
+    expect(user.email_is_placeholder).toBe(true)
+  })
+  it('placeholder IDEMPOTENT (même nom+club → même email à chaque sync)', () => {
+    const a = mapBaseRowToMember({ ...row, fullName: 'NGORAN Stéphane', email: '' }, CLUB)
+    const b = mapBaseRowToMember({ ...row, fullName: 'NGORAN Stéphane', email: '' }, CLUB)
+    expect(a.user.email).toBe(b.user.email)
+    expect(a.user.email).toBe(`sans-email.ngoran-stephane@${CLUB}.local`)
+  })
+  it('placeholder distinct par membre (pas de collision onConflict email)', () => {
+    const j = mapBaseRowToMember({ ...row, fullName: 'OURO SAMA Jalil', email: '' }, CLUB)
+    const d = mapBaseRowToMember({ ...row, fullName: 'TCHOUTA David', email: '' }, CLUB)
+    expect(j.user.email).not.toBe(d.user.email)
+  })
+  it('email VIDE + fullName vide → placeholder "anonyme" (jamais de crash)', () => {
+    const { user } = mapBaseRowToMember({ ...row, fullName: '   ', email: '' }, CLUB)
+    expect(user.email).toBe(`sans-email.anonyme@${CLUB}.local`)
+    expect(user.email_is_placeholder).toBe(true)
   })
   it('statut inconnu → throw', () => {
     expect(() => mapBaseRowToMember({ ...row, status: 'En cours' }, CLUB)).toThrow(

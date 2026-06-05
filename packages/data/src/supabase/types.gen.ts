@@ -578,7 +578,7 @@ export type Database = {
           symbol: string | null
           synced_at: string
           total: number | null
-          transaction_date: string
+          transaction_date: string | null
           type: Database['public']['Enums']['transaction_type']
         }
         Insert: {
@@ -592,7 +592,7 @@ export type Database = {
           symbol?: string | null
           synced_at: string
           total?: number | null
-          transaction_date: string
+          transaction_date?: string | null
           type: Database['public']['Enums']['transaction_type']
         }
         Update: {
@@ -606,7 +606,7 @@ export type Database = {
           symbol?: string | null
           synced_at?: string
           total?: number | null
-          transaction_date?: string
+          transaction_date?: string | null
           type?: Database['public']['Enums']['transaction_type']
         }
         Relationships: [
@@ -628,6 +628,7 @@ export type Database = {
           created_at: string
           directory_opt_in: boolean
           email: string
+          email_is_placeholder: boolean
           firstname: string | null
           full_name: string
           id: string
@@ -647,6 +648,7 @@ export type Database = {
           created_at?: string
           directory_opt_in?: boolean
           email: string
+          email_is_placeholder?: boolean
           firstname?: string | null
           full_name: string
           id?: string
@@ -666,6 +668,7 @@ export type Database = {
           created_at?: string
           directory_opt_in?: boolean
           email?: string
+          email_is_placeholder?: boolean
           firstname?: string | null
           full_name?: string
           id?: string

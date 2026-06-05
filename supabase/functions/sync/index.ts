@@ -220,7 +220,9 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
           users.push(user)
           membershipByEmail.set(user.email, membership)
         } catch (e) {
-          // Une ligne invalide (email/statut) ne bloque pas l'import des autres.
+          // Une ligne au statut inconnu ne bloque pas l'import des autres. Depuis
+          // migration 026, l'email VIDE ne throw plus (placeholder déterministe) :
+          // seul un statut non reconnu ("Membre actif"/"Membre sorti") atterrit ici.
           rowErrors.push(errMsg(e))
         }
       }
@@ -246,8 +248,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         .filter((m): m is { user_id: string } & MembershipUpsert => m !== null)
       // QUARANTAINE — memberships.joined_at est NOT NULL en DB (migration 004). Une
       // adhésion sans date d'entrée est l'anomalie : on l'écarte AVANT l'upsert pour ne
-      // pas faire crasher l'insert (les users restent tous upsertés — leurs champs requis
-      // sont déjà validés par le mapper, qui throw sur un email invalide).
+      // pas faire crasher l'insert. Les users restent TOUS upsertés (y compris ceux sans
+      // email, via placeholder déterministe depuis migration 026) : aucune perte de membre.
       const validMemberships = memberships.filter((m) => m.joined_at != null)
       const droppedMembers = memberships
         .filter((m) => m.joined_at == null)
@@ -340,27 +342,28 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       const raw = await deps.readSheet(sheetId, 'HISTORIQUE')
       const rows = parseHistorique(raw)
       const transactions = mapHistoriqueRows(rows, clubId)
-      // QUARANTAINE — transactions.transaction_date est NOT NULL en DB (migration 006).
-      // On filtre les lignes sans date AVANT l'insert (rappel : delete+insert, donc le
-      // filtre porte sur l'insert) pour ne pas faire crasher l'import (snapshot partiel).
-      const validTransactions = transactions.filter((t) => t.transaction_date != null)
-      const droppedTransactions = transactions.length - validTransactions.length
+      // AUCUNE PERTE (migration 026) — transaction_date est désormais NULL-able en DB.
+      // Une transaction sans date (date inconnue) est IMPORTÉE avec transaction_date = null,
+      // jamais écartée (principe owner). On ne fabrique surtout PAS de date de remplacement.
+      const datelessCount = transactions.filter((t) => t.transaction_date == null).length
       const synced_at = new Date().toISOString()
       const { error: delErr } = await supabase.from('transactions').delete().eq('club_id', clubId)
       if (delErr) throw new Error(`delete transactions: ${delErr.message}`)
-      if (validTransactions.length > 0) {
+      if (transactions.length > 0) {
         const { error: insErr } = await supabase
           .from('transactions')
-          .insert(validTransactions.map((t) => ({ ...t, synced_at })))
+          .insert(transactions.map((t) => ({ ...t, synced_at })))
         if (insErr) throw new Error(`insert transactions: ${insErr.message}`)
       }
-      const status: SnapshotStatus = droppedTransactions > 0 ? 'partial' : 'success'
+      // INFORMATIF (pas une exclusion) : on signale les transactions sans date mais
+      // elles sont bien en DB. Snapshot 'partial' juste pour tracer l'anomalie de source.
+      const status: SnapshotStatus = datelessCount > 0 ? 'partial' : 'success'
       const note =
-        droppedTransactions > 0
-          ? `${droppedTransactions} transaction(s) ignorée(s) : date illisible`
+        datelessCount > 0
+          ? `${datelessCount} transaction(s) importée(s) sans date (date inconnue en source)`
           : null
-      // MOLLE : transactions à date illisible écartées → warnings[] (la feuille a importé).
-      if (note) warnings.push(`HISTORIQUE (lignes ignorées): ${note}`)
+      // MOLLE : note informative (les transactions sont importées, pas perdues).
+      if (note) warnings.push(`HISTORIQUE: ${note}`)
       snapshots['HISTORIQUE'] = await createSnapshot(
         supabase,
         clubId,

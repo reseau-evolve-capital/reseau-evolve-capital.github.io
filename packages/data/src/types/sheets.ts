@@ -81,6 +81,11 @@ export interface UserUpsert {
   full_name: string
   phone?: string | null
   address?: string | null
+  /**
+   * true = email synthétique généré à l'import (membre Base sans email).
+   * Déterministe entre syncs ; ne reçoit jamais de magic link. Cf. migration 026.
+   */
+  email_is_placeholder: boolean
 }
 export interface MembershipUpsert {
   club_id: string

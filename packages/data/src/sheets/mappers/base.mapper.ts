@@ -1,24 +1,39 @@
-import { z } from 'zod'
+import { slugify } from '@evolve/utils'
 import type { BaseRowDTO, UserUpsert, MembershipUpsert } from '../../types/sheets'
 import { toIsoDate } from './_shared'
 
-const emailSchema = z.email() // zod v4
+/**
+ * Email synthétique DÉTERMINISTE pour un membre Base sans email (typiquement un
+ * sortant). Idempotent : même nom + même club → même email à chaque sync, pour que
+ * l'upsert onConflict(email) matche et ne crée jamais de doublon. Le domaine `.local`
+ * et le préfixe `sans-email.` garantissent qu'il n'est ni invité ni sur l'allowlist
+ * → aucun magic link possible (cf. migration 026). On slugifie le full_name (fallback
+ * "anonyme" si vide) ; le clubId (UUID stable) borne l'unicité inter-clubs.
+ */
+function placeholderEmail(fullName: string, clubId: string): string {
+  const nameSlug = slugify(fullName) || 'anonyme'
+  return `sans-email.${nameSlug}@${clubId}.local`
+}
 
 /**
  * Mappe une ligne de la feuille Base (l'ancre) vers un couple user + membership.
- * L'email est la clé naturelle de matching : il est normalisé (trim + lowercase)
- * puis validé. Un email invalide fait échouer l'import de la ligne (throw).
+ * L'email est la clé naturelle de matching : il est normalisé (trim + lowercase).
+ *
+ * Principe owner « aucune perte à l'import » :
+ *   - email VIDE  → email placeholder déterministe + email_is_placeholder = true ;
+ *   - email NON VIDE (même malformé) → conservé tel quel (trim+lowercase),
+ *     email_is_placeholder = false. On ne perd pas l'info ; de toute façon un email
+ *     hors allowlist ne reçoit pas de magic link.
+ * Le mapper ne throw plus sur l'email (seul un statut inconnu reste bloquant).
  */
 export function mapBaseRowToMember(
   row: BaseRowDTO,
   clubId: string
 ): { user: UserUpsert; membership: MembershipUpsert } {
-  const email = row.email.trim().toLowerCase()
-  const parsed = emailSchema.safeParse(email)
-  if (!parsed.success) {
-    throw new Error(`Email invalide pour "${row.fullName}": "${row.email}"`)
-  }
   const fullName = row.fullName.trim()
+  const rawEmail = row.email.trim().toLowerCase()
+  const emailIsPlaceholder = rawEmail === ''
+  const email = emailIsPlaceholder ? placeholderEmail(fullName, clubId) : rawEmail
   // Décomposition heuristique : full_name reste la référence (cf. DATA_MODEL §2.2).
   // Le 1er token est traité comme nom (NOM en majuscules dans la Sheet), le reste
   // comme prénom(s). Un mononyme (un seul token) produit firstname=''.
@@ -40,6 +55,7 @@ export function mapBaseRowToMember(
       firstname,
       phone: row.phone ?? null,
       address: row.address ?? null,
+      email_is_placeholder: emailIsPlaceholder,
     },
     membership: {
       club_id: clubId,
