@@ -11,6 +11,7 @@ import { useMutation } from '@tanstack/react-query'
 import { Logo, Button, Input, FormField, ThemeToggle, Icon } from '@evolve/ui'
 import { requestMagicLink } from '@/lib/api/auth'
 import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
+import { BrandDataviz } from '@/components/auth/BrandDataviz'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // Lien d'aide → site vitrine public (existant). i18n-ready (copy FR par défaut).
@@ -32,45 +33,6 @@ function BrandStat({ value, label }: { value: string; label: string }) {
         {label}
       </span>
     </div>
-  )
-}
-
-/** Visualisation décorative « réseau de clubs » (4 nœuds reliés, 1 actif jaune). */
-function ClubNetworkViz({ ariaLabel }: { ariaLabel: string }) {
-  return (
-    <svg
-      viewBox="0 0 320 180"
-      className="mt-2 w-full max-w-[360px] rounded-[14px] border border-neutral-800 bg-neutral-900 p-2"
-      role="img"
-      aria-label={ariaLabel}
-    >
-      <g stroke="var(--color-neutral-700)" strokeWidth="1.5">
-        <line x1="70" y1="55" x2="250" y2="55" />
-        <line x1="70" y1="55" x2="70" y2="130" />
-        <line x1="70" y1="55" x2="250" y2="130" />
-        <line x1="250" y1="55" x2="70" y2="130" />
-        <line x1="250" y1="55" x2="250" y2="130" />
-        <line x1="70" y1="130" x2="250" y2="130" />
-      </g>
-      {/* nœud actif (jaune) */}
-      <circle cx="70" cy="55" r="22" fill="var(--color-brand-yellow)" />
-      {/* nœuds secondaires */}
-      {[
-        [250, 55],
-        [70, 130],
-        [250, 130],
-      ].map(([cx, cy]) => (
-        <circle
-          key={`${cx}-${cy}`}
-          cx={cx}
-          cy={cy}
-          r="18"
-          fill="var(--color-neutral-1000)"
-          stroke="var(--color-neutral-700)"
-          strokeWidth="1.5"
-        />
-      ))}
-    </svg>
   )
 }
 
@@ -123,7 +85,7 @@ export function LoginScreen() {
               {t('brand.tagline')}
             </p>
           </div>
-          <ClubNetworkViz ariaLabel={t('brand.networkVizLabel')} />
+          <BrandDataviz ariaLabel={t('brand.datavizLabel')} />
         </div>
         <div className="flex gap-10">
           <BrandStat value="4" label={t('brand.stats.clubs')} />
@@ -184,19 +146,58 @@ export function LoginScreen() {
                   />
                 )}
               </FormField>
+              {/* A4 — feedback explicite pendant l'aller-retour réseau (~1-2s).
+                  On n'utilise PAS `isLoading` (qui masque le label au profit d'un
+                  spinner seul) : on rend spinner + texte « Envoi du lien… » côte à
+                  côte pour lever toute ambiguïté, et on pilote l'état désactivé +
+                  `aria-busy` à la main. */}
               <Button
                 type="submit"
                 variant="primary"
                 size="lg"
-                isLoading={isLoading}
-                aria-label={isLoading ? t('form.submitting') : undefined}
+                disabled={isLoading}
+                aria-busy={isLoading || undefined}
+                iconLeft={
+                  isLoading ? (
+                    <svg
+                      aria-hidden="true"
+                      focusable="false"
+                      className="h-4 w-4 animate-spin motion-reduce:animate-none"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="opacity-25"
+                      />
+                      <path
+                        d="M12 2a10 10 0 0 1 10 10"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  ) : undefined
+                }
                 className="w-full"
               >
-                {t('form.submit')}
+                {isLoading ? t('form.submitting') : t('form.submit')}
               </Button>
             </form>
 
-            <p className="mt-3 text-center text-[13px] text-text-ter">{t('form.reassurance')}</p>
+            {/* A4 — statut annoncé aux lecteurs d'écran + visible : zéro ambiguïté
+                pendant l'envoi. En idle, on garde le texte de réassurance. */}
+            <p
+              className="mt-3 text-center text-[13px] text-text-ter"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {isLoading ? t('form.submittingHint') : t('form.reassurance')}
+            </p>
 
             <div className="my-6 flex items-center gap-4">
               <span className="h-px flex-1 bg-border" />

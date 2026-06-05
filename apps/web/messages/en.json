@@ -53,7 +53,7 @@
       "headlineLead": "Make visible what your club",
       "headlineHighlight": "builds together.",
       "tagline": "A single space to track the portfolio, contributions and each member's stake — with the rigor of a fund, at the scale of a circle.",
-      "networkVizLabel": "Diagram of a network of connected clubs",
+      "datavizLabel": "Abstract illustration of a portfolio: valuation curve, allocation and history",
       "stats": {
         "clubs": "Clubs",
         "members": "Members",
@@ -75,7 +75,8 @@
       "emailLabel": "Email",
       "emailPlaceholder": "lea@cercle-arago.fr",
       "submit": "Send my link →",
-      "submitting": "Sending…",
+      "submitting": "Sending link…",
+      "submittingHint": "Preparing your sign-in link, one moment…",
       "reassurance": "Link valid for 15 min. No password, no spam.",
       "invalidEmail": "Invalid email address."
     },

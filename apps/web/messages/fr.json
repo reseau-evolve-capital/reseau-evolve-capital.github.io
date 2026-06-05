@@ -53,7 +53,7 @@
       "headlineLead": "Rends visible ce que ton club",
       "headlineHighlight": "construit ensemble.",
       "tagline": "Un espace unique pour suivre le portefeuille, les cotisations et la quote-part de chaque membre — avec la rigueur d'un fonds, à l'échelle d'un cercle.",
-      "networkVizLabel": "Schéma d'un réseau de clubs connectés",
+      "datavizLabel": "Illustration abstraite d'un portefeuille : courbe de valorisation, répartition et historique",
       "stats": {
         "clubs": "Clubs",
         "members": "Membres",
@@ -75,7 +75,8 @@
       "emailLabel": "Email",
       "emailPlaceholder": "lea@cercle-arago.fr",
       "submit": "Recevoir mon lien →",
-      "submitting": "Envoi en cours…",
+      "submitting": "Envoi du lien…",
+      "submittingHint": "On prépare ton lien de connexion, un instant…",
       "reassurance": "Lien valable 15 min. Aucun mot de passe, aucun spam.",
       "invalidEmail": "Adresse email invalide."
     },
