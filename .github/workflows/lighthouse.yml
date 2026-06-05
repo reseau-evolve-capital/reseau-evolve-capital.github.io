@@ -1,0 +1,74 @@
+name: Lighthouse CI
+
+# Audit qualité (perf / a11y / best-practices / SEO) sur les PAGES PUBLIQUES
+# sans auth : /login et une route 404 (page introuvable). Les pages
+# authentifiées (/dashboard, /portfolio, /contributions, /admin) sont hors
+# périmètre — un login Lighthouse en CI est fragile (magic link) et toute
+# route protégée redirige vers /login, ce qui fausserait les scores. Suivi V1.
+# L'a11y est par ailleurs déjà couverte par jest-axe (packages/ui) et
+# @axe-core/playwright (apps/web/playwright/a11y.spec.ts).
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/monorepo]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lighthouse:
+    name: Lighthouse CI (pages publiques)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Polices commerciales MADE Tommy Soft : exclues du dépôt par licence (repo
+      # PUBLIC). ensure-fonts garantit la présence des .otf (stubs vides →
+      # fallback Plus Jakarta Sans au runtime) pour que le build soit
+      # reproductible. Même pattern que le job `build` de ci.yml.
+      - name: Garantir les polices (ensure-fonts)
+        run: node scripts/ensure-fonts.mjs
+
+      # Build de l'app membre avec les mêmes env placeholders que le job build.
+      # Routes dynamiques (server-rendered) → aucun appel Supabase au build.
+      - name: Build (apps/web)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_SITE_URL: https://example.com
+        run: pnpm turbo build --filter=@evolve/web
+
+      # lhci autorun : démarre `next start -p 3001` (startServerCommand de
+      # lighthouserc.json), collecte /login + 404, applique les seuils,
+      # écrit les rapports dans ./lh-reports.
+      - name: Lighthouse CI (collect + assert)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_SITE_URL: https://example.com
+        run: pnpm lighthouse
+
+      - name: Upload des rapports Lighthouse (artefact)
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: lighthouse-reports
+          path: ./lh-reports
+          if-no-files-found: warn
