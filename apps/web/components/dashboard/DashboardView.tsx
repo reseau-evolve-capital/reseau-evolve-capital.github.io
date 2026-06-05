@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -27,6 +27,7 @@ const STALE_MS = 2 * 60 * 60 * 1000 // 2h
 export function DashboardView({ initialData }: { initialData: DashboardData | null }) {
   const t = useTranslations('dashboard')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
   const toast = useToast()
   // Tous les hooks AVANT tout early return (règle des hooks React) : `data` peut être null
   // sur les états error/empty, donc useSyncStatus reçoit clubId nullable de façon sûre.
@@ -109,13 +110,14 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
       )}
       {stale && data.syncedAt && (
         <p className="text-[12px] text-text-ter">
-          {t('stale', { time: formatRelativeTime(data.syncedAt) })}
+          {t('stale', { time: formatRelativeTime(data.syncedAt, undefined, locale) })}
         </p>
       )}
       {/* Le statut de sync est déjà porté par la topbar du shell sur desktop. */}
       <div className="md:hidden">
         <SyncBanner
           syncedAt={data.syncedAt}
+          locale={locale}
           userRole={data.member.role}
           isSyncing={sync.isPending}
           onSync={() => sync.mutate()}

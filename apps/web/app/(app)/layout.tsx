@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { cookies } from 'next/headers'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getLocale } from 'next-intl/server'
 import { createServerClient } from '@evolve/data'
 import { formatDateLong, formatRelativeTime } from '@evolve/utils'
 import type { SidebarClub } from '@evolve/ui'
@@ -17,6 +17,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)
   const t = await getTranslations('nav.shell')
+  const locale = await getLocale()
 
   const {
     data: { user: authUser },
@@ -64,7 +65,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         .join(' · ')
 
       clubActif = { name: club.name, meta: meta || undefined }
-      if (club.synced_at) syncLabel = t('syncedAt', { time: formatRelativeTime(club.synced_at) })
+      if (club.synced_at)
+        syncLabel = t('syncedAt', { time: formatRelativeTime(club.synced_at, undefined, locale) })
     }
   }
 

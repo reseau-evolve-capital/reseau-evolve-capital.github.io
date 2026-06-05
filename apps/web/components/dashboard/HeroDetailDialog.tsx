@@ -9,7 +9,7 @@ import * as React from 'react'
 
 import Link from 'next/link'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 import * as Dialog from '@radix-ui/react-dialog'
 
@@ -36,6 +36,7 @@ export function HeroDetailDialog({
 }: HeroDetailDialogProps) {
   const t = useTranslations('dashboard')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -59,7 +60,7 @@ export function HeroDetailDialog({
           </div>
           {syncedAt && (
             <p className="mt-2 text-[12px] text-text-ter">
-              {t('detail.lastSync', { time: formatRelativeTime(syncedAt) })}
+              {t('detail.lastSync', { time: formatRelativeTime(syncedAt, undefined, locale) })}
             </p>
           )}
           <Link

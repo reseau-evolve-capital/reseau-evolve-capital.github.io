@@ -15,7 +15,7 @@
 import { useMemo, useRef, useState } from 'react'
 
 import { useQueryClient } from '@tanstack/react-query'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 import { useQueryState, parseAsStringEnum, parseAsString } from 'nuqs'
 
 import {
@@ -61,6 +61,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   // Tous les hooks AVANT tout early return (règle des hooks React).
   const t = useTranslations('portfolio')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
   const toast = useToast()
   const { data, isError } = usePortfolio(initialData)
   const queryClient = useQueryClient()
@@ -185,6 +186,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
       <div className="md:hidden">
         <SyncBanner
           syncedAt={data.syncedAt}
+          locale={locale}
           userRole={data.userRole}
           isSyncing={sync.isPending}
           onSync={() => sync.mutate()}
@@ -277,7 +279,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
               {t('lastSync')}
             </span>
             <span className="text-[13px] text-text-sec [font-feature-settings:'tnum']">
-              {data.syncedAt ? formatRelativeTime(data.syncedAt) : '—'}
+              {data.syncedAt ? formatRelativeTime(data.syncedAt, undefined, locale) : '—'}
             </span>
           </div>
         </aside>
