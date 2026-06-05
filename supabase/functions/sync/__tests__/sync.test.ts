@@ -448,14 +448,23 @@ function sameKey(a: Row, b: Row, keys: string[]): boolean {
  * clubs.last_error_email_sent_at, géré hors-sync par NTF-003) sont PRÉSERVÉES.
  * (Un remplacement complet les effacerait à tort à chaque sync.)
  */
-function upsertRows(table: Row[], incoming: Row[], onConflict: string): void {
+function upsertRows(
+  table: Row[],
+  incoming: Row[],
+  onConflict: string,
+  insertDefaults: Row = {}
+): void {
   const keys = onConflict.split(',').map((k) => k.trim())
   for (const row of incoming) {
     const idx = table.findIndex((existing) => sameKey(existing, row, keys))
     if (idx >= 0) {
+      // MERGE (UPDATE ON CONFLICT) : seules les colonnes fournies sont écrites — l'existant
+      // (ex. role d'un network_admin / dirigeant) est préservé si absent du payload.
       table[idx] = { ...table[idx], ...row }
     } else {
-      table.push({ ...row })
+      // INSERT : applique les DEFAULT de colonnes que Postgres poserait (ex. memberships.role
+      // = 'member'), que le payload n'a pas fournis. La feuille Base ne pose plus le rôle.
+      table.push({ ...insertDefaults, ...row })
     }
   }
 }
@@ -477,6 +486,8 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
   // calcule le résultat au moment du `await` (then).
   class QueryBuilder implements PromiseLike<{ data: unknown; error: unknown }> {
     private filters: Array<{ col: string; val: unknown }> = []
+    private neqFilters: Array<{ col: string; val: unknown }> = []
+    private ltFilters: Array<{ col: string; val: unknown }> = []
     private inFilter: { col: string; vals: unknown[] } | null = null
     private op: 'select' | 'upsert' | 'insert' | 'delete' | 'update' = 'select'
     private payload: Row[] = []
@@ -492,6 +503,14 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
     }
     eq(col: string, val: unknown): this {
       this.filters.push({ col, val })
+      return this
+    }
+    neq(col: string, val: unknown): this {
+      this.neqFilters.push({ col, val })
+      return this
+    }
+    lt(col: string, val: unknown): this {
+      this.ltFilters.push({ col, val })
       return this
     }
     in(col: string, vals: unknown[]): this {
@@ -523,6 +542,16 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
       for (const f of this.filters) {
         if (r[f.col] !== f.val) return false
       }
+      for (const f of this.neqFilters) {
+        if (r[f.col] === f.val) return false
+      }
+      for (const f of this.ltFilters) {
+        // Comparaison < générique (timestamps ISO comparables lexicographiquement,
+        // nombres comparables aussi). Une cellule null/undefined ne matche jamais « < ».
+        const cell = r[f.col]
+        if (cell == null) return false
+        if (!((cell as never) < (f.val as never))) return false
+      }
       if (this.inFilter && !this.inFilter.vals.includes(r[this.inFilter.col])) return false
       return true
     }
@@ -537,7 +566,12 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
         case 'select':
           return { data: this.computeSelectData(), error: null }
         case 'upsert':
-          upsertRows(table, this.withUserIds(this.payload), this.onConflict)
+          upsertRows(
+            table,
+            this.withUserIds(this.payload),
+            this.onConflict,
+            this.table === 'memberships' ? { role: 'member' } : {}
+          )
           return { data: null, error: null }
         case 'insert':
           for (const row of this.withUserIds(this.payload)) table.push({ ...row })
@@ -559,10 +593,22 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
       }
     }
 
-    /** users.upsert : assigne un id déterministe par email (simule la séquence DB). */
+    /**
+     * Assigne un id déterministe aux lignes écrites quand la DB le ferait via DEFAULT :
+     *  - users     : id dérivé de l'email ;
+     *  - memberships : id dérivé de (user_id, club_id) — sinon le lookup par nom (réconciliation
+     *    des rôles) ne pourrait jamais retrouver le membership à promouvoir (id manquant).
+     */
     private withUserIds(rows: Row[]): Row[] {
-      if (this.table !== 'users') return rows
-      return rows.map((r) => (r.id ? r : { ...r, id: userIdFromEmail(String(r.email)) }))
+      if (this.table === 'users') {
+        return rows.map((r) => (r.id ? r : { ...r, id: userIdFromEmail(String(r.email)) }))
+      }
+      if (this.table === 'memberships') {
+        return rows.map((r) =>
+          r.id ? r : { ...r, id: `membership-${String(r.user_id)}-${String(r.club_id)}` }
+        )
+      }
+      return rows
     }
 
     /** Calcule le data d'un select, avec jointure users (FK désambiguïsée) sur memberships. */
@@ -896,6 +942,202 @@ Deno.test('handler : ordre impératif → PARAMETRAGES avant Base', async () => 
   const idxBase = order.indexOf('Base')
   assert(idxParam >= 0 && idxBase >= 0)
   assert(idxParam < idxBase, 'PARAMETRAGES doit précéder Base')
+})
+
+// ===========================================================================
+// 3bis. RÉCONCILIATION DES RÔLES (B1) — dérivés de PARAMETRAGES
+// ===========================================================================
+
+// En-têtes Base réutilisés pour les fixtures de ce bloc.
+const BASE_HEADER = [
+  'Nom',
+  'Email',
+  'Entrée',
+  'Sortie',
+  'Statut',
+  'Demande',
+  'Docs',
+  'Tel',
+  'Adresse',
+  'Montant',
+]
+
+// PARAMETRAGES enrichi des dirigeants (libellés volontairement « sales » : accents/casse).
+const PARAMS_WITH_OFFICERS: string[][] = [
+  ['Paramètre', 'Valeur'],
+  ['Nom du club', 'Évolve Capital'],
+  ['Cotisation min', '100'],
+  ['Président(e)', 'AGBEHONOU Edem'],
+  ['Trésorier(e)', 'HOUESSOU Valentino'],
+]
+
+// Base contenant les deux dirigeants + un membre simple, tous actifs.
+const BASE_WITH_OFFICERS: string[][] = [
+  BASE_HEADER,
+  ['AGBEHONOU Edem', 'edem@club.fr', '01/06/2018', '', 'Membre actif', '', '', '', '', ''],
+  ['HOUESSOU Valentino', 'valentino@club.fr', '01/06/2018', '', 'Membre actif', '', '', '', '', ''],
+  ['LASKARI Fabien', 'fabien@club.fr', '01/06/2018', '', 'Membre actif', '', '', '', '', ''],
+]
+
+function roleByFullName(store: Store, fullName: string): string | undefined {
+  const u = store.users.find((x) => x.full_name === fullName)
+  if (!u) return undefined
+  const m = store.memberships.find((x) => x.user_id === u.id && x.club_id === CLUB_ID)
+  return m?.role as string | undefined
+}
+
+// Test B1 a — promotion : Président/Trésorier dérivés, les autres restent 'member'.
+Deno.test('handler : rôles dérivés de PARAMETRAGES (président/trésorier promus)', async () => {
+  const store = emptyStore(true)
+  const handler = buildHandler(store, {
+    overrides: { PARAMETRAGES: PARAMS_WITH_OFFICERS, Base: BASE_WITH_OFFICERS },
+  })
+  const res = await handler(syncRequest(CLUB_ID))
+  assertEquals(res.status, 200)
+  const body = (await res.json()) as SyncResponseBody
+  assertEquals(body.success, true)
+  assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+  assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'treasurer')
+  assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'member')
+})
+
+// Test B1 b — idempotence : un 2e sync produit les mêmes rôles.
+Deno.test('handler : rôles dérivés idempotents (re-sync = mêmes rôles)', async () => {
+  const store = emptyStore(true)
+  const handler = buildHandler(store, {
+    overrides: { PARAMETRAGES: PARAMS_WITH_OFFICERS, Base: BASE_WITH_OFFICERS },
+  })
+  await handler(syncRequest(CLUB_ID))
+  await handler(syncRequest(CLUB_ID))
+  assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+  assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'treasurer')
+  assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'member')
+})
+
+// Test B1 c — un ex-dirigeant disparu de PARAMETRAGES redevient 'member' au sync suivant.
+Deno.test('handler : ex-dirigeant retiré de PARAMETRAGES redevient member', async () => {
+  const store = emptyStore(true)
+  // 1er sync : Valentino est trésorier.
+  const handler1 = buildHandler(store, {
+    overrides: { PARAMETRAGES: PARAMS_WITH_OFFICERS, Base: BASE_WITH_OFFICERS },
+  })
+  await handler1(syncRequest(CLUB_ID))
+  assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'treasurer')
+  // 2e sync : plus de trésorier dans PARAMETRAGES → Valentino doit retomber 'member'.
+  const paramsNoTreasurer: string[][] = [
+    ['Paramètre', 'Valeur'],
+    ['Nom du club', 'Évolve Capital'],
+    ['Cotisation min', '100'],
+    ['Président(e)', 'AGBEHONOU Edem'],
+  ]
+  const handler2 = buildHandler(store, {
+    overrides: { PARAMETRAGES: paramsNoTreasurer, Base: BASE_WITH_OFFICERS },
+  })
+  await handler2(syncRequest(CLUB_ID))
+  assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+  assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'member')
+})
+
+// Test B1 d — network_admin (hors feuille Base) JAMAIS écrasé par la réconciliation.
+Deno.test(
+  'handler : network_admin préservé (jamais rétrogradé par la réconciliation)',
+  async () => {
+    const store = emptyStore(true)
+    // Seed d'un network_admin existant, hors feuille Base.
+    store.users.push({ id: 'user-admin', email: 'admin@club.fr', full_name: 'ADMIN Réseau' })
+    store.memberships.push({
+      id: 'm-admin',
+      user_id: 'user-admin',
+      club_id: CLUB_ID,
+      role: 'network_admin',
+      joined_at: '2020-01-01',
+    })
+    const handler = buildHandler(store, {
+      overrides: { PARAMETRAGES: PARAMS_WITH_OFFICERS, Base: BASE_WITH_OFFICERS },
+    })
+    await handler(syncRequest(CLUB_ID))
+    // Le compte admin n'est pas dans Base → non touché par l'upsert Base ni par la réconciliation.
+    assertEquals(roleByFullName(store, 'ADMIN Réseau'), 'network_admin')
+  }
+)
+
+// Test B1 d' — network_admin qui EST AUSSI membre de la feuille Base : préservé.
+// (Régression réelle observée en live : l'upsert Base écrasait son rôle en 'member'.)
+Deno.test(
+  'handler : network_admin membre de la feuille Base préservé (non rétrogradé par l’upsert Base)',
+  async () => {
+    const store = emptyStore(true)
+    // Fabien est dans BASE_WITH_OFFICERS (fabien@club.fr) mais a été élevé network_admin.
+    // On pré-seede SON membership avec un id/clé alignés sur ce que le mock génère, pour que
+    // l'upsert Base le retrouve (onConflict user_id,club_id) et le MERGE sans toucher le rôle.
+    const fabienId = userIdFromEmail('fabien@club.fr')
+    store.memberships.push({
+      id: `membership-${fabienId}-${CLUB_ID}`,
+      user_id: fabienId,
+      club_id: CLUB_ID,
+      role: 'network_admin',
+      joined_at: '2018-06-01',
+    })
+    const handler = buildHandler(store, {
+      overrides: { PARAMETRAGES: PARAMS_WITH_OFFICERS, Base: BASE_WITH_OFFICERS },
+    })
+    await handler(syncRequest(CLUB_ID))
+    // Base ne pose plus le rôle → Fabien reste network_admin ; les dirigeants sont bien promus.
+    assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'network_admin')
+    assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+    assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'treasurer')
+  }
+)
+
+// Test B1 e — nom de dirigeant introuvable → warning (pas d'erreur dure, sync OK).
+Deno.test('handler : dirigeant introuvable → warning, success reste true', async () => {
+  const store = emptyStore(true)
+  const paramsBadName: string[][] = [
+    ['Paramètre', 'Valeur'],
+    ['Nom du club', 'Évolve Capital'],
+    ['Cotisation min', '100'],
+    ['Président(e)', 'INCONNU Personne'],
+  ]
+  const handler = buildHandler(store, {
+    overrides: { PARAMETRAGES: paramsBadName, Base: BASE_WITH_OFFICERS },
+  })
+  const res = await handler(syncRequest(CLUB_ID))
+  const body = (await res.json()) as SyncResponseBody
+  assertEquals(body.success, true)
+  assertEquals(body.errors.length, 0)
+  assert(body.warnings.some((w) => w.includes('INCONNU Personne')))
+})
+
+// ===========================================================================
+// 3ter. POSITIONS FANTÔMES (B2) — désactivation des absentes de la matrice
+// ===========================================================================
+
+// Test B2 — une position en base mais absente de la matrice est désactivée (is_active=false).
+Deno.test('handler : position fantôme (absente de la matrice) désactivée', async () => {
+  const store = emptyStore(true)
+  // Pré-seed d'une position « démo » ANCIENNE encore active, absente de la matrice courante.
+  store.positions.push({
+    id: 'pos-ghost',
+    club_id: CLUB_ID,
+    symbol: 'GHOST',
+    quantity: 1,
+    is_active: true,
+    synced_at: '2000-01-01T00:00:00.000Z', // antérieur au run → doit être désactivée
+  })
+  const handler = buildHandler(store)
+  const res = await handler(syncRequest(CLUB_ID))
+  assertEquals(res.status, 200)
+  const body = (await res.json()) as SyncResponseBody
+  assertEquals(body.success, true)
+  // AAPL (matrice) actif ; GHOST (absent) désactivé — l'historique est conservé (pas de delete).
+  const aapl = store.positions.find((p) => p.symbol === 'AAPL')
+  const ghost = store.positions.find((p) => p.symbol === 'GHOST')
+  assert(aapl !== undefined)
+  assertEquals(aapl.is_active, true)
+  assert(ghost !== undefined)
+  assertEquals(ghost.is_active, false)
+  // Une seule position ACTIVE reste (AAPL).
+  assertEquals(store.positions.filter((p) => p.is_active === true).length, 1)
 })
 
 // ===========================================================================

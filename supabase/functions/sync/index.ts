@@ -29,7 +29,12 @@ import {
   parseCotisations,
 } from './sheetParsers.ts'
 
-import { mapParametragesToClub } from '../../../packages/data/src/sheets/mappers/parametrages.mapper.ts'
+import {
+  mapParametragesToClub,
+  mapParametragesToOfficers,
+} from '../../../packages/data/src/sheets/mappers/parametrages.mapper.ts'
+import type { ClubOfficers } from '../../../packages/data/src/sheets/mappers/parametrages.mapper.ts'
+import { normalizeName } from '../../../packages/data/src/sheets/normalizeName.ts'
 import { mapBaseRowToMember } from '../../../packages/data/src/sheets/mappers/base.mapper.ts'
 import { resolveBaseEmail } from '../../../packages/data/src/sheets/mappers/baseEmailResolution.ts'
 import { mapPortefeuilleRows } from '../../../packages/data/src/sheets/mappers/portefeuille.mapper.ts'
@@ -167,6 +172,10 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     const syncedSheets: string[] = []
     const errors: string[] = []
     const warnings: string[] = []
+    // Dirigeants extraits de PARAMETRAGES (capturés à l'étape 1) — consommés APRÈS l'import
+    // Base par la réconciliation des rôles. Vide par défaut : si PARAMETRAGES échoue, la
+    // réconciliation ne touche aucun rôle (les memberships restent tous 'member').
+    let officers: ClubOfficers = { presidentName: null, treasurerName: null }
     const snapshots: Record<
       string,
       { status: SnapshotStatus; checksum: string; row_count: number }
@@ -206,6 +215,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       const raw = await deps.readSheet(sheetId, 'PARAMETRAGES')
       const rows = parseParametrages(raw)
       const clubUpsert = mapParametragesToClub(rows, sheetId)
+      // Capture des dirigeants pour la réconciliation des rôles (étape post-Base).
+      officers = mapParametragesToOfficers(rows)
       const { error } = await supabase
         .from('clubs')
         .upsert({ id: clubId, ...clubUpsert }, { onConflict: 'id' })
@@ -311,6 +322,101 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       )
     })
 
+    // 2bis) RÉCONCILIATION DES RÔLES — dérive president/treasurer depuis PARAMETRAGES.
+    // ---------------------------------------------------------------------------
+    // POURQUOI ICI : l'import Base (étape 2) vient d'upserter TOUS les memberships avec
+    // role='member' (cf. base.mapper). PARAMETRAGES (étape 1) liste les dirigeants par nom.
+    // On rapproche les noms (normalisés) des dirigeants vers users.full_name pour promouvoir
+    // le bon membership. La Base étant importée AVANT, les memberships existent déjà.
+    //
+    // IDEMPOTENCE : l'upsert Base ne touche PLUS le rôle (préservé sur update). C'est ici la
+    // seule autorité de gouvernance : SI au moins un dirigeant est résolu depuis PARAMETRAGES,
+    // on réinitialise tout president/treasurer du club à 'member' puis on re-promeut les
+    // dirigeants courants. Un ex-dirigeant disparu de PARAMETRAGES redevient donc 'member',
+    // un membre normal reste 'member'. Re-sync = mêmes rôles.
+    //
+    // FAIL-SAFE : si AUCUN dirigeant n'est résolu (PARAMETRAGES vide/malformée), on ne réinitialise
+    // RIEN — on ne wipe jamais le staff sur une source absente.
+    //
+    // SÉCURITÉ : le reset ne porte QUE sur president/treasurer (`.in('role', [...])`) — un
+    // 'network_admin' (rôle global hors PARAMETRAGES, qu'il soit ou non membre de la feuille
+    // Base) n'est JAMAIS rétrogradé. La promotion garde aussi `.neq('role','network_admin')`.
+    //
+    // ROBUSTESSE : best-effort. Un nom introuvable → warning (jamais errors[], pour ne pas
+    // bloquer le refresh de la MV ni faire success=false). Une exception inattendue est
+    // capturée et transformée en warning : la cohérence des rôles ne doit pas casser la sync.
+    if (errors.length === 0 || syncedSheets.includes('Base')) {
+      try {
+        const lookups = await loadMembershipLookups(supabase, clubId)
+        // Index nom normalisé → membership_id. En cas d'homonymes (même full_name
+        // normalisé), le dernier gagne : cas non géré finement en V0 (warning si ambigu).
+        const byName = new Map<string, string>()
+        const ambiguous = new Set<string>()
+        for (const m of lookups) {
+          const key = normalizeName(m.full_name)
+          if (key === '') continue
+          if (byName.has(key)) ambiguous.add(key)
+          byName.set(key, m.id)
+        }
+
+        // Cibles depuis PARAMETRAGES (source de vérité gouvernance).
+        const targets: Array<{ role: 'president' | 'treasurer'; name: string }> = []
+        if (officers.presidentName)
+          targets.push({ role: 'president', name: officers.presidentName })
+        if (officers.treasurerName)
+          targets.push({ role: 'treasurer', name: officers.treasurerName })
+
+        // Résolution nom → membership. Introuvables/ambigus → warning (best-effort, jamais bloquant).
+        const matched: Array<{ id: string; role: 'president' | 'treasurer' }> = []
+        for (const t of targets) {
+          const key = normalizeName(t.name)
+          const membershipId = byName.get(key)
+          if (!membershipId) {
+            warnings.push(
+              `Rôles: ${t.role} introuvable pour "${t.name}" (aucun membre ne correspond).`
+            )
+            continue
+          }
+          if (ambiguous.has(key)) {
+            warnings.push(
+              `Rôles: "${t.name}" est ambigu (homonymes) — ${t.role} appliqué au dernier membre trouvé.`
+            )
+          }
+          matched.push({ id: membershipId, role: t.role })
+        }
+
+        // RÉTROGRADATION fail-safe : on ne réinitialise les rôles dirigeants QUE si au moins un
+        // dirigeant courant a été identifié (PARAMETRAGES exploitable). Si AUCUN n'est résolu
+        // (feuille vide/malformée), on NE TOUCHE À RIEN — jamais de wipe du staff sur source
+        // absente. On ne rétrograde QUE president/treasurer ; network_admin et member intacts.
+        if (matched.length > 0) {
+          const { error: resetErr } = await supabase
+            .from('memberships')
+            .update({ role: 'member' })
+            .eq('club_id', clubId)
+            .in('role', ['president', 'treasurer'])
+          if (resetErr) {
+            warnings.push(`Rôles: échec réinitialisation des dirigeants: ${resetErr.message}`)
+          }
+        }
+
+        // PROMOTION des dirigeants courants (jamais sur un network_admin : garde .neq).
+        for (const m of matched) {
+          const { error: roleErr } = await supabase
+            .from('memberships')
+            .update({ role: m.role })
+            .eq('id', m.id)
+            .neq('role', 'network_admin')
+          if (roleErr) {
+            warnings.push(`Rôles: échec MAJ ${m.role} (membership ${m.id}): ${roleErr.message}`)
+          }
+        }
+      } catch (e) {
+        // Best-effort : aucune exception ne doit faire échouer la sync.
+        warnings.push(`Rôles: réconciliation ignorée (${errMsg(e)}).`)
+      }
+    }
+
     // 3) Portefeuille → positions (les lignes d'agrégat vont dans le snapshot, pas dans positions)
     await runSheet('Portefeuille', async () => {
       // Onglet réel de la matrice : « POSITIONS » (l'étiquette de snapshot reste « Portefeuille »).
@@ -329,6 +435,21 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
           .from('positions')
           .upsert(positionsWithMeta, { onConflict: 'club_id,symbol' })
         if (error) throw new Error(`upsert positions: ${error.message}`)
+      }
+      // RÉCONCILIATION — désactive les positions FANTÔMES : celles présentes en base mais
+      // ABSENTES de la matrice courante. Les lignes vivantes viennent d'être (ré)upsertées
+      // avec ce `synced_at` (constant du run) ; toute position du club encore active avec un
+      // synced_at ANTÉRIEUR n'a pas été revue → on la désactive (is_active=false) plutôt que
+      // de la supprimer (on conserve l'historique). Idempotent : un re-sync ne réactive rien.
+      // La lecture portfolio filtre déjà .eq('is_active', true) → les fantômes disparaissent.
+      {
+        const { error: deactErr } = await supabase
+          .from('positions')
+          .update({ is_active: false })
+          .eq('club_id', clubId)
+          .eq('is_active', true)
+          .lt('synced_at', synced_at)
+        if (deactErr) throw new Error(`deactivate positions: ${deactErr.message}`)
       }
       const status: SnapshotStatus = droppedPositions.length > 0 ? 'partial' : 'success'
       const note =
