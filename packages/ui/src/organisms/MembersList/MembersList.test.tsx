@@ -141,6 +141,64 @@ describe('MembersList — colonne Accès (ADM-007)', () => {
   })
 })
 
+describe('MembersList — email placeholder (membre importé sans email)', () => {
+  const WITH_PLACEHOLDER: MemberRow[] = [
+    {
+      id: '9',
+      fullName: 'ZZZ Sortant',
+      email: 'sans-email.zzz@club.local',
+      emailIsPlaceholder: true,
+      role: 'member',
+      totalContributed: 5000, // 1re ligne (tri desc)
+      detentionPct: 0.2,
+      monthsCount: 30,
+      status: null,
+      accessStatus: 'active',
+    },
+    ...MEMBERS,
+  ]
+
+  it('masque le placeholder et affiche « Email manquant »', () => {
+    render(<MembersList members={WITH_PLACEHOLDER} />)
+    expect(screen.getByText('Email manquant')).toBeInTheDocument()
+    expect(screen.queryByText('sans-email.zzz@club.local')).toBeNull()
+  })
+
+  it('respecte le libellé i18n du placeholder manquant', () => {
+    render(<MembersList members={WITH_PLACEHOLDER} labels={{ emailMissing: 'Missing email' }} />)
+    expect(screen.getByText('Missing email')).toBeInTheDocument()
+  })
+
+  it('propose « Renseigner l’email » seulement pour les placeholders', async () => {
+    const u = userEvent.setup()
+    const onEdit = vi.fn()
+    render(<MembersList members={WITH_PLACEHOLDER} onEditMemberEmail={onEdit} />)
+    const triggers = screen.getAllByRole('button', { name: 'Actions' })
+    // 1re ligne = placeholder → l'entrée existe
+    await u.click(triggers[0]!)
+    await u.click(await screen.findByRole('menuitem', { name: /Renseigner l'email/i }))
+    expect(onEdit).toHaveBeenCalledTimes(1)
+    expect(onEdit.mock.calls[0]![0]).toMatchObject({ fullName: 'ZZZ Sortant' })
+  })
+
+  it('PAS d’entrée « Renseigner l’email » pour un membre avec email réel', async () => {
+    const u = userEvent.setup()
+    render(<MembersList members={WITH_PLACEHOLDER} onEditMemberEmail={() => {}} />)
+    const triggers = screen.getAllByRole('button', { name: 'Actions' })
+    // 2e ligne (total 4200) = AFOUDAH, email réel → pas d'entrée d'édition email
+    await u.click(triggers[1]!)
+    await screen.findByRole('menu')
+    expect(screen.queryByRole('menuitem', { name: /Renseigner l'email/i })).toBeNull()
+  })
+
+  it('pas de violations axe avec un placeholder', async () => {
+    const { container } = render(
+      <MembersList members={WITH_PLACEHOLDER} onEditMemberEmail={() => {}} />
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
 describe('MembersList — membres sortis', () => {
   const WITH_LEFT: MemberRow[] = [
     ...MEMBERS,

@@ -29,6 +29,12 @@ export interface MemberRow {
   id: string
   fullName: string
   email: string
+  /**
+   * true = l'email est un placeholder synthétique (membre importé sans email, cf. migration 026).
+   * Dans ce cas la table masque l'email et affiche « Email manquant » + propose de le renseigner.
+   * Défaut `false` si omis (rétro-compatible).
+   */
+  emailIsPlaceholder?: boolean
   role: MemberRoleKey
   totalContributed: number
   detentionPct: number // fraction 0..1
@@ -80,6 +86,8 @@ export interface MembersListLabels {
   leftBadge?: string
   /** Texte « Sorti le {date} » sous le nom d'un membre sorti. `date` est déjà formatée. */
   leftSince?: (date: string) => string
+  /** Texte affiché à la place de l'email quand c'est un placeholder (défaut FR « Email manquant »). */
+  emailMissing?: string
 }
 
 export interface MembersListProps {
@@ -95,6 +103,11 @@ export interface MembersListProps {
   onUnlockMember?: (member: MemberRow) => void
   /** Action « Voir la fiche » d'un membre (ADM-007). */
   onViewMember?: (member: MemberRow) => void
+  /**
+   * Action « Renseigner l'email » d'un membre. Si fournie, l'entrée n'apparaît dans le
+   * menu que pour les membres dont l'email est un placeholder (`emailIsPlaceholder`).
+   */
+  onEditMemberEmail?: (member: MemberRow) => void
   /** Chaînes user-facing/a11y (i18n). Tout défaut est FR. */
   labels?: MembersListLabels
 }
@@ -137,6 +150,7 @@ const DEFAULT_COLUMN_LABELS: MembersListColumnLabels = {
 const DEFAULT_EMPTY_TITLE = 'Aucun membre'
 const DEFAULT_EMPTY_DESCRIPTION = "Ce club n'a pas encore de membre correspondant à ce filtre."
 const DEFAULT_TABLE_LABEL = 'Membres du club'
+const DEFAULT_EMAIL_MISSING = 'Email manquant'
 const DEFAULT_LEFT_BADGE = 'Sorti'
 const defaultLeftSince: NonNullable<MembersListLabels['leftSince']> = (date) => `Sorti le ${date}`
 
@@ -158,6 +172,8 @@ interface ActionsConfig {
   onLock?: (member: MemberRow) => void
   onUnlock?: (member: MemberRow) => void
   onViewProfile?: (member: MemberRow) => void
+  /** Édition de l'email : n'est proposée que pour les membres au email placeholder. */
+  onEditEmail?: (member: MemberRow) => void
 }
 
 /** Libellés liés au statut « membre sorti ». */
@@ -174,6 +190,7 @@ function buildColumns(
   accessLabels: Pick<AccessBadgeLabels, 'active' | 'locked'>,
   detentionBarLabel: (name: string) => string,
   leftLabels: LeftLabels,
+  emailMissingLabel: string,
   actions: ActionsConfig
 ) {
   const baseColumns = [
@@ -197,7 +214,16 @@ function buildColumns(
                 </Badge>
               )}
             </div>
-            <span className="text-[12px] text-text-ter">{c.row.original.email}</span>
+            {c.row.original.emailIsPlaceholder ? (
+              // Email placeholder (membre importé sans email) : on masque le synthétique et on
+              // signale clairement l'absence (token text-ter atténué + icône, jamais le rouge brand).
+              <span className="inline-flex items-center gap-1 text-[12px] text-text-ter italic">
+                <Icon name="MailX" size={16} className="h-3.5 w-3.5" aria-hidden="true" />
+                {emailMissingLabel}
+              </span>
+            ) : (
+              <span className="text-[12px] text-text-ter">{c.row.original.email}</span>
+            )}
             {left && leaveAt && (
               <span className="text-[12px] text-text-ter">
                 {leftLabels.since(formatDate(leaveAt))}
@@ -268,6 +294,12 @@ function buildColumns(
             onViewProfile={
               actions.onViewProfile ? () => actions.onViewProfile?.(c.row.original) : undefined
             }
+            // « Renseigner l'email » : uniquement pour les membres au email placeholder.
+            onEditEmail={
+              actions.onEditEmail && c.row.original.emailIsPlaceholder
+                ? () => actions.onEditEmail?.(c.row.original)
+                : undefined
+            }
           />
         </div>
       ),
@@ -286,6 +318,7 @@ export function MembersList({
   onLockMember,
   onUnlockMember,
   onViewMember,
+  onEditMemberEmail,
   labels,
 }: MembersListProps) {
   const [sorting, setSorting] = React.useState<SortingState>([
@@ -308,6 +341,7 @@ export function MembersList({
   const detentionBarLabel = labels?.detentionBarLabel ?? defaultDetentionBarLabel
   const sortLabel = labels?.sortLabel ?? defaultSortLabel
   const tableLabel = labels?.tableLabel ?? DEFAULT_TABLE_LABEL
+  const emailMissingLabel = labels?.emailMissing ?? DEFAULT_EMAIL_MISSING
   const leftLabels = React.useMemo<LeftLabels>(
     () => ({
       badge: labels?.leftBadge ?? DEFAULT_LEFT_BADGE,
@@ -316,9 +350,11 @@ export function MembersList({
     [labels?.leftBadge, labels?.leftSince]
   )
 
-  // Le menu d'actions n'apparaît que si au moins un callback d'accès est fourni
+  // Le menu d'actions n'apparaît que si au moins un callback d'action est fourni
   // (rétro-compatibilité : sans callbacks, on garde la pastille sans le menu).
-  const actionsEnabled = Boolean(onLockMember || onUnlockMember || onViewMember)
+  const actionsEnabled = Boolean(
+    onLockMember || onUnlockMember || onViewMember || onEditMemberEmail
+  )
   const actionsLabels = labels?.actions
 
   const columns = React.useMemo(
@@ -330,12 +366,14 @@ export function MembersList({
         accessLabels,
         detentionBarLabel,
         leftLabels,
+        emailMissingLabel,
         {
           enabled: actionsEnabled,
           labels: actionsLabels,
           onLock: onLockMember,
           onUnlock: onUnlockMember,
           onViewProfile: onViewMember,
+          onEditEmail: onEditMemberEmail,
         }
       ),
     [
@@ -345,11 +383,13 @@ export function MembersList({
       accessLabels,
       detentionBarLabel,
       leftLabels,
+      emailMissingLabel,
       actionsEnabled,
       actionsLabels,
       onLockMember,
       onUnlockMember,
       onViewMember,
+      onEditMemberEmail,
     ]
   )
 

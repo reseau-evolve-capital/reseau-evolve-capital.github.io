@@ -26,6 +26,8 @@ export interface MemberActionsMenuLabels {
   unlock?: string
   /** Entrée « Voir la fiche ». */
   viewProfile?: string
+  /** Entrée « Renseigner l'email » (membre importé sans email réel). */
+  editEmail?: string
 }
 
 const DEFAULT_LABELS: Required<MemberActionsMenuLabels> = {
@@ -33,6 +35,7 @@ const DEFAULT_LABELS: Required<MemberActionsMenuLabels> = {
   lock: "Bloquer l'accès",
   unlock: 'Débloquer',
   viewProfile: 'Voir la fiche',
+  editEmail: "Renseigner l'email",
 }
 
 export interface MemberActionsMenuProps {
@@ -40,6 +43,8 @@ export interface MemberActionsMenuProps {
   onLock?: () => void
   onUnlock?: () => void
   onViewProfile?: () => void
+  /** Action « Renseigner l'email » — n'apparaît que si fournie (membre sans email réel). */
+  onEditEmail?: () => void
   /** Libellés (i18n). Chaque clé absente retombe sur son défaut FR. */
   labels?: MemberActionsMenuLabels
   className?: string
@@ -56,6 +61,7 @@ export function MemberActionsMenu({
   onLock,
   onUnlock,
   onViewProfile,
+  onEditEmail,
   labels,
   className,
 }: MemberActionsMenuProps) {
@@ -99,6 +105,16 @@ export function MemberActionsMenu({
             >
               <Icon name="LockOpen" size={16} aria-hidden="true" />
               <span>{t.unlock}</span>
+            </DropdownMenu.Item>
+          )}
+
+          {onEditEmail && (
+            <DropdownMenu.Item
+              onSelect={() => onEditEmail()}
+              className={cn(ITEM_CLASS, 'text-text')}
+            >
+              <Icon name="Mail" size={16} aria-hidden="true" />
+              <span>{t.editEmail}</span>
             </DropdownMenu.Item>
           )}
 
