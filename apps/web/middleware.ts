@@ -45,6 +45,12 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Racine : pas de page d'accueil membre → on route selon la session
+  // (connecté → dashboard, sinon → login). Meilleure UX qu'un placeholder.
+  if (pathname === '/') {
+    return redirectWithCookies(new URL(user ? '/dashboard' : '/login', request.url), response())
+  }
+
   // /login/* : si session active → rediriger vers le dashboard.
   // Le /login/verify (callback magic link) reste accessible sans session.
   if (pathname.startsWith('/login') && user) {
