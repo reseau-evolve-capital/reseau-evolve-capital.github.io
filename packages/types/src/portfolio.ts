@@ -14,6 +14,8 @@ export interface PortfolioPosition {
   category: string | null
   /** Secteur ("Technologie"). Null/"" → traité comme "Autres" par l'agrégation. */
   sector: string | null
+  /** Typologie du titre ("Offensif" | "Défensif"). Null/"" → traité comme "Autres" par le filtre. */
+  typologie: string | null
   quantity: number
   /** PRU pondéré moyen (colonne `pump`). Null si inconnu. */
   pru: number | null
@@ -44,3 +46,7 @@ export type PortfolioDir = 'asc' | 'desc'
 /** Libellé du regroupement des secteurs inconnus/vides. Partagé entre l'agrégation
  *  (buildPortfolio, apps/web) et l'affichage (AllocationDonut) pour éviter toute dérive. */
 export const OTHER_SECTOR_LABEL = 'Autres'
+
+/** Libellé du regroupement des typologies inconnues/vides (filtre par typologie).
+ *  7/11 positions ont une typologie vide en source → repli « Autres ». */
+export const OTHER_TYPOLOGY_LABEL = 'Autres'

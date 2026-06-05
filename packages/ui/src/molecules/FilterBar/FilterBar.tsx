@@ -6,9 +6,15 @@ export interface FilterBarProps {
   sectors: string[]
   /** Secteur actif ; null = "Tous". */
   sector?: string | null
+  /** Typologies disponibles (Offensif/Défensif/Autres). Optionnel : si vide/absent, l'axe n'est pas rendu. */
+  typologies?: string[]
+  /** Typologie active ; null = "Toutes". */
+  typologie?: string | null
   sort: PortfolioSort
   dir: PortfolioDir
   onSectorChange: (sector: string | null) => void
+  /** Appelé au changement de typologie (null = "Toutes"). Requis seulement si `typologies` fourni. */
+  onTypologyChange?: (typologie: string | null) => void
   onSortChange: (sort: PortfolioSort) => void
   onDirChange: (dir: PortfolioDir) => void
   className?: string
@@ -20,6 +26,10 @@ export interface FilterBarProps {
     group: string
     /** Pill « tous les secteurs ». */
     all: string
+    /** aria-label du sous-groupe typologie + pill « toutes les typologies ». */
+    typologie: string
+    /** Pill « toutes les typologies ». */
+    typologyAll: string
     /** Label a11y du select de tri (sr-only). */
     sortBy: string
     /** aria-label du bouton quand l'ordre est croissant. */
@@ -38,6 +48,8 @@ const SORT_LABEL: Record<PortfolioSort, string> = {
 const DEFAULT_LABELS = {
   group: 'Filtres du portefeuille',
   all: 'Tous',
+  typologie: 'Typologie',
+  typologyAll: 'Toutes',
   sortBy: 'Trier par',
   ascending: 'Ordre croissant',
   descending: 'Ordre décroissant',
@@ -74,9 +86,12 @@ function SectorPill({
 export function FilterBar({
   sectors,
   sector,
+  typologies,
+  typologie,
   sort,
   dir,
   onSectorChange,
+  onTypologyChange,
   onSortChange,
   onDirChange,
   className,
@@ -86,6 +101,8 @@ export function FilterBar({
   const sortId = React.useId()
   const sortLabel: Record<PortfolioSort, string> = { ...SORT_LABEL, ...sortLabels }
   const l = { ...DEFAULT_LABELS, ...labels }
+  // L'axe typologie n'est rendu que si des typologies sont fournies ET le handler est branché.
+  const showTypology = !!typologies && typologies.length > 0 && !!onTypologyChange
   return (
     <div
       role="group"
@@ -102,6 +119,26 @@ export function FilterBar({
           </SectorPill>
         ))}
       </div>
+
+      {showTypology && (
+        <div
+          role="group"
+          aria-label={l.typologie}
+          className="flex w-full flex-wrap items-center gap-2"
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter">
+            {l.typologie}
+          </span>
+          <SectorPill active={typologie == null} onClick={() => onTypologyChange?.(null)}>
+            {l.typologyAll}
+          </SectorPill>
+          {typologies?.map((tp) => (
+            <SectorPill key={tp} active={typologie === tp} onClick={() => onTypologyChange?.(tp)}>
+              {tp}
+            </SectorPill>
+          ))}
+        </div>
+      )}
 
       <div className="ml-auto flex items-center gap-2">
         <label className="sr-only" htmlFor={sortId}>

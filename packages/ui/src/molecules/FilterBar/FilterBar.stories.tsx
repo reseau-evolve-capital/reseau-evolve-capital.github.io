@@ -22,15 +22,19 @@ type Story = StoryObj<typeof FilterBar>
 export const Interactive: Story = {
   render: () => {
     const [sector, setSector] = React.useState<string | null>(null)
+    const [typologie, setTypologie] = React.useState<string | null>(null)
     const [sort, setSort] = React.useState<PortfolioSort>('value')
     const [dir, setDir] = React.useState<PortfolioDir>('desc')
     return (
       <FilterBar
         sectors={['Technologie', 'Santé', 'Industrie']}
         sector={sector}
+        typologies={['Offensif', 'Défensif', 'Autres']}
+        typologie={typologie}
         sort={sort}
         dir={dir}
         onSectorChange={setSector}
+        onTypologyChange={setTypologie}
         onSortChange={setSort}
         onDirChange={setDir}
       />
@@ -41,6 +45,26 @@ export const Interactive: Story = {
     const tech = canvas.getByRole('button', { name: 'Technologie' })
     await userEvent.click(tech)
     await expect(tech).toHaveAttribute('aria-pressed', 'true')
+    // 2e axe : la typologie est indépendante du secteur (filtre combiné côté appelant).
+    const offensif = canvas.getByRole('button', { name: 'Offensif' })
+    await userEvent.click(offensif)
+    await expect(offensif).toHaveAttribute('aria-pressed', 'true')
+    await expect(tech).toHaveAttribute('aria-pressed', 'true')
+  },
+}
+
+export const AvecTypologie: Story = {
+  args: {
+    sectors: ['Technologie', 'Santé', 'Industrie'],
+    sector: 'Technologie',
+    typologies: ['Offensif', 'Défensif', 'Autres'],
+    typologie: 'Offensif',
+    sort: 'value',
+    dir: 'desc',
+    onSectorChange: () => {},
+    onTypologyChange: () => {},
+    onSortChange: () => {},
+    onDirChange: () => {},
   },
 }
 

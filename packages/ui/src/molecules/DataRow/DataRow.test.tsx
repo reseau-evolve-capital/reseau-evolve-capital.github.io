@@ -12,6 +12,7 @@ const pos: PortfolioPosition = {
   symbol: 'NASDAQ:META',
   category: 'Actions',
   sector: 'Technologie',
+  typologie: 'Offensif',
   quantity: 248,
   pru: 450,
   livePrice: 585,

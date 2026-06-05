@@ -12,6 +12,7 @@ const make = (over: Partial<PortfolioPosition>): PortfolioPosition => ({
   symbol: 'NASDAQ:META',
   category: 'Actions',
   sector: 'Technologie',
+  typologie: 'Offensif',
   quantity: 10,
   pru: 100,
   livePrice: 200,

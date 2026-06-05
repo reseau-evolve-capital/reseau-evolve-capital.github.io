@@ -88,4 +88,74 @@ describe('FilterBar', () => {
     )
     expect(await axe(container)).toHaveNoViolations()
   })
+
+  it("ne rend PAS l'axe typologie sans typologies ni handler", () => {
+    render(
+      <FilterBar
+        sectors={sectors}
+        sort="value"
+        dir="desc"
+        onSectorChange={() => {}}
+        onSortChange={() => {}}
+        onDirChange={() => {}}
+      />
+    )
+    expect(screen.queryByRole('group', { name: /typologie/i })).not.toBeInTheDocument()
+  })
+
+  it("rend l'axe typologie + une pill par typologie quand fourni avec un handler", () => {
+    render(
+      <FilterBar
+        sectors={sectors}
+        typologies={['Offensif', 'Défensif']}
+        sort="value"
+        dir="desc"
+        onSectorChange={() => {}}
+        onTypologyChange={() => {}}
+        onSortChange={() => {}}
+        onDirChange={() => {}}
+      />
+    )
+    expect(screen.getByRole('group', { name: /typologie/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Offensif' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Défensif' })).toBeInTheDocument()
+  })
+
+  it('onTypologyChange reçoit la typologie cliquée, et null pour "Toutes"', async () => {
+    const onTypologyChange = vi.fn()
+    render(
+      <FilterBar
+        sectors={sectors}
+        typologies={['Offensif', 'Défensif']}
+        typologie="Offensif"
+        sort="value"
+        dir="desc"
+        onSectorChange={() => {}}
+        onTypologyChange={onTypologyChange}
+        onSortChange={() => {}}
+        onDirChange={() => {}}
+      />
+    )
+    await userEvent.click(screen.getByRole('button', { name: 'Défensif' }))
+    expect(onTypologyChange).toHaveBeenCalledWith('Défensif')
+    await userEvent.click(screen.getByRole('button', { name: 'Toutes' }))
+    expect(onTypologyChange).toHaveBeenCalledWith(null)
+  })
+
+  it("n'a aucune violation a11y avec l'axe typologie", async () => {
+    const { container } = render(
+      <FilterBar
+        sectors={sectors}
+        typologies={['Offensif', 'Défensif']}
+        typologie="Offensif"
+        sort="value"
+        dir="desc"
+        onSectorChange={() => {}}
+        onTypologyChange={() => {}}
+        onSortChange={() => {}}
+        onDirChange={() => {}}
+      />
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
 })
