@@ -4,8 +4,9 @@
  * Règles :
  * - /login/* : accessible sans session (le lien magique /login/verify doit fonctionner).
  *   Si l'utilisateur est déjà connecté et accède à /login → redirect /dashboard.
- * - Routes protégées (/dashboard, /portfolio, /contributions, /onboarding, /admin) :
- *   session obligatoire, sinon redirect /login.
+ * - Routes protégées (/dashboard, /portfolio, /contributions, /onboarding, /admin, /profil) :
+ *   session obligatoire, sinon redirect /login. Tant que l'onboarding n'est pas terminé,
+ *   ces routes (hors /onboarding/*) redirigent vers /onboarding/step-1 (guard A1).
  * - /admin uniquement : le user doit passer user_is_staff() (trésorier, président ou
  *   network_admin dans un club actif), sinon redirect /dashboard.
  *
@@ -18,7 +19,14 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@/lib/supabase/middleware'
 
-const PROTECTED_PREFIXES = ['/dashboard', '/portfolio', '/contributions', '/onboarding', '/admin']
+const PROTECTED_PREFIXES = [
+  '/dashboard',
+  '/portfolio',
+  '/contributions',
+  '/onboarding',
+  '/admin',
+  '/profil',
+]
 
 /**
  * Construit une réponse de redirection en propageant les cookies posés par
@@ -70,6 +78,28 @@ export async function middleware(request: NextRequest) {
     const { data: blocked } = await supabase.rpc('current_user_access_blocked')
     if (blocked) {
       return redirectWithCookies(new URL('/acces-suspendu', request.url), response())
+    }
+
+    // Guard onboarding (A1) : tant que l'inscription n'est pas terminée, l'espace membre
+    // n'est pas accessible — on force le parcours /onboarding/* à CHAQUE requête protégée
+    // (pas seulement juste après le verify : un refresh ou un lien direct doit aussi rediriger).
+    // self-read autorisé par la policy « users: self read » (migration 011). Requête légère
+    // (une colonne), uniquement sur les routes protégées (jamais sur les publiques/statics).
+    const onOnboarding = pathname.startsWith('/onboarding')
+    const { data: profile } = await supabase
+      .from('users')
+      .select('onboarding_completed')
+      .eq('id', user.id)
+      .maybeSingle()
+    const onboardingCompleted = profile?.onboarding_completed ?? false
+
+    if (!onboardingCompleted && !onOnboarding) {
+      return redirectWithCookies(new URL('/onboarding/step-1', request.url), response())
+    }
+    // INVERSE : un membre déjà onboardé qui retombe sur /onboarding/* est renvoyé au dashboard
+    // (le tour /onboarding/tour reste accessible : c'est une visite guidée, pas une étape d'inscription).
+    if (onboardingCompleted && onOnboarding && !pathname.startsWith('/onboarding/tour')) {
+      return redirectWithCookies(new URL('/dashboard', request.url), response())
     }
   }
 
