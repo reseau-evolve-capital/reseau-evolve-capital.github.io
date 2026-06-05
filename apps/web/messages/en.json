@@ -7,7 +7,9 @@
     "close": "Close",
     "refreshing": "Refreshing…",
     "dataSafe": "Your data stays safe.",
-    "changeLanguage": "Change language"
+    "changeLanguage": "Change language",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "nav": {
     "sidebar": {
@@ -439,14 +441,16 @@
       "title": "Admin — Evolve Capital",
       "cotisationsTitle": "Contributions — Admin Evolve Capital",
       "membersTitle": "Members — Admin Evolve Capital",
-      "invitationsTitle": "Invitations — Evolve Capital Admin"
+      "invitationsTitle": "Invitations — Evolve Capital Admin",
+      "settingsTitle": "Club settings — Evolve Capital Admin"
     },
     "tabs": {
       "dashboard": "Dashboard",
       "members": "Members",
       "cotisations": "Contributions",
       "invitations": "Invitations",
-      "navLabel": "Treasurer area navigation"
+      "navLabel": "Treasurer area navigation",
+      "settings": "Settings"
     },
     "invitations": {
       "title": "Invitations",
@@ -487,6 +491,52 @@
       "linkLabel": "Access link (share it with the member)",
       "linkNote": "Automatic email delivery is coming soon.",
       "tableLabel": "Invitations list"
+    },
+    "settings": {
+      "title": "Club settings",
+      "subtitle": "View and edit the club information sourced from the matrix.",
+      "sections": {
+        "general": "General information",
+        "sensitive": "Sensitive settings",
+        "sensitiveHint": "Editing these critical fields requires a double confirmation."
+      },
+      "fields": {
+        "name": "Club name",
+        "city": "City",
+        "country": "Country",
+        "brokerAccountRef": "Club broker account ID",
+        "annualInvestmentCap": "Annual investment cap"
+      },
+      "hints": {
+        "city": "City where the club is based.",
+        "country": "ISO 2-letter country code (e.g. FR, BE, LU).",
+        "brokerAccountRef": "The club's account reference at the broker. Sensitive field.",
+        "annualInvestmentCap": "Maximum amount investable per year, in euros. Sensitive field."
+      },
+      "readonly": {
+        "brokerName": "Broker: {value}"
+      },
+      "errors": {
+        "name_required": "The club name is required.",
+        "country_invalid": "Invalid country code (2 letters expected, e.g. FR).",
+        "cap_invalid": "Invalid cap (a positive amount is expected)."
+      },
+      "confirm": {
+        "title": "Sensitive operation",
+        "description": "You are editing critical club settings. A wrong value can prevent account reconciliation. Double-check before confirming.",
+        "acknowledge": "I have verified these values and confirm I want to change them.",
+        "before": "Before",
+        "after": "After",
+        "submit": "Confirm change"
+      },
+      "toast": {
+        "successTitle": "Settings saved",
+        "successMessage": "The club settings have been updated.",
+        "errorTitle": "Save failed",
+        "errorMessage": "Could not save the settings. Please try again.",
+        "forbiddenTitle": "Access denied",
+        "forbiddenMessage": "You don't have permission to edit these settings."
+      }
     }
   },
   "errors": {
@@ -519,6 +569,9 @@
       },
       "invitations": {
         "title": "Could not load invitations."
+      },
+      "settings": {
+        "title": "Could not load the club settings."
       }
     },
     "nav": {

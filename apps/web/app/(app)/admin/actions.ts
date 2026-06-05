@@ -11,6 +11,7 @@ import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { createServerClient } from '@evolve/data'
 import { resolveAdminContext } from '@/lib/data/admin'
+import { buildUpdateArgs, validateInput, type ClubSettingsInput } from '@/lib/data/clubSettings'
 import { getInvitationMailer } from '@/lib/invitations/mailer'
 import { newInviteToken, hashInviteToken, inviteUrl } from '@/lib/invitations/token'
 
@@ -126,6 +127,31 @@ export async function unlockMemberAction(membershipId: string): Promise<ActionRe
     p_locked: false,
     p_reason: undefined,
   })
+  if (error) return { ok: false, error: mapPgError(error.code) }
+  return { ok: true }
+}
+
+/**
+ * Mettre à jour les paramètres du club (nom, ville, pays, réf. courtier, plafond).
+ * La garde staff est dans la RPC `update_club_settings` (SECURITY DEFINER). On valide
+ * aussi côté serveur avant l'appel : entrée invalide → erreur métier stable, pas d'appel DB.
+ * Le double-warning « opération sensible » sur broker_account_ref est imposé côté UI.
+ */
+export async function updateClubSettingsAction(input: ClubSettingsInput): Promise<ActionResult> {
+  const supabase = await serverClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'unauthorized' }
+  const ctx = await resolveAdminContext(supabase, user.id)
+  if (!ctx) return { ok: false, error: 'forbidden' }
+
+  const validationErrors = validateInput(input)
+  if (validationErrors.length > 0) {
+    return { ok: false, error: validationErrors[0] ?? 'invalid' }
+  }
+
+  const { error } = await supabase.rpc('update_club_settings', buildUpdateArgs(ctx.clubId, input))
   if (error) return { ok: false, error: mapPgError(error.code) }
   return { ok: true }
 }

@@ -71,7 +71,7 @@ export type Database = {
           annual_investment_cap: number | null
           broker_account_ref: string | null
           city: string | null
-          country: string
+          country: string | null
           created_at: string
           currency: string
           id: string
@@ -88,7 +88,7 @@ export type Database = {
           annual_investment_cap?: number | null
           broker_account_ref?: string | null
           city?: string | null
-          country?: string
+          country?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -105,7 +105,7 @@ export type Database = {
           annual_investment_cap?: number | null
           broker_account_ref?: string | null
           city?: string | null
-          country?: string
+          country?: string | null
           created_at?: string
           currency?: string
           id?: string
@@ -739,6 +739,17 @@ export type Database = {
         Returns: Database['public']['Enums']['member_role']
       }
       refresh_member_quote_part: { Args: never; Returns: undefined }
+      update_club_settings: {
+        Args: {
+          p_annual_investment_cap?: number
+          p_broker_account_ref?: string
+          p_city?: string
+          p_club_id: string
+          p_country?: string
+          p_name?: string
+        }
+        Returns: undefined
+      }
       user_is_staff: { Args: never; Returns: boolean }
       verify_attestation: {
         Args: { p_reference: string }

@@ -7,7 +7,9 @@
     "close": "Fermer",
     "refreshing": "Actualisation…",
     "dataSafe": "Tes données restent en sécurité.",
-    "changeLanguage": "Changer de langue"
+    "changeLanguage": "Changer de langue",
+    "save": "Enregistrer",
+    "cancel": "Annuler"
   },
   "nav": {
     "sidebar": {
@@ -439,14 +441,16 @@
       "title": "Admin — Evolve Capital",
       "cotisationsTitle": "Cotisations — Admin Evolve Capital",
       "membersTitle": "Membres — Admin Evolve Capital",
-      "invitationsTitle": "Invitations — Admin Evolve Capital"
+      "invitationsTitle": "Invitations — Admin Evolve Capital",
+      "settingsTitle": "Paramètres du club — Admin Evolve Capital"
     },
     "tabs": {
       "dashboard": "Tableau de bord",
       "members": "Membres",
       "cotisations": "Cotisations",
       "invitations": "Invitations",
-      "navLabel": "Navigation espace trésorier"
+      "navLabel": "Navigation espace trésorier",
+      "settings": "Paramètres"
     },
     "invitations": {
       "title": "Invitations",
@@ -487,6 +491,52 @@
       "linkLabel": "Lien d'accès (à transmettre au membre)",
       "linkNote": "L'envoi automatique par email arrivera prochainement.",
       "tableLabel": "Liste des invitations"
+    },
+    "settings": {
+      "title": "Paramètres du club",
+      "subtitle": "Consultez et modifiez les informations du club issues de la matrice.",
+      "sections": {
+        "general": "Informations générales",
+        "sensitive": "Paramètres sensibles",
+        "sensitiveHint": "La modification de ces champs critiques demande une double confirmation."
+      },
+      "fields": {
+        "name": "Nom du club",
+        "city": "Ville",
+        "country": "Pays",
+        "brokerAccountRef": "Identifiant du club chez le courtier",
+        "annualInvestmentCap": "Plafond annuel d’investissement"
+      },
+      "hints": {
+        "city": "Ville où le club est domicilié.",
+        "country": "Code pays ISO à 2 lettres (ex. FR, BE, LU).",
+        "brokerAccountRef": "Référence du compte du club chez le courtier. Champ sensible.",
+        "annualInvestmentCap": "Montant maximum investissable par an, en euros. Champ sensible."
+      },
+      "readonly": {
+        "brokerName": "Courtier : {value}"
+      },
+      "errors": {
+        "name_required": "Le nom du club est obligatoire.",
+        "country_invalid": "Code pays invalide (2 lettres attendues, ex. FR).",
+        "cap_invalid": "Plafond invalide (montant positif attendu)."
+      },
+      "confirm": {
+        "title": "Opération sensible",
+        "description": "Vous modifiez des paramètres critiques du club. Une valeur erronée peut empêcher le rapprochement des comptes. Vérifiez avant de confirmer.",
+        "acknowledge": "J’ai vérifié ces valeurs et je confirme vouloir les modifier.",
+        "before": "Avant",
+        "after": "Après",
+        "submit": "Confirmer la modification"
+      },
+      "toast": {
+        "successTitle": "Paramètres enregistrés",
+        "successMessage": "Les paramètres du club ont été mis à jour.",
+        "errorTitle": "Échec de l’enregistrement",
+        "errorMessage": "Impossible d’enregistrer les paramètres. Réessayez.",
+        "forbiddenTitle": "Accès refusé",
+        "forbiddenMessage": "Vous n’avez pas les droits pour modifier ces paramètres."
+      }
     }
   },
   "errors": {
@@ -519,6 +569,9 @@
       },
       "invitations": {
         "title": "Impossible de charger les invitations."
+      },
+      "settings": {
+        "title": "Impossible de charger les paramètres du club."
       }
     },
     "nav": {
