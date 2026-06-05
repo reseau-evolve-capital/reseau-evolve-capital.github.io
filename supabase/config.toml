@@ -261,6 +261,16 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+# Template magic link BRANDÉ, lien-only, FR (A6/A7).
+# ACTIF EN LOCAL : remplace le template natif EN par défaut (qui affiche le code
+# OTP {{ .Token }}). Notre template n'utilise QUE {{ .ConfirmationURL }} → plus de
+# « enter the code ». En PROD, la localisation par utilisateur (fr/en) passe par
+# l'Auth Hook `send-email` (cf. [auth.hook.send_email] plus bas) ; ce template
+# statique reste le fallback FR du mailer natif.
+[auth.email.template.magic_link]
+subject = "Ton lien de connexion à Evolve Capital"
+content_path = "./supabase/templates/magic_link.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true
@@ -297,6 +307,38 @@ max_frequency = "5s"
 # [auth.hook.custom_access_token]
 # enabled = true
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
+
+# Auth Hook « Send Email » — email d'auth BRANDÉ + LOCALISÉ par utilisateur (A8).
+# ───────────────────────────────────────────────────────────────────────────────
+# ⚠️ LAISSÉ COMMENTÉ EN LOCAL — À ACTIVER UNIQUEMENT EN PROD.
+#
+# Pourquoi off en local :
+#   Ce hook envoie les emails d'auth via Brevo (vrais emails sortants). En local,
+#   on veut au contraire que tout soit capté par Mailpit. Le rendu brandé lien-only
+#   est déjà couvert localement par le template statique FR
+#   [auth.email.template.magic_link] (cf. plus haut) + Mailpit. Activer ce hook en
+#   local enverrait de vrais emails Brevo et contournerait Mailpit.
+#
+# Ce que fait le hook (Edge Function supabase/functions/send-email) :
+#   - reçoit { user, email_data } (email_action_type, token_hash, redirect_to, site_url) ;
+#   - construit la ConfirmationURL (LIEN UNIQUEMENT — jamais de code/OTP) ;
+#   - rend MagicLinkEmail dans la locale de l'utilisateur (user_metadata.locale, défaut 'fr') ;
+#   - envoie via Brevo. La locale est alimentée par signInWithOtp({ options: { data: { locale } } })
+#     dans apps/web/app/api/auth/magic-link/route.ts (cookie NEXT_LOCALE).
+#
+# ACTIVATION PROD (dashboard Supabase ou config déployée) :
+#   [auth.hook.send_email]
+#   enabled = true
+#   uri = "https://<project-ref>.functions.supabase.co/send-email"
+#   # secret_path / secret : SEND_EMAIL_HOOK_SECRET (format "v1,whsec_…")
+#   # + déployer la fonction : supabase functions deploy send-email --no-verify-jwt
+#   # + secrets serveur (jamais committés) :
+#   #     supabase secrets set SEND_EMAIL_HOOK_SECRET=v1,whsec_…  BREVO_API_KEY=…  \
+#   #                          BREVO_SENDER_EMAIL=noreply@mail.evolve-capital.fr
+#
+# [auth.hook.send_email]
+# enabled = true
+# uri = "https://<project-ref>.functions.supabase.co/send-email"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
 [auth.sms.twilio]

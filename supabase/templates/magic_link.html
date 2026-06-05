@@ -1,0 +1,187 @@
+<!doctype html>
+<!--
+  Template magic link Evolve Capital — LOCAL / Supabase Auth mailer natif (A6/A7).
+
+  Pourquoi ce fichier existe
+  --------------------------
+  En local, la stack Supabase CLI envoie les emails d'auth via son mailer natif
+  (Go templates), captés par Mailpit. Le template PAR DÉFAUT est en anglais et
+  affiche le code OTP (« Alternatively, enter the code … {{ .Token }} »).
+  Ce template le remplace par une version BRANDÉE Evolve, en FR (locale par défaut),
+  et LIEN UNIQUEMENT : on n'utilise QUE {{ .ConfirmationURL }}, jamais {{ .Token }}.
+
+  Portée
+  ------
+  - LOCAL : actif (cf. [auth.email.template.magic_link] dans supabase/config.toml).
+  - PROD  : la localisation par utilisateur (fr/en) passe par l'Auth Hook
+            `send-email` (Brevo + MagicLinkEmail.tsx). Ce template statique reste
+            le fallback FR du mailer natif si le hook est désactivé.
+
+  ⚠️ Les couleurs sont codées en dur (un template Go ne peut pas importer
+  @evolve/design-system). Valeurs alignées sur packages/design-system/src/tokens :
+    brand.yellow #FDC70C · brand.orange #F3903F · accentInk/text #231F20
+    textSec #5F6062 · textTer #67686A · border #E4E4DF · card #FFFFFF
+    cardSub/bg #FAFAF9 · email.bg #F4F4F2
+-->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light" />
+    <title>Connexion à Evolve Capital</title>
+  </head>
+  <body
+    style="margin: 0; padding: 24px 0; background-color: #f4f4f2; font-family: 'Plus Jakarta Sans', system-ui, sans-serif;"
+  >
+    <!-- Aperçu inbox (masqué dans le corps) -->
+    <div
+      style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #f4f4f2;"
+    >
+      Ton lien de connexion sécurisé à Evolve Capital (valide 60 min).
+    </div>
+
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      style="border-collapse: collapse;"
+    >
+      <tr>
+        <td align="center">
+          <table
+            role="presentation"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e4e4df; border-radius: 14px; overflow: hidden; border-collapse: separate;"
+          >
+            <!-- 1 · Bandeau accent (fallback jaune solide pour Outlook) -->
+            <tr>
+              <td
+                style="height: 5px; line-height: 5px; font-size: 1px; background-color: #fdc70c; background: linear-gradient(90deg, #fff33b, #fdc70c 55%, #f3903f);"
+              >
+                &nbsp;
+              </td>
+            </tr>
+
+            <!-- 2 · En-tête logo -->
+            <tr>
+              <td
+                style="padding: 26px 32px; text-align: center; border-bottom: 1px solid #e4e4df; background-color: #ffffff;"
+              >
+                <span
+                  style="font-family: 'Tommy Soft', 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 800; font-size: 16px; letter-spacing: -0.01em; color: #231f20;"
+                >
+                  <span
+                    style="display: inline-block; width: 26px; height: 26px; line-height: 26px; text-align: center; border-radius: 7px; background-color: #231f20; color: #fdc70c; font-size: 15px; vertical-align: middle;"
+                    >€</span
+                  >
+                  EVOLVE <span style="color: #5f6062;">CAPITAL</span>
+                </span>
+              </td>
+            </tr>
+
+            <!-- 4 · Contenu -->
+            <tr>
+              <td style="padding: 38px 40px 34px;">
+                <p
+                  style="margin: 0 0 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #67686a;"
+                >
+                  Sécurité · Connexion
+                </p>
+                <h1
+                  style="margin: 0 0 14px; font-family: 'Tommy Soft', 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 800; font-size: 27px; line-height: 1.12; letter-spacing: -0.02em; color: #231f20;"
+                >
+                  Connexion à Evolve Capital
+                </h1>
+                <p style="margin: 0 0 26px; font-size: 15px; line-height: 1.6; color: #5f6062;">
+                  Voici ton lien de connexion sécurisé. Il
+                  <strong style="color: #231f20; font-weight: 600;">expire après 60 min</strong> et
+                  fonctionne une seule fois.
+                </p>
+
+                <!-- CTA jaune, encre #231F20 — jamais blanc, jamais brand.red -->
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  style="border-collapse: collapse;"
+                >
+                  <tr>
+                    <td
+                      align="center"
+                      style="border-radius: 10px; background-color: #fdc70c;"
+                    >
+                      <a
+                        href="{{ .ConfirmationURL }}"
+                        target="_blank"
+                        style="display: block; width: 100%; box-sizing: border-box; text-align: center; background-color: #fdc70c; color: #231f20; font-family: 'Tommy Soft', 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.04em; text-decoration: none; padding: 17px 24px; border-radius: 10px;"
+                        >Se connecter</a
+                      >
+                    </td>
+                  </tr>
+                </table>
+
+                <!-- Lien en clair (backup) — toujours {{ .ConfirmationURL }}, jamais de code -->
+                <div
+                  style="margin-top: 22px; border: 1px solid #e4e4df; border-radius: 10px; background-color: #fafaf9; padding: 14px 16px;"
+                >
+                  <p
+                    style="margin: 0 0 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #67686a;"
+                  >
+                    Ou copie ce lien dans ton navigateur
+                  </p>
+                  <a
+                    href="{{ .ConfirmationURL }}"
+                    target="_blank"
+                    style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5f6062; word-break: break-all; line-height: 1.5; text-decoration: none;"
+                    >{{ .ConfirmationURL }}</a
+                  >
+                </div>
+
+                <p
+                  style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e4e4df; font-size: 12.5px; line-height: 1.55; color: #67686a;"
+                >
+                  <strong style="color: #5f6062; font-weight: 600;"
+                    >Tu n'as pas demandé ce lien&nbsp;?</strong
+                  >
+                  Ignore cet email — ton compte reste protégé, aucune action n'a été engagée.
+                </p>
+              </td>
+            </tr>
+
+            <!-- 5 · Footer -->
+            <tr>
+              <td
+                style="padding: 22px 40px 28px; background-color: #fafaf9; border-top: 1px solid #e4e4df;"
+              >
+                <p
+                  style="margin: 0 0 6px; font-family: 'Tommy Soft', 'Plus Jakarta Sans', system-ui, sans-serif; font-weight: 700; font-size: 13px; color: #231f20;"
+                >
+                  Evolve Capital
+                </p>
+                <p style="margin: 0 0 6px; font-size: 12px; line-height: 1.55; color: #67686a;">
+                  Email essentiel — ce lien de connexion t'est toujours envoyé, indépendamment de tes
+                  préférences.
+                </p>
+                <p style="margin: 0 0 6px; font-size: 12px; line-height: 1.55; color: #67686a;">
+                  Evolve Capital SAS · 12 rue de la Bourse, 75002 Paris · RCS Paris 901 234 567
+                </p>
+                <hr style="border: none; border-top: 1px solid #e4e4df; margin: 14px 0;" />
+                <p style="margin: 0; font-size: 12px; line-height: 1.55; color: #67686a;">
+                  <a
+                    href="https://reseauevolvecapital.com/mentions-legales"
+                    style="color: #5f6062; text-decoration: underline;"
+                    >Mentions légales</a
+                  >
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
