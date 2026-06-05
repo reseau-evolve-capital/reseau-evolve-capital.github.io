@@ -311,15 +311,16 @@ La CI distante tourne sur `git push origin feat/monorepo` (typecheck + lint + te
 
 ## 10. Dépannage
 
-| Symptôme                                     | Cause / solution                                                                                      |
-| -------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `supabase start` se fige                     | Lancer `supabase start -x vector,logflare` (désactive l'analytics qui hang).                          |
-| Port `3001` occupé                           | `lsof -ti :3001 \| xargs kill` puis relancer `make dev-web`.                                          |
-| E2E : `generate_link 401 / no_authorization` | `SUPABASE_SERVICE_ROLE_KEY` absent → le fournir via `supabase status -o env` (cf. §8).                |
-| Magic link introuvable                       | Regarder Inbucket http://127.0.0.1:54324 (aucun email réel en local).                                 |
-| `/dashboard` ou `/portfolio` vide            | Seed minimal sans données → injecter la démo (§6) puis `refresh materialized view member_quote_part`. |
-| Types DB désynchronisés                      | `make db-types` après toute migration.                                                                |
-| Repartir de zéro (DB)                        | `make db-reset` ⚠️ **destructif** (wipe + replay migrations + seed).                                  |
+| Symptôme                                         | Cause / solution                                                                                                                                                                                                            |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `supabase start` se fige                         | Lancer `supabase start -x vector,logflare` (désactive l'analytics qui hang).                                                                                                                                                |
+| Port `3001` occupé                               | `lsof -ti :3001 \| xargs kill` puis relancer `make dev-web`.                                                                                                                                                                |
+| E2E : `generate_link 401 / no_authorization`     | `SUPABASE_SERVICE_ROLE_KEY` absent → le fournir via `supabase status -o env` (cf. §8).                                                                                                                                      |
+| Magic link introuvable                           | Regarder Inbucket http://127.0.0.1:54324 (aucun email réel en local).                                                                                                                                                       |
+| Login : **502 « Impossible d'envoyer le lien »** | Conteneur **Inbucket arrêté** (`docker ps \| grep inbucket` vide) → GoTrue ne peut envoyer. Fix : `supabase stop && supabase start -x vector,logflare`, vérifier qu'Inbucket remonte (les données du volume DB persistent). |
+| `/dashboard` ou `/portfolio` vide                | Seed minimal sans données → injecter la démo (§6) puis `refresh materialized view member_quote_part`.                                                                                                                       |
+| Types DB désynchronisés                          | `make db-types` après toute migration.                                                                                                                                                                                      |
+| Repartir de zéro (DB)                            | `make db-reset` ⚠️ **destructif** (wipe + replay migrations + seed).                                                                                                                                                        |
 
 ---
 
