@@ -79,9 +79,12 @@ async function loadMembershipLookups(
   supabase: SupabaseClient,
   clubId: string
 ): Promise<MembershipLookup[]> {
+  // Désambiguïsation : memberships a DEUX FK vers users (user_id et locked_by,
+  // cf. ADM-007). On qualifie l'embed par le nom de la contrainte du user_id pour
+  // lever l'erreur PostgREST « more than one relationship was found ».
   const { data, error } = await supabase
     .from('memberships')
-    .select('id, user_id, users!inner(full_name)')
+    .select('id, user_id, users!memberships_user_id_fkey!inner(full_name)')
     .eq('club_id', clubId)
   if (error) throw new Error(`Chargement memberships échoué: ${error.message}`)
   type Row = { id: string; user_id: string; users: { full_name: string } | { full_name: string }[] }
@@ -284,7 +287,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
 
     // 3) Portefeuille → positions (les lignes d'agrégat vont dans le snapshot, pas dans positions)
     await runSheet('Portefeuille', async () => {
-      const raw = await deps.readSheet(sheetId, 'Portefeuille')
+      // Onglet réel de la matrice : « POSITIONS » (l'étiquette de snapshot reste « Portefeuille »).
+      const raw = await deps.readSheet(sheetId, 'POSITIONS')
       const rows = parsePortefeuille(raw)
       const { positions, aggregateRows } = mapPortefeuilleRows(rows, clubId)
       // QUARANTAINE — positions.quantity est NOT NULL en DB (migration 005). Le mapper

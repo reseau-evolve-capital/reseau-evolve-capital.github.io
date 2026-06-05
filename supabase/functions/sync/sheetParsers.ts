@@ -4,7 +4,7 @@
 // Les mappers métier (packages/data) consomment ensuite ces DTO — ces parsers ne
 // font AUCUNE logique métier, juste la projection colonne → champ.
 
-import { toNumOrNull } from '@evolve/utils'
+import { toNumOrNull, stripAccents } from '@evolve/utils'
 import type {
   BaseRowDTO,
   ParametragesRowDTO,
@@ -36,15 +36,19 @@ function dataRows(rows: string[][]): string[][] {
  * partir des lignes clé/valeur. Le mapper ne lit que rows[0].
  */
 export function parseParametrages(rows: string[][]): ParametragesRowDTO[] {
+  // Normalisation ROBUSTE des libellés : trim + minuscule + accents retirés.
+  // Les libellés de la feuille peuvent varier en casse/accents (ex. « Pénalité »
+  // vs « penalite ») : on indexe sur la forme normalisée pour matcher de façon stable.
+  const norm = (s: string): string => stripAccents(s.trim().toLowerCase())
   const kv = new Map<string, string>()
   for (const row of rows.slice(1)) {
-    const key = cell(row, 0).toLowerCase()
+    const key = norm(cell(row, 0))
     if (key === '') continue
     kv.set(key, cell(row, 1))
   }
   const get = (...keys: string[]): string => {
     for (const k of keys) {
-      const found = kv.get(k)
+      const found = kv.get(norm(k))
       if (found != null && found !== '') return found
     }
     return ''
@@ -53,6 +57,14 @@ export function parseParametrages(rows: string[][]): ParametragesRowDTO[] {
   if (clubName === '') {
     throw new Error('PARAMETRAGES : "Nom du club" introuvable.')
   }
+  // broker_account_ref est TEXT : on garde la string brute (toNumOrNull la dénaturerait).
+  const brokerAccountRef =
+    get(
+      'identifiant du club chez le courtier',
+      'identifiant courtier',
+      'identifiant du compte courtier',
+      'compte courtier'
+    ) || null
   return [
     {
       clubName,
@@ -60,6 +72,16 @@ export function parseParametrages(rows: string[][]): ParametragesRowDTO[] {
       penaltyRate: toNumOrNull(get('penalite', 'pénalité', 'penalty')),
       city: get('ville') || null,
       country: get('pays') || null,
+      brokerAccountRef,
+      annualInvestmentCap: toNumOrNull(
+        get(
+          'limite de cotisation annuelle',
+          'plafond annuel',
+          'plafond de cotisation annuelle',
+          'limite annuelle'
+        )
+      ),
+      brokerName: get('nom du courtier', 'courtier') || null,
     },
   ]
 }

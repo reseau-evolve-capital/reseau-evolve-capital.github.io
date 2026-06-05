@@ -90,9 +90,11 @@ export async function loadTreasurerEmails(
   clubId: string
 ): Promise<string[]> {
   try {
+    // Désambiguïsation : memberships a DEUX FK vers users (user_id et locked_by,
+    // cf. ADM-007). On qualifie l'embed par le nom de la contrainte du user_id.
     const { data, error } = await supabase
       .from('memberships')
-      .select('users!inner(email)')
+      .select('users!memberships_user_id_fkey!inner(email)')
       .eq('club_id', clubId)
       .in('role', TREASURER_ROLES as unknown as string[])
     if (error || !data) return []

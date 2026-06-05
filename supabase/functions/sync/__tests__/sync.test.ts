@@ -62,6 +62,39 @@ Deno.test('parseParametrages : structure clé/valeur (A=libellé, B=valeur) → 
   assertEquals(rows[0].country, 'France')
 })
 
+Deno.test(
+  'parseParametrages : capte courtier + plafond annuel (matching robuste accents/casse)',
+  () => {
+    const raw: string[][] = [
+      ['Paramètre', 'Valeur'],
+      ['Nom du club', 'Évolve Capital'],
+      ['Cotisation min', '100'],
+      // Casse/accents volontairement « sales » pour valider la normalisation.
+      ['IDENTIFIANT DU CLUB CHEZ LE COURTIER', '85537808'],
+      ['Limite de cotisation annuelle', '5 500'],
+      ['Nom du courtier', 'BOURSE DIRECT'],
+    ]
+    const rows = parseParametrages(raw)
+    // broker_account_ref reste une string brute (zéro non significatif éventuel préservé).
+    assertEquals(rows[0].brokerAccountRef, '85537808')
+    // Plafond annuel parsé en number (format FR avec espace insécable géré par toNumOrNull).
+    assertEquals(rows[0].annualInvestmentCap, 5500)
+    assertEquals(rows[0].brokerName, 'BOURSE DIRECT')
+  }
+)
+
+Deno.test('parseParametrages : courtier/plafond absents → null', () => {
+  const raw: string[][] = [
+    ['Paramètre', 'Valeur'],
+    ['Nom du club', 'Club'],
+    ['Cotisation min', '0'],
+  ]
+  const rows = parseParametrages(raw)
+  assertEquals(rows[0].brokerAccountRef, null)
+  assertEquals(rows[0].annualInvestmentCap, null)
+  assertEquals(rows[0].brokerName, null)
+})
+
 Deno.test('parseBase : colonnes A..J → BaseRowDTO (lignes vides filtrées)', () => {
   const raw: string[][] = [
     ['Nom', 'Email', 'Entrée', 'Sortie', 'Statut', 'Demande', 'Docs', 'Tel', 'Adresse', 'Montant'],
@@ -210,7 +243,8 @@ const SHEETS: Readonly<Record<string, readonly (readonly string[])[]>> = Object.
       '1500',
     ],
   ]),
-  Portefeuille: Object.freeze([
+  // Onglet réel : « POSITIONS » (l'étiquette interne de snapshot reste « Portefeuille »).
+  POSITIONS: Object.freeze([
     ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours'],
     ['Apple', 'AAPL', 'Action', '10', 'EUR', '1 234,56'],
     ['TOTAL', '', 'Agrégat', '', '', '5 000,00'],
@@ -401,13 +435,14 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
       return rows.map((r) => (r.id ? r : { ...r, id: userIdFromEmail(String(r.email)) }))
     }
 
-    /** Calcule le data d'un select, avec jointure users!inner sur memberships. */
+    /** Calcule le data d'un select, avec jointure users (FK désambiguïsée) sur memberships. */
     private computeSelectData(): unknown {
       const rows = this.rows()
       if (this.table === 'memberships') {
-        // Deux formes de select sur memberships :
-        //  - sync : .select('id, user_id, users!inner(full_name)')
-        //  - alerte NTF-003 : .select('users!inner(email)') filtré par role.
+        // Deux formes de select sur memberships (embed qualifié par memberships_user_id_fkey
+        // car memberships a 2 FK vers users — user_id et locked_by, cf. ADM-007) :
+        //  - sync : .select('id, user_id, users!memberships_user_id_fkey!inner(full_name)')
+        //  - alerte NTF-003 : .select('users!memberships_user_id_fkey!inner(email)') filtré par role.
         if (this.selectCols.includes('email')) {
           return rows.map((m) => {
             const u = store.users.find((x) => x.id === m.user_id)
@@ -531,10 +566,22 @@ interface SyncResponseBody {
   snapshots: Record<string, { status: string; checksum: string; row_count: number }>
 }
 
+// Étiquettes internes des feuilles (= valeurs de body.synced_sheets et clés de snapshots).
+// L'étiquette « Portefeuille » est conservée même si l'onglet réel lu est « POSITIONS ».
 const SHEET_ORDER = [
   'PARAMETRAGES',
   'Base',
   'Portefeuille',
+  'HISTORIQUE',
+  'COTISATIONS',
+  'Details cotisations',
+]
+
+// Noms d'onglets RÉELLEMENT passés à readSheet (≠ étiquettes : « POSITIONS » et non « Portefeuille »).
+const READ_ORDER = [
+  'PARAMETRAGES',
+  'Base',
+  'POSITIONS',
   'HISTORIQUE',
   'COTISATIONS',
   'Details cotisations',
@@ -655,7 +702,8 @@ Deno.test(
     const handler = buildHandler(store, {
       rpcCalls,
       overrides: {
-        Portefeuille: [
+        // L'override porte sur l'onglet lu par readSheet : « POSITIONS ».
+        POSITIONS: [
           ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours'],
           ['Apple', 'AAPL', 'Action', '10', 'EUR', '1 234,56'],
           ['BadCo', 'BADQ', 'Action', 'NON_NUM', 'EUR', '200'],
@@ -705,8 +753,9 @@ Deno.test('handler : ordre impératif → PARAMETRAGES avant Base', async () => 
   const handler = buildHandler(store, { order })
   const res = await handler(syncRequest(CLUB_ID))
   assertEquals(res.status, 200)
-  // L'ordre de lecture des feuilles est exactement l'ordre impératif documenté.
-  assertEquals(order, SHEET_ORDER)
+  // L'ordre de lecture des onglets est exactement l'ordre impératif documenté
+  // (avec l'onglet réel « POSITIONS » et non l'étiquette « Portefeuille »).
+  assertEquals(order, READ_ORDER)
   const idxParam = order.indexOf('PARAMETRAGES')
   const idxBase = order.indexOf('Base')
   assert(idxParam >= 0 && idxBase >= 0)

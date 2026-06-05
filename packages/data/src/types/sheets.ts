@@ -20,6 +20,12 @@ export interface ParametragesRowDTO {
   penaltyRate?: number | null
   city?: string | null
   country?: string | null
+  /** Identifiant du club chez le courtier (TEXT brut, zéros non significatifs conservés). */
+  brokerAccountRef?: string | null
+  /** Limite de cotisation annuelle (NUMERIC). */
+  annualInvestmentCap?: number | null
+  /** Nom du courtier (ex. « BOURSE DIRECT ») — rangé dans clubs.settings (pas de colonne dédiée). */
+  brokerName?: string | null
 }
 export interface PortefeuilleRowDTO {
   name: string
@@ -93,7 +99,12 @@ export interface ClubUpsert {
   min_contribution: number
   currency?: string
   city?: string | null
+  /** Code ISO 3166-1 alpha-2. Nullable depuis migration 024 (saisi par l'admin plus tard). */
   country?: string | null
+  /** Identifiant du club chez le courtier (clubs.broker_account_ref TEXT, migration 022). */
+  broker_account_ref?: string | null
+  /** Limite de cotisation annuelle (clubs.annual_investment_cap NUMERIC, migration 022). */
+  annual_investment_cap?: number | null
   settings?: Record<string, unknown>
 }
 export interface PositionUpsert {
