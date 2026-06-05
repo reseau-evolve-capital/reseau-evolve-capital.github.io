@@ -44,15 +44,46 @@ describe('EvolveEmailShell', () => {
 })
 
 describe('MagicLinkEmail', () => {
-  const magicLink = 'https://app.evolve.capital/auth/magic?token=abc-123'
+  const magicLink = 'https://app.evolve.capital/login/verify?code=abc-123'
   const expiresInMin = 15
 
-  it('contient le logo, le lien magique et la durée de validité', async () => {
+  it('FR (défaut) : logo, lien magique, durée, titre FR', async () => {
     const html = await renderEmailHtml(createElement(MagicLinkEmail, { magicLink, expiresInMin }))
     expect(html).toMatch(/EVOLVE/i)
     expect(html).toContain(magicLink)
     expect(html).toContain('Connexion à Evolve Capital')
     expect(html).toContain(String(expiresInMin))
+    // CTA FR.
+    expect(html).toContain('Se connecter')
+  })
+
+  it('EN : titre, CTA et copy anglaise + lien magique', async () => {
+    const html = await renderEmailHtml(
+      createElement(MagicLinkEmail, { magicLink, expiresInMin, locale: 'en' })
+    )
+    expect(html).toContain(magicLink)
+    expect(html).toContain('Sign in to Evolve Capital')
+    expect(html).toContain('Sign in')
+    expect(html).toContain(String(expiresInMin))
+    // Pas de copy FR résiduelle dans la version EN.
+    expect(html).not.toContain('Connexion à Evolve Capital')
+  })
+
+  it('LIEN UNIQUEMENT (A7) : aucun code/OTP affiché, ni fr ni en', async () => {
+    for (const locale of ['fr', 'en'] as const) {
+      const html = await renderEmailHtml(
+        createElement(MagicLinkEmail, { magicLink, expiresInMin, locale })
+      )
+      // Aucune invite à saisir un code (FR/EN), aucune mention de code/OTP.
+      expect(html.toLowerCase()).not.toMatch(/enter the code|saisis le code|saisir le code/)
+      expect(html.toLowerCase()).not.toMatch(/\bcode otp\b|\bcode de vérification\b|one-?time code/)
+      // Aucun placeholder de template Supabase (Token/Code) ne doit fuiter.
+      expect(html).not.toContain('{{ .Token }}')
+      expect(html).not.toContain('{{ .Code }}')
+      // Aucun bloc de 6 chiffres isolé (forme d'un OTP) hors de l'URL du lien.
+      const rendered = html.replace(/<[^>]+>/g, ' ').replace(magicLink, ' ')
+      expect(rendered).not.toMatch(/(?<!\d)\d{6}(?!\d)/)
+    }
   })
 
   it('utilise un CTA jaune (token brand-yellow), texte encre, jamais brand.red', async () => {
