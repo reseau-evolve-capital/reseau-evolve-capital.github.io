@@ -741,6 +741,7 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: Database['public']['Enums']['member_role']
       }
+      is_club_staff: { Args: { p_club_id: string }; Returns: boolean }
       refresh_member_quote_part: { Args: never; Returns: undefined }
       update_club_settings: {
         Args: {
