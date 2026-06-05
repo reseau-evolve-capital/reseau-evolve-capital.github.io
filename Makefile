@@ -50,7 +50,7 @@ db-types:
 	supabase gen types typescript --local > packages/data/src/supabase/types.gen.ts
 
 db-sync:
-	pnpm --filter @evolve/web tsx scripts/sync-sheets.ts
+	node scripts/sync-sheets.mjs $(CLUB_ID)
 
 ## Docker (apps/web uniquement)
 docker-build:
