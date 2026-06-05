@@ -77,7 +77,7 @@ describe('MembersList — rendu', () => {
     expect(container.textContent).toMatch(/%/)
   })
 
-  it('affiche — pour status null', () => {
+  it('affiche — pour status null + libellé a11y explicite', () => {
     render(<MembersList members={MEMBERS} />)
     // COLY Marc a status: null
     const rows = screen.getAllByTestId('member-row')
@@ -86,6 +86,16 @@ describe('MembersList — rendu', () => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const colyRow = rows[2]!
     expect(within(colyRow).getByText('—')).toBeInTheDocument()
+    // F3 : le « — » n'est plus muet → title + aria-label explicites (défaut FR).
+    expect(within(colyRow).getByLabelText('Aucune cotisation enregistrée')).toBeInTheDocument()
+  })
+
+  it('respecte le libellé i18n du statut « aucune cotisation »', () => {
+    render(<MembersList members={MEMBERS} labels={{ statusNone: 'No contribution recorded' }} />)
+    const rows = screen.getAllByTestId('member-row')
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const colyRow = rows[2]!
+    expect(within(colyRow).getByLabelText('No contribution recorded')).toBeInTheDocument()
   })
 
   it('état vide → EmptyState « Aucun membre »', () => {
@@ -206,7 +216,9 @@ describe('MembersList — membres sortis', () => {
       id: '4',
       fullName: 'DIOP Awa',
       email: 'awa@x.fr',
-      role: 'member',
+      // « treasurer » : prouve que le rôle de gouvernance est bien remplacé (pas seulement
+      // le cas par défaut « Membre »).
+      role: 'treasurer',
       totalContributed: 600,
       detentionPct: 0.02,
       monthsCount: 6,
@@ -240,6 +252,29 @@ describe('MembersList — membres sortis', () => {
     expect(screen.queryByText('Sorti')).toBeNull()
     const rows = screen.getAllByTestId('member-row')
     rows.forEach((r) => expect(r).toHaveAttribute('data-member-status', 'active'))
+  })
+
+  it('remplace le badge rôle par « Ancien membre » (F4)', () => {
+    render(<MembersList members={WITH_LEFT} />)
+    const rows = screen.getAllByTestId('member-row')
+    const leftRow = rows.find((r) => within(r).queryByText('Sorti'))
+    expect(leftRow).toBeDefined()
+    expect(within(leftRow!).getByText('Ancien membre')).toBeInTheDocument()
+    // Le rôle de gouvernance d'origine (Trésorier) n'est plus affiché pour ce membre.
+    expect(within(leftRow!).queryByText('Trésorier')).toBeNull()
+  })
+
+  it('garde le badge rôle pour les membres actifs', () => {
+    render(<MembersList members={WITH_LEFT} />)
+    // AFOUDAH (treasurer, actif) garde « Trésorier » ; « Ancien membre » n'apparaît qu'une fois.
+    expect(screen.getByText('Trésorier')).toBeInTheDocument()
+    expect(screen.getAllByText('Ancien membre')).toHaveLength(1)
+  })
+
+  it('respecte le libellé i18n « Ancien membre »', () => {
+    render(<MembersList members={WITH_LEFT} labels={{ formerRole: 'Former member' }} />)
+    expect(screen.getByText('Former member')).toBeInTheDocument()
+    expect(screen.queryByText('Ancien membre')).toBeNull()
   })
 
   it('respecte les libellés i18n du badge et de la date', () => {

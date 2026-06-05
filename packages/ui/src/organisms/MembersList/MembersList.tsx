@@ -66,8 +66,19 @@ export interface MembersListLabels {
   columns?: Partial<MembersListColumnLabels>
   /** Libellés des rôles (Badge). */
   roles?: Partial<Record<MemberRoleKey, string>>
+  /**
+   * Libellé du « rôle » affiché pour un membre sorti (`membershipStatus === 'left'`).
+   * État purement présentationnel dérivé de la sortie — il remplace le badge rôle de
+   * gouvernance (on ne mélange pas gouvernance et état d'adhésion). Défaut FR « Ancien membre ».
+   */
+  formerRole?: string
   /** Libellés des statuts de cotisation (Pill). */
   statuses?: Partial<Record<MemberContribStatus, string>>
+  /**
+   * Texte d'accessibilité du statut « aucune cotisation enregistrée » (status `null`).
+   * Sert de `title` et d'`aria-label` au « — » muet. Défaut FR « Aucune cotisation enregistrée ».
+   */
+  statusNone?: string
   /** Libellés des statuts d'accès (AccessBadge). active/locked. */
   access?: Pick<AccessBadgeLabels, 'active' | 'locked'>
   /** Libellés du menu d'actions (MemberActionsMenu). */
@@ -136,6 +147,10 @@ const DEFAULT_STATUS_LABEL: Record<MemberContribStatus, string> = {
   late: 'En retard',
   exempt: 'Exempté',
 }
+/** Libellé du « rôle » d'un membre sorti (remplace le badge rôle). */
+const DEFAULT_FORMER_ROLE_LABEL = 'Ancien membre'
+/** a11y du statut `null` (membre sans ligne de cotisation enregistrée). */
+const DEFAULT_STATUS_NONE_LABEL = 'Aucune cotisation enregistrée'
 
 const DEFAULT_COLUMN_LABELS: MembersListColumnLabels = {
   fullName: 'Membre',
@@ -186,7 +201,9 @@ interface LeftLabels {
 function buildColumns(
   columnLabels: MembersListColumnLabels,
   roleLabels: Record<MemberRoleKey, string>,
+  formerRoleLabel: string,
   statusLabels: Record<MemberContribStatus, string>,
+  statusNoneLabel: string,
   accessLabels: Pick<AccessBadgeLabels, 'active' | 'locked'>,
   detentionBarLabel: (name: string) => string,
   leftLabels: LeftLabels,
@@ -236,7 +253,14 @@ function buildColumns(
     col.accessor('role', {
       header: columnLabels.role,
       enableSorting: false,
-      cell: (c) => <Badge variant={ROLE_VARIANT[c.getValue()]}>{roleLabels[c.getValue()]}</Badge>,
+      cell: (c) => {
+        // Membre sorti : on affiche « Ancien membre » (état d'adhésion) À LA PLACE du badge
+        // rôle de gouvernance — on ne mélange pas les deux notions (décision lead).
+        if (c.row.original.membershipStatus === 'left') {
+          return <Badge variant="neutral">{formerRoleLabel}</Badge>
+        }
+        return <Badge variant={ROLE_VARIANT[c.getValue()]}>{roleLabels[c.getValue()]}</Badge>
+      },
     }),
     col.accessor('totalContributed', {
       header: columnLabels.totalContributed,
@@ -264,14 +288,36 @@ function buildColumns(
       enableSorting: false,
       cell: (c) => {
         const s = c.getValue()
-        return s ? <Pill status={STATUS_PILL[s]}>{statusLabels[s]}</Pill> : <span>—</span>
+        // status `null` → tiret muet, mais on explicite le sens (title + aria-label) pour
+        // que l'AT et le survol ne laissent pas un « — » ambigu. `—` reste aria-hidden.
+        return s ? (
+          <Pill status={STATUS_PILL[s]}>{statusLabels[s]}</Pill>
+        ) : (
+          // `role="img"` rend l'aria-label permis (un span nu l'interdit) : le « — » devient
+          // une image textuelle au sens « aucune cotisation », et `title` sert l'infobulle.
+          <span role="img" title={statusNoneLabel} aria-label={statusNoneLabel}>
+            <span aria-hidden="true">—</span>
+          </span>
+        )
       },
     }),
     // Colonne « Accès » (ADM-007), juste après « Statut ».
     col.accessor('accessStatus', {
       header: columnLabels.access,
       enableSorting: false,
-      cell: (c) => <AccessBadge status={c.getValue()} labels={accessLabels} />,
+      cell: (c) => {
+        // Membre sorti : l'accès reste sémantiquement « actif » (aucune sémantique modifiée),
+        // mais on atténue visuellement la pastille pour rester cohérent avec la ligne grisée
+        // (F2/F4). L'opacité n'est qu'un signal secondaire — le libellé du badge demeure lisible.
+        const left = c.row.original.membershipStatus === 'left'
+        return (
+          <AccessBadge
+            status={c.getValue()}
+            labels={accessLabels}
+            className={left ? 'opacity-60' : undefined}
+          />
+        )
+      },
     }),
   ]
 
@@ -337,6 +383,8 @@ export function MembersList({
     () => ({ ...DEFAULT_STATUS_LABEL, ...labels?.statuses }),
     [labels?.statuses]
   )
+  const formerRoleLabel = labels?.formerRole ?? DEFAULT_FORMER_ROLE_LABEL
+  const statusNoneLabel = labels?.statusNone ?? DEFAULT_STATUS_NONE_LABEL
   const accessLabels = labels?.access ?? {}
   const detentionBarLabel = labels?.detentionBarLabel ?? defaultDetentionBarLabel
   const sortLabel = labels?.sortLabel ?? defaultSortLabel
@@ -362,7 +410,9 @@ export function MembersList({
       buildColumns(
         columnLabels,
         roleLabels,
+        formerRoleLabel,
         statusLabels,
+        statusNoneLabel,
         accessLabels,
         detentionBarLabel,
         leftLabels,
@@ -379,7 +429,9 @@ export function MembersList({
     [
       columnLabels,
       roleLabels,
+      formerRoleLabel,
       statusLabels,
+      statusNoneLabel,
       accessLabels,
       detentionBarLabel,
       leftLabels,

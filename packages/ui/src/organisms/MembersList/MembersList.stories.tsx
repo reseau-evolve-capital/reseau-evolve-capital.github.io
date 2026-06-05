@@ -92,7 +92,10 @@ export const Empty: Story = {
   },
 }
 
-/** Avec un membre sorti du club : badge « Sorti », date de sortie et ligne atténuée. */
+/**
+ * Avec un membre sorti du club : badge « Sorti », date de sortie et ligne atténuée.
+ * Le rôle de gouvernance laisse place au badge « Ancien membre » (état d'adhésion).
+ */
 export const WithLeftMember: Story = {
   args: {
     members: [
@@ -101,7 +104,9 @@ export const WithLeftMember: Story = {
         id: '4',
         fullName: 'DIOP Awa',
         email: 'awa@x.fr',
-        role: 'member',
+        // Volontairement « treasurer » pour prouver que le rôle est remplacé, pas le seul cas
+        // par défaut « Membre ».
+        role: 'treasurer',
         totalContributed: 600,
         detentionPct: 0.02,
         monthsCount: 6,
@@ -119,6 +124,9 @@ export const WithLeftMember: Story = {
     const rows = canvas.getAllByTestId('member-row')
     const leftRow = rows.find((r) => within(r).queryByText('Sorti'))
     await expect(leftRow).toHaveAttribute('data-member-status', 'left')
+    // F4 : le rôle de gouvernance est masqué au profit de « Ancien membre ».
+    await expect(within(leftRow!).getByText('Ancien membre')).toBeInTheDocument()
+    await expect(within(leftRow!).queryByText('Trésorier')).toBeNull()
   },
 }
 
