@@ -367,17 +367,17 @@
         "warning": "Synced with warnings",
         "warningMessage": "Some rows were skipped."
       },
-      "unpaidAlert": "{count, plural, =1 {1 member is in arrears.} other {# members are in arrears.}}",
+      "unpaidAlert": "{count, plural, =1 {1 member has an outstanding contribution.} other {# members have outstanding contributions.}}",
       "kpi": {
         "activeMembers": "Active members",
         "portfolioValue": "Portfolio value",
         "totalContributed": "Total contributed",
-        "unpaidCount": "Members in arrears"
+        "unpaidCount": "Outstanding"
       }
     },
     "members": {
       "title": "Club members",
-      "filterUnpaid": "Show only members in arrears",
+      "filterUnpaid": "Members with outstanding contributions",
       "tableLabel": "Club members",
       "columns": {
         "fullName": "Member",
@@ -391,13 +391,15 @@
         "member": "Member",
         "treasurer": "Treasurer",
         "president": "President",
-        "network_admin": "Network admin"
+        "network_admin": "Network admin",
+        "former": "Former member"
       },
       "statuses": {
         "ok": "Up to date",
         "pending": "Pending",
         "late": "Overdue",
-        "exempt": "Exempt"
+        "exempt": "Exempt",
+        "none": "No contribution recorded"
       },
       "empty": {
         "title": "No members",
@@ -411,8 +413,10 @@
         "label": "Filter by status",
         "all": "All members",
         "active": "Active members",
-        "left": "Members who left"
+        "left": "Members who left",
+        "option": "{label} ({count})"
       },
+      "resultsCount": "{count, plural, =1 {1 result} other {# results}}",
       "left": {
         "badge": "Left",
         "since": "Left on {date}"

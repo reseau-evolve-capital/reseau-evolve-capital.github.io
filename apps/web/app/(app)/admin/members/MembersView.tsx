@@ -80,6 +80,11 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
   const activeCount = countActiveMembers(data.members)
   const atLimit = activeCount >= ACTIVE_MEMBER_LIMIT
 
+  // Comptes par état d'adhésion, pour suffixer chaque option du filtre (F5).
+  // Calculés sur TOUS les membres en mémoire, indépendamment des filtres en cours.
+  const totalCount = data.members.length
+  const leftCount = totalCount - activeCount
+
   // Filtres composés : état d'adhésion (tous/actifs/sortis) puis impayé.
   const filtered = filterMembers(filterByMemberState(data.members, memberState), onlyUnpaid)
 
@@ -170,9 +175,25 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             </SelectTrigger>
             <SelectPortal>
               <SelectContent>
-                <SelectItem value="all">{t('members.stateFilter.all')}</SelectItem>
-                <SelectItem value="active">{t('members.stateFilter.active')}</SelectItem>
-                <SelectItem value="left">{t('members.stateFilter.left')}</SelectItem>
+                {/* Chaque option porte son compte (sur tous les membres) → repère rapide (F5). */}
+                <SelectItem value="all">
+                  {t('members.stateFilter.option', {
+                    label: t('members.stateFilter.all'),
+                    count: totalCount,
+                  })}
+                </SelectItem>
+                <SelectItem value="active">
+                  {t('members.stateFilter.option', {
+                    label: t('members.stateFilter.active'),
+                    count: activeCount,
+                  })}
+                </SelectItem>
+                <SelectItem value="left">
+                  {t('members.stateFilter.option', {
+                    label: t('members.stateFilter.left'),
+                    count: leftCount,
+                  })}
+                </SelectItem>
               </SelectContent>
             </SelectPortal>
           </SelectRoot>
@@ -197,6 +218,10 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
           {t('staleData')}
         </p>
       )}
+      {/* Nombre de résultats du filtre courant (annoncé aux AT via role="status"). */}
+      <p role="status" className="text-[12px] text-text-ter">
+        {t('members.resultsCount', { count: filtered.length })}
+      </p>
       <MembersList
         members={filtered.map(toRow)}
         onLockMember={(m) => setModal({ member: m, mode: 'lock' })}
@@ -222,12 +247,16 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             president: t('members.roles.president'),
             network_admin: t('members.roles.network_admin'),
           },
+          // Membre sorti : « Ancien membre » remplace le badge rôle (F4).
+          formerRole: t('members.roles.former'),
           statuses: {
             ok: t('members.statuses.ok'),
             pending: t('members.statuses.pending'),
             late: t('members.statuses.late'),
             exempt: t('members.statuses.exempt'),
           },
+          // a11y du statut « — » (aucune cotisation enregistrée) (F3).
+          statusNone: t('members.statuses.none'),
           access: {
             active: t('members.access.active'),
             locked: t('members.access.locked'),

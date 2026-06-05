@@ -367,17 +367,17 @@
         "warning": "Synchronisé avec des anomalies",
         "warningMessage": "Certaines lignes ont été ignorées."
       },
-      "unpaidAlert": "{count, plural, =1 {1 membre est en situation d’impayé.} other {# membres sont en situation d’impayé.}}",
+      "unpaidAlert": "{count, plural, =1 {1 membre a une cotisation à régulariser.} other {# membres ont une cotisation à régulariser.}}",
       "kpi": {
         "activeMembers": "Membres actifs",
         "portfolioValue": "Valeur du portefeuille",
         "totalContributed": "Total cotisé",
-        "unpaidCount": "Membres en impayé"
+        "unpaidCount": "À régulariser"
       }
     },
     "members": {
       "title": "Membres du club",
-      "filterUnpaid": "Afficher seulement les membres en impayé",
+      "filterUnpaid": "Membres avec cotisation à régulariser",
       "tableLabel": "Membres du club",
       "columns": {
         "fullName": "Membre",
@@ -391,13 +391,15 @@
         "member": "Membre",
         "treasurer": "Trésorier",
         "president": "Président",
-        "network_admin": "Admin réseau"
+        "network_admin": "Admin réseau",
+        "former": "Ancien membre"
       },
       "statuses": {
         "ok": "À jour",
         "pending": "En attente",
         "late": "En retard",
-        "exempt": "Exempté"
+        "exempt": "Exempté",
+        "none": "Aucune cotisation enregistrée"
       },
       "empty": {
         "title": "Aucun membre",
@@ -411,8 +413,10 @@
         "label": "Filtrer par état",
         "all": "Tous les membres",
         "active": "Membres actifs",
-        "left": "Membres sortis"
+        "left": "Membres sortis",
+        "option": "{label} ({count})"
       },
+      "resultsCount": "{count, plural, =1 {1 résultat} other {# résultats}}",
       "left": {
         "badge": "Sorti",
         "since": "Sorti le {date}"
