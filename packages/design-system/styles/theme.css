@@ -31,6 +31,7 @@
   --color-data-positive-50: var(--data-positive-50);
   --color-data-negative: var(--data-negative);
   --color-data-negative-50: var(--data-negative-50);
+  --color-data-negative-strong: var(--data-negative-strong);
   --color-data-neutral: var(--data-neutral);
   --color-data-neutral-50: var(--data-neutral-50);
   --color-data-warning: var(--data-warning);

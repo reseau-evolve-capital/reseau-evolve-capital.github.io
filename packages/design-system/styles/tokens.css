@@ -33,6 +33,11 @@
   --data-positive-50: #E8F5F0;
   --data-negative: #C53030;
   --data-negative-50: #FEECEE;
+  /* Texte rouge dataviz foncé pour AA/AAA sur le tint clair (#C53030 sur -50 ≈ 4.9:1 ne
+     passe pas AAA texte normal). Réservé au TEXTE des alertes de retard ; #991B1B sur
+     blanc ≈ 7.6:1 (AAA) et sur --data-negative-50 (#FEECEE) ≈ 6.9:1 (AAA). Le rouge vif
+     --data-negative reste pour icônes/bordures/pastilles. Jamais le rouge brand #E93E3A. */
+  --data-negative-strong: #991B1B;
   /* AA-safe sur surfaces claires : #67686A = 4.7:1 sur le tint --data-neutral-50
      (#ECECE8) et 5.6:1 sur blanc, comme TEXTE (badges « Actions »/neutres).
      L'ancien #8A8B8C (≈2.9:1) échouait WCAG AA. Le tint de fond reste inchangé. */
@@ -112,4 +117,7 @@
   --data-warning-50: rgba(245, 158, 11, 0.14);
   /* En sombre, le texte ambre doit être CLAIR (lisible sur fond foncé). */
   --data-warning-strong: #FCD34D;
+  /* En sombre, le texte rouge dataviz doit être CLAIR (lisible sur fond foncé) :
+     #FCA5A5 sur --card (#1A1718) ≈ 7.2:1 (AAA). */
+  --data-negative-strong: #FCA5A5;
 }
