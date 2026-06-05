@@ -69,17 +69,19 @@ describe('getDashboardData', () => {
           net_market_value: '65574.87',
           contribution_status: 'ok',
           amount_due: '0',
-          synced_at: '2026-05-31T00:00:00Z',
         },
         error: null,
       },
       users: { data: { firstname: 'Ruben', full_name: 'AFOUDAH Ruben' }, error: null },
-      clubs: { data: { name: 'Club Test' }, error: null },
+      // E2 : syncedAt vient de clubs.synced_at (timestamp du club), pas de member_quote_part.
+      clubs: { data: { name: 'Club Test', synced_at: '2026-06-05T10:00:00Z' }, error: null },
     })
 
     const result = await getDashboardData(supabase, 'user-1', 'club-1')
 
     expect(result).not.toBeNull()
+    // E2 : la source du statut de sync est clubs.synced_at (unifiée avec la topbar desktop).
+    expect(result?.syncedAt).toBe('2026-06-05T10:00:00Z')
     // Coercition Number() : valeurs numériques renvoyées comme number, pas string.
     expect(result?.netMarketValue).toBe(65574.87)
     expect(typeof result?.netMarketValue).toBe('number')
@@ -105,11 +107,11 @@ describe('getDashboardData', () => {
           net_market_value: '0',
           contribution_status: 'pending',
           amount_due: '0',
-          synced_at: null,
         },
         error: null,
       },
       users: { data: null, error: null },
+      // clubs.synced_at absent → syncedAt retombe sur null (état « jamais synchronisé »).
       clubs: { data: { name: 'Club Test' }, error: null },
     })
 
@@ -117,5 +119,6 @@ describe('getDashboardData', () => {
 
     expect(result?.member.fullName).toBe('Membre')
     expect(result?.member.firstname).toBeNull()
+    expect(result?.syncedAt).toBeNull()
   })
 })

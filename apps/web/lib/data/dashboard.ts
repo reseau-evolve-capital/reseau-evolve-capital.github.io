@@ -1,8 +1,14 @@
 // Couche data du dashboard membre (DSH-006).
 //
-// `member_quote_part` est une vue matérialisée rafraîchie toutes les 2h par la sync.
-// Elle porte la valeur BOOK (`net_market_value`) — décision V0 : pas de prix live ici.
-// La RLS isole automatiquement les lignes par `auth.uid()` (policies sur memberships).
+// `member_quote_part` est une vue (security_invoker, migration 030) : recalculée à chaque
+// requête → toujours à jour, suit la cascade de re-key user_id à la 1re connexion (pas de MV
+// figée). Elle porte la valeur BOOK (`net_market_value`) — décision V0 : pas de prix live ici.
+// La RLS des tables sous-jacentes isole les lignes par `auth.uid()` (policies memberships +
+// contributions « own read »).
+//
+// `syncedAt` exposé à l'UI vient de `clubs.synced_at` (timestamp du CLUB, MAJ à chaque sync),
+// pas de `member_quote_part.synced_at` (par-membre, désynchronisable) : source unique partagée
+// avec la topbar desktop (layout (app)) pour un statut de sync cohérent desktop/mobile (E2).
 //
 // Réf : DATA_MODEL.md §2 (vue member_quote_part), CLAUDE.md (valorisation book V0).
 
@@ -51,7 +57,7 @@ export async function getDashboardData(
   const { data: mqp, error } = await supabase
     .from('member_quote_part')
     .select(
-      'role, joined_at, detention_pct, total_contributed, net_market_value, contribution_status, amount_due, synced_at'
+      'role, joined_at, detention_pct, total_contributed, net_market_value, contribution_status, amount_due'
     )
     .eq('user_id', userId)
     .eq('club_id', clubId)
@@ -65,20 +71,24 @@ export async function getDashboardData(
         | 'net_market_value'
         | 'contribution_status'
         | 'amount_due'
-        | 'synced_at'
       >
     >()
   if (error) throw error
   if (!mqp) return null
 
   // La vue ne porte PAS les colonnes de nom : on lit le profil séparément (DATA_MODEL.md §2).
+  // On lit aussi `clubs.synced_at` : source unique du statut de sync (E2), partagée avec la topbar.
   const [{ data: profile }, { data: club }] = await Promise.all([
     supabase
       .from('users')
       .select('firstname, full_name')
       .eq('id', userId)
       .maybeSingle<Pick<UserRow, 'firstname' | 'full_name'>>(),
-    supabase.from('clubs').select('name').eq('id', clubId).maybeSingle<Pick<ClubRow, 'name'>>(),
+    supabase
+      .from('clubs')
+      .select('name, synced_at')
+      .eq('id', clubId)
+      .maybeSingle<Pick<ClubRow, 'name' | 'synced_at'>>(),
   ])
 
   return {
@@ -97,6 +107,7 @@ export async function getDashboardData(
       amountDue: Number(mqp.amount_due ?? 0),
     },
     club: { name: club?.name ?? '—' },
-    syncedAt: mqp.synced_at ?? null,
+    // E2 : statut de sync unifié sur le timestamp du CLUB (≠ member_quote_part.synced_at par-membre).
+    syncedAt: club?.synced_at ?? null,
   }
 }
