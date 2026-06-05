@@ -56,7 +56,9 @@ function buildCsp(): string {
     "'self'",
     ...supabaseConnectSources(), // REST/Auth/Storage https + Realtime wss
     'https://cloudflareinsights.com', // beacon Cloudflare POST les métriques ici (OPS-002)
-    'https://*.ingest.sentry.io', // ingestion Sentry via le DSN (OPS-001)
+    // Sentry : couvre le DSN classique (*.ingest.sentry.io) ET les DSN RÉGIONAUX
+    // (*.ingest.de.sentry.io / .us.) — le wildcard simple ne matche pas le segment régional.
+    'https://*.sentry.io', // ingestion Sentry, toutes régions (OPS-001)
   ]
   const scriptSrc = [
     "'self'",
