@@ -32,3 +32,36 @@ export function mapParametragesToClub(rows: ParametragesRowDTO[], sheetId: strin
     },
   }
 }
+
+/** Noms BRUTS des dirigeants extraits de PARAMETRAGES (pour réconciliation des rôles). */
+export interface ClubOfficers {
+  /** Nom complet du Président(e), ou null si absent de la feuille. */
+  presidentName: string | null
+  /** Nom complet du Trésorier(e), ou null si absent de la feuille. */
+  treasurerName: string | null
+}
+
+/**
+ * Extrait les noms des dirigeants (Président, Trésorier) de la feuille PARAMETRAGES.
+ *
+ * Séparé de `mapParametragesToClub` car ces noms ne sont PAS de la config club : ils
+ * servent uniquement à la réconciliation des rôles côté `sync` (matching du nom vers
+ * `users.full_name`). Le nom est renvoyé BRUT (non normalisé) ; la normalisation pour
+ * le matching vit dans `normalizeName`, appliquée au moment du rapprochement.
+ *
+ * Feuille vide → dirigeants null (pas d'exception : l'absence de dirigeant n'est pas
+ * une erreur dure ; le sync logge alors un warning et continue). Le Secrétaire n'est
+ * PAS extrait (décision : pas de valeur 'secretary' dans l'enum member_role).
+ */
+export function mapParametragesToOfficers(rows: ParametragesRowDTO[]): ClubOfficers {
+  const first = rows[0]
+  if (!first) return { presidentName: null, treasurerName: null }
+  const clean = (s: string | null | undefined): string | null => {
+    const v = (s ?? '').trim()
+    return v === '' ? null : v
+  }
+  return {
+    presidentName: clean(first.presidentName),
+    treasurerName: clean(first.treasurerName),
+  }
+}

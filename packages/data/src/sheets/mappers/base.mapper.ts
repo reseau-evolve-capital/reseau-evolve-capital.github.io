@@ -65,7 +65,10 @@ export function mapBaseRowToMember(
     },
     membership: {
       club_id: clubId,
-      role: 'member',
+      // On ne pose PAS `role` ici : la feuille Base ne porte aucune info de gouvernance.
+      // Le rôle est piloté par PARAMETRAGES (réconciliation côté sync). À l'insert, la colonne
+      // prend son défaut DB ('member') ; à l'update, le rôle existant est préservé (un
+      // president/treasurer dérivé ou un network_admin global n'est jamais rétrogradé par Base).
       status: isActive ? 'active' : 'left',
       joined_at: toIsoDate(row.joinedAt),
       leave_at: toIsoDate(row.leftAt),

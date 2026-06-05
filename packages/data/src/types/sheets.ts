@@ -26,6 +26,17 @@ export interface ParametragesRowDTO {
   annualInvestmentCap?: number | null
   /** Nom du courtier (ex. « BOURSE DIRECT ») — rangé dans clubs.settings (pas de colonne dédiée). */
   brokerName?: string | null
+  /**
+   * Nom complet du Président(e) tel qu'écrit dans PARAMETRAGES (brut, non normalisé).
+   * Sert UNIQUEMENT à la réconciliation des rôles côté `sync` (matching vers users.full_name) —
+   * jamais persisté tel quel. null si la ligne est absente de la feuille.
+   */
+  presidentName?: string | null
+  /**
+   * Nom complet du Trésorier(e) tel qu'écrit dans PARAMETRAGES (brut, non normalisé).
+   * Même usage que `presidentName` (réconciliation des rôles). null si absent.
+   */
+  treasurerName?: string | null
 }
 export interface PortefeuilleRowDTO {
   name: string
@@ -89,7 +100,9 @@ export interface UserUpsert {
 }
 export interface MembershipUpsert {
   club_id: string
-  role: 'member'
+  // Pas de `role` : la feuille Base ne détermine pas la gouvernance. Le rôle est dérivé de
+  // PARAMETRAGES (réconciliation sync) ; à l'insert la colonne prend son défaut DB ('member'),
+  // à l'update le rôle existant (president/treasurer dérivé, ou network_admin) est préservé.
   status: 'active' | 'left'
   /** format 'yyyy-mm-dd' pour colonne Postgres DATE, ou null. */
   joined_at: string | null
