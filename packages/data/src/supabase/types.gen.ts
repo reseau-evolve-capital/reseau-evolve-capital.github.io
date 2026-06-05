@@ -28,13 +28,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      attestation_sends: {
+        Row: {
+          brevo_message_id: string | null
+          created_at: string
+          id: string
+          membership_id: string
+          period: string
+          reference: string | null
+          sent_at: string
+        }
+        Insert: {
+          brevo_message_id?: string | null
+          created_at?: string
+          id?: string
+          membership_id: string
+          period: string
+          reference?: string | null
+          sent_at?: string
+        }
+        Update: {
+          brevo_message_id?: string | null
+          created_at?: string
+          id?: string
+          membership_id?: string
+          period?: string
+          reference?: string | null
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'attestation_sends_membership_id_fkey'
+            columns: ['membership_id']
+            isOneToOne: false
+            referencedRelation: 'memberships'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       clubs: {
         Row: {
+          annual_investment_cap: number | null
+          broker_account_ref: string | null
           city: string | null
           country: string
           created_at: string
           currency: string
           id: string
+          last_error_email_sent_at: string | null
           min_contribution: number | null
           name: string
           settings: Json
@@ -44,11 +85,14 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          annual_investment_cap?: number | null
+          broker_account_ref?: string | null
           city?: string | null
           country?: string
           created_at?: string
           currency?: string
           id?: string
+          last_error_email_sent_at?: string | null
           min_contribution?: number | null
           name: string
           settings?: Json
@@ -58,11 +102,14 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          annual_investment_cap?: number | null
+          broker_account_ref?: string | null
           city?: string | null
           country?: string
           created_at?: string
           currency?: string
           id?: string
+          last_error_email_sent_at?: string | null
           min_contribution?: number | null
           name?: string
           settings?: Json
@@ -587,8 +634,10 @@ export type Database = {
           lastname: string | null
           onboarding_completed: boolean
           phone: string | null
+          postal_address: string | null
           rgpd_consented_at: string | null
           updated_at: string
+          welcome_sent: boolean
         }
         Insert: {
           address?: string | null
@@ -604,8 +653,10 @@ export type Database = {
           lastname?: string | null
           onboarding_completed?: boolean
           phone?: string | null
+          postal_address?: string | null
           rgpd_consented_at?: string | null
           updated_at?: string
+          welcome_sent?: boolean
         }
         Update: {
           address?: string | null
@@ -621,8 +672,10 @@ export type Database = {
           lastname?: string | null
           onboarding_completed?: boolean
           phone?: string | null
+          postal_address?: string | null
           rgpd_consented_at?: string | null
           updated_at?: string
+          welcome_sent?: boolean
         }
         Relationships: []
       }
@@ -687,6 +740,14 @@ export type Database = {
       }
       refresh_member_quote_part: { Args: never; Returns: undefined }
       user_is_staff: { Args: never; Returns: boolean }
+      verify_attestation: {
+        Args: { p_reference: string }
+        Returns: {
+          club_name: string
+          issued_at: string
+          period: string
+        }[]
+      }
     }
     Enums: {
       access_event_action: 'locked' | 'unlocked'

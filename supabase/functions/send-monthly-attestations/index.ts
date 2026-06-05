@@ -174,14 +174,26 @@ async function buildDeps(supabase: SupabaseClient): Promise<AttestationBatchDeps
         .eq('membership_id', member.membershipId)
         .maybeSingle()
 
-      // Club du membre (pour positions + ville).
+      // Club du membre (pour positions + ville + champs attestation).
       const { data: membership } = await supabase
         .from('memberships')
-        .select('club_id, joined_at, clubs(name, city)')
+        .select(
+          'club_id, joined_at, user_id, clubs(name, city, broker_account_ref, annual_investment_cap)'
+        )
         .eq('id', member.membershipId)
         .maybeSingle()
       const clubId = membership?.club_id as string | undefined
       const club = Array.isArray(membership?.clubs) ? membership?.clubs[0] : membership?.clubs
+
+      // Adresse postale du membre (dédiée attestation, sinon adresse importée de Base).
+      const userId = membership?.user_id as string | undefined
+      const { data: userRow } = userId
+        ? await supabase
+            .from('users')
+            .select('postal_address, address')
+            .eq('id', userId)
+            .maybeSingle()
+        : { data: null as { postal_address: string | null; address: string | null } | null }
 
       // Positions du club (valo Σ).
       const { data: positions } = clubId
@@ -200,9 +212,11 @@ async function buildDeps(supabase: SupabaseClient): Promise<AttestationBatchDeps
           clubName: (club?.name as string) ?? clubName,
           clubCity: (club?.city as string) ?? null,
           joinedAt: (membership?.joined_at as string) ?? null,
-          brokerAccountRef: null,
-          postalAddress: null,
+          brokerAccountRef: (club?.broker_account_ref as string) ?? null,
+          postalAddress:
+            (userRow?.postal_address as string) ?? (userRow?.address as string) ?? null,
           brokerName: null,
+          annualInvestmentCap: (club?.annual_investment_cap as number) ?? null,
         },
         contribution: contribution
           ? {
@@ -252,15 +266,20 @@ async function buildDeps(supabase: SupabaseClient): Promise<AttestationBatchDeps
         attachmentName: `attestation-detention-${clubSlug(data.clubName)}-${periodSlug(period)}.pdf`,
         htmlContent,
         subject: `Ton attestation de détention de ${periodLabelFr(period)}`,
+        // Réf vérifiable déterministe (encodée dans le QR du PDF) → persistée par recordSend.
+        reference: data.reference,
       }
     },
 
     sendBrevo,
 
-    recordSend: async (membershipId, period, brevoMessageId) => {
-      const { error } = await supabase
-        .from('attestation_sends')
-        .insert({ membership_id: membershipId, period, brevo_message_id: brevoMessageId })
+    recordSend: async (membershipId, period, brevoMessageId, reference) => {
+      const { error } = await supabase.from('attestation_sends').insert({
+        membership_id: membershipId,
+        period,
+        brevo_message_id: brevoMessageId,
+        reference, // registre /verifier — n'altère PAS l'idempotence (UNIQUE membership_id, period)
+      })
       // Insert en double (course) : la contrainte UNIQUE renvoie 23505 — on l'avale (idempotent).
       if (error && error.code !== '23505') {
         throw new Error(`Insert attestation_sends échoué: ${error.message}`)

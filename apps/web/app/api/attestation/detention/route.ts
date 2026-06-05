@@ -103,14 +103,25 @@ export async function GET(request: Request): Promise<NextResponse> {
       { data: positionRows },
       { data: monthRows },
     ] = await Promise.all([
-      supabase.from('users').select('full_name, address').eq('id', userId).maybeSingle<{
-        full_name: string | null
-        address: string | null
-      }>(),
-      supabase.from('clubs').select('name, city').eq('id', clubId).maybeSingle<{
-        name: string | null
-        city: string | null
-      }>(),
+      supabase
+        .from('users')
+        .select('full_name, address, postal_address')
+        .eq('id', userId)
+        .maybeSingle<{
+          full_name: string | null
+          address: string | null
+          postal_address: string | null
+        }>(),
+      supabase
+        .from('clubs')
+        .select('name, city, broker_account_ref, annual_investment_cap')
+        .eq('id', clubId)
+        .maybeSingle<{
+          name: string | null
+          city: string | null
+          broker_account_ref: string | null
+          annual_investment_cap: number | null
+        }>(),
       supabase
         .from('contributions')
         .select('detention_pct, total_contributed, net_market_value, status, amount_due, penalties')
@@ -159,9 +170,11 @@ export async function GET(request: Request): Promise<NextResponse> {
         clubName: clubRow?.name ?? null,
         clubCity: clubRow?.city ?? null,
         joinedAt: membership.joined_at,
-        brokerAccountRef: null, // pas en DB V0 → « — » (follow-up : clubs.broker_account_ref)
-        postalAddress: userRow?.address ?? null,
+        brokerAccountRef: clubRow?.broker_account_ref ?? null, // clubs.broker_account_ref (022)
+        // Adresse dédiée attestation (postal_address) sinon adresse importée de Base (address).
+        postalAddress: userRow?.postal_address ?? userRow?.address ?? null,
         brokerName: null, // défaut « Bourse Direct »
+        annualInvestmentCap: clubRow?.annual_investment_cap ?? null, // → capacité restante (022)
       },
       contribution: contributionRow
         ? {

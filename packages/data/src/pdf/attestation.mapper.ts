@@ -2,9 +2,10 @@
 //
 // Le fetch (session + RLS) vit dans la route API ; ce mapper ne fait QUE de la mise en
 // forme — il est testable sans DB. Règle d'or (CLAUDE.md) : aucune lacune ne produit
-// `NaN`/`undefined`/chaîne vide à l'écran → fallback `—` partout. Les champs ⚠ (adresse,
-// n° compte courtier, plafond annuel, dirigeants) ne sont PAS en DB en V0 → `—` assumé,
-// follow-up data non bloquant (pas de migration).
+// `NaN`/`undefined`/chaîne vide à l'écran → fallback `—` partout. L'adresse postale, le n°
+// de compte courtier et le plafond annuel (→ capacité restante) sont désormais alimentables
+// (colonnes users.postal_address / clubs.broker_account_ref / clubs.annual_investment_cap,
+// migration 022) ; une colonne vide reste rendue « — »/null. Les dirigeants restent hors DV0.
 //
 // Le formatage FR (formatEUR/formatPct/formatDate) est appliqué dans le composant PDF, pas
 // ici : le mapper produit des VALEURS numériques (ou null) + des libellés bruts, pour rester
@@ -48,9 +49,11 @@ export interface AttestationIdentityInput {
   joinedAt: string | null // ISO date (memberships.joined_at)
   /** N° de compte courtier — pas en DB V0 → null → `—`. */
   brokerAccountRef: string | null
-  /** Adresse postale — pas en DB V0 → null → `—`. */
+  /** Adresse postale — `clubs`/`users` (postal_address) ; null → `—`. */
   postalAddress: string | null
   brokerName: string | null // défaut « Bourse Direct »
+  /** Plafond annuel d'investissement (EUR) — clubs.annual_investment_cap ; null → capacité « — ». */
+  annualInvestmentCap: number | null
 }
 
 export interface AttestationInput {
@@ -194,6 +197,13 @@ export function mapAttestation(input: AttestationInput): AttestationData {
   const { year, month } = parsePeriod(input.period)
   const c = input.contribution
 
+  // Investissement cumulé de l'année + capacité restante = plafond − cumulé.
+  // Capacité non calculable si le plafond est absent (→ null → `—`). Si rien n'est investi
+  // cette année (yearInvested null), la capacité restante = le plafond entier.
+  const yearInvested = sumYearInvested(input.months, year)
+  const cap = num(input.identity.annualInvestmentCap)
+  const yearRemainingCapacity = cap === null ? null : cap - (yearInvested ?? 0)
+
   // Seed du n° de réf : identité + période (déterministe, non-secret).
   const seed = `${text(input.identity.fullName)}|${text(input.identity.clubName)}|${input.period}`
   const reference = buildReference(seed, input.period)
@@ -219,9 +229,10 @@ export function mapAttestation(input: AttestationInput): AttestationData {
     quotePartValue: { value: num(c?.netMarketValue ?? null), format: 'eur' },
     portfolioValue: { value: sumPortfolioValue(input.positions), format: 'eur' },
 
-    yearInvested: { value: sumYearInvested(input.months, year), format: 'eur' },
-    // Plafond annuel ABSENT en DB V0 → capacité restante non calculable → `—`.
-    yearRemainingCapacity: { value: null, format: 'eur' },
+    yearInvested: { value: yearInvested, format: 'eur' },
+    // Capacité restante = plafond annuel − investissement cumulé de l'année.
+    // Plafond absent (clubs.annual_investment_cap null) → non calculable → `—`.
+    yearRemainingCapacity: { value: yearRemainingCapacity, format: 'eur' },
     monthClubEffort: { value: monthEffort(input.months, year, month), format: 'eur' },
   }
 }

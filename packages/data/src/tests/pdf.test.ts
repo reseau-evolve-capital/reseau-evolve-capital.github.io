@@ -28,9 +28,10 @@ function completeInput(): AttestationInput {
       clubName: 'Les Investisseurs Audacieux',
       clubCity: 'Paris',
       joinedAt: '2018-06-01',
-      brokerAccountRef: null, // pas en DB V0 → `—`
-      postalAddress: null, // pas en DB V0 → `—`
+      brokerAccountRef: null, // testé séparément (cas alimenté)
+      postalAddress: null, // testé séparément (cas alimenté)
       brokerName: null, // → défaut « Bourse Direct »
+      annualInvestmentCap: null, // pas de plafond → capacité « — »
     },
     contribution: {
       detentionPct: 0.12345,
@@ -94,6 +95,7 @@ describe('mapAttestation — structure et formatage', () => {
         brokerAccountRef: null,
         postalAddress: null,
         brokerName: null,
+        annualInvestmentCap: null,
       },
       contribution: null,
       positions: [],
@@ -124,6 +126,42 @@ describe('mapAttestation — structure et formatage', () => {
       expect(m.value).toBeNull()
       expect(Number.isNaN(m.value as number)).toBe(false)
     }
+  })
+})
+
+describe('champs data alimentables (022) — broker, adresse, capacité restante', () => {
+  it('rend broker_account_ref et postal_address quand fournis', () => {
+    const input = completeInput()
+    input.identity.brokerAccountRef = 'BD-123456'
+    input.identity.postalAddress = '12 rue de la Paix, 75002 Paris'
+    const data = mapAttestation(input)
+    expect(data.brokerAccountRef).toBe('BD-123456')
+    expect(data.postalAddress).toBe('12 rue de la Paix, 75002 Paris')
+  })
+
+  it('capacité restante = plafond − investissement cumulé de l’année', () => {
+    const input = completeInput()
+    // completeInput : 2 mois payés 2026 à 100 → yearInvested = 200.
+    input.identity.annualInvestmentCap = 5000
+    const data = mapAttestation(input)
+    expect(data.yearInvested.value).toBe(200)
+    expect(data.yearRemainingCapacity.value).toBe(4800)
+  })
+
+  it('capacité restante = plafond entier si rien investi cette année', () => {
+    const input = completeInput()
+    input.months = [] // aucun mois payé → yearInvested null
+    input.identity.annualInvestmentCap = 5000
+    const data = mapAttestation(input)
+    expect(data.yearInvested.value).toBeNull()
+    expect(data.yearRemainingCapacity.value).toBe(5000)
+  })
+
+  it('capacité restante = null (→ « — ») si pas de plafond', () => {
+    const input = completeInput()
+    input.identity.annualInvestmentCap = null
+    const data = mapAttestation(input)
+    expect(data.yearRemainingCapacity.value).toBeNull()
   })
 })
 

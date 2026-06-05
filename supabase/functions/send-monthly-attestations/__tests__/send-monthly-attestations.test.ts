@@ -41,7 +41,12 @@ interface FakeOpts {
 
 function makeDeps(state: FakeState, opts: FakeOpts = {}) {
   const brevoPayloads: BrevoEmailPayload[] = []
-  const recorded: { membershipId: string; period: string; messageId: string | null }[] = []
+  const recorded: {
+    membershipId: string
+    period: string
+    messageId: string | null
+    reference: string
+  }[] = []
   const sleeps: number[] = []
   const rl = { ...(opts.rateLimit ?? {}) }
 
@@ -59,6 +64,7 @@ function makeDeps(state: FakeState, opts: FakeOpts = {}) {
         attachmentName: `attestation-detention-club-2026-04.pdf`,
         htmlContent: `<html>${member.membershipId}</html>`,
         subject: 'Ton attestation de détention de avril 2026',
+        reference: `REC-202604-${member.membershipId.toUpperCase()}`,
       })
     },
     sendBrevo: (payload) => {
@@ -71,9 +77,9 @@ function makeDeps(state: FakeState, opts: FakeOpts = {}) {
       brevoPayloads.push(payload)
       return Promise.resolve({ messageId: `msg-${brevoPayloads.length}` })
     },
-    recordSend: (membershipId, period, messageId) => {
+    recordSend: (membershipId, period, messageId, reference) => {
       state.sentLog.add(`${membershipId}|${period}`)
-      recorded.push({ membershipId, period, messageId })
+      recorded.push({ membershipId, period, messageId, reference })
       return Promise.resolve()
     },
     sleep: (ms) => {
@@ -119,8 +125,10 @@ Deno.test('premier run : envoie à chaque membre actif avec pièce jointe PDF ba
   assertEquals(atob(att.content), 'PDF-m1')
   assertEquals(brevoPayloads[0].to[0].email, 'a@ex.fr')
 
-  // Journalisé pour les deux.
+  // Journalisé pour les deux, avec la référence vérifiable (registre /verifier).
   assertEquals(recorded.length, 2)
+  assertEquals(recorded[0].reference, 'REC-202604-M1')
+  assertEquals(recorded[1].reference, 'REC-202604-M2')
 })
 
 // ---- Test 2 — IDEMPOTENCE : 2e run même période → 0 envoi ----

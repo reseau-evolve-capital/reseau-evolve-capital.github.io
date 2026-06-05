@@ -35,6 +35,8 @@ export interface AttestationAssembly {
   htmlContent: string
   /** Sujet de l'email. */
   subject: string
+  /** N° de référence vérifiable (REC-AAAAMM-XXXX) du document — persisté à l'envoi. */
+  reference: string
 }
 
 /** Pièce jointe Brevo (contenu base64). */
@@ -76,8 +78,14 @@ export interface AttestationBatchDeps {
   assemble: (member: MemberRow, clubName: string, period: string) => Promise<AttestationAssembly>
   /** Envoie l'email via Brevo. Lève BrevoRateLimitError sur 429. */
   sendBrevo: (payload: BrevoEmailPayload) => Promise<BrevoSendResult>
-  /** Journalise l'envoi (INSERT attestation_sends). Idempotent côté DB (UNIQUE). */
-  recordSend: (membershipId: string, period: string, brevoMessageId: string | null) => Promise<void>
+  /** Journalise l'envoi (INSERT attestation_sends). Idempotent côté DB (UNIQUE).
+   *  `reference` = n° vérifiable du document (registre /verifier) — persisté avec l'envoi. */
+  recordSend: (
+    membershipId: string,
+    period: string,
+    brevoMessageId: string | null,
+    reference: string
+  ) => Promise<void>
   /** Attente (backoff). Injectable pour test instantané. */
   sleep: (ms: number) => Promise<void>
   /** Log diagnostic (injectable pour test silencieux). */
@@ -202,7 +210,8 @@ export async function runAttestationBatch(
         })
 
         // Journalisation APRÈS succès (idempotence ; UNIQUE protège des courses).
-        await deps.recordSend(member.membershipId, period, result.messageId)
+        // On persiste la `reference` vérifiable (registre /verifier) en même temps que l'envoi.
+        await deps.recordSend(member.membershipId, period, result.messageId, assembly.reference)
         summary.sent += 1
       } catch (e) {
         // NON-ARRÊT : l'échec d'un membre n'interrompt pas le batch.
