@@ -304,7 +304,8 @@
     "kpi": {
       "totalContributed": "Total contributed",
       "monthsCount": "Number of months",
-      "detentionPct": "Stake"
+      "detentionPct": "Stake",
+      "netMarketValue": "Net holdings value"
     },
     "penalties": {
       "title": "Penalties",
@@ -484,7 +485,8 @@
       "kpi": {
         "total": "Total contributed",
         "count": "Payments",
-        "average": "Average payment"
+        "average": "Average payment",
+        "netMarketValue": "Member net value"
       },
       "empty": {
         "title": "No contributions",

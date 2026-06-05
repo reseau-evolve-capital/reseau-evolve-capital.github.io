@@ -304,7 +304,8 @@
     "kpi": {
       "totalContributed": "Total cotisé",
       "monthsCount": "Nombre de mois",
-      "detentionPct": "Quote-part"
+      "detentionPct": "Quote-part",
+      "netMarketValue": "Valeur nette détenue"
     },
     "penalties": {
       "title": "Pénalités",
@@ -484,7 +485,8 @@
       "kpi": {
         "total": "Total cotisé",
         "count": "Versements",
-        "average": "Versement moyen"
+        "average": "Versement moyen",
+        "netMarketValue": "Valeur nette de la part"
       },
       "empty": {
         "title": "Aucune cotisation",

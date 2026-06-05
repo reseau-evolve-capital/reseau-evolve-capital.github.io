@@ -22,6 +22,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@evolve/ui'
+import { formatEUR } from '@evolve/utils'
 import {
   useAdminContributions,
   type AdminContribPayload,
@@ -46,6 +47,10 @@ export function AdminCotisationsView({
   const payload = data ?? initialData
   const stats = payload.stats
 
+  // D5 — quand un membre est filtré, on remonte sa valeur nette détenue depuis la liste
+  // `members` (stable, fournie par la page RSC) pour afficher une carte dédiée.
+  const selectedMember = membershipId ? (members.find((m) => m.id === membershipId) ?? null) : null
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -61,7 +66,7 @@ export function AdminCotisationsView({
           value={membershipId ?? ALL}
           onValueChange={(v) => void setMember(v === ALL ? null : v)}
         >
-          <SelectTrigger aria-label={t('cotisations.filterMember')} className="w-56">
+          <SelectTrigger aria-label={t('cotisations.filterMember')} className="w-full sm:w-56">
             <SelectValue placeholder={t('cotisations.allMembers')} />
           </SelectTrigger>
           <SelectPortal>
@@ -81,6 +86,19 @@ export function AdminCotisationsView({
         <p role="status" className="text-[12px] text-text-ter">
           {t('staleData')}
         </p>
+      )}
+
+      {/* D5 — carte valeur nette de la part du membre, visible UNIQUEMENT quand un membre
+          est filtré (style accentué identique à la vue membre). Fallback « — » si null. */}
+      {selectedMember && (
+        <div className="rounded-[10px] border-2 border-accent bg-card p-4 sm:p-5 shadow-[var(--sh-card)]">
+          <p className="font-display font-bold text-[14px] tracking-[-0.01em] text-text">
+            {t('cotisations.kpi.netMarketValue')}
+          </p>
+          <p className="mt-2 font-display font-[800] text-[26px] sm:text-[32px] leading-none tracking-[-0.02em] text-text [font-feature-settings:'tnum','lnum']">
+            {selectedMember.netMarketValue != null ? formatEUR(selectedMember.netMarketValue) : '—'}
+          </p>
+        </div>
       )}
 
       <div

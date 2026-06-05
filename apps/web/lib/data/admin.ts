@@ -54,6 +54,8 @@ export interface ClubMember {
   totalContributed: number
   detentionPct: number // fraction 0..1
   monthsCount: number
+  /** Valeur boursière nette détenue par le membre (€). null si non renseignée. */
+  netMarketValue: number | null
   status: ContributionStatus | null
   amountDue: number
   isUnpaid: boolean
@@ -240,7 +242,9 @@ export async function getClubMembers(
       >(),
     supabase
       .from('contributions')
-      .select('membership_id, total_contributed, detention_pct, months_count, status, amount_due')
+      .select(
+        'membership_id, total_contributed, detention_pct, months_count, net_market_value, status, amount_due'
+      )
       .eq('club_id', clubId)
       .returns<
         {
@@ -248,6 +252,7 @@ export async function getClubMembers(
           total_contributed: number | null
           detention_pct: number | null
           months_count: number | null
+          net_market_value: number | null
           status: ContributionStatus
           amount_due: number | null
         }[]
@@ -271,6 +276,7 @@ export async function getClubMembers(
       totalContributed: Number(c?.total_contributed ?? 0),
       detentionPct: Number(c?.detention_pct ?? 0),
       monthsCount: Number(c?.months_count ?? 0),
+      netMarketValue: c?.net_market_value != null ? Number(c.net_market_value) : null,
       status,
       amountDue,
       isUnpaid: isUnpaid(status, amountDue),
@@ -341,10 +347,13 @@ export async function getClubContributionsTimeline(
   clubId: string,
   membershipId?: string | null
 ): Promise<{ years: TimelineYear[]; stats: ContribStats }> {
+  // D3 — borne la frise à l'année courante (l'échéancier matrice va jusqu'en 2051 en `due`).
+  const currentYear = new Date().getFullYear()
   let q = supabase
     .from('contribution_months')
     .select('year, month, amount, status, paid_at')
     .eq('club_id', clubId)
+    .lte('year', currentYear)
     .order('year', { ascending: false })
     .order('month', { ascending: false })
   if (membershipId) q = q.eq('membership_id', membershipId)

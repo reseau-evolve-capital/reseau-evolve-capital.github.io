@@ -2,7 +2,8 @@
 
 // Vue cotisations (COT-005). Hydrate depuis initialData (RSC) puis laisse TanStack Query gérer
 // le refetch (focus fenêtre + pull-to-refresh manuel). États empty/error explicites.
-// Le bandeau de retard utilise EXCLUSIVEMENT les tokens data-warning (jamais le rouge brand).
+// Le bandeau de retard utilise EXCLUSIVEMENT les tokens data-negative (rouge dataviz #C53030),
+// jamais le rouge brand #E93E3A. Le texte passe en data-negative-strong (AAA).
 // Réf : E-COT, écran 04_contributions.md, CLAUDE.md (jamais de NaN/undefined, a11y, copy FR, tokens).
 
 import { useRef, useState } from 'react'
@@ -183,18 +184,20 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
         {/* COLONNE GAUCHE — situation, KPIs, pénalités, CTA attestation. */}
         <div className="flex flex-col gap-4">
           {data.status === 'late' && (
+            // Bandeau de retard : ROUGE dataviz (data-negative), JAMAIS le rouge brand
+            // #E93E3A. Texte en data-negative-strong pour AAA sur le tint clair/sombre.
             <div
               role="alert"
-              className="flex items-start gap-3 rounded-[10px] border border-data-warning bg-data-warning-50 p-4"
+              className="flex items-start gap-3 rounded-[10px] border border-data-negative bg-data-negative-50 p-4"
             >
               <Icon
                 name="TriangleAlert"
                 size={20}
-                className="text-data-warning"
+                className="text-data-negative"
                 aria-hidden="true"
               />
               <div className="flex flex-col gap-1">
-                <Text className="font-semibold">
+                <Text className="font-semibold text-data-negative-strong">
                   {t('lateAlert.title', { amount: formatEUR(data.amountDue) })}
                 </Text>
                 <Text variant="caption" color="text-sec" className="normal-case tracking-normal">
@@ -203,6 +206,17 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
               </div>
             </div>
           )}
+
+          {/* D1 — Valeur boursière nette détenue : carte ACCENTUÉE distincte, mise en avant
+              au-dessus des 3 KPI. Fallback « — » si la valeur n'est pas renseignée. */}
+          <div className="rounded-[10px] border-2 border-accent bg-card p-4 sm:p-5 shadow-[var(--sh-card)]">
+            <p className="font-display font-bold text-[14px] tracking-[-0.01em] text-text">
+              {t('kpi.netMarketValue')}
+            </p>
+            <p className="mt-2 font-display font-[800] text-[26px] sm:text-[32px] leading-none tracking-[-0.02em] text-text [font-feature-settings:'tnum','lnum']">
+              {data.netMarketValue != null ? formatEUR(data.netMarketValue) : '—'}
+            </p>
+          </div>
 
           {/* KPIs : 3 colonnes en mobile/tablette, empilés en desktop (colonne étroite). */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-1">

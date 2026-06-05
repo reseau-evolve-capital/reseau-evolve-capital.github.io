@@ -24,6 +24,7 @@ const mk = (over: Partial<ClubMember>): ClubMember => ({
   totalContributed: 1000,
   detentionPct: 0.1,
   monthsCount: 10,
+  netMarketValue: 5000,
   status: 'ok',
   amountDue: 0,
   isUnpaid: false,

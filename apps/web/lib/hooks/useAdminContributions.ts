@@ -7,6 +7,9 @@ import type { ContribStats } from '@/lib/data/admin'
 export interface AdminContribOption {
   id: string
   fullName: string
+  /** Valeur boursière nette détenue par le membre (€). null si non renseignée.
+   *  Affichée (carte dédiée) uniquement quand ce membre est filtré dans la vue admin. */
+  netMarketValue: number | null
 }
 
 export interface AdminContribPayload {

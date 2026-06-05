@@ -30,7 +30,11 @@ export default async function AdminCotisationsPage() {
   return (
     <AdminCotisationsView
       initialData={{ clubId: ctx.clubId, years: timeline.years, stats: timeline.stats }}
-      members={members.map((m) => ({ id: m.id, fullName: m.fullName }))}
+      members={members.map((m) => ({
+        id: m.id,
+        fullName: m.fullName,
+        netMarketValue: m.netMarketValue,
+      }))}
     />
   )
 }
