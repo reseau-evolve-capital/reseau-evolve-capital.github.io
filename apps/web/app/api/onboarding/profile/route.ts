@@ -61,19 +61,28 @@ export async function POST(request: Request): Promise<NextResponse> {
   }
 
   // 5. Mise à jour du profil + marquage onboarding terminé.
-  const { error: updErr } = await supabase
-    .from('users')
-    .update({
-      firstname: body.firstname,
-      lastname: body.lastname,
-      phone: body.phone ?? null,
-      address: body.address ?? null,
-      avatar_url: body.avatar_url ?? null,
-      onboarding_completed: true,
-      rgpd_consented_at: new Date().toISOString(),
-      directory_opt_in: body.directory_opt_in,
-    })
-    .eq('id', user.id)
+  //
+  // DÉFENSIF (BUG 5) : ne JAMAIS écraser une valeur existante par du vide. Le téléphone,
+  // l'adresse et l'avatar sont alimentés par la sync Sheets ; un onboarding au store vide
+  // (ou un champ effacé par l'utilisateur) ne doit pas les détruire. On n'inclut donc la
+  // colonne dans l'UPDATE que si une valeur non vide est fournie — sinon on préserve l'existant.
+  // firstname/lastname restent obligatoires (validés min 1) et sont toujours écrits.
+  const phone = body.phone?.trim()
+  const address = body.address?.trim()
+  const avatarUrl = body.avatar_url?.trim()
+
+  const update: Record<string, unknown> = {
+    firstname: body.firstname,
+    lastname: body.lastname,
+    onboarding_completed: true,
+    rgpd_consented_at: new Date().toISOString(),
+    directory_opt_in: body.directory_opt_in,
+  }
+  if (phone) update.phone = phone
+  if (address) update.address = address
+  if (avatarUrl) update.avatar_url = avatarUrl
+
+  const { error: updErr } = await supabase.from('users').update(update).eq('id', user.id)
   if (updErr) return NextResponse.json({ error: "Échec de l'enregistrement." }, { status: 500 })
 
   return NextResponse.json({ user_id: user.id, onboarding_completed: true })

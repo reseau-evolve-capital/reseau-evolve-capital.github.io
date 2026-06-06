@@ -45,6 +45,28 @@ function supabaseConnectSources(): string[] {
 }
 
 /**
+ * Origine HTTP(S) du Storage Supabase à autoriser dans `img-src` (avatars publics).
+ *
+ * L'URL d'avatar stockée est ABSOLUE et env-dépendante (BUG 4) : en prod
+ * `https://xxx.supabase.co/storage/…` (déjà couverte par `https:`), en dev local
+ * `http://127.0.0.1:54321/storage/…` — ce schéma `http:` n'est PAS couvert par `https:`,
+ * d'où un blocage CSP de l'image en dev. On ajoute donc explicitement l'origine Supabase.
+ */
+function supabaseImgSources(): string[] {
+  const raw = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const sources = new Set<string>()
+  if (raw) {
+    try {
+      sources.add(new URL(raw).origin)
+    } catch {
+      // URL malformée : on ne casse rien, fallback dev ci-dessous.
+    }
+  }
+  if (isDev) sources.add('http://127.0.0.1:54321')
+  return [...sources]
+}
+
+/**
  * Assemble la Content-Security-Policy.
  *
  * Stratégie : stricte en production, plus permissive en développement
@@ -78,7 +100,10 @@ function buildCsp(): string {
     'script-src': scriptSrc,
     'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
     'font-src': ["'self'", 'https://fonts.gstatic.com', 'data:'],
-    'img-src': ["'self'", 'data:', 'https:'],
+    // `blob:` : aperçu optimiste local de l'avatar (URL.createObjectURL) avant upload (BUG 2).
+    // Origine Supabase Storage explicite : l'URL d'avatar stockée est absolue (http en dev local,
+    // https en prod) — sans ça, l'avatar est bloqué par la CSP en dev (BUG 4).
+    'img-src': ["'self'", 'data:', 'blob:', 'https:', ...supabaseImgSources()],
     'connect-src': connectSrc,
     // Verrous de durcissement : aucun plugin/embed, l'app n'est jamais iframée,
     // <base> et les soumissions de formulaires restent sur l'origine.

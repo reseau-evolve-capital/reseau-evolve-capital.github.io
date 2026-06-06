@@ -61,3 +61,73 @@ export async function getProfileData(supabase: ServerClient, userId: string): Pr
     club: membership?.clubs ? { name: membership.clubs.name, city: membership.clubs.city } : null,
   }
 }
+
+/** Valeurs de pré-remplissage de l'onboarding, lues depuis `users` (synchronisé via Sheets). */
+export interface OnboardingDefaults {
+  firstname: string
+  lastname: string
+  phone: string
+  address: string
+  avatarUrl: string | null
+}
+
+/**
+ * Dérive prénom/nom à partir des colonnes `firstname`/`lastname`/`full_name`.
+ *
+ * GOTCHA data (sync Sheets) : `firstname` contient parfois le nom COMPLET
+ * (ex. « SAMA Abdel Haq » alors que le nom de famille est « OURO »). On privilégie
+ * donc le couple `firstname` + `lastname` quand `lastname` est renseigné. Si `lastname`
+ * est vide, on retombe sur un découpage de `full_name` : premier token = nom (les feuilles
+ * stockent « NOM Prénom »), reste = prénom — filet de sécurité pour ne jamais laisser un
+ * champ requis vide quand la donnée existe.
+ */
+export function deriveNameParts(
+  firstname: string | null,
+  lastname: string | null,
+  fullName: string | null
+): { firstname: string; lastname: string } {
+  const fn = (firstname ?? '').trim()
+  const ln = (lastname ?? '').trim()
+  if (ln) return { firstname: fn, lastname: ln }
+
+  // lastname absent : on tente de dériver depuis full_name (« NOM Prénom »).
+  const tokens = (fullName ?? '').trim().split(/\s+/).filter(Boolean)
+  if (tokens.length >= 2) {
+    const [first, ...rest] = tokens
+    return { firstname: rest.join(' '), lastname: first ?? '' }
+  }
+  // Pas assez d'info : on garde ce qu'on a (firstname éventuel, lastname vide).
+  return { firstname: fn, lastname: ln }
+}
+
+/**
+ * Charge les valeurs de pré-remplissage de l'onboarding pour le membre courant.
+ * RLS « users: self read » autorise `id = auth.uid()` — pas de service-role.
+ * Renvoie toujours des chaînes (jamais null sauf `avatarUrl`) pour hydrater le form sans risque.
+ */
+export async function getOnboardingDefaults(
+  supabase: ServerClient,
+  userId: string
+): Promise<OnboardingDefaults> {
+  const { data } = await supabase
+    .from('users')
+    .select('firstname, lastname, full_name, phone, address, avatar_url')
+    .eq('id', userId)
+    .maybeSingle<
+      Pick<UserRow, 'firstname' | 'lastname' | 'full_name' | 'phone' | 'address' | 'avatar_url'>
+    >()
+
+  const { firstname, lastname } = deriveNameParts(
+    data?.firstname ?? null,
+    data?.lastname ?? null,
+    data?.full_name ?? null
+  )
+
+  return {
+    firstname,
+    lastname,
+    phone: (data?.phone ?? '').trim(),
+    address: (data?.address ?? '').trim(),
+    avatarUrl: data?.avatar_url ?? null,
+  }
+}

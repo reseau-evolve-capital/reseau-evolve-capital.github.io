@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl'
 import { z } from 'zod'
 import { FormField, Input, Button, Badge, Icon } from '@evolve/ui'
 import { useOnboardingStore } from '@/lib/stores/onboarding'
+import type { OnboardingDefaults } from '@/lib/data/profile'
 
 // Téléphone facultatif (F8) : accepté vide ; si rempli, format souple international.
 // Regex permissive : chiffres, espaces, +, parenthèses, point, tiret — 6 à 20 caractères.
@@ -32,15 +33,25 @@ function initials(firstname: string, lastname: string): string {
   return (a + b).toUpperCase()
 }
 
-export function Step1Form({ invited = false }: { invited?: boolean }) {
+export function Step1Form({
+  invited = false,
+  defaults,
+}: {
+  invited?: boolean
+  /** Valeurs synchronisées depuis `users` (RSC) pour pré-remplir l'onboarding (BUG 1). */
+  defaults?: OnboardingDefaults
+}) {
   const router = useRouter()
   const t = useTranslations('onboarding')
   const tCommon = useTranslations('common')
   const store = useOnboardingStore()
 
-  const [firstname, setFirstname] = useState(store.firstname)
-  const [lastname, setLastname] = useState(store.lastname)
-  const [phone, setPhone] = useState(store.phone)
+  // Pré-remplissage (BUG 1) : hydrate les champs depuis le store si déjà rempli (retour arrière),
+  // sinon depuis les valeurs synchronisées. On ne clobber JAMAIS une saisie en cours :
+  // le store prime, `defaults` ne sert que de valeur initiale quand le store est vide.
+  const [firstname, setFirstname] = useState(() => store.firstname || defaults?.firstname || '')
+  const [lastname, setLastname] = useState(() => store.lastname || defaults?.lastname || '')
+  const [phone, setPhone] = useState(() => store.phone || defaults?.phone || '')
   const [phoneError, setPhoneError] = useState<string | undefined>()
 
   // Le téléphone est facultatif : le CTA reste actif tant que prénom/nom sont remplis.
@@ -63,6 +74,10 @@ export function Step1Form({ invited = false }: { invited?: boolean }) {
       firstname: firstname.trim(),
       lastname: lastname.trim(),
       phone: trimmedPhone,
+      // Reporte l'adresse + l'avatar synchronisés dans le store SI rien n'y a encore été saisi,
+      // afin que l'étape 2 affiche ces valeurs pré-remplies (sans écraser une saisie en cours).
+      ...(store.address ? {} : defaults?.address ? { address: defaults.address } : {}),
+      ...(store.avatarUrl ? {} : defaults?.avatarUrl ? { avatarUrl: defaults.avatarUrl } : {}),
     })
     router.push('/onboarding/step-2')
   }

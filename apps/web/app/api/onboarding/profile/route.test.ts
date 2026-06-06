@@ -82,4 +82,55 @@ describe('POST /api/onboarding/profile', () => {
     expect(res.status).toBe(200)
     expect(await res.json()).toEqual({ user_id: 'u1', onboarding_completed: true })
   })
+
+  // BUG 5 — défensif : un store vide (phone/address/avatar à null ou vide) ne doit JAMAIS
+  // écraser la valeur synchronisée. On vérifie que ces colonnes sont OMISES du payload UPDATE.
+  it("défensif : phone/address/avatar vides → colonnes non incluses dans l'UPDATE", async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: 'u1', email: 'test@example.com' } },
+      error: null,
+    })
+    mocks.select.mockReturnValue({
+      eq: () => ({ maybeSingle: async () => ({ data: { id: 'u1' }, error: null }) }),
+    })
+    mocks.eq.mockResolvedValue({ data: null, error: null })
+    await POST(req({ ...validBody, phone: '   ', address: null, avatar_url: null }))
+
+    const payload = mocks.update.mock.calls[0]?.[0] ?? {}
+    expect(payload).not.toHaveProperty('phone')
+    expect(payload).not.toHaveProperty('address')
+    expect(payload).not.toHaveProperty('avatar_url')
+    expect(payload).toMatchObject({
+      firstname: 'Léa',
+      lastname: 'Martin',
+      onboarding_completed: true,
+    })
+  })
+
+  // À l'inverse, des valeurs non vides DOIVENT être écrites (le membre a saisi/uploadé).
+  it('écrit phone/address/avatar quand des valeurs non vides sont fournies', async () => {
+    mocks.getUser.mockResolvedValue({
+      data: { user: { id: 'u1', email: 'test@example.com' } },
+      error: null,
+    })
+    mocks.select.mockReturnValue({
+      eq: () => ({ maybeSingle: async () => ({ data: { id: 'u1' }, error: null }) }),
+    })
+    mocks.eq.mockResolvedValue({ data: null, error: null })
+    await POST(
+      req({
+        ...validBody,
+        phone: ' 06 12 34 56 78 ',
+        address: ' 1 rue de Paris ',
+        avatar_url: 'https://cdn.example.com/u1/avatar.webp',
+      })
+    )
+
+    const payload = mocks.update.mock.calls[0]?.[0] ?? {}
+    expect(payload).toMatchObject({
+      phone: '06 12 34 56 78',
+      address: '1 rue de Paris',
+      avatar_url: 'https://cdn.example.com/u1/avatar.webp',
+    })
+  })
 })

@@ -1,26 +1,35 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { OnboardingShell, AvatarUpload, FormField, Input, Button } from '@evolve/ui'
 import { useOnboardingStore } from '@/lib/stores/onboarding'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { resizeAndUploadAvatar } from '@/lib/upload/avatar'
+import type { OnboardingDefaults } from '@/lib/data/profile'
 
-export function Step2Form() {
+export function Step2Form({ defaults }: { defaults?: OnboardingDefaults }) {
   const router = useRouter()
   const t = useTranslations('onboarding')
   const tCommon = useTranslations('common')
   const store = useOnboardingStore()
   const supabase = useSupabase()
 
+  // Pré-remplissage (BUG 1) : le store prime (saisie en cours / retour arrière), `defaults`
+  // (valeurs synchronisées lues côté serveur) ne sert que de repli quand le store est vide.
+  // On ne clobber donc jamais une saisie en cours.
   const [userId, setUserId] = useState<string | null>(null)
-  const [phone, setPhone] = useState(store.phone)
-  const [address, setAddress] = useState(store.address)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(store.avatarUrl)
+  const [phone, setPhone] = useState(() => store.phone || defaults?.phone || '')
+  const [address, setAddress] = useState(() => store.address || defaults?.address || '')
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    () => store.avatarUrl ?? defaults?.avatarUrl ?? null
+  )
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | undefined>()
+
+  // Object URL de l'aperçu optimiste local (BUG 2) — révoqué après succès et au démontage.
+  const localPreviewRef = useRef<string | null>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -28,8 +37,23 @@ export function Step2Form() {
     })
   }, [supabase])
 
+  // Libère tout object URL local encore vivant au démontage (évite les fuites mémoire).
+  useEffect(() => {
+    return () => {
+      if (localPreviewRef.current) URL.revokeObjectURL(localPreviewRef.current)
+    }
+  }, [])
+
   async function handleFileSelected(file: File) {
     if (!userId) return
+
+    // Aperçu OPTIMISTE (BUG 2) : on affiche l'image choisie immédiatement, avant l'upload,
+    // pour un retour visuel instantané. On révoque tout aperçu local précédent au passage.
+    if (localPreviewRef.current) URL.revokeObjectURL(localPreviewRef.current)
+    const localUrl = URL.createObjectURL(file)
+    localPreviewRef.current = localUrl
+    setPreviewUrl(localUrl)
+
     setIsUploading(true)
     setUploadError(undefined)
     try {
@@ -38,7 +62,14 @@ export function Step2Form() {
       setPreviewUrl(url)
     } catch (err) {
       setUploadError(err instanceof Error ? err.message : t('step2.uploadError'))
+      // En cas d'échec, on retombe sur l'avatar précédent (synchronisé) plutôt que l'aperçu local.
+      setPreviewUrl(store.avatarUrl)
     } finally {
+      // L'aperçu local a joué son rôle (remplacé par l'URL publique ou réverti) : on le libère.
+      if (localPreviewRef.current) {
+        URL.revokeObjectURL(localPreviewRef.current)
+        localPreviewRef.current = null
+      }
       setIsUploading(false)
     }
   }
