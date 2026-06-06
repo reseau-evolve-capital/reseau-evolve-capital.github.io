@@ -185,11 +185,12 @@ test('dashboard admin → KPIs + alerte impayé', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: 'Espace trésorier' })).toBeVisible()
   await expect(page.getByText('Membres actifs')).toBeVisible()
-  await expect(page.getByText('Membres en impayé')).toBeVisible()
-  // COLY est le seul impayé → l'alerte (role=alert, tokens data-warning) mentionne « impayé ».
+  // F1 : wording clarifié « impayé » → « à régulariser » (KPI = « À régulariser »).
+  await expect(page.getByText('À régulariser', { exact: true })).toBeVisible()
+  // COLY est le seul concerné → l'alerte (role=alert) mentionne « à régulariser ».
   // `getByRole('alert')` matche aussi le __next-route-announcer__ (vide) de Next → strict mode
-  // violation. On filtre l'alerte par son texte (apostrophe typographique « ’ » dans la copie).
-  await expect(page.getByRole('alert').filter({ hasText: /impayé/ })).toBeVisible()
+  // violation. On filtre l'alerte par son texte.
+  await expect(page.getByRole('alert').filter({ hasText: /régulariser/ })).toBeVisible()
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -207,7 +208,7 @@ test('liste des membres + filtre impayé', async ({ page }) => {
   // hors scope E2E, à traiter en ADM-007/CSS). Playwright le juge alors « not visible » et
   // refuse `.click()`. On clique le <label htmlFor> associé (déclenche le contrôle lié) — c'est
   // l'interaction réelle d'un utilisateur (clic sur le libellé du toggle).
-  await page.getByText('Afficher seulement les membres en impayé').click()
+  await page.getByText('Membres avec cotisation à régulariser').click()
 
   // Seul COLY est impayé (status 'late', amount_due 150).
   await expect(page.getByTestId('member-row')).toHaveCount(1)
