@@ -17,6 +17,18 @@ export function Step3Form() {
   const [rgpd, setRgpd] = useState(store.rgpdConsented)
   const [directory, setDirectory] = useState(store.directoryOptIn)
 
+  // Persiste l'état des cases dans le store à chaque changement : les liens « lire »
+  // (charte / confidentialité) naviguent vers /legal/* dans le même onglet ; le retour
+  // navigateur ré-hydrate alors les cases depuis le store (sinon l'état local serait perdu).
+  const handleRgpdChange = (value: boolean) => {
+    setRgpd(value)
+    store.patch({ rgpdConsented: value })
+  }
+  const handleDirectoryChange = (value: boolean) => {
+    setDirectory(value)
+    store.patch({ directoryOptIn: value })
+  }
+
   // Garde : si firstname/lastname vides (deep link), retour à step-1
   useEffect(() => {
     if (!store.firstname || !store.lastname) {
@@ -81,7 +93,7 @@ export function Step3Form() {
         <div className="flex flex-col gap-2">
           <ConsentRow
             checked={rgpd}
-            onCheckedChange={setRgpd}
+            onCheckedChange={handleRgpdChange}
             label={t('step3.rgpdLabel')}
             linkHref="/legal/charter"
             linkLabel={t('step3.rgpdLinkLabel')}
@@ -90,8 +102,9 @@ export function Step3Form() {
 
           <ConsentRow
             checked={directory}
-            onCheckedChange={setDirectory}
+            onCheckedChange={handleDirectoryChange}
             label={t('step3.directoryLabel')}
+            linkHref="/legal/privacy"
             linkLabel={t('step3.directoryLinkLabel')}
           />
         </div>
