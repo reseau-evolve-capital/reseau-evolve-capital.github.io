@@ -1,3 +1,33 @@
 @import "./fonts.css";
 @import "./tokens.css";
 @import "./theme.css";
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Filet a11y (RGAA 3.3) — curseur sur les éléments interactifs.
+   Le preflight Tailwind v4 ne pose plus `cursor: pointer` sur `<button>`
+   (régression vs v3) : la main ne s'affiche plus au survol des cliquables.
+   `theme.css` (importé ci-dessus) fait `@import "tailwindcss"`, donc ce
+   bloc `@layer base` vient APRÈS le preflight et le surcharge proprement.
+   Consommé par apps/web ET le Storybook de packages/ui → corrige les deux.
+   ───────────────────────────────────────────────────────────────────────── */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  a[href],
+  [role='link'],
+  label[for],
+  select:not(:disabled),
+  summary,
+  input[type='submit']:not(:disabled),
+  input[type='button']:not(:disabled),
+  input[type='reset']:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [aria-disabled='true'],
+  select:disabled,
+  input:disabled {
+    cursor: not-allowed;
+  }
+}
