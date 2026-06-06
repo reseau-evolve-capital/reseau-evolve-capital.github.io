@@ -160,3 +160,34 @@
 - **Vérification du QR — FAIT** : le QR pointe `/verifier/{ref}` → **page publique livrée** (migration 023 : `attestation_sends.reference` + RPC `verify_attestation` à divulgation minimale). Seule l'attestation **mensuelle** (cron) est enregistrée donc vérifiable ; l'on-demand produit la même réf déterministe mais n'est pas enregistré. Collision hash 4 car. assumée (identifiant lisible non-secret).
 - **Limites de rendu assumées** : emails sans dark (intention V0) ; PDF Helvetica ne rend pas U+202F → espaces fines remappées en espace normale pour le PDF (formatEUR reste canonique ailleurs) ; bandeau email dégradé avec fallback solide pour Outlook.
 - **Dette a11y connue conservée** : tap-target CTA contributions 40px < 44px (dette S6, hors périmètre E-NTF) ; chip glyphe toast 20px dans chip 32px (atome `Icon` limité à 16/20/24) ; pas de token `brand-yellow-50` → surface info via opacité `/16` (suivi design-system).
+
+---
+
+## Sprint E-QA1 — corrections post-test utilisateur (2026-06-06)
+
+23 commits sur `feat/monorepo` (non poussés). Gate complet vert (lint+typecheck+vitest 13 tasks), Deno sync **29/0** + send-email **7/7**, QA runtime réelle (login PKCE Mailpit, light/dark/mobile). Tous les items backlog **CONVERGÉS** (preuves DB + screenshots `docs/audits/shots/qa-*.jpeg`).
+
+### Arbitrages owner (tranchés en Phase 0)
+
+- **A9 illustrations login** = **Dataviz de marque abstraite** (courbes/donut/sparklines tokens brand, micro-anim, reduced-motion) — composant `apps/web/components/auth/BrandDataviz.tsx` (remplace l'ancien `ClubNetworkViz`).
+- **B5 invitations** = **restreindre aux membres du club** (migration 031) : `admin_create_invitation` lève une exception si l'email n'est pas déjà membre (plus d'allowlist arbitraire) ; révocation couvre aussi `accepted` (verrouille l'accès) ; état UI « lien à copier » vs « envoyé ».
+- **Email magic link** = **Auth Hook Edge Function (Brevo)** pour la prod (localisé fr/en via `user_metadata.locale`, lien-only) + **template statique brandé lien-only** pour le LOCAL (`supabase/templates/magic_link.html`, vérifié Mailpit sans code OTP). Le hook reste **commenté en local** (Brevo enverrait de vrais emails) → activation prod = action owner.
+
+### Décisions lead loggées
+
+- **B1 rôles** : dérivés de PARAMETRAGES (Président/Trésorier) par matching nom normalisé ; **Base ne pose plus le rôle** (insert→défaut DB 'member', update→préservé) ; réconciliation **fail-safe** (ne wipe RIEN si 0 dirigeant résolu) ; **network_admin jamais rétrogradé** (y compris s'il est membre Base). Rôle « Secrétaire » **déféré** (pas de valeur d'enum orpheline en V0).
+- **B2/C2 réconciliation** : positions ET agrégats portefeuille désactivés (`is_active=false`) si absents du dernier import (historique conservé, pas de delete).
+- **C1 total portefeuille** = ligne d'agrégat **« Portefeuille »** (col G, matchée par LABEL, persistée en table `portfolio_aggregates` migration 029), **fallback** somme live si absente. Valeurs live conservées par position. (Tension assumée avec le principe « valo live » : le TOTAL suit la matrice, conforme à la consigne owner.)
+- **E1 dashboard vide 1re connexion** : `member_quote_part` **MV → VUE normale `security_invoker`** (migration 030) → toujours à jour (suit la cascade re-key login), RLS native (un membre ne voit QUE ses chiffres — plus sûr que la MV). `refresh_member_quote_part` → no-op, appel retiré du sync.
+- **E2 « synchronisé il y a… »** unifié sur `clubs.synced_at` (desktop+mobile), plus la colonne MV par-membre.
+- **F4 « Ancien membre »** = badge **présentationnel** dérivé de `status='left'` (PAS de valeur d'enum `member_role` — éviterait de casser RLS/STAFF_ROLES). Opacité de ligne déjà existante ; **opacité retirée du badge Accès** (faisait chuter le vert #0A7A4D à 2.46:1 → échec AA ; la ligne grisée porte l'atténuation).
+- **A3 magic link** : cause racine réelle = **flux PKCE** (`code`→`exchangeCodeForSession`), pas `token_hash` ni double-mount. Échange déplacé dans une **route handler serveur** `(auth)/login/verify/route.ts` (idempotent, gère PKCE + OTP invitation). A1 guard onboarding dans `middleware.ts`. A2 = vraie page `(app)/profil/`.
+
+### Dette / suivis (non bloquants)
+
+- **i18n temps relatif** : `formatRelativeTime` désormais localisé (prop `locale` + threading) ; les formatters **monnaie/date restent fr-FR** (décision i18n antérieure).
+- **CSP** : `*.sentry.io` autorisé (DSN régionaux `*.ingest.de.sentry.io`). **Cloudflare RUM** : mismatch CORS local (`ACAO http://localhost` ≠ `:3001`) lié à `NEXT_PUBLIC_SITE_URL` sans port — bruit LOCAL, à vérifier en prod.
+- **D2 compteur mois** : vue membre = mois `paid` réels (≠ #ERROR! source) ; vue admin = « Versements ». Sémantique légèrement divergente entre vues → harmonisation copy à confirmer (mineur).
+- **Dette e2e harness (PRÉ-EXISTANTE, pas une régression du sprint)** : (1) `a11y.spec /portfolio` rouge car le **seed e2e a 0 position** → `getPortfolioData` renvoie null → EmptyState (le `return null` sur 0 ligne pré-date le sprint) ; fix = mocker l'API portfolio dans a11y.spec ou seeder des positions. (2) `auth.spec:37` rouge **en suite** mais **vert en isolation** = contamination cross-spec (toggle de rôle seed). Specs touchées ré-alignées : `access.spec` (modèle B5), `admin.spec` (wording F1). Suite sur **seed propre = 43/45** (2 dettes ci-dessus).
+- **Migrations 029/030/031 local-only** (projet non lié) — à pousser remote au déploiement.
+- **Actions owner** : (1) activer le hook `[auth.hook.send_email]` + secrets Brevo/SEND_EMAIL_HOOK_SECRET en prod (localisation emails) ; (2) DSN Sentry régional ; (3) fournir un asset logo SVG/PNG transparent (note antérieure).
