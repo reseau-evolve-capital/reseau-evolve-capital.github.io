@@ -1,18 +1,19 @@
-export default ({env}) => ({
-    upload: {
-        config: {
-          provider: "strapi-provider-upload-supabase",
-          providerOptions: {
-            apiUrl: env("SUPABASE_API_URL"),
-            apiKey: env("SUPABASE_API_KEY"),
-            bucket: env("SUPABASE_BUCKET"),
-            directory: env("SUPABASE_DIRECTORY"),
-          },
-          actionOptions: {
-            upload: {},
-            uploadStream: {},
-            delete: {},
-          },
-        },
+export default () => ({
+  // Provider d'upload LOCAL (disque) — l'ancien storage Supabase (bucket rec.blog.assets) est mort.
+  // Les nouveaux uploads vont dans content/public/uploads.
+  // ⚠ PROD : le site vitrine est en export statique → les images doivent être servies depuis un
+  // storage PUBLIC. Le provider local ne suffit PAS en prod (URLs localhost:1337). Pour déployer le
+  // blog avec images, recâbler strapi-provider-upload-supabase sur un NOUVEAU projet Supabase (ou S3/
+  // Cloudinary) et re-uploader. Voir apps/vitrine/CLAUDE.md.
+  upload: {
+    config: {
+      provider: 'local',
+      sizeLimit: 250 * 1024 * 1024, // 250 Mo
+      actionOptions: {
+        upload: {},
+        uploadStream: {},
+        delete: {},
       },
-});
+    },
+  },
+})
