@@ -1,44 +1,53 @@
 {
-  "name": "reseau-evolve-capital-gh-pages",
+  "name": "evolve-capital",
   "version": "0.1.0",
   "private": true,
+  "description": "Evolve Capital — Plateforme d'investissement participatif",
+  "type": "module",
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "export": "next export",
-    "deploy": "npx gh-pages -d out -t"
+    "build": "turbo build",
+    "build:web": "turbo build --filter=@evolve/web",
+    "build:vitrine": "turbo build --filter=@evolve/vitrine",
+    "dev": "turbo dev",
+    "dev:web": "turbo dev --filter=@evolve/web",
+    "dev:vitrine": "turbo dev --filter=@evolve/vitrine",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "test": "turbo test",
+    "test:e2e": "turbo test:e2e",
+    "storybook": "turbo storybook --filter=@evolve/ui",
+    "lighthouse": "lhci autorun",
+    "clean": "turbo clean && rm -rf node_modules .turbo",
+    "prepare": "husky"
   },
-  "dependencies": {
-    "@strapi/blocks-react-renderer": "^1.0.2",
-    "@strapi/client": "^1.0.2",
-    "@types/canvas-confetti": "^1.9.0",
-    "canvas-confetti": "^1.9.3",
-    "clsx": "^2.1.1",
-    "framer-motion": "^11.0.3",
-    "leaflet": "^1.9.4",
-    "lucide-react": "^0.474.0",
-    "next": "15.1.6",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-icons": "^5.0.1",
-    "react-leaflet": "^5.0.0",
-    "serve": "^14.2.1",
-    "tailwind-merge": "^3.0.1"
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yaml,yml}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@types/leaflet": "^1.9.16",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.1.6",
-    "gh-pages": "^6.1.1",
-    "postcss": "^8",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5"
-  },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+    "@commitlint/cli": "^21.0.2",
+    "@lhci/cli": "^0.15.1",
+    "@commitlint/config-conventional": "^21.0.2",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.3.0",
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.2"
+  }
 }

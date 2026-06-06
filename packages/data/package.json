@@ -1,0 +1,39 @@
+{
+  "name": "@evolve/data",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./supabase/client": "./src/supabase/client.ts",
+    "./supabase/server": "./src/supabase/server.ts",
+    "./prices": "./src/prices/index.ts",
+    "./emails": "./src/emails/index.ts",
+    "./pdf": "./src/pdf/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:rls": "vitest run src/supabase/__tests__/rls-isolation.test.ts"
+  },
+  "dependencies": {
+    "@evolve/design-system": "workspace:*",
+    "@evolve/types": "workspace:*",
+    "@evolve/utils": "workspace:*",
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.0.8",
+    "@react-pdf/renderer": "^4.5.1",
+    "@supabase/ssr": "^0.10.3",
+    "@supabase/supabase-js": "^2.0.0",
+    "googleapis": "^144.0.0",
+    "qrcode": "^1.5.4",
+    "react": "^19",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^19",
+    "typescript": "^5",
+    "vitest": "^2.0.0"
+  }
+}

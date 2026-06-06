@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -12,13 +13,16 @@
 
 # testing
 /coverage
+**/coverage
 
 # next.js
 /.next/
 /out/
+**/.next/
 
 # production
 /build
+**/build
 
 # misc
 .DS_Store
@@ -32,6 +36,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +44,36 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Turborepo
+.turbo
+
+# pnpm (pnpm-lock.yaml est commité intentionnellement pour le CI --frozen-lockfile)
+.playwright-mcp
+
+# Captures de travail jetables (preuves d'audit/debug) — isolées, non versionnées
+docs/_scratch/
+
+# Lighthouse CI — rapports générés (uploadés en artefact CI, jamais versionnés)
+/lh-reports/
+.lighthouseci/
+
+# Logs physiques de sync (raw_data des feuilles) — PII membres, jamais versionnés
+/sync-logs/
+
+# Dumps / backups de base de données — SECRETS (hashes, tokens), repo public → JAMAIS versionnés
+*.backup
+*.backup.gz
+*.dump
+db_cluster-*.gz
+*.sql.gz
+
+# Sortie d'export statique de la vitrine (générée par `make vitrine-export`)
+/apps/vitrine/out/
+
+# Exports de storage (assets) — volumineux / repo public → jamais versionnés
+*.storage.zip
+
+# Captures d'écran d'audit/QA ad-hoc (volumineuses). Les références versionnées
+# déjà commitées restent suivies ; ceci évite que les nouvelles polluent le repo.
+docs/audits/shots/

@@ -1,0 +1,136 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feat/monorepo]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Typecheck + Lint + Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm turbo typecheck
+
+      - name: Lint
+        run: pnpm turbo lint
+
+      - name: Test
+        run: pnpm turbo test
+
+      - name: 'Règle: pas de hex en dur dans packages/ui'
+        run: |
+          # On retire les commentaires de ligne (// …) avant de chercher : un hex
+          # cité dans un commentaire qui DOCUMENTE la règle (ex. « jamais #E93E3A »)
+          # n'est pas un hex en dur. Seuls les hex dans du vrai code (className, style) comptent.
+          matches=$(grep -rnE '#[0-9A-Fa-f]{6}' packages/ui/src \
+               --include='*.tsx' --include='*.ts' \
+               | grep -v '\.test\.' | grep -v '\.stories\.' | grep -v 'tokens/index' \
+               | sed -E 's://.*$::' \
+               | grep -E '#[0-9A-Fa-f]{6}' || true)
+          if [ -n "$matches" ]; then
+            echo "$matches"
+            echo "Hex en dur détecté dans packages/ui — utiliser les classes Tailwind"
+            exit 1
+          fi
+          echo "Aucun hex en dur"
+
+      - name: 'Règle: import lucide-react uniquement via Icon atom'
+        run: |
+          if grep -r "from 'lucide-react'" packages/ui/src \
+               --include='*.tsx' --include='*.ts' \
+               | grep -v 'atoms/Icon/Icon.tsx'; then
+            echo "Import lucide-react direct interdit — utiliser <Icon name='...' />"
+            exit 1
+          fi
+          echo "Imports lucide-react conformes"
+
+      - name: 'Règle: TrendBadge sans brand-red'
+        run: |
+          if grep -r 'brand-red\|E93E3A\|e93e3a' packages/ui/src/molecules/TrendBadge/ \
+               | grep -v '\.test\.' | grep -v '\.stories\.'; then
+            echo "brand-red interdit dans TrendBadge"
+            exit 1
+          fi
+          echo "TrendBadge conforme"
+
+  build:
+    name: Build apps/web
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Polices commerciales MADE Tommy Soft : exclues du dépôt par licence (repo PUBLIC).
+      # ensure-fonts garantit la présence des .otf (vraies si EVOLVE_FONTS_SRC, sinon stubs
+      # vides → fallback Plus Jakarta Sans au runtime) pour que le build soit reproductible.
+      # Aussi exécuté en predev/prebuild d'apps/web pour les checkouts propres locaux.
+      - name: Garantir les polices (ensure-fonts)
+        run: node scripts/ensure-fonts.mjs
+
+      # Build de l'app membre. Toutes les routes sont dynamiques (server-rendered on
+      # demand) → aucun appel Supabase au build : des valeurs publiques de remplacement
+      # suffisent à valider la compilation (next-intl, tokens, RSC) sans secrets.
+      - name: Build (apps/web)
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          NEXT_PUBLIC_SITE_URL: https://example.com
+          # Sentry (OPS-001) : upload des source maps si le secret est défini, sinon
+          # withSentryConfig skip silencieusement (NEXT_PUBLIC_SENTRY_DSN absent → no-op,
+          # SENTRY_AUTH_TOKEN absent → pas d'upload). Le build ne casse jamais sans secret.
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        run: pnpm turbo build --filter=@evolve/web
+
+  commitlint:
+    name: Commitlint (Conventional Commits)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # L'action commitlint résout la plage de commits depuis le payload d'event GitHub
+      # (peu fiable sous act) → on saute l'étape en local act ; la config est validée par
+      # husky (hook commit-msg) + `pnpm exec commitlint --from <base> --to HEAD`.
+      - name: Lint des messages de commit (commitlint.config.js)
+        if: ${{ !env.ACT }}
+        uses: wagoid/commitlint-github-action@v6

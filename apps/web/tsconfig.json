@@ -1,0 +1,24 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": ".next",
+    "plugins": [{ "name": "next" }],
+    "paths": {
+      "@/*": ["./*"],
+      "@evolve/ui": ["../../packages/ui/src"],
+      "@evolve/ui/*": ["../../packages/ui/src/*"],
+      "@evolve/design-system": ["../../packages/design-system/src"],
+      "@evolve/design-system/styles/*": ["../../packages/design-system/styles/*"],
+      "@evolve/design-system/*": ["../../packages/design-system/src/*"],
+      "@evolve/types": ["../../packages/types/src"],
+      "@evolve/types/*": ["../../packages/types/src/*"],
+      "@evolve/data": ["../../packages/data/src"],
+      "@evolve/data/*": ["../../packages/data/src/*"],
+      "@evolve/utils": ["../../packages/utils/src"],
+      "@evolve/utils/*": ["../../packages/utils/src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

@@ -1,0 +1,142 @@
+/* Entrée CSS unique de l'app membre.
+   En Tailwind v4, `@import "tailwindcss"` + `@theme` + `@source` doivent vivre
+   dans la MÊME entrée traitée pour que les utilitaires token-dépendants soient émis.
+   `index.css` (design-system) apporte tailwindcss + tokens + le bloc @theme ;
+   les `@source` ci-dessous disent où scanner les classes utilisées. */
+@import "@evolve/design-system/styles/index.css";
+
+/* Classes Tailwind utilisées par @evolve/ui et par l'app elle-même.
+   Résolus relativement à ce fichier (apps/web/app/). */
+@source "../../../packages/ui/src";
+@source "../app";
+@source "../components";
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  /* Surface de page + couleur de texte de base pilotées par le thème (clair/sombre) */
+  background-color: var(--color-bg-page);
+  color: var(--color-text);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Animations décoratives auth (login + check-email)
+   Toutes encapsulées dans `prefers-reduced-motion: no-preference` : si
+   l'utilisateur réduit les animations, RIEN ne joue → fallback statique.
+   Les couleurs/tailles viennent des tokens design (jamais de hex en dur).
+   ───────────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  /* A9 — dataviz de marque : tracé de courbe qui se dessine */
+  @keyframes auth-draw {
+    from {
+      stroke-dashoffset: var(--auth-dash, 600);
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  /* A9 — point lumineux qui pulse doucement sur la courbe */
+  @keyframes auth-pulse {
+    0%,
+    100% {
+      opacity: 0.45;
+      transform: scale(0.85);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.15);
+    }
+  }
+  /* A9 — barres de sparkline qui montent une à une */
+  @keyframes auth-rise {
+    from {
+      transform: scaleY(0.2);
+      opacity: 0.4;
+    }
+    to {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+  /* A9 — arc du donut qui se remplit */
+  @keyframes auth-arc {
+    from {
+      stroke-dashoffset: var(--auth-arc-len, 300);
+    }
+    to {
+      stroke-dashoffset: var(--auth-arc-to, 96);
+    }
+  }
+  /* A5 — enveloppe qui décolle puis s'estompe */
+  @keyframes auth-send {
+    0% {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    55% {
+      transform: translateY(-6px) scale(1.04);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-3px) scale(1);
+      opacity: 1;
+    }
+  }
+  /* A5 — halo qui respire autour de l'enveloppe */
+  @keyframes auth-halo {
+    0%,
+    100% {
+      transform: scale(0.9);
+      opacity: 0.35;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.6;
+    }
+  }
+  /* A5 — particules « envoi » qui s'élèvent */
+  @keyframes auth-spark {
+    0% {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    30% {
+      opacity: 0.9;
+    }
+    100% {
+      transform: translateY(-18px);
+      opacity: 0;
+    }
+  }
+
+  .auth-anim-draw {
+    stroke-dasharray: var(--auth-dash, 600);
+    animation: auth-draw var(--dur-draw, 1600ms) ease-out forwards;
+  }
+  .auth-anim-pulse {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: auth-pulse 2400ms ease-in-out infinite;
+  }
+  .auth-anim-rise {
+    transform-box: fill-box;
+    transform-origin: bottom;
+    animation: auth-rise 700ms ease-out backwards;
+  }
+  .auth-anim-arc {
+    stroke-dasharray: var(--auth-arc-len, 300);
+    animation: auth-arc 1400ms ease-out forwards;
+  }
+  .auth-anim-send {
+    animation: auth-send 2600ms ease-in-out infinite;
+  }
+  .auth-anim-halo {
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: auth-halo 2600ms ease-in-out infinite;
+  }
+  .auth-anim-spark {
+    animation: auth-spark 2200ms ease-out infinite;
+  }
+}

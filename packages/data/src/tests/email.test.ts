@@ -1,0 +1,106 @@
+import { describe, expect, it } from 'vitest'
+import { createElement } from 'react'
+import { brand, semantic } from '@evolve/design-system'
+import { EvolveEmailShell, MagicLinkEmail, renderEmailHtml } from '../emails'
+
+describe('renderEmailHtml', () => {
+  it('rend un élément React Email en HTML string', async () => {
+    const html = await renderEmailHtml(
+      createElement(EvolveEmailShell, {
+        preview: 'Aperçu',
+        children: createElement('p', null, 'Contenu'),
+      })
+    )
+    expect(typeof html).toBe('string')
+    expect(html).toContain('<!DOCTYPE')
+  })
+})
+
+describe('EvolveEmailShell', () => {
+  it('contient le logo Evolve et le footer RGPD réutilisable', async () => {
+    const html = await renderEmailHtml(
+      createElement(EvolveEmailShell, {
+        preview: 'Aperçu',
+        children: createElement('p', null, 'Contenu'),
+      })
+    )
+    // Logo / marque
+    expect(html).toMatch(/EVOLVE/i)
+    // Footer RGPD : marque + adresse + désinscription + mentions légales
+    expect(html).toContain('Evolve Capital SAS')
+    expect(html).toMatch(/désinscrire/i)
+    expect(html).toMatch(/mentions légales/i)
+  })
+
+  it('rend le preview text passé en prop', async () => {
+    const html = await renderEmailHtml(
+      createElement(EvolveEmailShell, {
+        preview: 'Mon aperçu unique',
+        children: createElement('p', null, 'Contenu'),
+      })
+    )
+    expect(html).toContain('Mon aperçu unique')
+  })
+})
+
+describe('MagicLinkEmail', () => {
+  const magicLink = 'https://app.evolve.capital/login/verify?code=abc-123'
+  const expiresInMin = 15
+
+  it('FR (défaut) : logo, lien magique, durée, titre FR', async () => {
+    const html = await renderEmailHtml(createElement(MagicLinkEmail, { magicLink, expiresInMin }))
+    expect(html).toMatch(/EVOLVE/i)
+    expect(html).toContain(magicLink)
+    expect(html).toContain('Connexion à Evolve Capital')
+    expect(html).toContain(String(expiresInMin))
+    // CTA FR.
+    expect(html).toContain('Se connecter')
+  })
+
+  it('EN : titre, CTA et copy anglaise + lien magique', async () => {
+    const html = await renderEmailHtml(
+      createElement(MagicLinkEmail, { magicLink, expiresInMin, locale: 'en' })
+    )
+    expect(html).toContain(magicLink)
+    expect(html).toContain('Sign in to Evolve Capital')
+    expect(html).toContain('Sign in')
+    expect(html).toContain(String(expiresInMin))
+    // Pas de copy FR résiduelle dans la version EN.
+    expect(html).not.toContain('Connexion à Evolve Capital')
+  })
+
+  it('LIEN UNIQUEMENT (A7) : aucun code/OTP affiché, ni fr ni en', async () => {
+    for (const locale of ['fr', 'en'] as const) {
+      const html = await renderEmailHtml(
+        createElement(MagicLinkEmail, { magicLink, expiresInMin, locale })
+      )
+      // Aucune invite à saisir un code (FR/EN), aucune mention de code/OTP.
+      expect(html.toLowerCase()).not.toMatch(/enter the code|saisis le code|saisir le code/)
+      expect(html.toLowerCase()).not.toMatch(/\bcode otp\b|\bcode de vérification\b|one-?time code/)
+      // Aucun placeholder de template Supabase (Token/Code) ne doit fuiter.
+      expect(html).not.toContain('{{ .Token }}')
+      expect(html).not.toContain('{{ .Code }}')
+      // Aucun bloc de 6 chiffres isolé (forme d'un OTP) hors de l'URL du lien.
+      const rendered = html.replace(/<[^>]+>/g, ' ').replace(magicLink, ' ')
+      expect(rendered).not.toMatch(/(?<!\d)\d{6}(?!\d)/)
+    }
+  })
+
+  it('utilise un CTA jaune (token brand-yellow), texte encre, jamais brand.red', async () => {
+    const html = await renderEmailHtml(createElement(MagicLinkEmail, { magicLink, expiresInMin }))
+    // Le CTA porte la couleur de fond brand-yellow et l'encre accent.
+    expect(html.toLowerCase()).toContain(brand.yellow.toLowerCase())
+    expect(html.toLowerCase()).toContain(semantic.accentInk.toLowerCase())
+    // brand.red est strictement réservé au branding, jamais sur ce flux.
+    expect(html.toLowerCase()).not.toContain(brand.red.toLowerCase())
+  })
+
+  it('expose le lien en clair (backup plaintext) et un ton rassurant', async () => {
+    const html = await renderEmailHtml(createElement(MagicLinkEmail, { magicLink, expiresInMin }))
+    // Lien backup en clair (apparaît au moins deux fois : href + texte).
+    const occurrences = html.split(magicLink).length - 1
+    expect(occurrences).toBeGreaterThanOrEqual(2)
+    // L'apostrophe est échappée en entité HTML (&#x27;) par React Email.
+    expect(html).toMatch(/Tu n(?:'|&#x27;)as pas demandé ce lien/i)
+  })
+})

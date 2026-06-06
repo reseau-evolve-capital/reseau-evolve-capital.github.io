@@ -1,0 +1,853 @@
+{
+  "common": {
+    "retry": "Try again",
+    "back": "Back",
+    "continue": "Continue",
+    "or": "OR",
+    "close": "Close",
+    "refreshing": "Refreshing…",
+    "dataSafe": "Your data stays safe.",
+    "changeLanguage": "Change language",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "nav": {
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "portfolio": "Club portfolio",
+      "contributions": "My contributions",
+      "network": "Club network",
+      "admin": "Treasurer area",
+      "section": "Member area",
+      "navLabel": "Main navigation",
+      "notification": "notification",
+      "soon": "Soon",
+      "clubTitle": "Active club"
+    },
+    "bottom": {
+      "dashboard": "Dashboard",
+      "portfolio": "Portfolio",
+      "contributions": "Contributions",
+      "navLabel": "Mobile navigation"
+    },
+    "topbar": {
+      "userMenu": "User menu",
+      "admin": "Treasurer area",
+      "profile": "Profile",
+      "logout": "Log out"
+    },
+    "themeToggle": {
+      "toggle": "Toggle theme",
+      "switchToLight": "Switch to light mode",
+      "switchToDark": "Switch to dark mode"
+    },
+    "shell": {
+      "syncedAt": "Synced {time}",
+      "clubMembers": "{count, plural, one {# member} other {# members}}",
+      "userFallback": "Member"
+    }
+  },
+  "login": {
+    "brand": {
+      "eyebrow": "Network of investment clubs",
+      "headlineLead": "Make visible what your club",
+      "headlineHighlight": "builds together.",
+      "tagline": "A single space to track the portfolio, contributions and each member's stake — with the rigor of a fund, at the scale of a circle.",
+      "datavizLabel": "Abstract illustration of a portfolio: valuation curve, allocation and history",
+      "stats": {
+        "clubs": "Clubs",
+        "members": "Members",
+        "aum": "Under management"
+      }
+    },
+    "help": {
+      "link": "Need help?"
+    },
+    "themeToggle": {
+      "toggle": "Toggle theme",
+      "switchToLight": "Switch to light mode",
+      "switchToDark": "Switch to dark mode"
+    },
+    "form": {
+      "eyebrow": "Member area · Sign in",
+      "title": "Welcome.",
+      "subtitle": "Enter your email and we'll send you a sign-in link — no password to remember.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "lea@cercle-arago.fr",
+      "submit": "Send my link →",
+      "submitting": "Sending link…",
+      "submittingHint": "Preparing your sign-in link, one moment…",
+      "reassurance": "Link valid for 15 min. No password, no spam.",
+      "invalidEmail": "Invalid email address."
+    },
+    "passkey": {
+      "label": "Sign in with a passkey",
+      "badge": "V1"
+    },
+    "invite": {
+      "text": "First time here? Your club sends you an invitation —",
+      "link": "learn more",
+      "suffix": "."
+    },
+    "checkEmail": {
+      "title": "Check your inbox",
+      "sentTo": "We've sent a magic link to <strong>{email}</strong>. It expires in 10 minutes.",
+      "resend": "Resend",
+      "resendCooldown": "Resend in {seconds}s",
+      "genericError": "Error"
+    },
+    "verify": {
+      "expiredTitle": "This link has expired or is invalid.",
+      "expiredBody": "Request a new one to sign in.",
+      "backToLogin": "Back to login",
+      "connecting": "Signing in…"
+    }
+  },
+  "onboarding": {
+    "progress": "Step {step} of {total}",
+    "phonePlaceholder": "+33 6 00 00 00 00",
+    "eyebrow": "Onboarding",
+    "chromeTitle": "Onboarding · Step {step} / {total}",
+    "stepCounter": "Step {step} / {total}",
+    "chromeNavAria": "Help and preferences",
+    "help": {
+      "link": "Need help?"
+    },
+    "themeToggle": {
+      "toggle": "Toggle theme",
+      "switchToLight": "Switch to light mode",
+      "switchToDark": "Switch to dark mode"
+    },
+    "sections": {
+      "profile": "Minimal profile",
+      "consents": "Consents",
+      "tour": "Guided tour"
+    },
+    "rail": {
+      "title": "Progress",
+      "aria": "Onboarding steps",
+      "statusCurrent": "In progress",
+      "statusUpcoming": "Up next",
+      "profile": { "label": "Minimal profile" },
+      "consents": { "label": "Consents" },
+      "tour": { "label": "Guided tour" }
+    },
+    "timeCard": {
+      "eyebrow": "In under",
+      "value": "3 minutes",
+      "body": "We only ask for the essentials to open your space. You can enrich your profile later."
+    },
+    "testimonial": {
+      "lead": "“We built Evolve to",
+      "highlight": "make visible",
+      "tail": "what investment clubs have been doing for decades.”",
+      "author": "Louis Martin",
+      "role": "Co-founder · Cercle Arago"
+    },
+    "step1": {
+      "eyebrow": "Step 01 · Minimal profile",
+      "welcome": "Welcome, {name}",
+      "welcomeFallback": "great to see you",
+      "subtitle": "A few details for your member profile. They'll be visible to the other members of your club.",
+      "avatarTitle": "Add a profile photo",
+      "avatarHint": "Optional · you can add it on the next step",
+      "avatarPreviewAria": "Profile photo preview",
+      "firstname": "First name",
+      "firstnamePlaceholder": "Your first name",
+      "lastname": "Last name",
+      "lastnamePlaceholder": "Your last name",
+      "phone": "Phone (optional)",
+      "phoneHint": "For session reminders · optional",
+      "phoneInvalid": "Invalid phone format."
+    },
+    "step2": {
+      "heading": "Your photo and contact details.",
+      "subtitle": "Optional: complete now or later from your profile.",
+      "avatarCaption": "Profile photo (optional)",
+      "avatarUploadAria": "Add a profile photo (optional)",
+      "avatarEmpty": "Photo",
+      "avatarUploading": "Uploading…",
+      "avatarUploadingAria": "Uploading",
+      "uploadError": "Upload failed.",
+      "phone": "Phone",
+      "address": "Address",
+      "addressPlaceholder": "12 rue de la Paix, 75001 Paris"
+    },
+    "step3": {
+      "heading": "A few agreements before you get started.",
+      "subtitle": "Two required commitments, a third optional one for the life of the network.",
+      "submit": "Join the club",
+      "rgpdLabel": "I accept the privacy policy and the processing of my personal data.",
+      "rgpdLinkLabel": "read",
+      "directoryLabel": "I agree to appear in the club's member directory.",
+      "directoryLinkLabel": "learn more",
+      "submitError": "Something went wrong. Try again."
+    },
+    "tour": {
+      "heading": "Quick tour, we promise.",
+      "enterSpace": "Go to my space",
+      "skip": "Skip the tour",
+      "regionAria": "Introduction",
+      "slideAria": "Slide {index} of {count}",
+      "slide1": {
+        "imageAlt": "Stake illustration",
+        "title": "Your stake",
+        "body": "Track how your stake evolves in real time, with the changes and the valuation of your portfolio."
+      },
+      "slide2": {
+        "imageAlt": "Club illustration",
+        "title": "Your club",
+        "body": "Find your club's information, view the shared dashboard and stay up to date on decisions."
+      },
+      "slide3": {
+        "imageAlt": "Network illustration",
+        "title": "The network",
+        "body": "Connect with members of the Evolve Capital network and build synergies within the community."
+      }
+    },
+    "invitedWelcome": {
+      "badge": "You've been invited",
+      "text": "Welcome! Complete your profile to access your space."
+    }
+  },
+  "dashboard": {
+    "error": {
+      "title": "We couldn't load your data. Try again?"
+    },
+    "empty": {
+      "title": "Data not available",
+      "description": "Your data isn't available yet. The treasurer must first sync the matrix."
+    },
+    "sync": {
+      "rateLimited": "Rate limit reached. Try again in a few minutes.",
+      "failed": "Sync failed. Try again?",
+      "success": "Sync complete",
+      "warning": "Synced with warnings",
+      "warningMessage": "Some rows were skipped."
+    },
+    "stale": "Data updated {time}.",
+    "hero": {
+      "label": "Your stake",
+      "viewDetail": ", view details",
+      "aria": "Your stake: {amount}",
+      "updated": "Updated {time}"
+    },
+    "syncBanner": {
+      "syncedAt": "Synced {time}",
+      "neverSynced": "—",
+      "refresh": "Refresh",
+      "refreshAria": "Refresh data"
+    },
+    "kpi": {
+      "detention": "My holding",
+      "totalContributed": "Total contributed",
+      "contributionStatus": "Contribution status"
+    },
+    "statusValue": {
+      "ok": "Up to date",
+      "pending": "Pending",
+      "late": "Overdue",
+      "exempt": "Exempt"
+    },
+    "detail": {
+      "title": "Your stake",
+      "description": "It represents {pct} of {clubName}'s portfolio. It evolves with your contributions and the performance of the holdings.",
+      "lastSync": "Last sync {time}",
+      "viewPortfolio": "View my portfolio →"
+    }
+  },
+  "portfolio": {
+    "title": "Portfolio",
+    "subtitle": "{count, plural, one {# open position} other {# open positions}}",
+    "filtersRegion": "Filters",
+    "summaryRegion": "Summary",
+    "lastSync": "Last sync",
+    "totalGainLoss": "Total gain / loss",
+    "errorState": {
+      "title": "We couldn't load your portfolio. Try again?"
+    },
+    "emptyState": {
+      "title": "Your club has no open position yet.",
+      "description": "The treasurer must first sync the matrix."
+    },
+    "sync": {
+      "rateLimited": "Rate limit reached. Try again in a few minutes.",
+      "failed": "Sync failed. Try again?",
+      "syncedAt": "Synced {time}",
+      "neverSynced": "—",
+      "refresh": "Refresh",
+      "refreshAria": "Refresh data",
+      "success": "Sync complete",
+      "warning": "Synced with warnings",
+      "warningMessage": "Some rows were skipped."
+    },
+    "sort": {
+      "value": "Value",
+      "name": "Name",
+      "performance": "Performance"
+    },
+    "filters": {
+      "group": "Portfolio filters",
+      "all": "All",
+      "typologie": "Type",
+      "typologyAll": "All",
+      "sortBy": "Sort by",
+      "ascending": "Ascending order",
+      "descending": "Descending order"
+    },
+    "allocation": {
+      "title": "Sector allocation",
+      "totalValue": "Total value",
+      "ariaPrefix": "Portfolio allocation: ",
+      "legend": "Allocation legend"
+    },
+    "balances": {
+      "title": "Provisions and balances"
+    },
+    "table": {
+      "columns": {
+        "name": "Asset",
+        "category": "Type",
+        "quantity": "Quantity",
+        "pru": "Avg cost",
+        "livePrice": "Price",
+        "currentValue": "Value",
+        "gainLossEur": "+/- €",
+        "gainLossPct": "+/- %"
+      },
+      "emptyTitle": "No position",
+      "emptyDescription": "Your club has no open position yet.",
+      "transactionsHistory": "Transaction history (soon) →",
+      "tableLabel": "Position portfolio",
+      "sortLabel": "Sort by {column}{direction, select, asc {, ascending} desc {, descending} other {}}",
+      "rowLabel": "View details for {name}",
+      "counter": {
+        "unfiltered": "{count, plural, one {# position} other {# positions}}",
+        "filtered": "Showing {rendered} of {total} — view all"
+      }
+    },
+    "modal": {
+      "quantity": "Quantity",
+      "pru": "Avg cost",
+      "livePrice": "Price",
+      "currentValue": "Total value",
+      "gainLossEur": "+/- €",
+      "gainLossPct": "+/- %",
+      "allocationPct": "% of portfolio"
+    },
+    "metaTitle": "Portfolio — Evolve Capital"
+  },
+  "contributions": {
+    "title": "My contributions",
+    "historyTitle": "Monthly history",
+    "attestation": {
+      "cta": "Download holding certificate",
+      "loading": "Generating…",
+      "error": "Certificate generation failed. Try again?",
+      "success": "Certificate downloaded."
+    },
+    "status": {
+      "ok": "Up to date",
+      "pending": "Pending",
+      "late": "Overdue",
+      "exempt": "Exempt"
+    },
+    "kpi": {
+      "totalContributed": "Total contributed",
+      "monthsCount": "Number of months",
+      "detentionPct": "Stake",
+      "netMarketValue": "Net holdings value"
+    },
+    "penalties": {
+      "title": "Penalties",
+      "active": "{amount} in outstanding penalties.",
+      "none": "No outstanding penalty."
+    },
+    "lateAlert": {
+      "title": "You have an overdue contribution of {amount}.",
+      "body": "Reach out to your club's treasurer to settle your situation."
+    },
+    "empty": {
+      "title": "No contributions yet",
+      "description": "Your first contribution will appear here."
+    },
+    "error": {
+      "loadTitle": "We couldn't load your contributions. Try again?"
+    },
+    "sync": {
+      "rateLimited": "Rate limit reached. Try again in a few minutes.",
+      "failed": "Sync failed. Try again?",
+      "success": "Sync complete",
+      "warning": "Synced with warnings",
+      "warningMessage": "Some rows were skipped."
+    },
+    "timeline": {
+      "legend": {
+        "paid": "Paid",
+        "pending": "Pending",
+        "late": "Overdue",
+        "exempt": "Exempt",
+        "upcoming": "Upcoming"
+      },
+      "monthInitials": ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
+      "legendLabel": "Status legend",
+      "historyLabel": "Contribution history",
+      "emptyTitle": "No contributions yet",
+      "emptyDescription": "Your first contribution will appear here."
+    },
+    "metaTitle": "My contributions — Evolve Capital"
+  },
+  "admin": {
+    "staleData": "Couldn't refresh the data. Showing the last known values.",
+    "sync": {
+      "syncedAt": "Synced {time}",
+      "refresh": "Refresh",
+      "refreshAria": "Refresh data"
+    },
+    "forbidden": {
+      "title": "Access denied",
+      "description": "This area is reserved for club treasurers.",
+      "action": "Back to dashboard"
+    },
+    "dashboard": {
+      "title": "Treasurer area",
+      "syncError": {
+        "rateLimited": "Rate limit reached. Try again in a few minutes.",
+        "failed": "Sync failed. Try again?",
+        "success": "Sync complete",
+        "warning": "Synced with warnings",
+        "warningMessage": "Some rows were skipped."
+      },
+      "unpaidAlert": "{count, plural, =1 {1 member has an outstanding contribution.} other {# members have outstanding contributions.}}",
+      "kpi": {
+        "activeMembers": "Active members",
+        "portfolioValue": "Portfolio value",
+        "totalContributed": "Total contributed",
+        "unpaidCount": "Outstanding"
+      }
+    },
+    "members": {
+      "title": "Club members",
+      "filterUnpaid": "Members with outstanding contributions",
+      "tableLabel": "Club members",
+      "columns": {
+        "fullName": "Member",
+        "role": "Role",
+        "totalContributed": "Total contributed",
+        "detentionPct": "Stake",
+        "monthsCount": "Months contributed",
+        "status": "Status"
+      },
+      "roles": {
+        "member": "Member",
+        "treasurer": "Treasurer",
+        "president": "President",
+        "network_admin": "Network admin",
+        "former": "Former member"
+      },
+      "statuses": {
+        "ok": "Up to date",
+        "pending": "Pending",
+        "late": "Overdue",
+        "exempt": "Exempt",
+        "none": "No contribution recorded"
+      },
+      "empty": {
+        "title": "No members",
+        "description": "This club has no member matching this filter yet."
+      },
+      "sortLabel": "Sort by {column}{direction, select, asc {, ascending} desc {, descending} other {}}",
+      "detentionBarLabel": "{name}'s stake",
+      "activeCount": "{count}/{limit} active members",
+      "activeLimitReached": "(limit reached)",
+      "stateFilter": {
+        "label": "Filter by status",
+        "all": "All members",
+        "active": "Active members",
+        "left": "Members who left",
+        "option": "{label} ({count})"
+      },
+      "resultsCount": "{count, plural, =1 {1 result} other {# results}}",
+      "left": {
+        "badge": "Left",
+        "since": "Left on {date}"
+      },
+      "email": {
+        "missing": "Missing email",
+        "action": "Set email",
+        "modal": {
+          "title": "Set email for {name}",
+          "description": "This member was imported without an email (typically someone who left). Enter their real email: it will be used to link them to their account. No access is opened automatically.",
+          "emailLabel": "Email address",
+          "emailPlaceholder": "first.last@example.com",
+          "emailHelp": "The email you enter replaces the placeholder and is preserved on syncs.",
+          "cancel": "Cancel",
+          "confirm": "Save",
+          "close": "Close"
+        },
+        "errors": {
+          "duplicate": "This email is already used by another member.",
+          "invalid": "Invalid email format."
+        },
+        "toast": {
+          "successTitle": "Email saved",
+          "successMessage": "The member's email has been updated.",
+          "errorTitle": "Action failed",
+          "errorMessage": "Something went wrong. Please try again.",
+          "forbiddenMessage": "You don't have permission to edit this member."
+        }
+      },
+      "access": {
+        "column": "Access",
+        "active": "Active",
+        "locked": "Locked",
+        "invited": "Invited",
+        "actions": {
+          "lock": "Lock access",
+          "unlock": "Unlock",
+          "viewProfile": "View profile",
+          "menu": "Actions"
+        },
+        "lockModal": {
+          "title": "Lock access for {name}?",
+          "description": "This person will be signed out immediately and won't be able to access the member area until unlocked. This action is reversible.",
+          "reasonLabel": "Reason (optional)",
+          "reasonPlaceholder": "Choose a reason",
+          "reasons": {
+            "unpaid": "Unpaid",
+            "left": "Left the club",
+            "suspended": "Temporarily suspended",
+            "other": "Other"
+          },
+          "otherPlaceholder": "Specify the reason…",
+          "cancel": "Cancel",
+          "confirm": "Lock access"
+        },
+        "unlockModal": {
+          "title": "Unlock access for {name}?",
+          "description": "The member will be able to access the member area again.",
+          "confirm": "Unlock"
+        },
+        "lockSuccess": "Access locked.",
+        "unlockSuccess": "Access restored.",
+        "error": "Action failed."
+      }
+    },
+    "cotisations": {
+      "title": "Club contributions",
+      "filterMember": "Filter by member",
+      "allMembers": "All members",
+      "kpi": {
+        "total": "Total contributed",
+        "count": "Payments",
+        "average": "Average payment",
+        "netMarketValue": "Member net value"
+      },
+      "empty": {
+        "title": "No contributions",
+        "description": "No payment recorded for this filter."
+      }
+    },
+    "meta": {
+      "title": "Admin — Evolve Capital",
+      "cotisationsTitle": "Contributions — Admin Evolve Capital",
+      "membersTitle": "Members — Admin Evolve Capital",
+      "invitationsTitle": "Invitations — Evolve Capital Admin",
+      "settingsTitle": "Club settings — Evolve Capital Admin"
+    },
+    "tabs": {
+      "dashboard": "Dashboard",
+      "members": "Members",
+      "cotisations": "Contributions",
+      "invitations": "Invitations",
+      "navLabel": "Treasurer area navigation",
+      "settings": "Settings"
+    },
+    "invitations": {
+      "title": "Invitations",
+      "subtitle": "Give app access to a club member. Each access link is personal and expires automatically.",
+      "inviteCta": "Invite a member",
+      "form": {
+        "placeholder": "email@example.com",
+        "submit": "Generate access link",
+        "note": "The email must belong to a club member. A copyable link, valid for 72 h, will be generated.",
+        "success": "Invitation created. Copy the access link below.",
+        "errorInvalid": "Invalid email address.",
+        "errorDuplicate": "An invitation is already pending for this email.",
+        "errorNotMember": "This email does not match any club member.",
+        "errorGeneric": "Could not create the invitation."
+      },
+      "columns": {
+        "email": "Email",
+        "sentAt": "Sent on",
+        "expiresAt": "Expires on",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "status": {
+        "pending": "Pending",
+        "accepted": "Accepted",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "actions": {
+        "resend": "Resend invitation",
+        "revoke": "Revoke invitation",
+        "copyLink": "Copy link",
+        "linkCopied": "Link copied"
+      },
+      "empty": {
+        "title": "No invitations.",
+        "description": "Invite your first member to get started."
+      },
+      "linkLabel": "Access link (share it with the member)",
+      "linkToCopyLabel": "Link to copy and share with the member",
+      "linkNote": "No email was sent. Copy this link and share it with the member yourself.",
+      "deliveredLabel": "Invitation sent by email",
+      "deliveredNote": "An email with this link was sent to the member. You can also copy it above.",
+      "tableLabel": "Invitations list"
+    },
+    "settings": {
+      "title": "Club settings",
+      "subtitle": "View and edit the club information sourced from the matrix.",
+      "sections": {
+        "general": "General information",
+        "sensitive": "Sensitive settings",
+        "sensitiveHint": "Editing these critical fields requires a double confirmation."
+      },
+      "fields": {
+        "name": "Club name",
+        "city": "City",
+        "country": "Country",
+        "brokerAccountRef": "Club broker account ID",
+        "annualInvestmentCap": "Annual investment cap"
+      },
+      "hints": {
+        "city": "City where the club is based.",
+        "country": "ISO 2-letter country code (e.g. FR, BE, LU).",
+        "brokerAccountRef": "The club's account reference at the broker. Sensitive field.",
+        "annualInvestmentCap": "Maximum amount investable per year, in euros. Sensitive field."
+      },
+      "readonly": {
+        "brokerName": "Broker: {value}"
+      },
+      "errors": {
+        "name_required": "The club name is required.",
+        "country_invalid": "Invalid country code (2 letters expected, e.g. FR).",
+        "cap_invalid": "Invalid cap (a positive amount is expected)."
+      },
+      "confirm": {
+        "title": "Sensitive operation",
+        "description": "You are editing critical club settings. A wrong value can prevent account reconciliation. Double-check before confirming.",
+        "acknowledge": "I have verified these values and confirm I want to change them.",
+        "before": "Before",
+        "after": "After",
+        "submit": "Confirm change"
+      },
+      "toast": {
+        "successTitle": "Settings saved",
+        "successMessage": "The club settings have been updated.",
+        "errorTitle": "Save failed",
+        "errorMessage": "Could not save the settings. Please try again.",
+        "forbiddenTitle": "Access denied",
+        "forbiddenMessage": "You don't have permission to edit these settings."
+      }
+    }
+  },
+  "errors": {
+    "auth": {
+      "title": "We couldn't load the sign-in. Try again?",
+      "body": "No worries, your account is safe."
+    },
+    "onboarding": {
+      "title": "We couldn't load your sign-up. Try again?",
+      "body": "Your progress is saved, you can pick up right where you left off."
+    },
+    "dashboard": {
+      "title": "We couldn't load your dashboard. Try again?"
+    },
+    "portfolio": {
+      "title": "We couldn't load your portfolio. Try again?"
+    },
+    "contributions": {
+      "title": "We couldn't load your contributions. Try again?"
+    },
+    "admin": {
+      "dashboard": {
+        "title": "We couldn't load the treasurer area. Try again?"
+      },
+      "members": {
+        "title": "We couldn't load the members. Try again?"
+      },
+      "cotisations": {
+        "title": "We couldn't load the club contributions. Try again?"
+      },
+      "invitations": {
+        "title": "Could not load invitations."
+      },
+      "settings": {
+        "title": "Could not load the club settings."
+      }
+    },
+    "nav": {
+      "requestFailed": "Something went wrong. Try again."
+    }
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This page doesn't exist or has been moved. No worries, we'll bring you back to familiar ground.",
+    "backToDashboard": "Back to dashboard"
+  },
+  "profile": {
+    "metaTitle": "My profile — Evolve Capital",
+    "title": "My profile",
+    "subtitle": "Your member information.",
+    "unknownName": "Member",
+    "editHint": "Editing your profile is coming soon. To correct any information, contact your treasurer.",
+    "fields": {
+      "email": "Email",
+      "phone": "Phone",
+      "club": "Club",
+      "role": "Role",
+      "joinedAt": "Member since"
+    },
+    "roles": {
+      "member": "Member",
+      "treasurer": "Treasurer",
+      "president": "President",
+      "network_admin": "Network admin"
+    }
+  },
+  "accessSuspended": {
+    "metaTitle": "Access suspended — Evolve Capital",
+    "title": "Your access has been suspended.",
+    "description": "Your treasurer has temporarily suspended your access to the member area. This may be due to an outstanding contribution or another reason. Contact them to learn more and restore your access.",
+    "contactCta": "Contact my treasurer",
+    "signOut": "Sign out"
+  },
+  "attestationVerify": {
+    "metaTitle": "Attestation verification — Evolve Capital",
+    "brand": "Evolve Capital",
+    "title": "Attestation verification",
+    "authentic": "Authentic document",
+    "clubLabel": "Club",
+    "periodLabel": "Period",
+    "issuedAtLabel": "Issue date",
+    "autoGenerated": "Document generated automatically, without signature.",
+    "unknown": "Unknown or not-yet-registered reference",
+    "unknownHint": "Attestations become verifiable after their monthly delivery."
+  },
+  "legal": {
+    "charter": {
+      "metaTitle": "Network charter — Evolve Capital",
+      "title": "Evolve network charter",
+      "updatedLabel": "Last updated on",
+      "lastUpdated": "2025-04-12",
+      "back": "Back to sign-up",
+      "sections": [
+        {
+          "title": "Legal information",
+          "paragraphs": [
+            "Réseau Evolve Capital — association declared in accordance with the French law of July 1, 1901.",
+            "Headquarters: 181 boulevard Macdonald, 75019 Paris, France.",
+            "Email: contact@reseauevolvecapital.com",
+            "Legal representative: Lionel Zoclanclounon, President of the association."
+          ]
+        },
+        {
+          "title": "Purpose and spirit of the network",
+          "paragraphs": [
+            "The Evolve Capital network brings its members together around a shared approach to financial education and collective investment. Each member commits to taking part in a spirit of respect, transparency and mutual support.",
+            "Membership implies acceptance of the club's operating rules, of this charter and of the privacy policy."
+          ]
+        },
+        {
+          "title": "Member commitments",
+          "paragraphs": [
+            "Pay contributions according to the terms set by the club and keep personal information up to date.",
+            "Respect the confidentiality of information shared within the network and of other members.",
+            "Take part in good faith in collective decisions and club activities."
+          ]
+        },
+        {
+          "title": "Intellectual property",
+          "paragraphs": [
+            "All content made available by the network (structure, presentation, texts, logos, images, videos, sounds, applications) constitutes a work protected by French and international copyright and intellectual property legislation.",
+            "Any reproduction, representation, use or adaptation, in any form whatsoever, of all or part of these elements without the prior written agreement of Réseau Evolve Capital is strictly prohibited."
+          ]
+        },
+        {
+          "title": "Limitation of liability",
+          "paragraphs": [
+            "The information provided is as accurate as possible and regularly updated, but may contain inaccuracies or omissions. If you notice an error, please report it by email, describing the problem as precisely as possible.",
+            "The network cannot be held responsible for damage related to the use of the content, nor for the content of third-party sites that links may point to."
+          ]
+        },
+        {
+          "title": "Applicable law and jurisdiction",
+          "paragraphs": [
+            "This charter and the terms of use are subject to French law. In the event of a dispute relating to their interpretation, execution or termination, the courts of Paris have exclusive jurisdiction."
+          ]
+        }
+      ]
+    },
+    "privacy": {
+      "metaTitle": "Privacy policy — Evolve Capital",
+      "title": "Privacy policy",
+      "updatedLabel": "Last updated on",
+      "lastUpdated": "2025-04-12",
+      "back": "Back to sign-up",
+      "sections": [
+        {
+          "title": "Introduction",
+          "paragraphs": [
+            "At Réseau Evolve Capital, we respect your privacy and are committed to protecting your personal data. This policy informs you about how we handle your data and about your data protection rights.",
+            "Our services are intended for individuals interested in investment and finance, and are not intended for children. We do not knowingly collect data relating to children."
+          ]
+        },
+        {
+          "title": "The data we collect",
+          "paragraphs": [
+            "Identity data: first name, last name, identifier.",
+            "Contact data: email address, telephone number, postal address.",
+            "Technical data: IP address, login data, browser type and version, time zone, operating system and platform.",
+            "Usage data: information about how you use the member area.",
+            "Marketing and communications data: your communication preferences, including your presence in the member directory."
+          ]
+        },
+        {
+          "title": "How we use your data",
+          "paragraphs": [
+            "To manage your membership and your relationship with the club, and to notify you of changes to our terms or this policy.",
+            "To give you access to the member area features (dashboard, portfolio, contributions).",
+            "To send you, where applicable, the communications you have consented to.",
+            "We only use your personal data when the law allows us to."
+          ]
+        },
+        {
+          "title": "Cookies and similar technologies",
+          "paragraphs": [
+            "We use cookies and similar technologies to remember your preferences (such as the light/dark theme and language) and to ensure the member area works correctly.",
+            "Some cookies are essential for authentication: blocking them may prevent access to all or part of the service."
+          ]
+        },
+        {
+          "title": "Your rights",
+          "paragraphs": [
+            "Request access to your personal data.",
+            "Request correction or erasure of your personal data.",
+            "Object to processing or request its restriction.",
+            "Request the transfer of your personal data.",
+            "Withdraw your consent where processing relies on it."
+          ]
+        },
+        {
+          "title": "Contact",
+          "paragraphs": [
+            "For any questions about this policy or our privacy practices: contact@reseauevolvecapital.com"
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,75 @@
+/* Tailwind V4 @theme — remapping CSS vars vers classes utilitaires
+   ⚠️  Règle : ZÉRO hex en dur ici, tout via var(--)
+   Résultat : bg-brand-yellow, text-data-negative, shadow-card, rounded-md, etc. */
+
+@import "tailwindcss";
+
+@theme {
+  /* Brand */
+  --color-brand-yellow-light: var(--brand-yellow-light);
+  --color-brand-yellow: var(--brand-yellow);
+  --color-brand-orange: var(--brand-orange);
+  --color-brand-red: var(--brand-red);
+
+  /* Neutrals */
+  --color-neutral-0: var(--n-0);
+  --color-neutral-50: var(--n-50);
+  --color-neutral-100: var(--n-100);
+  --color-neutral-150: var(--n-150);
+  --color-neutral-200: var(--n-200);
+  --color-neutral-300: var(--n-300);
+  --color-neutral-400: var(--n-400);
+  --color-neutral-500: var(--n-500);
+  --color-neutral-600: var(--n-600);
+  --color-neutral-700: var(--n-700);
+  --color-neutral-800: var(--n-800);
+  --color-neutral-900: var(--n-900);
+  --color-neutral-1000: var(--n-1000);
+
+  /* Data-viz */
+  --color-data-positive: var(--data-positive);
+  --color-data-positive-50: var(--data-positive-50);
+  --color-data-negative: var(--data-negative);
+  --color-data-negative-50: var(--data-negative-50);
+  --color-data-negative-strong: var(--data-negative-strong);
+  --color-data-neutral: var(--data-neutral);
+  --color-data-neutral-50: var(--data-neutral-50);
+  --color-data-warning: var(--data-warning);
+  --color-data-warning-50: var(--data-warning-50);
+  --color-data-warning-strong: var(--data-warning-strong);
+
+  /* Semantic */
+  --color-bg: var(--bg);
+  --color-bg-page: var(--bg-page);
+  --color-card: var(--card);
+  --color-card-sub: var(--card-sub);
+  --color-text: var(--text);
+  --color-text-sec: var(--text-sec);
+  --color-text-ter: var(--text-ter);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+
+  /* Shadows */
+  --shadow-card: var(--sh-card);
+  --shadow-pop: var(--sh-pop);
+  --shadow-modal: var(--sh-modal);
+  --shadow-glow: var(--sh-glow);
+
+  /* Radii */
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-pill: var(--r-pill);
+
+  /* Motion */
+  --duration-fast: var(--dur-fast);
+  --duration-std: var(--dur-std);
+  --duration-slow: var(--dur-slow);
+
+  /* Fonts */
+  --font-display: 'Tommy Soft', 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}

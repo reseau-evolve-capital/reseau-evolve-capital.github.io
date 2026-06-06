@@ -1,0 +1,19 @@
+{
+  "imports": {
+    "@evolve/utils": "../../../packages/utils/src/index.ts",
+    "zod": "npm:zod@^4.4.3",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2"
+  },
+  "scopes": {
+    "../../../packages/data/src/sheets/mappers/": {
+      "../../../packages/data/src/sheets/mappers/_shared": "../../../packages/data/src/sheets/mappers/_shared.ts",
+      "../../../packages/data/src/types/sheets": "../../../packages/data/src/types/sheets.ts"
+    },
+    "../../../packages/utils/src/": {
+      "../../../packages/utils/src/format": "../../../packages/utils/src/format.ts",
+      "../../../packages/utils/src/dates": "../../../packages/utils/src/dates.ts",
+      "../../../packages/utils/src/numeric": "../../../packages/utils/src/numeric.ts",
+      "../../../packages/utils/src/strings": "../../../packages/utils/src/strings.ts"
+    }
+  }
+}

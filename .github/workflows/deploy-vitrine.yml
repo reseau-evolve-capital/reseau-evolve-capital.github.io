@@ -1,0 +1,64 @@
+name: Deploy Vitrine (GitHub Pages)
+
+# ⚠ DORMANT — déclenchement MANUEL uniquement.
+# Le blog vitrine est généré en SSG depuis un Strapi qui tourne EN LOCAL
+# (DB + assets sur Supabase). En CI, Strapi n'est pas disponible → le blog se
+# builderait VIDE (les try/catch de src/lib/api.ts renvoient []). Tant que
+# Strapi n'est pas hébergé sur un serveur distant, le déploiement se fait en
+# local : `make vitrine-deploy` (build Strapi up → push out/ sur la branche
+# gh-pages). NE PAS réactiver le trigger push sur main sans Strapi distant.
+# Voir apps/vitrine/CLAUDE.md.
+on:
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build vitrine
+        working-directory: apps/vitrine
+        env:
+          NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN }}
+          NEXT_PUBLIC_APP_SCRIPT_URL: ${{ secrets.NEXT_PUBLIC_APP_SCRIPT_URL }}
+          NEXT_PUBLIC_CONTACT_FORM_URL: ${{ secrets.NEXT_PUBLIC_CONTACT_FORM_URL }}
+        run: pnpm build
+
+      - name: Ensure CNAME in out/
+        working-directory: apps/vitrine
+        run: |
+          if [ ! -f out/CNAME ]; then
+            echo "reseauevolvecapital.com" > out/CNAME
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'apps/vitrine/out'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
