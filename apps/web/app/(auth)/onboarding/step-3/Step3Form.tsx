@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { useMutation } from '@tanstack/react-query'
-import { OnboardingShell, ProgressHeader, ConsentRow, Button, Heading } from '@evolve/ui'
+import { OnboardingShell, ConsentRow, Button } from '@evolve/ui'
 import { useOnboardingStore } from '@/lib/stores/onboarding'
 import { submitOnboardingProfile } from '@/lib/api/onboarding'
 
@@ -44,11 +44,12 @@ export function Step3Form() {
   return (
     <OnboardingShell
       header={
-        <ProgressHeader
-          step={3}
-          total={3}
-          formatLabel={(s, n) => t('progress', { step: s, total: n })}
-        />
+        <div className="flex flex-col gap-2 text-center">
+          <h1 className="font-display text-[28px] font-bold leading-tight text-text sm:text-[34px]">
+            {t('step3.heading')}
+          </h1>
+          <p className="text-[15px] leading-relaxed text-text-sec">{t('step3.subtitle')}</p>
+        </div>
       }
       footer={
         <div className="flex flex-col gap-2">
@@ -77,8 +78,6 @@ export function Step3Form() {
       }
     >
       <div className="flex flex-col gap-6">
-        <Heading level="h2">{t('step3.heading')}</Heading>
-
         <div className="flex flex-col gap-2">
           <ConsentRow
             checked={rgpd}

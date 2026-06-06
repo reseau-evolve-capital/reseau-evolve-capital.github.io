@@ -106,15 +106,63 @@
   "onboarding": {
     "progress": "Step {step} of {total}",
     "phonePlaceholder": "+33 6 00 00 00 00",
+    "eyebrow": "Onboarding",
+    "chromeTitle": "Onboarding · Step {step} / {total}",
+    "stepCounter": "Step {step} / {total}",
+    "chromeNavAria": "Help and preferences",
+    "help": {
+      "link": "Need help?"
+    },
+    "themeToggle": {
+      "toggle": "Toggle theme",
+      "switchToLight": "Switch to light mode",
+      "switchToDark": "Switch to dark mode"
+    },
+    "sections": {
+      "profile": "Minimal profile",
+      "consents": "Consents",
+      "tour": "Guided tour"
+    },
+    "rail": {
+      "title": "Progress",
+      "aria": "Onboarding steps",
+      "statusCurrent": "In progress",
+      "statusUpcoming": "Up next",
+      "profile": { "label": "Minimal profile" },
+      "consents": { "label": "Consents" },
+      "tour": { "label": "Guided tour" }
+    },
+    "timeCard": {
+      "eyebrow": "In under",
+      "value": "3 minutes",
+      "body": "We only ask for the essentials to open your space. You can enrich your profile later."
+    },
+    "testimonial": {
+      "lead": "“We built Evolve to",
+      "highlight": "make visible",
+      "tail": "what investment clubs have been doing for decades.”",
+      "author": "Louis Martin",
+      "role": "Co-founder · Cercle Arago"
+    },
     "step1": {
+      "eyebrow": "Step 01 · Minimal profile",
+      "welcome": "Welcome, {name}",
+      "welcomeFallback": "great to see you",
+      "subtitle": "A few details for your member profile. They'll be visible to the other members of your club.",
+      "avatarTitle": "Add a profile photo",
+      "avatarHint": "Optional · you can add it on the next step",
+      "avatarPreviewAria": "Profile photo preview",
       "firstname": "First name",
       "firstnamePlaceholder": "Your first name",
       "lastname": "Last name",
       "lastnamePlaceholder": "Your last name",
       "phone": "Phone (optional)",
+      "phoneHint": "For session reminders · optional",
       "phoneInvalid": "Invalid phone format."
     },
     "step2": {
+      "heading": "Your photo and contact details.",
+      "subtitle": "Optional: complete now or later from your profile.",
       "avatarCaption": "Profile photo (optional)",
       "avatarUploadAria": "Add a profile photo (optional)",
       "avatarEmpty": "Photo",
@@ -127,6 +175,7 @@
     },
     "step3": {
       "heading": "A few agreements before you get started.",
+      "subtitle": "Two required commitments, a third optional one for the life of the network.",
       "submit": "Join the club",
       "rgpdLabel": "I accept the privacy policy and the processing of my personal data.",
       "rgpdLinkLabel": "read",
@@ -135,6 +184,7 @@
       "submitError": "Something went wrong. Try again."
     },
     "tour": {
+      "heading": "Quick tour, we promise.",
       "enterSpace": "Go to my space",
       "skip": "Skip the tour",
       "regionAria": "Introduction",

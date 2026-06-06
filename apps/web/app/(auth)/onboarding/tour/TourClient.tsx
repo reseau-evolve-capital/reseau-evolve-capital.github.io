@@ -3,14 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import {
-  OnboardingShell,
-  ProgressHeader,
-  CarouselSlider,
-  SlideCard,
-  Button,
-  Link,
-} from '@evolve/ui'
+import { OnboardingShell, CarouselSlider, SlideCard, Button, Link } from '@evolve/ui'
 
 export function TourClient() {
   const router = useRouter()
@@ -39,15 +32,14 @@ export function TourClient() {
   ]
 
   return (
+    // Le tour est la dernière partie de l'étape 03 du fil d'onboarding (réf desktop :
+    // « ÉTAPE 03 / 03 »). Le carrousel respire en colonne large (width="wide").
     <OnboardingShell
-      // Le tour est la dernière partie de l'étape 03 du fil d'onboarding (réf desktop :
-      // « ÉTAPE 03 / 03 »), cohérent avec step-3 (consentements) → indicateur 3/3.
+      width="wide"
       header={
-        <ProgressHeader
-          step={3}
-          total={3}
-          formatLabel={(s, n) => t('progress', { step: s, total: n })}
-        />
+        <h1 className="text-center font-display text-[28px] font-bold leading-tight text-text sm:text-[34px]">
+          {t('tour.heading')}
+        </h1>
       }
       footer={
         <div className="flex flex-col items-center gap-3">

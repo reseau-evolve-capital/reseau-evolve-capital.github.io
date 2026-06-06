@@ -67,7 +67,8 @@ test('flow complet login → onboarding → dashboard', async ({ page }) => {
   // Tour d'onboarding
   await expect(page).toHaveURL(/\/onboarding\/tour/, { timeout: 15_000 })
   // Indicateur d'étape cohérent avec le reste du fil (FIX-OBD-001) : le tour = étape 3/3.
-  await expect(page.getByText(/Étape 3 sur 3/i).first()).toBeVisible()
+  // Le chrome d'onboarding affiche le compteur « Étape 3 / 3 » (réf desktop).
+  await expect(page.getByText(/Étape 3 \/ 3/i).first()).toBeVisible()
 
   // Accéder au dashboard
   await page.getByRole('button', { name: /accéder à mon espace/i }).click()

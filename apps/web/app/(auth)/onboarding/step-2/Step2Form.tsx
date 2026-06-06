@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { OnboardingShell, ProgressHeader, AvatarUpload, FormField, Input, Button } from '@evolve/ui'
+import { OnboardingShell, AvatarUpload, FormField, Input, Button } from '@evolve/ui'
 import { useOnboardingStore } from '@/lib/stores/onboarding'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { resizeAndUploadAvatar } from '@/lib/upload/avatar'
@@ -51,11 +51,12 @@ export function Step2Form() {
   return (
     <OnboardingShell
       header={
-        <ProgressHeader
-          step={2}
-          total={3}
-          formatLabel={(s, n) => t('progress', { step: s, total: n })}
-        />
+        <div className="flex flex-col gap-2">
+          <h1 className="font-display text-[28px] font-bold leading-tight text-text sm:text-[32px]">
+            {t('step2.heading')}
+          </h1>
+          <p className="text-[15px] leading-relaxed text-text-sec">{t('step2.subtitle')}</p>
+        </div>
       }
       footer={
         <div className="flex flex-col gap-2">
