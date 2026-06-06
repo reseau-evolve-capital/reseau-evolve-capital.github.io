@@ -87,12 +87,36 @@ async function seedLockMe(): Promise<void> {
   })
 }
 
-/** Supprime LOCKME + l'invitation de test (par EMAIL → robuste au re-key login). */
+/**
+ * Seede un MEMBRE du club (user + membership actif) pour un email donné.
+ * Depuis B5 (migration 031), `admin_create_invitation` n'autorise que les emails qui sont
+ * DÉJÀ membres du club — donc les cibles d'invitation de test doivent exister en amont.
+ * `onboarded=false` permet de tester la redirection onboarding à l'acceptation.
+ */
+async function seedClubMember(id: string, email: string, onboarded: boolean): Promise<void> {
+  await withDb(async (sql) => {
+    await sql`
+      INSERT INTO users (id, email, full_name, onboarding_completed)
+      VALUES (${id}::uuid, ${email}, ${email}, ${onboarded})
+      ON CONFLICT (id) DO UPDATE SET onboarding_completed = EXCLUDED.onboarding_completed
+    `
+    await sql`
+      INSERT INTO memberships (id, user_id, club_id, role, status, joined_at)
+      VALUES (${id}::uuid, ${id}::uuid, ${SEED_CLUB_ID}::uuid, 'member', 'active', '2021-06-01')
+      ON CONFLICT (user_id, club_id) DO UPDATE SET status = 'active', role = 'member'
+    `
+  })
+}
+
+const INVITE_MEMBER_ID = 'cccccccc-0000-0000-0000-000000000008'
+const PROVISION_MEMBER_ID = 'cccccccc-0000-0000-0000-000000000009'
+
+/** Supprime LOCKME + les membres/invitations de test (par EMAIL → robuste au re-key login). */
 async function cleanup(): Promise<void> {
   await withDb(async (sql) => {
     await sql`DELETE FROM invitations WHERE club_id = ${SEED_CLUB_ID}::uuid AND lower(email) IN (${INVITE_EMAIL}, ${PROVISION_EMAIL})`
-    // memberships des users de test (PROVISION : adhésion provisionnée à l'acceptation) — par EMAIL.
-    await sql`DELETE FROM memberships WHERE user_id IN (SELECT id FROM users WHERE email IN (${LOCKME.email}, ${PROVISION_EMAIL}))`
+    // memberships des users de test (membres seedés pour les invitations B5) — par EMAIL.
+    await sql`DELETE FROM memberships WHERE user_id IN (SELECT id FROM users WHERE email IN (${LOCKME.email}, ${INVITE_EMAIL}, ${PROVISION_EMAIL}))`
     await sql`DELETE FROM users WHERE email IN (${LOCKME.email}, ${INVITE_EMAIL}, ${PROVISION_EMAIL})`
     // Supprime aussi l'entrée auth.users : sinon, à la connexion suivante, handle_new_user
     // (AFTER INSERT) ne se redéclenche pas → public.users.id ne serait pas re-keyé sur l'uuid
@@ -126,6 +150,9 @@ async function expectNoSeriousA11y(page: Page, label: string): Promise<void> {
 test.beforeAll(async () => {
   await cleanup()
   await seedLockMe()
+  // B5 : les invitations ne ciblent que des membres existants → on seede les 2 cibles.
+  await seedClubMember(INVITE_MEMBER_ID, INVITE_EMAIL, true)
+  await seedClubMember(PROVISION_MEMBER_ID, PROVISION_EMAIL, false)
   await setSeedRole('treasurer')
 })
 
@@ -143,7 +170,7 @@ test('invitations : invite → lien copiable + ligne en attente → révoque', a
 
   await page.getByRole('textbox', { name: /Adresse e-mail/i }).fill(INVITE_EMAIL)
   // exact:true → ne pas matcher les boutons « Renvoyer l'invitation (…) » des lignes existantes.
-  await page.getByRole('button', { name: "Envoyer l'invitation", exact: true }).click()
+  await page.getByRole('button', { name: "Générer le lien d'accès", exact: true }).click()
 
   // Le lien d'accès clair s'affiche (panneau copiable) — V0 sans envoi auto.
   await expect(page.locator('input[readonly]')).toHaveValue(/\/login\/invite\?token=/)
@@ -158,21 +185,22 @@ test('invitations : invite → lien copiable + ligne en attente → révoque', a
   await expect(row.getByText('Révoquée')).toBeVisible()
 })
 
-test('invitation acceptée → adhésion provisionnée dans le club', async ({ page }) => {
-  // 1. Le trésorier invite un nouvel email et récupère le lien d'accès affiché.
+test('invitation (membre du club) acceptée → accès accordé, adhésion active', async ({ page }) => {
+  // B5 : on invite un MEMBRE existant du club (seedé en beforeAll) pour lui donner l'accès appli.
+  // 1. Le trésorier génère le lien d'accès nominatif et le récupère.
   await loginAsSeedMember(page)
   await page.goto('/admin/invitations')
   await page.getByRole('textbox', { name: /Adresse e-mail/i }).fill(PROVISION_EMAIL)
-  await page.getByRole('button', { name: "Envoyer l'invitation", exact: true }).click()
+  await page.getByRole('button', { name: "Générer le lien d'accès", exact: true }).click()
   const link = await page.locator('input[readonly]').inputValue()
   expect(link).toMatch(/\/login\/invite\?token=/)
 
-  // 2. L'invité (déconnecté) ouvre le lien → acceptation → onboarding « invité ».
+  // 2. Le membre (déconnecté) ouvre le lien → acceptation → onboarding (non-onboardé).
   await page.context().clearCookies()
   await page.goto(link)
   await expect(page).toHaveURL(/\/onboarding\/step-1/, { timeout: 15_000 })
 
-  // 3. L'adhésion a été provisionnée (membre actif du club de l'invitation).
+  // 3. L'adhésion du membre dans le club est bien active (préexistante, accès désormais ouvert).
   const rows = await withDb(
     (sql) => sql`
       SELECT m.role::text AS role, m.status::text AS status
