@@ -72,4 +72,35 @@ describe('ConsentRow — interaction', () => {
     fireEvent.click(link)
     expect(handler).not.toHaveBeenCalled()
   })
+
+  it('par défaut (linkTarget _self) le lien interne reste dans le même onglet', () => {
+    const { getByRole } = render(
+      <ConsentRow
+        checked={false}
+        onCheckedChange={() => undefined}
+        label="J'accepte la charte"
+        linkHref="/legal/charter"
+        linkLabel="lire"
+      />
+    )
+    const link = getByRole('link', { name: '[lire]' })
+    expect(link.getAttribute('target')).toBeNull()
+    expect(link.getAttribute('rel')).toBeNull()
+  })
+
+  it('linkTarget="_blank" ouvre dans un nouvel onglet avec rel sécurisé', () => {
+    const { getByRole } = render(
+      <ConsentRow
+        checked={false}
+        onCheckedChange={() => undefined}
+        label="J'accepte la charte"
+        linkHref="/legal/charter"
+        linkLabel="lire"
+        linkTarget="_blank"
+      />
+    )
+    const link = getByRole('link', { name: '[lire]' })
+    expect(link.getAttribute('target')).toBe('_blank')
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer')
+  })
 })

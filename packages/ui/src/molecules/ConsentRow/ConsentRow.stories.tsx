@@ -55,3 +55,24 @@ export const WithLink: Story = {
     expect(args.onCheckedChange).not.toHaveBeenCalled()
   },
 }
+
+/**
+ * `linkTarget="_blank"` : le lien de détail s'ouvre dans un nouvel onglet
+ * (avec `rel="noopener noreferrer"`). Utile dans un flux à état volatile
+ * (onboarding) où une navigation pleine page viderait le store en mémoire.
+ */
+export const ExternalTab: Story = {
+  args: {
+    checked: false,
+    label: "J'accepte la charte du réseau",
+    linkHref: '/legal/charter',
+    linkLabel: 'lire',
+    linkTarget: '_blank',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const linkEl = canvas.getByRole('link', { name: '[lire]' })
+    expect(linkEl).toHaveAttribute('target', '_blank')
+    expect(linkEl).toHaveAttribute('rel', 'noopener noreferrer')
+  },
+}

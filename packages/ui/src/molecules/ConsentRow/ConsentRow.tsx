@@ -14,6 +14,13 @@ export interface ConsentRowProps {
   linkHref?: string
   /** Texte du lien inline — défaut "lire" */
   linkLabel?: string
+  /**
+   * Cible du lien de détail. `_blank` ouvre dans un nouvel onglet (avec
+   * `rel="noopener noreferrer"` automatique) — utile quand la ligne vit dans un
+   * flux à état volatile (ex: onboarding zustand en mémoire) où une navigation
+   * pleine page viderait l'état. Défaut `_self`.
+   */
+  linkTarget?: '_blank' | '_self'
   /** Affiche une astérisque rouge si requis */
   required?: boolean
   className?: string
@@ -30,6 +37,7 @@ export function ConsentRow({
   label,
   linkHref,
   linkLabel = 'lire',
+  linkTarget = '_self',
   required,
   className,
 }: ConsentRowProps) {
@@ -64,7 +72,12 @@ export function ConsentRow({
           )}
         </label>
         {linkHref && (
-          <Link id={linkId} href={linkHref} className="text-[14px]">
+          <Link
+            id={linkId}
+            href={linkHref}
+            className="text-[14px]"
+            {...(linkTarget === '_blank' ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
             [{linkLabel}]
           </Link>
         )}
