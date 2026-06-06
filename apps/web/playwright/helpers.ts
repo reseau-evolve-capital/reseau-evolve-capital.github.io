@@ -88,3 +88,17 @@ export async function completeOnboardingFor(email: string = SEED_EMAIL): Promise
     await sql.end()
   }
 }
+
+/**
+ * Force onboarding_completed=false pour un membre. Rend le test du flow onboarding
+ * robuste à l'ordre des specs : `loginAsSeedMember` (admin/access) met le seed à `true`,
+ * donc le test du flow doit réinitialiser explicitement à `false` au démarrage.
+ */
+export async function resetOnboardingFor(email: string = SEED_EMAIL): Promise<void> {
+  const sql = postgres(DB_URL, { max: 1 })
+  try {
+    await sql`UPDATE public.users SET onboarding_completed = false WHERE email = ${email}`
+  } finally {
+    await sql.end()
+  }
+}

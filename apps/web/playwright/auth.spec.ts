@@ -11,7 +11,7 @@
 
 import { test, expect } from '@playwright/test'
 
-import { generateMagicLink, completeOnboardingFor } from './helpers'
+import { generateMagicLink, completeOnboardingFor, resetOnboardingFor } from './helpers'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Scénario 1 : /dashboard sans session → redirect /login
@@ -35,6 +35,9 @@ test('email non invité → erreur', async ({ page }) => {
 // Scénario 3 : flow complet login → onboarding → dashboard
 // ─────────────────────────────────────────────────────────────────────────────
 test('flow complet login → onboarding → dashboard', async ({ page }) => {
+  // Robustesse à l'ordre des specs : loginAsSeedMember (admin/access) met le seed à
+  // onboarding_completed=true ; on force false ici pour tester réellement le flow d'onboarding.
+  await resetOnboardingFor('test@example.com')
   // Génère un magic link pour le membre de test (pré-importé en seed)
   const token = await generateMagicLink('test@example.com')
 
