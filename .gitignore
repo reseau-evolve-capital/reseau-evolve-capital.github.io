@@ -59,3 +59,16 @@ docs/_scratch/
 
 # Logs physiques de sync (raw_data des feuilles) — PII membres, jamais versionnés
 /sync-logs/
+
+# Dumps / backups de base de données — SECRETS (hashes, tokens), repo public → JAMAIS versionnés
+*.backup
+*.backup.gz
+*.dump
+db_cluster-*.gz
+*.sql.gz
+
+# Sortie d'export statique de la vitrine (générée par `make vitrine-export`)
+/apps/vitrine/out/
+
+# Exports de storage (assets) — volumineux / repo public → jamais versionnés
+*.storage.zip

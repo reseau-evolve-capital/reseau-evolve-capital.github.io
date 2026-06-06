@@ -1,12 +1,15 @@
 name: Deploy Vitrine (GitHub Pages)
 
+# ⚠ DORMANT — déclenchement MANUEL uniquement.
+# Le blog vitrine est généré en SSG depuis un Strapi qui tourne EN LOCAL
+# (DB + assets sur Supabase). En CI, Strapi n'est pas disponible → le blog se
+# builderait VIDE (les try/catch de src/lib/api.ts renvoient []). Tant que
+# Strapi n'est pas hébergé sur un serveur distant, le déploiement se fait en
+# local : `make vitrine-deploy` (build Strapi up → push out/ sur la branche
+# gh-pages). NE PAS réactiver le trigger push sur main sans Strapi distant.
+# Voir apps/vitrine/CLAUDE.md.
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'apps/vitrine/**'
-      - '.github/workflows/deploy-vitrine.yml'
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
