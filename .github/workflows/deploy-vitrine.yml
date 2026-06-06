@@ -43,7 +43,6 @@ jobs:
         working-directory: apps/vitrine
         env:
           NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN }}
-          NEXT_PUBLIC_GOOGLE_SCRIPT_URL: ${{ secrets.NEXT_PUBLIC_GOOGLE_SCRIPT_URL }}
           NEXT_PUBLIC_APP_SCRIPT_URL: ${{ secrets.NEXT_PUBLIC_APP_SCRIPT_URL }}
           NEXT_PUBLIC_CONTACT_FORM_URL: ${{ secrets.NEXT_PUBLIC_CONTACT_FORM_URL }}
         run: pnpm build
