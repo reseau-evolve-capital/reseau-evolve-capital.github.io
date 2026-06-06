@@ -91,8 +91,17 @@ function buildCsp(): string {
   ]
   if (isDev) {
     // HMR / React Refresh de Next en dev s'appuie sur eval + websockets localhost.
+    // On autorise localhost ET 127.0.0.1 : selon l'hôte utilisé pour ouvrir l'app
+    // (http://localhost:3001 ou http://127.0.0.1:3001), le WebSocket HMR vise le
+    // même host — sans 127.0.0.1, l'accès via 127.0.0.1 voit son WS bloqué par la CSP
+    // et React n'hydrate pas (toggle thème inerte, forms morts).
     scriptSrc.push("'unsafe-eval'")
-    connectSrc.push('ws://localhost:*', 'http://localhost:*')
+    connectSrc.push(
+      'ws://localhost:*',
+      'http://localhost:*',
+      'ws://127.0.0.1:*',
+      'http://127.0.0.1:*'
+    )
   }
 
   const directives: Record<string, string[]> = {
@@ -141,6 +150,14 @@ const nextConfig: NextConfig = {
     '@evolve/types',
     '@evolve/utils',
   ],
+  // En DEV uniquement : autorise l'accès aux ressources dev (dont le WebSocket HMR
+  // `/_next/webpack-hmr`) depuis 127.0.0.1. Next 16 bloque par défaut les requêtes
+  // cross-origin vers ces ressources ; sans cette liste, ouvrir l'app via
+  // http://127.0.0.1:3001 fait échouer le WS HMR (ERR_INVALID_HTTP_RESPONSE) et le
+  // runtime Turbopack reste bloqué → React n'hydrate pas (toggle thème inerte, forms morts).
+  // Complète l'autorisation CSP `ws://127.0.0.1:*` : la CSP débloque le schéma côté navigateur,
+  // `allowedDevOrigins` débloque le host côté serveur Next. Option dev-only, sans effet en prod.
+  ...(isDev ? { allowedDevOrigins: ['127.0.0.1'] } : {}),
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }]
   },

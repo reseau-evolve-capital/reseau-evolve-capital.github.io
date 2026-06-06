@@ -17,9 +17,10 @@ export function Step3Form() {
   const [rgpd, setRgpd] = useState(store.rgpdConsented)
   const [directory, setDirectory] = useState(store.directoryOptIn)
 
-  // Persiste l'état des cases dans le store à chaque changement : les liens « lire »
-  // (charte / confidentialité) naviguent vers /legal/* dans le même onglet ; le retour
-  // navigateur ré-hydrate alors les cases depuis le store (sinon l'état local serait perdu).
+  // Persiste l'état des cases dans le store à chaque changement (cohérence avec le retour arrière).
+  // NB : les liens « lire » (charte / confidentialité) s'ouvrent en NOUVEL ONGLET
+  // (linkTarget="_blank") — aucune navigation pleine page, donc le store onboarding en mémoire
+  // (avatar uploadé, téléphone, adresse) reste intact pendant la lecture des documents.
   const handleRgpdChange = (value: boolean) => {
     setRgpd(value)
     store.patch({ rgpdConsented: value })
@@ -97,6 +98,7 @@ export function Step3Form() {
             label={t('step3.rgpdLabel')}
             linkHref="/legal/charter"
             linkLabel={t('step3.rgpdLinkLabel')}
+            linkTarget="_blank"
             required
           />
 
@@ -106,6 +108,7 @@ export function Step3Form() {
             label={t('step3.directoryLabel')}
             linkHref="/legal/privacy"
             linkLabel={t('step3.directoryLinkLabel')}
+            linkTarget="_blank"
           />
         </div>
 
