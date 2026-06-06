@@ -221,3 +221,11 @@
 ### R-034 · Nom du club « Hacked name » sur l'attestation
 
 **Statut :** stale data, résolu après re-sync. **Vigilance :** confirmer que `clubs.name` est lu (jamais hardcodé) ; un re-sync remet le bon nom.
+
+### R-035 · Curseur non-pointer sur les éléments cliquables (Tailwind v4)
+
+**Corrigé :** 2026-06-06.
+**Symptôme :** le preflight Tailwind v4 ne pose plus `cursor: pointer` sur `<button>` → curseur flèche par défaut sur les cliquables (régression RGAA 3.3 / UX).
+**Fix :** règle `@layer base` dans `packages/design-system/styles/index.css` (`cursor: pointer` sur les interactifs, `not-allowed` sur `[disabled]`/`[aria-disabled]`).
+**Test :** `apps/web/playwright/cursor-pointer.spec.ts` (scanne les routes, échoue si un cliquable n'a pas `cursor: pointer`).
+**Vigilance :** tout composant interactif custom (`div`/`span` avec `onClick` → ajouter `role="button"` + `tabIndex={0}` + `onKeyDown`) ; toute surcharge `cursor` en dur dans un composant.

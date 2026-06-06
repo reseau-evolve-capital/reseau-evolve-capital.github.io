@@ -34,6 +34,7 @@ docs/qa/
 | App membre (dev)                           | `make dev-web` → **`http://localhost:3001`** (PAS `127.0.0.1`, cf. #R-024b)                                                                                                    |
 | **Tests Deno** (Edge `sync`, `send-email`) | `~/.deno/bin/deno test --no-check --allow-all --config supabase/functions/<fn>/deno.json supabase/functions/<fn>/__tests__/*.test.ts`                                          |
 | **e2e Playwright**                         | `SUPABASE_SERVICE_ROLE_KEY="$(supabase status -o env \| grep -i service_role \| cut -d= -f2 \| tr -d '\"')" pnpm --filter @evolve/web exec playwright test <spec> --workers=1` |
+| **Curseur** (RGAA 3.3, cf. #R-035)         | `pnpm --filter @evolve/web exec playwright test cursor-pointer.spec.ts --workers=1`                                                                                            |
 | Réfs visuelles                             | `cd <REC>/standalone-exports && python3 -m http.server 8770`                                                                                                                   |
 | Login réel (magic link)                    | Mailpit `http://127.0.0.1:54324/api/v1/messages` → ConfirmationURL `/auth/v1/verify` (flux PKCE) → 1er clic                                                                    |
 | Re-sync matrice                            | `supabase functions serve --env-file supabase/functions/.env` (terminal dédié) puis `SUPABASE_SERVICE_ROLE_KEY=... make db-sync CLUB_ID=<id>`                                  |
@@ -104,6 +105,7 @@ itère dev→fix→re-test, stop quand vert ou après 10 tours.
 | 2026-06-06 | Téléphone vide sur /profil                                                                              | Test utilisateur | R-020                    | ✅ corrigé (route défensive) |
 | 2026-06-06 | (QA) perte d'état si lien légal même onglet                                                             | QA runtime       | R-025                    | ✅ corrigé (nouvel onglet)   |
 | 2026-06-06 | (QA) app n'hydrate pas via 127.0.0.1                                                                    | QA runtime       | R-024b                   | ✅ corrigé (dev-only)        |
+| 2026-06-06 | Curseur ne change pas sur les cliquables                                                                | Test utilisateur | R-035                    | ✅ corrigé (base CSS + test) |
 
 ### Dettes ouvertes (à surveiller)
 

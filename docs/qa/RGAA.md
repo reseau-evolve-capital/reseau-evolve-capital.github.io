@@ -16,12 +16,16 @@
 7. **États non-couleur** : un état (retard, sorti, bloqué) ne repose JAMAIS sur la seule couleur (badge + texte + icône).
 8. **i18n** : `lang` correct (`fr`/`en`) ; pas de clé brute affichée.
 9. **Jamais de `NaN`/`undefined`/écran vide** → fallback « — » / `EmptyState` / `ErrorBoundary`.
+10. **Curseur (RGAA 3.3 / UX)** : tout élément interactif affiche `cursor: pointer` (et `disabled` → `not-allowed`).
+    - Couvert globalement par la règle `@layer base` du design-system (`packages/design-system/styles/index.css`) ; ne jamais surcharger avec un `cursor` en dur (cf. #R-035, régression preflight Tailwind v4).
+    - Tout cliquable custom (`div`/`span` avec `onClick`) doit aussi porter `role="button"` + `tabIndex={0}` + `onKeyDown` (Enter/Espace).
 
 ## Outils
 
 - **axe-core** via Playwright : déjà intégré dans `apps/web/playwright/a11y.spec.ts` et `access.spec.ts`
   (`new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa'])`). **Violations bloquantes = `critical`/`serious`**.
 - **Lighthouse CI** : config existante (pages publiques) — viser score a11y ≥ 90.
+- **Curseur** : `apps/web/playwright/cursor-pointer.spec.ts` scanne les routes et échoue (message verbeux) si un cliquable n'a pas `cursor: pointer` (cf. #R-035). Lancer : `pnpm --filter @evolve/web exec playwright test cursor-pointer.spec.ts --workers=1`.
 
 ## Critères par écran (référence FLOWS.md)
 
