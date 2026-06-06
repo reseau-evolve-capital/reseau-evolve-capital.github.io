@@ -9,9 +9,17 @@ const meta: Meta<typeof OnboardingShell> = {
   component: OnboardingShell,
   tags: ['autodocs'],
   parameters: {
-    // La hauteur min-h-screen nécessite un viewport suffisant en Storybook
     layout: 'fullscreen',
   },
+  decorators: [
+    // Le shell est transparent (le fond appartient au chrome) : on simule le
+    // fond de page thémé du layout onboarding pour un rendu réaliste.
+    (Story) => (
+      <div className="flex min-h-screen bg-bg-page">
+        <Story />
+      </div>
+    ),
+  ],
 }
 export default meta
 type Story = StoryObj<typeof OnboardingShell>
@@ -53,6 +61,25 @@ export const WithoutFooter: Story = {
       <Text variant="body" color="text-sec">
         Votre profil membre est prêt. Vous allez être redirigé vers le tableau de bord.
       </Text>
+    ),
+  },
+}
+
+/** Variante large — utilisée par le tour guidé (carrousel pleine largeur). */
+export const Wide: Story = {
+  args: {
+    width: 'wide',
+    header: <Heading level="h3">Tour rapide, promis.</Heading>,
+    children: (
+      <Text variant="body" color="text-sec">
+        Le carrousel du tour occupe une colonne plus large (960 px) pour laisser respirer les slides
+        et leurs visuels géométriques.
+      </Text>
+    ),
+    footer: (
+      <Button variant="primary" size="lg" className="w-full">
+        Accéder à mon espace
+      </Button>
     ),
   },
 }

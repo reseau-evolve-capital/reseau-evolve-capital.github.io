@@ -66,4 +66,20 @@ describe('OnboardingShell — rendu des slots', () => {
     // Aucun bouton de navigation n'est rendu
     expect(queryByRole('button')).toBeNull()
   })
+
+  it('largeur narrow par défaut (640 px), wide sur demande (960 px)', () => {
+    const { container, rerender } = render(
+      <OnboardingShell>
+        <p>Contenu</p>
+      </OnboardingShell>
+    )
+    expect(container.querySelector('.max-w-\\[640px\\]')).toBeTruthy()
+
+    rerender(
+      <OnboardingShell width="wide">
+        <p>Contenu</p>
+      </OnboardingShell>
+    )
+    expect(container.querySelector('.max-w-\\[960px\\]')).toBeTruthy()
+  })
 })
