@@ -81,8 +81,9 @@ vitrine-export:
 	echo "reseauevolvecapital.com" > $(VITRINE_DIR)/out/CNAME
 
 # Publier out/ sur la branche gh-pages (gh-pages -d out -t)
+# NB: 'run' obligatoire — 'deploy' est une commande pnpm reservee, sinon pnpm l'intercepte.
 vitrine-deploy: vitrine-export
-	pnpm --filter @evolve/vitrine deploy
+	pnpm --filter @evolve/vitrine run deploy
 
 # Strapi en dev natif — content/ est en YARN. Exige Node 22 LTS (engines <=22.x) :
 # bascule auto via nvm (lit content/.nvmrc=22). Node 23/24 = refusé par yarn.
