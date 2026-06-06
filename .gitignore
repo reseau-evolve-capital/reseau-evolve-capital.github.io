@@ -73,3 +73,7 @@ db_cluster-*.gz
 
 # Exports de storage (assets) — volumineux / repo public → jamais versionnés
 *.storage.zip
+
+# Captures d'écran d'audit/QA ad-hoc (volumineuses). Les références versionnées
+# déjà commitées restent suivies ; ceci évite que les nouvelles polluent le repo.
+docs/audits/shots/
