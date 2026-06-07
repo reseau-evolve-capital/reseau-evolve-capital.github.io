@@ -25,6 +25,8 @@ export interface ClubSettings {
   country: string | null // ISO 3166-1 alpha-2 (MAJUSCULES) ou null
   brokerAccountRef: string | null // champ SENSIBLE
   annualInvestmentCap: number | null // champ sensible (EUR)
+  /** Cotisation minimale du club (EUR). Éditable par le staff ; toujours définie (défaut 100). */
+  minContribution: number
   /** Lecture seule (jamais éditable ici) : nom du courtier issu de settings.broker_name. */
   brokerName: string | null
 }
@@ -37,6 +39,8 @@ export interface ClubSettingsInput {
   brokerAccountRef: string
   /** Chaîne du champ montant (peut contenir des espaces, virgule décimale FR). */
   annualInvestmentCap: string
+  /** Chaîne du champ cotisation minimale (EUR). Requis (valeur toujours présente). */
+  minContribution: string
 }
 
 /** Arguments passés à la RPC update_club_settings (null-safe). */
@@ -47,9 +51,14 @@ export interface ClubSettingsRpcArgs {
   p_country: string | null
   p_broker_account_ref: string | null
   p_annual_investment_cap: number | null
+  p_min_contribution: number | null
 }
 
-export type ValidationErrorCode = 'name_required' | 'country_invalid' | 'cap_invalid'
+export type ValidationErrorCode =
+  | 'name_required'
+  | 'country_invalid'
+  | 'cap_invalid'
+  | 'min_contribution_invalid'
 
 // ─── Helpers PURS (testés sans DB) ───────────────────────────────────────────
 
@@ -93,12 +102,16 @@ export function validateInput(input: ClubSettingsInput): ValidationErrorCode[] {
   if (!isValidCountry(normalizeCountry(input.country))) errors.push('country_invalid')
   const cap = parseAmount(input.annualInvestmentCap)
   if (cap !== null && (Number.isNaN(cap) || cap < 0)) errors.push('cap_invalid')
+  // Cotisation minimale : REQUISE (valeur toujours présente) + nombre ≥ 0.
+  const minC = parseAmount(input.minContribution)
+  if (minC === null || Number.isNaN(minC) || minC < 0) errors.push('min_contribution_invalid')
   return errors
 }
 
 /** Construit les arguments RPC null-safe à partir d'une entrée formulaire (suppose valide). */
 export function buildUpdateArgs(clubId: string, input: ClubSettingsInput): ClubSettingsRpcArgs {
   const cap = parseAmount(input.annualInvestmentCap)
+  const minC = parseAmount(input.minContribution)
   return {
     p_club_id: clubId,
     p_name: input.name.trim(),
@@ -106,6 +119,8 @@ export function buildUpdateArgs(clubId: string, input: ClubSettingsInput): ClubS
     p_country: normalizeCountry(input.country),
     p_broker_account_ref: normalizeText(input.brokerAccountRef),
     p_annual_investment_cap: cap !== null && !Number.isNaN(cap) ? cap : null,
+    // null → inchangé côté RPC (colonne NOT NULL) ; sinon la nouvelle valeur saisie.
+    p_min_contribution: minC !== null && !Number.isNaN(minC) ? minC : null,
   }
 }
 
@@ -123,12 +138,20 @@ export async function getClubSettings(
 ): Promise<ClubSettings> {
   const { data, error } = await supabase
     .from('clubs')
-    .select('id, name, city, country, broker_account_ref, annual_investment_cap, settings')
+    .select(
+      'id, name, city, country, broker_account_ref, annual_investment_cap, min_contribution, settings'
+    )
     .eq('id', clubId)
     .single<
       Pick<
         ClubRow,
-        'id' | 'name' | 'city' | 'country' | 'broker_account_ref' | 'annual_investment_cap'
+        | 'id'
+        | 'name'
+        | 'city'
+        | 'country'
+        | 'broker_account_ref'
+        | 'annual_investment_cap'
+        | 'min_contribution'
       > & { settings: ClubRow['settings'] }
     >()
   if (error) throw error
@@ -144,6 +167,8 @@ export async function getClubSettings(
     brokerAccountRef: data.broker_account_ref,
     annualInvestmentCap:
       data.annual_investment_cap === null ? null : Number(data.annual_investment_cap),
+    // NOT NULL en DB (défaut 100) ; repli défensif sur 100 si jamais absent.
+    minContribution: data.min_contribution === null ? 100 : Number(data.min_contribution),
     brokerName,
   }
 }

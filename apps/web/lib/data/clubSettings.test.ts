@@ -16,6 +16,7 @@ const mkInput = (over: Partial<ClubSettingsInput> = {}): ClubSettingsInput => ({
   country: 'FR',
   brokerAccountRef: 'BRK-123',
   annualInvestmentCap: '10000',
+  minContribution: '100',
   ...over,
 })
 
@@ -95,6 +96,15 @@ describe('validateInput', () => {
   it('plafond vide est accepté (nullable)', () => {
     expect(validateInput(mkInput({ annualInvestmentCap: '' }))).toEqual([])
   })
+  it('cotisation minimale vide → min_contribution_invalid (requise)', () => {
+    expect(validateInput(mkInput({ minContribution: '' }))).toContain('min_contribution_invalid')
+  })
+  it('cotisation minimale négative → min_contribution_invalid', () => {
+    expect(validateInput(mkInput({ minContribution: '-1' }))).toContain('min_contribution_invalid')
+  })
+  it('cotisation minimale valide → aucune erreur', () => {
+    expect(validateInput(mkInput({ minContribution: '150' }))).toEqual([])
+  })
 })
 
 describe('buildUpdateArgs', () => {
@@ -106,6 +116,7 @@ describe('buildUpdateArgs', () => {
       p_country: 'FR',
       p_broker_account_ref: 'BRK-123',
       p_annual_investment_cap: 10000,
+      p_min_contribution: 100,
     })
   })
   it('champs vides → null (city, broker, cap)', () => {
