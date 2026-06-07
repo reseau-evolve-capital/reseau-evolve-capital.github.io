@@ -145,6 +145,7 @@ function InstallBannerInner() {
         badge={t('badge')}
         ctaLabel={caseCopy.cta}
         dismissLabel={t('dismiss')}
+        closeLabel={t('close')}
         onCta={() => void handleCta()}
         onDismiss={handleDismiss}
       />
