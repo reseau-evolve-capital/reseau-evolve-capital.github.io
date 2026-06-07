@@ -19,8 +19,11 @@ export interface PortfolioPosition {
   quantity: number
   /** PRU pondéré moyen (colonne `pump`). Null si inconnu. */
   pru: number | null
-  /** Cours live en €. Null si aucun provider/symbole indisponible → affiché "—". */
+  /** Cours live en €. Null si aucun provider/symbole indisponible. */
   livePrice: number | null
+  /** Cours de la matrice (snapshot, possiblement ancien) en €. Sert de repli d'AFFICHAGE
+   *  du cours quand `livePrice` est null, pour ne pas afficher "—" (QA 2026-06-07). */
+  marketPrice: number | null
   /** Valeur retenue : live (quantity × livePrice) si dispo, sinon snapshot DB `market_value`. */
   currentValue: number
   /** Gain/Perte en € (currentValue − bookValue). */

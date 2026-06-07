@@ -16,6 +16,7 @@ const make = (over: Partial<PortfolioPosition>): PortfolioPosition => ({
   quantity: 10,
   pru: 100,
   livePrice: 200,
+  marketPrice: 200,
   currentValue: 2000,
   gainLossEur: 1000,
   gainLossPct: 1,

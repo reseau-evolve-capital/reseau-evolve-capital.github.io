@@ -13,6 +13,7 @@ const mk = (over: Partial<PortfolioPosition>): PortfolioPosition => ({
   quantity: 248,
   pru: 450,
   livePrice: 585,
+  marketPrice: 585,
   currentValue: 145050,
   gainLossEur: 31834,
   gainLossPct: 0.28,

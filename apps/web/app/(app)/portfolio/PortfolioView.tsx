@@ -241,9 +241,12 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
         </header>
 
         {/* Colonne gauche : filtres secteur/tri (FilterBar, state nuqs inchangé) + dernière sync. */}
+        {/* Masquée < lg : sur mobile le filtre prenait trop de place au-dessus du donut
+            (QA 2026-06-07) → on l'enlève, la répartition sectorielle remonte. Tri par défaut
+            (valeur, desc) conservé via nuqs. La carte « dernière sync » est déjà mobile-hidden. */}
         <aside
           aria-label={t('filtersRegion')}
-          className="flex flex-col gap-4 lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:self-stretch"
+          className="hidden flex-col gap-4 lg:flex lg:col-start-1 lg:row-start-1 lg:row-span-2 lg:self-stretch"
         >
           <FilterBar
             sectors={sectors}

@@ -16,6 +16,7 @@ const pos: PortfolioPosition = {
   quantity: 248,
   pru: 450,
   livePrice: 585,
+  marketPrice: 585,
   currentValue: 145050,
   gainLossEur: 31834,
   gainLossPct: 0.28,
@@ -32,8 +33,14 @@ describe('DataRow', () => {
     expect(screen.getByText(/\+28,00[\s ]%/)).toBeInTheDocument()
   })
 
-  it('affiche "—" pour le cours quand livePrice est null', () => {
+  it('replie sur le cours matrice quand livePrice est null', () => {
     render(<DataRow position={{ ...pos, livePrice: null, isLive: false }} />)
+    // marketPrice (585) sert de repli d'affichage → pas de "—" (QA 2026-06-07).
+    expect(screen.getByText(/× 585,00[\s ]€/)).toBeInTheDocument()
+  })
+
+  it('affiche "—" pour le cours quand livePrice ET marketPrice sont null', () => {
+    render(<DataRow position={{ ...pos, livePrice: null, marketPrice: null, isLive: false }} />)
     expect(screen.getByText(/× —/)).toBeInTheDocument()
   })
 

@@ -26,7 +26,9 @@ export function DataRow({ position, onClick, isLoading, className }: DataRowProp
   }
 
   const loss = position.gainLossPct < 0
-  const cours = position.livePrice == null ? '—' : formatEUR(position.livePrice)
+  // Cours affiché : live si dispo, sinon repli matrice (snapshot ancien), sinon "—" (QA 2026-06-07).
+  const unitPrice = position.livePrice ?? position.marketPrice
+  const cours = unitPrice == null ? '—' : formatEUR(unitPrice)
   const label = `Position ${position.name}, ${position.quantity} parts, valeur ${formatEUR(
     position.currentValue
   )}, performance ${formatPct(position.gainLossPct)}`
