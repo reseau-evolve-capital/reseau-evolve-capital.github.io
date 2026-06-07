@@ -23,6 +23,16 @@ function isPromptable(pwaCase: PwaCase): pwaCase is PwaPromptableCase {
   return PROMPTABLE.has(pwaCase)
 }
 
+/**
+ * Override du délai de trigger via `window.__PWA_TRIGGER_DELAY_MS__` — seam de test
+ * uniquement (E2E déterministes sans attendre 8 s réelles). Jamais posé en prod.
+ */
+function readTriggerDelayOverride(): number | null {
+  if (typeof window === 'undefined') return null
+  const v = (window as unknown as { __PWA_TRIGGER_DELAY_MS__?: unknown }).__PWA_TRIGGER_DELAY_MS__
+  return typeof v === 'number' && v >= 0 ? v : null
+}
+
 /** `true` si l'élément focus est un champ de saisie — on n'interrompt jamais une saisie. */
 function isEditableElementFocused(): boolean {
   if (typeof document === 'undefined') return false
@@ -89,7 +99,8 @@ export function useInstallBannerState(pwaCase: PwaCase): UseInstallBannerState {
     if (wasInstalled()) return
     if (!computeEligibility(state, Date.now())) return
 
-    const controller = new BannerTriggerController(browserTriggerEnv(), TRIGGER_DELAY_MS, () => {
+    const delay = readTriggerDelayOverride() ?? TRIGGER_DELAY_MS
+    const controller = new BannerTriggerController(browserTriggerEnv(), delay, () => {
       setShouldShow(true)
     })
     controller.start()
