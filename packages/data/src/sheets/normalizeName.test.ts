@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { normalizeName } from './normalizeName'
+import { normalizeName } from './normalizeName.ts'
 
 describe('normalizeName', () => {
   it('met en minuscule, retire les accents et trim', () => {

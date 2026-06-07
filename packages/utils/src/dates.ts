@@ -1,6 +1,6 @@
 /** Parsing de dates FR pour l'ingestion Sheets. Tout invalide → null (jamais throw). */
 
-import { stripAccents } from './strings'
+import { stripAccents } from './strings.ts'
 
 /** "01/06/2018" | "01-06-2018" → Date UTC à minuit. null si invalide. */
 export function parseFrDate(input: string | null | undefined): Date | null {

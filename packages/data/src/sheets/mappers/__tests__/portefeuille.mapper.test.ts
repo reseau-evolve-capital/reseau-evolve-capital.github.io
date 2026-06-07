@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { mapPortefeuilleRows, mapAggregateRows } from '../portefeuille.mapper'
-import type { PortefeuilleRowDTO } from '../../../types/sheets'
+import { mapPortefeuilleRows, mapAggregateRows } from '../portefeuille.mapper.ts'
+import type { PortefeuilleRowDTO } from '../../../types/sheets.ts'
 
 const CLUB = '11111111-1111-1111-1111-111111111111'
 

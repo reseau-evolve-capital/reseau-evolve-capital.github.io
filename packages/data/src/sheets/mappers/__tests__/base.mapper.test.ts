@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { mapBaseRowToMember } from '../base.mapper'
-import type { BaseRowDTO } from '../../../types/sheets'
+import { mapBaseRowToMember } from '../base.mapper.ts'
+import type { BaseRowDTO } from '../../../types/sheets.ts'
 
 const CLUB = '11111111-1111-1111-1111-111111111111'
 const row: BaseRowDTO = {

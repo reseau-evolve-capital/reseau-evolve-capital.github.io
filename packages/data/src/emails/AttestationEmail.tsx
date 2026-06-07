@@ -2,7 +2,7 @@ import { Button, Heading, Section, Text } from '@react-email/components'
 import type { CSSProperties } from 'react'
 import { brand, font, radius, semantic } from '@evolve/design-system'
 import { formatMonth } from '@evolve/utils'
-import { EvolveEmailShell } from './_layout/EvolveEmailShell'
+import { EvolveEmailShell } from './_layout/EvolveEmailShell.tsx'
 
 /**
  * AttestationEmail — email mensuel accompagnant l'attestation de détention (NTF-005).

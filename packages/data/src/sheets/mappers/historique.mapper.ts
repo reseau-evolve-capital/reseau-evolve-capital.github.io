@@ -1,6 +1,6 @@
 import { stripAccents } from '@evolve/utils'
-import type { HistoriqueRowDTO, TransactionUpsert } from '../../types/sheets'
-import { toIsoDate } from './_shared'
+import type { HistoriqueRowDTO, TransactionUpsert } from '../../types/sheets.ts'
+import { toIsoDate } from './_shared.ts'
 
 // Clés NORMALISÉES (trim + minuscule + sans accent) : la matrice mélange « Achat » et
 // « ACHAT », « Vente » et « VENTE »… On matche sur la forme normalisée pour ne jamais

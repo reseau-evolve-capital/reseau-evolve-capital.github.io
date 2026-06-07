@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { mapHistoriqueRows } from '../historique.mapper'
-import type { HistoriqueRowDTO } from '../../../types/sheets'
+import { mapHistoriqueRows } from '../historique.mapper.ts'
+import type { HistoriqueRowDTO } from '../../../types/sheets.ts'
 
 const CLUB = '11111111-1111-1111-1111-111111111111'
 

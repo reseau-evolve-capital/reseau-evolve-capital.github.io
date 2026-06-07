@@ -1,7 +1,7 @@
 import { Button, Heading, Section, Text } from '@react-email/components'
 import type { CSSProperties } from 'react'
 import { brand, font, radius, semantic } from '@evolve/design-system'
-import { EvolveEmailShell } from './_layout/EvolveEmailShell'
+import { EvolveEmailShell } from './_layout/EvolveEmailShell.tsx'
 
 /**
  * WelcomeEmail — email de bienvenue au premier jour dans le club (NTF-002).

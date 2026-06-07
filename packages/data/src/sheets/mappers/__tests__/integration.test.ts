@@ -14,12 +14,12 @@
 
 import { describe, it, expect } from 'vitest'
 
-import { mapBaseRowToMember } from '../base.mapper'
-import { mapParametragesToClub } from '../parametrages.mapper'
-import { mapPortefeuilleRows } from '../portefeuille.mapper'
-import { mapHistoriqueRows } from '../historique.mapper'
-import { mapCotisationsRows } from '../cotisations.mapper'
-import { mapDetailsCotisationsRows } from '../detailsCotisations.mapper'
+import { mapBaseRowToMember } from '../base.mapper.ts'
+import { mapParametragesToClub } from '../parametrages.mapper.ts'
+import { mapPortefeuilleRows } from '../portefeuille.mapper.ts'
+import { mapHistoriqueRows } from '../historique.mapper.ts'
+import { mapCotisationsRows } from '../cotisations.mapper.ts'
+import { mapDetailsCotisationsRows } from '../detailsCotisations.mapper.ts'
 import { toNumOrNull } from '@evolve/utils'
 
 import type {
@@ -29,7 +29,7 @@ import type {
   HistoriqueRowDTO,
   CotisationsRowDTO,
   MembershipLookup,
-} from '../../../types/sheets'
+} from '../../../types/sheets.ts'
 
 // ---------------------------------------------------------------------------
 // FIXTURE FIGÉE — un club, 3 membres (dont 1 sorti), un portefeuille avec une

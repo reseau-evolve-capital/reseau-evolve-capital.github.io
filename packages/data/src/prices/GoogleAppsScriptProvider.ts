@@ -1,4 +1,4 @@
-import { PriceProvider, allNull } from './PriceProvider'
+import { PriceProvider, allNull } from './PriceProvider.ts'
 
 /** Provider Google Apps Script : appelle un webapp GAS qui retourne { prices: { symbol: number } }. */
 export class GoogleAppsScriptProvider implements PriceProvider {

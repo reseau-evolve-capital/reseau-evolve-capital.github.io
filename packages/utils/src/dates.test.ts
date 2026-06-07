@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { parseFrDate, parseFrMonth, formatRelativeTime } from './dates'
+import { parseFrDate, parseFrMonth, formatRelativeTime } from './dates.ts'
 
 describe('parseFrDate', () => {
   it('parse dd/mm/yyyy en Date UTC', () => {

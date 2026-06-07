@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createElement } from 'react'
 import { brand, dataViz } from '@evolve/design-system'
-import { SyncErrorEmail } from '../emails/SyncErrorEmail'
-import { renderEmailHtml } from '../emails'
+import { SyncErrorEmail } from '../emails/SyncErrorEmail.tsx'
+import { renderEmailHtml } from '../emails/index.ts'
 
 describe('SyncErrorEmail', () => {
   const props = {

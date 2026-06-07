@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { GoogleAppsScriptProvider } from '../GoogleAppsScriptProvider'
+import { GoogleAppsScriptProvider } from '../GoogleAppsScriptProvider.ts'
 
 afterEach(() => vi.restoreAllMocks())
 

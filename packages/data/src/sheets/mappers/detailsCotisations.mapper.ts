@@ -1,5 +1,5 @@
 import { parseFrMonth, toNumOrNull } from '@evolve/utils'
-import type { ContributionMonthUpsert, MembershipLookup } from '../../types/sheets'
+import type { ContributionMonthUpsert, MembershipLookup } from '../../types/sheets.ts'
 
 /**
  * Parse la feuille "Details cotisations".

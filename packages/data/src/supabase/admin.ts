@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from './types.gen'
+import type { Database } from './types.gen.ts'
 
 /**
  * Client Supabase SERVICE ROLE — **server-only**. Bypass RLS + accès `auth.admin`.

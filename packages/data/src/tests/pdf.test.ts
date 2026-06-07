@@ -16,7 +16,7 @@ import {
   buildReference,
   DASH,
   type AttestationInput,
-} from '../pdf'
+} from '../pdf/index.ts'
 
 const GENERATED_AT = new Date('2026-06-05T10:00:00.000Z')
 
