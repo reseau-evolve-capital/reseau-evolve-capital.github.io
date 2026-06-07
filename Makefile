@@ -1,7 +1,7 @@
 .PHONY: dev dev-web dev-vitrine build lint typecheck test test-e2e storybook \
         db-start db-stop db-migrate db-reset db-types db-set-sheet db-sync db-set-sheet-prod db-sync-prod \
         docker-build docker-up docker-down \
-        vitrine-export vitrine-deploy strapi-dev strapi-env strapi-build strapi-up strapi-down strapi-logs strapi-restart strapi-admin strapi-init strapi-clean \
+        vitrine-export vitrine-deploy strapi-dev strapi-seed strapi-env strapi-build strapi-up strapi-down strapi-logs strapi-restart strapi-admin strapi-init strapi-clean \
         strapi-db-up strapi-db-down strapi-db-shell strapi-db-restore \
         strapi-prod-build strapi-prod-up strapi-prod-down strapi-prod-logs strapi-prod-restart \
         clean help
@@ -99,6 +99,11 @@ vitrine-deploy: vitrine-export
 # bascule auto via nvm (lit apps/cms/.nvmrc=22). Node 23/24 = refusé par yarn.
 strapi-dev:
 	cd $(STRAPI_DIR) && bash -c '. "$${NVM_DIR:-$$HOME/.nvm}/nvm.sh"; nvm use && yarn develop'
+
+# Seed idempotent de l'édition 01 « La Quote-Part » (EDI-002) : démarre Strapi dev
+# avec le flag SEED_EDITION_01=1 (le bootstrap crée l'article brouillon s'il manque).
+strapi-seed:
+	cd $(STRAPI_DIR) && bash -c '. "$${NVM_DIR:-$$HOME/.nvm}/nvm.sh"; nvm use && SEED_EDITION_01=1 yarn develop'
 
 # Copie .env.docker → .env UNIQUEMENT s'il n'existe pas (ne clobbe jamais le .env Supabase)
 strapi-env:
