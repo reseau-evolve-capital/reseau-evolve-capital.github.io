@@ -133,7 +133,7 @@ export function createSendEmailHandler(
   deps: SendEmailDeps,
   opts: { fallbackSiteUrl: string; otpExpiryMin: number } = {
     fallbackSiteUrl: 'http://localhost:54321',
-    otpExpiryMin: 60,
+    otpExpiryMin: 10,
   }
 ): (req: Request) => Promise<Response> {
   return async (req: Request): Promise<Response> => {

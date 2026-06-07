@@ -64,7 +64,13 @@ export function EvolveEmailShell({
 }: EvolveEmailShellProps) {
   return (
     <Html lang="fr">
-      <Head />
+      <Head>
+        {/* Email conçu en CLAIR : on demande aux clients de NE PAS auto-inverser en
+            dark mode (sinon le jaune brand du CTA est terni — cf. QA 2026-06-07).
+            Levier standard (Apple Mail, iOS, Outlook ; Gmail partiel). */}
+        <meta name="color-scheme" content="light" />
+        <meta name="supported-color-schemes" content="light" />
+      </Head>
       <Preview>{preview}</Preview>
       <Body style={body}>
         <Container style={outer}>
@@ -129,6 +135,8 @@ const body: React.CSSProperties = {
   padding: '24px 0',
   backgroundColor: email.bg,
   fontFamily: font.body,
+  // Renforce le mode clair (cf. meta color-scheme) : le CTA jaune ne doit pas être terni.
+  colorScheme: 'light',
 }
 
 const outer: React.CSSProperties = {
