@@ -66,6 +66,7 @@ export function WelcomeEmail({ memberFirstName, clubName, appUrl }: WelcomeEmail
     <EvolveEmailShell
       preview={`Bienvenue dans le club ${club} sur Evolve Capital`}
       clubName={clubName}
+      hideUnsubscribe
     >
       <Text style={eyebrow}>Premier jour dans le club</Text>
       <Heading as="h1" style={h1}>

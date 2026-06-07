@@ -42,6 +42,14 @@ export interface EvolveEmailShellProps {
    * (ex. rappel « email essentiel »).
    */
   footerNote?: ReactNode
+  /**
+   * Masque le lien « Se désinscrire » du footer. À mettre à `true` pour TOUT email
+   * **transactionnel** (magic link, attestation, alerte…) : l'unsubscribe est une
+   * obligation des emails marketing, pas relationnels — et son lien/entête
+   * `List-Unsubscribe` est un signal « bulk » qui dégrade la délivrabilité (onglet
+   * Gmail « Promotions/Updates »). À laisser `false` (défaut) pour les newsletters.
+   */
+  hideUnsubscribe?: boolean
 }
 
 const ADRESSE_POSTALE =
@@ -52,6 +60,7 @@ export function EvolveEmailShell({
   children,
   clubName,
   footerNote,
+  hideUnsubscribe = false,
 }: EvolveEmailShellProps) {
   return (
     <Html lang="fr">
@@ -84,10 +93,14 @@ export function EvolveEmailShell({
             <Text style={footerText}>{ADRESSE_POSTALE}</Text>
             <Hr style={footerRule} />
             <Text style={footerLinks}>
-              <Link href="{{unsubscribe}}" style={footerLink}>
-                Se désinscrire (emails non-essentiels)
-              </Link>{' '}
-              ·{' '}
+              {hideUnsubscribe ? null : (
+                <>
+                  <Link href="{{unsubscribe}}" style={footerLink}>
+                    Se désinscrire (emails non-essentiels)
+                  </Link>{' '}
+                  ·{' '}
+                </>
+              )}
               <Link href="https://reseauevolvecapital.com/preferences" style={footerLink}>
                 Préférences
               </Link>{' '}
