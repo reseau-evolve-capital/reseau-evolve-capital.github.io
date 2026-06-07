@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { mapDetailsCotisationsRows } from '../detailsCotisations.mapper'
-import type { MembershipLookup } from '../../../types/sheets'
+import { mapDetailsCotisationsRows } from '../detailsCotisations.mapper.ts'
+import type { MembershipLookup } from '../../../types/sheets.ts'
 
 const CLUB = '11111111-1111-1111-1111-111111111111'
 const MEMBERSHIPS: MembershipLookup[] = [{ id: 'm-1', user_id: 'u-1', full_name: 'AFOUDAH Ruben' }]

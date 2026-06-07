@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { resolveBaseEmail, normalizeName } from '../baseEmailResolution'
-import type { MembershipLookup, UserUpsert } from '../../../types/sheets'
+import { resolveBaseEmail, normalizeName } from '../baseEmailResolution.ts'
+import type { MembershipLookup, UserUpsert } from '../../../types/sheets.ts'
 
 const CLUB = '11111111-1111-1111-1111-111111111111'
 

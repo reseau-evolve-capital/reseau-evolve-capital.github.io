@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createElement } from 'react'
 import { brand, semantic } from '@evolve/design-system'
-import { EvolveEmailShell, MagicLinkEmail, renderEmailHtml } from '../emails'
+import { EvolveEmailShell, MagicLinkEmail, renderEmailHtml } from '../emails/index.ts'
 
 describe('renderEmailHtml', () => {
   it('rend un élément React Email en HTML string', async () => {

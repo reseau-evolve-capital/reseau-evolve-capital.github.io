@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { stripAccents, slugify } from './strings'
+import { stripAccents, slugify } from './strings.ts'
 
 describe('stripAccents', () => {
   it('retire les accents', () => {

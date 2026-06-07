@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { toNum, toNumOrNull, toInt } from './numeric'
+import { toNum, toNumOrNull, toInt } from './numeric.ts'
 
 describe('toNumOrNull (nettoyage FR)', () => {
   it('"1 234,56" (NBSP U+00A0) → 1234.56', () => {

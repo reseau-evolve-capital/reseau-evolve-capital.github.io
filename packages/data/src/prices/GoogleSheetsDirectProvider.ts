@@ -1,5 +1,5 @@
 import { google, type sheets_v4 } from 'googleapis'
-import { PriceProvider, allNull } from './PriceProvider'
+import { PriceProvider, allNull } from './PriceProvider.ts'
 
 /** Lit une feuille "Prices" (A: symbole, B: =GOOGLEFINANCE) via service account. */
 export class GoogleSheetsDirectProvider implements PriceProvider {

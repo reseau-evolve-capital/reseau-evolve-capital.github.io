@@ -26,7 +26,7 @@ describe('readSheet', () => {
         ],
       },
     })
-    const { readSheet } = await import('./client')
+    const { readSheet } = await import('./client.ts')
     const out = await readSheet('sheet-id', 'Base')
     expect(out).toEqual([
       ['a', '1'],
@@ -37,13 +37,13 @@ describe('readSheet', () => {
   it('throw descriptif si GOOGLE_SA_KEY_BASE64 manquante', async () => {
     delete process.env.GOOGLE_SA_KEY_BASE64
     vi.resetModules()
-    const { readSheet } = await import('./client')
+    const { readSheet } = await import('./client.ts')
     await expect(readSheet('s', 'Base')).rejects.toThrow(/GOOGLE_SA_KEY_BASE64/)
   })
 
   it('retourne [] si la feuille est vide', async () => {
     valuesGet.mockResolvedValue({ data: { values: null } })
-    const { readSheet } = await import('./client')
+    const { readSheet } = await import('./client.ts')
     await expect(readSheet('s', 'Base')).resolves.toEqual([])
   })
 })

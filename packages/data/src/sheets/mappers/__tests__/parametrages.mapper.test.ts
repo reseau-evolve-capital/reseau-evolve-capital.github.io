@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { mapParametragesToClub, mapParametragesToOfficers } from '../parametrages.mapper'
+import { mapParametragesToClub, mapParametragesToOfficers } from '../parametrages.mapper.ts'
 
 describe('mapParametragesToClub', () => {
   it('génère slug + settings.penalty_rate', () => {

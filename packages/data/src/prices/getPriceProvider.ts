@@ -1,7 +1,7 @@
-import { PriceProvider, allNull } from './PriceProvider'
-import { GoogleAppsScriptProvider } from './GoogleAppsScriptProvider'
-import { GoogleSheetsDirectProvider } from './GoogleSheetsDirectProvider'
-import { AlphaVantageProvider } from './AlphaVantageProvider'
+import { PriceProvider, allNull } from './PriceProvider.ts'
+import { GoogleAppsScriptProvider } from './GoogleAppsScriptProvider.ts'
+import { GoogleSheetsDirectProvider } from './GoogleSheetsDirectProvider.ts'
+import { AlphaVantageProvider } from './AlphaVantageProvider.ts'
 
 /** Liste ordonnée des providers disponibles selon les env vars présentes. */
 function configuredProviders(): PriceProvider[] {

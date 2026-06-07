@@ -9,16 +9,16 @@ import type { ReactElement } from 'react'
  * miroir TS des tokens (`@evolve/design-system`) — compatible Gmail/Outlook.
  */
 
-export { EvolveEmailShell } from './_layout/EvolveEmailShell'
-export type { EvolveEmailShellProps } from './_layout/EvolveEmailShell'
-export { MagicLinkEmail } from './MagicLinkEmail'
-export type { MagicLinkEmailProps, MagicLinkLocale } from './MagicLinkEmail'
-export { WelcomeEmail } from './WelcomeEmail'
-export type { WelcomeEmailProps } from './WelcomeEmail'
-export { SyncErrorEmail } from './SyncErrorEmail'
-export type { SyncErrorEmailProps } from './SyncErrorEmail'
-export { AttestationEmail } from './AttestationEmail'
-export type { AttestationEmailProps, AttestationEmailKpis } from './AttestationEmail'
+export { EvolveEmailShell } from './_layout/EvolveEmailShell.tsx'
+export type { EvolveEmailShellProps } from './_layout/EvolveEmailShell.tsx'
+export { MagicLinkEmail } from './MagicLinkEmail.tsx'
+export type { MagicLinkEmailProps, MagicLinkLocale } from './MagicLinkEmail.tsx'
+export { WelcomeEmail } from './WelcomeEmail.tsx'
+export type { WelcomeEmailProps } from './WelcomeEmail.tsx'
+export { SyncErrorEmail } from './SyncErrorEmail.tsx'
+export type { SyncErrorEmailProps } from './SyncErrorEmail.tsx'
+export { AttestationEmail } from './AttestationEmail.tsx'
+export type { AttestationEmailProps, AttestationEmailKpis } from './AttestationEmail.tsx'
 
 /** Rend un email React Email en chaîne HTML prête à l'envoi. */
 export function renderEmailHtml(element: ReactElement): Promise<string> {

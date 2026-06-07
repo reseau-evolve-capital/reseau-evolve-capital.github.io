@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest'
-import { AlphaVantageProvider } from '../AlphaVantageProvider'
+import { AlphaVantageProvider } from '../AlphaVantageProvider.ts'
 
 afterEach(() => vi.restoreAllMocks())
 

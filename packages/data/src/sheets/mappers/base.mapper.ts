@@ -1,6 +1,6 @@
 import { slugify } from '@evolve/utils'
-import type { BaseRowDTO, UserUpsert, MembershipUpsert } from '../../types/sheets'
-import { toIsoDate } from './_shared'
+import type { BaseRowDTO, UserUpsert, MembershipUpsert } from '../../types/sheets.ts'
+import { toIsoDate } from './_shared.ts'
 
 /**
  * Email synthétique DÉTERMINISTE pour un membre Base sans email (typiquement un

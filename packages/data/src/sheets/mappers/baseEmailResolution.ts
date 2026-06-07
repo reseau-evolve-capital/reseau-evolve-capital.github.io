@@ -1,5 +1,5 @@
 import { stripAccents } from '@evolve/utils'
-import type { MembershipLookup, UserUpsert } from '../../types/sheets'
+import type { MembershipLookup, UserUpsert } from '../../types/sheets.ts'
 
 /**
  * Normalisation de nom pour le matching d'un membre Base vers un membership existant.

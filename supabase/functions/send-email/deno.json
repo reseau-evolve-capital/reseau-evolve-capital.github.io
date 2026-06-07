@@ -7,6 +7,7 @@
     "zod": "npm:zod@^4.4.3",
     "react": "npm:react@^19",
     "standardwebhooks": "npm:standardwebhooks@^1",
+    "@evolve/utils": "../../../packages/utils/src/index.ts",
     "@evolve/design-system": "../../../packages/design-system/src/tokens/index.ts",
     "@react-email/components": "npm:@react-email/components@^1",
     "@react-email/render": "npm:@react-email/render@^1"

@@ -10,8 +10,8 @@
 import { renderToBuffer } from '@react-pdf/renderer'
 import QRCode from 'qrcode'
 
-import { AttestationDetention } from './AttestationDetention'
-import type { AttestationData } from './attestation.mapper'
+import { AttestationDetention } from './AttestationDetention.tsx'
+import type { AttestationData } from './attestation.mapper.ts'
 
 export {
   mapAttestation,
@@ -21,7 +21,7 @@ export {
   parsePeriod,
   buildReference,
   DASH,
-} from './attestation.mapper'
+} from './attestation.mapper.ts'
 export type {
   AttestationData,
   AttestationInput,
@@ -30,9 +30,9 @@ export type {
   AttestationPositionInput,
   AttestationMonthInput,
   AttestationMetric,
-} from './attestation.mapper'
-export { AttestationDetention } from './AttestationDetention'
-export type { AttestationDetentionProps } from './AttestationDetention'
+} from './attestation.mapper.ts'
+export { AttestationDetention } from './AttestationDetention.tsx'
+export type { AttestationDetentionProps } from './AttestationDetention.tsx'
 
 /** Génère le QR (dataURL PNG) encodant l'URL de vérification. Erreur → undefined (fallback texte). */
 export async function buildVerificationQr(url: string): Promise<string | undefined> {

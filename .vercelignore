@@ -1,0 +1,35 @@
+# Vercel build = `pnpm install` + `turbo build --filter=@evolve/web` (cf. vercel.json).
+# On n'upload QUE les sources : Vercel réinstalle les deps et rebuild. Tout le reste
+# (caches, artefacts, dumps, contenu Strapi) est exclu pour rester sous la limite d'upload.
+
+# Dépendances — réinstallées par Vercel
+node_modules
+
+# Caches & artefacts de build — régénérés par Vercel
+.turbo
+.next
+out
+
+# Contenu Strapi de la vitrine (hors pnpm-workspace, ~1 Go, déployé séparément sur GH Pages)
+apps/vitrine/content
+
+# Secrets locaux — JAMAIS uploadés (Vercel injecte ses propres env vars)
+.env
+.env.*
+
+# Artefacts dev / tests / captures
+.playwright-mcp
+sync-logs
+test-results
+playwright-report
+docs/audits/shots
+
+# Archives & dumps lourds
+*.zip
+*.gz
+*.backup.gz
+
+# VCS / éditeur / OS
+.git
+.vscode
+.DS_Store

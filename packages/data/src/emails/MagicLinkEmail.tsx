@@ -1,7 +1,7 @@
 import { Button, Heading, Link, Section, Text } from '@react-email/components'
 import type { ReactNode } from 'react'
 import { brand, font, radius, semantic } from '@evolve/design-system'
-import { EvolveEmailShell } from './_layout/EvolveEmailShell'
+import { EvolveEmailShell } from './_layout/EvolveEmailShell.tsx'
 
 /** Locales supportées par l'email (FR par défaut). Pas de dépendance next-intl
  *  ici : le package @evolve/data ne doit embarquer aucune lib i18n (il tourne aussi

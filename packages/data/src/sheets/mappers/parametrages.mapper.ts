@@ -1,5 +1,5 @@
 import { stripAccents } from '@evolve/utils'
-import type { ParametragesRowDTO, ClubUpsert } from '../../types/sheets'
+import type { ParametragesRowDTO, ClubUpsert } from '../../types/sheets.ts'
 
 /**
  * Mappe les lignes de la feuille PARAMETRAGES vers la config d'un club.

@@ -107,12 +107,17 @@ Héberger Strapi sur un serveur distant → le build CI **et** `deploy-vitrine.y
 
 ## 3. App membre → Vercel (`apps/web`)
 
-> **État actuel : aucun déploiement Vercel n'est configuré** (pas de `vercel.json`, pas de workflow). Tout est à poser côté Vercel. Indépendant de la vitrine.
+> **État : DÉPLOYÉ.** Projet Vercel `evolve-web` (team « Evolve Capital's projects »), live sur `*.vercel.app` + domaine `app.reseauevolvecapital.com` (CNAME à propager). Config dans `apps/web/vercel.json` + `.vercelignore` (racine). Indépendant de la vitrine.
 
-### Réglages Vercel recommandés
+### Réglages Vercel (tels que déployés)
 
-- **Root Directory** = racine du repo (monorepo). **Install** : `pnpm install --frozen-lockfile`. **Node** : 20 (`.nvmrc`).
-- **Build** : `pnpm turbo build --filter=@evolve/web`. Le `prebuild` d'`apps/web` exécute `scripts/ensure-fonts.mjs` ; si Vercel appelle `next build` directement, **s'assurer que `ensure-fonts.mjs` tourne AVANT** (sinon Turbopack casse sur les `@font-face url()`). **Output** : `apps/web/.next` (SSR, pas d'export/standalone).
+- ⚠ **Root Directory = `apps/web`** (réglage projet, PAS la racine). Sinon échec « No Next.js version detected » (Vercel cherche `next` dans le `package.json` du Root Directory). Vercel upload tout le repo (workspace pnpm) mais build dans `apps/web`.
+- **`apps/web/vercel.json`** encode `framework: nextjs`, `installCommand: pnpm install --frozen-lockfile`, `buildCommand: node ../../scripts/ensure-fonts.mjs && next build`. Le `&& ensure-fonts` garantit les polices avant Turbopack (sinon casse sur les `@font-face url()`). `outputDirectory` laissé au défaut (`.next`) — **ne PAS** poser `apps/web/.next` au niveau projet (résolu relativement au Root Directory → `apps/web/apps/web/.next`).
+- **`.vercelignore` (racine) est OBLIGATOIRE** : sans lui l'upload dépasse 2 Gio (`.turbo` ~17 Gio, `.next`, `node_modules`, `apps/vitrine/content` ~1 Gio). Exclut aussi `.env*` (les secrets ne montent jamais ; Vercel injecte ses propres env vars).
+- ⚠ **`NEXT_PUBLIC_SUPABASE_URL` doit être dans l'env de BUILD** (pas que runtime) : `next.config.ts` en dérive la CSP (`connect-src`/`img-src`) au build. Absente au build → CSP prod bloque tous les appels Supabase.
+- **Deployment Protection** : `ssoProtection` réglé sur **preview-only** (sinon SSO Vercel renvoie 401 sur toute la prod → membres bloqués). Previews restent privées.
+- **Node** : 20 (`.nvmrc`). SSR classique (pas d'`output: export/standalone`).
+- **Env vars** : posées via `vercel env add <NAME> production` (ou dashboard) — cf. matrice §5. **`SUPABASE_ACCESS_TOKEN` (`sbp_…`)** requis pour `supabase secrets` côté Edge (pas pour Vercel).
 
 ### Piège des polices (MADE Tommy Soft) — BLOQUANT si non géré
 

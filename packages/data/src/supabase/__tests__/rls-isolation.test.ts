@@ -31,8 +31,8 @@ import crypto from 'node:crypto'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { createServiceRoleClient } from '../admin'
-import type { Database } from '../types.gen'
+import { createServiceRoleClient } from '../admin.ts'
+import type { Database } from '../types.gen.ts'
 
 // ─── Env / garde-fou ─────────────────────────────────────────────────────────
 

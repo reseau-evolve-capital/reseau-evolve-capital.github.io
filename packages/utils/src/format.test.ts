@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { formatEUR, formatPct, formatDate, formatDateLong, formatMonth } from './format'
+import { formatEUR, formatPct, formatDate, formatDateLong, formatMonth } from './format.ts'
 
 describe('formatEUR', () => {
   it('formate un montant décimal', () => {

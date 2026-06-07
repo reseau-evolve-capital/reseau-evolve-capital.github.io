@@ -1,5 +1,5 @@
 import { stripAccents } from '@evolve/utils'
-import type { CotisationsRowDTO, ContributionUpsert, MembershipLookup } from '../../types/sheets'
+import type { CotisationsRowDTO, ContributionUpsert, MembershipLookup } from '../../types/sheets.ts'
 
 /**
  * Mappe le libellé de statut de la feuille "Cotisations" vers l'enum métier.

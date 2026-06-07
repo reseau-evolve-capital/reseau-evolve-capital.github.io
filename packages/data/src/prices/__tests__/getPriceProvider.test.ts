@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
-import { getPricesWithFallback } from '../getPriceProvider'
+import { getPricesWithFallback } from '../getPriceProvider.ts'
 
 afterEach(() => {
   vi.unstubAllEnvs()

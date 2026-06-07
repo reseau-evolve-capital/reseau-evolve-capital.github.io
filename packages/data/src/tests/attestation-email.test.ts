@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createElement } from 'react'
 import { brand, semantic } from '@evolve/design-system'
-import { AttestationEmail } from '../emails/AttestationEmail'
-import { renderEmailHtml } from '../emails'
+import { AttestationEmail } from '../emails/AttestationEmail.tsx'
+import { renderEmailHtml } from '../emails/index.ts'
 
 describe('AttestationEmail', () => {
   const props = {

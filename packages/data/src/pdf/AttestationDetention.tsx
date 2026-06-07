@@ -26,7 +26,7 @@ import {
 import { brand, semantic, dataViz, font, radius } from '@evolve/design-system'
 import { formatEUR, formatPct, formatDate, formatDateLong } from '@evolve/utils'
 
-import { DASH, type AttestationData, type AttestationMetric } from './attestation.mapper'
+import { DASH, type AttestationData, type AttestationMetric } from './attestation.mapper.ts'
 
 export interface AttestationDetentionProps {
   data: AttestationData

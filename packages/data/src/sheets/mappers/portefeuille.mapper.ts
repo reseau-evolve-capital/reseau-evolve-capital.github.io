@@ -1,4 +1,4 @@
-import type { PortefeuilleRowDTO, PositionUpsert, AggregateUpsert } from '../../types/sheets'
+import type { PortefeuilleRowDTO, PositionUpsert, AggregateUpsert } from '../../types/sheets.ts'
 
 /** Sépare les positions réelles des lignes d'agrégat (symbol vide → snapshot). */
 export function mapPortefeuilleRows(

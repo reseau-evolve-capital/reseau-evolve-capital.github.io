@@ -1,6 +1,6 @@
 import { Button, Heading, Section, Text } from '@react-email/components'
 import { dataViz, font, radius, semantic } from '@evolve/design-system'
-import { EvolveEmailShell } from './_layout/EvolveEmailShell'
+import { EvolveEmailShell } from './_layout/EvolveEmailShell.tsx'
 
 /**
  * SyncErrorEmail — alerte aux trésoriers quand la synchronisation Sheets casse

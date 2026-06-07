@@ -1,5 +1,5 @@
 .PHONY: dev dev-web dev-vitrine build lint typecheck test test-e2e storybook \
-        db-start db-stop db-migrate db-reset db-types db-set-sheet db-sync \
+        db-start db-stop db-migrate db-reset db-types db-set-sheet db-sync db-set-sheet-prod db-sync-prod \
         docker-build docker-up docker-down \
         vitrine-export vitrine-deploy strapi-dev strapi-env strapi-build strapi-up strapi-down strapi-logs strapi-restart strapi-admin strapi-init strapi-clean \
         strapi-db-up strapi-db-down strapi-db-shell strapi-db-restore \
@@ -57,6 +57,15 @@ db-set-sheet:
 
 db-sync:
 	node scripts/sync-sheets.mjs $(CLUB_ID)
+
+# Variantes PROD : pointent les scripts sur le projet distant via apps/web/.env.prod
+# (gitignored : NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY prod). SHEET_ID
+# vient de .env.prod ou supabase/functions/.env. Usage : make db-set-sheet-prod CLUB_ID=<uuid>
+db-set-sheet-prod:
+	set -a; . ./apps/web/.env.prod; set +a; node scripts/set-sheet-id.mjs $(CLUB_ID)
+
+db-sync-prod:
+	set -a; . ./apps/web/.env.prod; set +a; node scripts/sync-sheets.mjs $(CLUB_ID)
 
 ## Docker (apps/web uniquement)
 docker-build:

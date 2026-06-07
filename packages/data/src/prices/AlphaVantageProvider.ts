@@ -1,4 +1,4 @@
-import { PriceProvider } from './PriceProvider'
+import { PriceProvider } from './PriceProvider.ts'
 
 /** Provider Alpha Vantage : appelle GLOBAL_QUOTE pour chaque symbole séquentiellement. */
 export class AlphaVantageProvider implements PriceProvider {
