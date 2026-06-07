@@ -143,21 +143,30 @@ Deno.test('échec Brevo → 502', async () => {
 
 // ---- Test 6 — buildConfirmationUrl ----
 Deno.test('buildConfirmationUrl : forme + encodage du redirect_to', () => {
-  const url = buildConfirmationUrl(
-    {
-      token: 'x',
-      token_hash: 'th',
-      redirect_to: 'http://localhost:3001/login/verify',
-      email_action_type: 'magiclink',
-      site_url: 'https://proj.supabase.co/',
-    },
-    'https://fallback.co'
-  )
+  const data = {
+    token: 'x',
+    token_hash: 'th',
+    redirect_to: 'http://localhost:3001/login/verify',
+    email_action_type: 'magiclink',
+    // site_url du payload = URL externe GoTrue (déjà /auth/v1) : NE DOIT PAS servir de base.
+    site_url: 'https://proj.supabase.co/auth/v1',
+  }
+  // La base vient de l'URL PROJET (2ᵉ arg), pas de data.site_url.
+  const url = buildConfirmationUrl(data, 'https://proj.supabase.co')
   assertStringIncludes(url, 'https://proj.supabase.co/auth/v1/verify?')
   assertStringIncludes(url, 'token=th')
   assertStringIncludes(url, 'type=magiclink')
   // redirect_to encodé en query param.
   assertStringIncludes(url, 'redirect_to=http%3A%2F%2Flocalhost%3A3001%2Flogin%2Fverify')
+  // Régression : jamais de chemin doublé, même si l'URL projet porte déjà /auth/v1.
+  if (url.includes('/auth/v1/auth/v1')) {
+    throw new Error(`chemin /auth/v1 doublé : ${url}`)
+  }
+  const doubled = buildConfirmationUrl(data, 'https://proj.supabase.co/auth/v1/')
+  assertStringIncludes(doubled, 'https://proj.supabase.co/auth/v1/verify?')
+  if (doubled.includes('/auth/v1/auth/v1')) {
+    throw new Error(`chemin /auth/v1 doublé (base avec suffixe) : ${doubled}`)
+  }
 })
 
 // ---- Test 7 — resolveLocale ----

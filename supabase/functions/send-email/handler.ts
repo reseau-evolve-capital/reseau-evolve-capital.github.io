@@ -94,14 +94,19 @@ export function resolveLocale(meta: Record<string, unknown> | null | undefined):
 
 /**
  * Construit la ConfirmationURL à usage unique à partir du payload du hook.
- * Forme : {site_url}/auth/v1/verify?token={token_hash}&type={action}&redirect_to={redirect_to}
+ * Forme : {projectUrl}/auth/v1/verify?token={token_hash}&type={action}&redirect_to={redirect_to}
+ *
+ * ⚠ La base est l'URL du **projet Supabase** (`SUPABASE_URL`), PAS `email_data.site_url` :
+ * dans le payload du hook, `site_url` porte l'URL externe de GoTrue (déjà suffixée `/auth/v1`),
+ * donc l'utiliser produisait un chemin doublé `/auth/v1/auth/v1/verify` → lien cassé
+ * (« No API key found »). On normalise donc en retirant un éventuel `/auth/v1` final.
  * On encode les composants (open-redirect/injection safe). JAMAIS de code/OTP exposé.
  */
 export function buildConfirmationUrl(
   data: SendEmailPayload['email_data'],
-  fallbackSiteUrl: string
+  projectUrl: string
 ): string {
-  const base = (data.site_url ?? fallbackSiteUrl).replace(/\/+$/, '')
+  const base = projectUrl.replace(/\/+$/, '').replace(/\/auth\/v1$/, '')
   const params = new URLSearchParams({
     token: data.token_hash,
     type: data.email_action_type,
