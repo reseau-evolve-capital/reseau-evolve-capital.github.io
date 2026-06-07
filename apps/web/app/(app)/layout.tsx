@@ -8,6 +8,7 @@ import { ToastProvider } from '@evolve/ui'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
 import { AppChromeSidebar, AppChromeTopbar, AppChromeBottom } from '@/components/chrome/AppChrome'
+import { InstallBannerMount } from '@/components/pwa/InstallBannerMount'
 
 // Les pages app/* nécessitent l'auth Supabase — pas de prérendu statique
 export const dynamic = 'force-dynamic'
@@ -98,6 +99,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
           <AppChromeBottom />
+          {/* PWA-001 : bannière d'installation. Montée ici (persiste entre onglets) mais
+              ne s'affiche que sur /dashboard. Enrobée d'un ErrorBoundary interne. */}
+          <InstallBannerMount />
         </ToastProvider>
       </SupabaseProvider>
     </QueryProvider>

@@ -55,3 +55,16 @@ export function detectPwaCase(env = readDetectionEnv()): PwaCase {
   if (/Android/.test(ua) && /Chrome/.test(ua)) return 'android-chrome'
   return 'desktop'
 }
+
+export type IosDevice = 'iphone' | 'ipad'
+
+/**
+ * Distingue iPhone et iPad (la modale iOS adapte l'illustration + la légende du Partager).
+ * Pur et SSR-safe : sans env → `'iphone'` (cas par défaut, le plus courant).
+ */
+export function detectIosDevice(env = readDetectionEnv()): IosDevice {
+  if (!env) return 'iphone'
+  if (/iPad/.test(env.userAgent)) return 'ipad'
+  if (/Macintosh/.test(env.userAgent) && env.maxTouchPoints > 1) return 'ipad'
+  return 'iphone'
+}

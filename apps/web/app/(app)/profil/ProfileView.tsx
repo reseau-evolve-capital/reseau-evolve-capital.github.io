@@ -2,6 +2,7 @@ import { getTranslations } from 'next-intl/server'
 import { Avatar, Badge, Heading } from '@evolve/ui'
 import { formatDate } from '@evolve/utils'
 import type { MemberRole, ProfileData } from '@/lib/data/profile'
+import { InstallSection } from './InstallSection'
 
 const DASH = '—'
 
@@ -66,6 +67,10 @@ export async function ProfileView({ data }: { data: ProfileData }) {
       </section>
 
       <p className="font-body text-[13px] text-text-ter">{t('editHint')}</p>
+
+      {/* PWA-001 : (ré)installer l'app à la demande (entrée permanente, surtout utile après
+          3 refus de la bannière). Masquée si déjà installée (standalone) ou sur desktop. */}
+      <InstallSection />
     </div>
   )
 }
