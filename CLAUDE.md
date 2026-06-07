@@ -139,7 +139,7 @@ Le skill `component-test-writer` (`/component-test-writer`) suit ce layering —
 ```
 <type>(<scope>): <description>
 
-scope ∈ { web | vitrine | ui | design-system | data | types | utils | supabase | sheets | infra }
+scope ∈ { web | vitrine | cms | ui | design-system | data | types | utils | supabase | sheets | infra | ci }
 ```
 
 Husky + commitlint rejettent tout le reste (config dans FND-004). Ces hooks ne sont pas encore en place — ils arrivent dans Sprint 0/1 du monorepo.
