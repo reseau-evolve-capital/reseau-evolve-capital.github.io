@@ -29,7 +29,9 @@ export default async function AdminNewsletterPage() {
   let loadError = false
   try {
     editions = await listNewsletters()
-  } catch {
+  } catch (err) {
+    // Log serveur pour diagnostic (env STRAPI manquante, CMS down, 4xx…) ; l'UI reste tolérante.
+    console.error('[newsletter] échec du chargement des éditions depuis le CMS :', err)
     loadError = true
   }
 

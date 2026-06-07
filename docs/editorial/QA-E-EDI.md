@@ -50,8 +50,15 @@ Captures dans `docs/audits/shots/` (gitignoré).
 
 - **Envoi Brevo réel** (campagne + test) : testé API mockée uniquement. Requiert `BREVO_API_KEY`,
   `BREVO_MEMBERS_LIST_ID`, `NEWSLETTER_TEST_RECIPIENTS`, sender vérifié SPF/DKIM/DMARC (dette délivrabilité QA2).
-- **E2E Playwright `newsletter.spec.ts`** : 2 parcours en `test.skip` tant que le stub Strapi SSR n'est pas
-  câblé (la page admin liste les éditions côté serveur Next). Test de montée + axe actifs.
+- **E2E Playwright `newsletter.spec.ts`** : ✅ **4/4 vert** exécuté contre le Strapi local seedé
+  (2026-06-07). Les 2 parcours conditionnels (`hasEditions`) tournent dès que le serveur Next pointe
+  sur un Strapi servant ≥1 édition publiée. Commande :
+  ```bash
+  # prérequis : supabase up + Strapi up (make strapi-seed) + édition 01 publiée
+  cd apps/web && SUPABASE_SERVICE_ROLE_KEY="$(supabase status -o env | grep -i service_role | cut -d= -f2 | tr -d '\"')" \
+    NEXT_PUBLIC_STRAPI_API_URL=http://localhost:1337/api pnpm exec playwright test newsletter.spec.ts --workers=1
+  ```
+  (À défaut de Strapi, le spec démarre un stub :4571 et `test.skip` les 2 parcours ; montée + axe restent actifs.)
 - **Rendu email multi-clients** (Gmail/Outlook/Apple Mail) : à valider via un envoi test réel.
 - **Deploy** : vitrine = manuel local `out/`→`gh-pages` (Strapi up requis) ; Strapi `apps/cms` autonome
   déployable sur DigitalOcean (suivi moyen terme).
