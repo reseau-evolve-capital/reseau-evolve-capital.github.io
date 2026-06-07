@@ -2,8 +2,9 @@ import Link from 'next/link'
 import { Article, getStrapiMediaUrl } from '@/lib/api'
 import BlockRenderer from '@/components/editorial/BlockRenderer'
 import { estimateReadingTime } from '@/components/editorial/readingTime'
-import { APP_URL } from '@/components/editorial/resolveUrl'
 import { formatDate } from '@/lib/utils'
+import SocialShareButtons from '@/components/blog/SocialShareButtons'
+import AuthorBio from '@/components/blog/AuthorBio'
 
 interface EditorialArticleContentProps {
   article: Article
@@ -27,8 +28,6 @@ export default function EditorialArticleContent({ article, locale }: EditorialAr
     edition: locale === 'en' ? 'The Quote-Part' : 'La Quote-Part',
     readingTime: locale === 'en' ? `${readingMin} min read` : `${readingMin} min de lecture`,
     by: locale === 'en' ? 'By' : 'Par',
-    networkTitle: locale === 'en' ? 'Réseau Evolve Capital' : 'Réseau Evolve Capital',
-    networkCta: locale === 'en' ? 'Access my member area' : 'Accéder à mon espace membre',
   }
 
   return (
@@ -113,25 +112,29 @@ export default function EditorialArticleContent({ article, locale }: EditorialAr
         <BlockRenderer corps={article.corps} locale={locale} />
       </div>
 
-      {/* Pied : auteur + CTA réseau discret */}
-      <footer className="mx-auto mt-12 max-w-3xl border-t border-gray-200 pt-8">
-        {article.auteurNom ? (
-          <p className="text-sm text-gray-700">
-            <span className="font-semibold text-[#231F20]">{article.auteurNom}</span>
-            {article.auteurRole ? (
-              <span className="text-gray-500"> — {article.auteurRole}</span>
-            ) : null}
-          </p>
+      {/* Pied : partage + à propos de l'auteur */}
+      <div className="mx-auto max-w-3xl">
+        {/* Partage (SEO / diffusion réseaux) */}
+        <SocialShareButtons
+          url={`/${locale}/blog/${article.slug}`}
+          title={article.title}
+          locale={locale}
+        />
+
+        {/* À propos de l'auteur : fiche riche si relation `author`, sinon signature simple */}
+        {article.author ? (
+          <AuthorBio author={article.author} locale={locale} />
+        ) : article.auteurNom ? (
+          <div className="mt-12 border-t border-gray-200 pt-8">
+            <p className="text-sm text-gray-700">
+              <span className="font-semibold text-[#231F20]">{article.auteurNom}</span>
+              {article.auteurRole ? (
+                <span className="text-gray-500"> — {article.auteurRole}</span>
+              ) : null}
+            </p>
+          </div>
         ) : null}
-        <a
-          href={APP_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center text-sm font-medium text-gray-600 underline-offset-4 transition-colors hover:text-[#231F20] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#231F20]"
-        >
-          {t.networkCta} →
-        </a>
-      </footer>
+      </div>
     </>
   )
 }
