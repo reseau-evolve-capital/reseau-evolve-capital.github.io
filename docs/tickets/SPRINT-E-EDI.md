@@ -52,4 +52,26 @@ Critères d'acceptation + `make lint typecheck test` vert (preuve réelle) + tes
 
 ## Journal des arbitrages
 
-- _(à compléter au fil des tickets)_
+- **EDI-000** : projet compose Docker épinglé `name: content` pour réutiliser le volume Postgres
+  existant `content_strapi-data` après le déplacement (zéro migration, DB blog préservée). Exclusion
+  `!apps/cms` du pnpm-workspace (le glob `apps/*` l'aurait capturé → collision yarn/corepack).
+- **EDI-001** : évolution **additive** du content-type `article` (pas de nouveau type, pas de rename).
+  `content` & `corps` rendus non-requis pour ne pas casser les articles legacy. `statut` = draftAndPublish
+  natif (pas d'enum custom) ; `couverture` = `featuredImage` réutilisé ; SEO = champs plats conservés.
+  Contrat de blocs figé en `packages/types` + `docs/editorial/block-contract.md` (mirroré vitrine).
+- **EDI-003** : dark **sans toggle global** dans la vitrine (qui n'en a pas) — uniquement `<picture>` +
+  `prefers-color-scheme` scopé aux blocs (respecte « on ne refactore jamais la vitrine »). Renderers
+  web en `<img>`/`<picture>` natif (art-direction non gérée par `next/image`).
+- **EDI-004** : filtre `?type=newsletter` **retiré** (incompatible export statique — `searchParams`).
+- **EDI-006** : pipeline + UI dans apps/web (Node, server-only). Idempotence **sans migration DB** via
+  unicité du nom de campagne Brevo (`quote-part-nX`). Sous-chemin `@evolve/data/brevo` (clé jamais cliente).
+  Sender ajouté (Brevo l'exige) → domaine SPF/DKIM à fournir (owner).
+- **EDI-002** : seed publie l'édition démo (l'API publique ne sert que le publié) ; idempotence via
+  `strapi.db.query` (le `documents().findMany` filtre le publié par défaut → créait des doublons).
+- **Scope commit** : ajout du scope `cms` à commitlint (nouvelle app `apps/cms`).
+
+## Statut final
+
+Tous les tickets EDI-000 → EDI-007 **livrés** sur `feat/e-edi-editorial` (non poussé). Gate complet
+vert (13/13). QA runtime PASS — voir `docs/editorial/QA-E-EDI.md`. Suivis owner : assets « Le Chiffre »,
+secrets Brevo + sender SPF/DKIM, câblage stub E2E SSR, déploiement Strapi DigitalOcean.
