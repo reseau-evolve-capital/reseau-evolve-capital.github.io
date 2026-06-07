@@ -324,12 +324,38 @@ La CI distante tourne sur `git push origin feat/monorepo` (typecheck + lint + te
 
 ---
 
+## 11. Éditorial : blog + newsletter « La Quote-Part » (Strapi · `apps/cms`)
+
+Le contenu éditorial (articles de blog + newsletters) est géré par **Strapi** (`apps/cms`, app
+autonome, yarn/Node 22, **hors** pnpm — Postgres Docker séparé `:5433`). Le détail d'exploitation
+(DB, restore, volume Docker, prod) vit dans **[`apps/cms/CLAUDE.md`](../apps/cms/CLAUDE.md)**.
+
+```bash
+make strapi-db-up     # Postgres local du CMS (:5433)
+make strapi-dev       # Strapi en dev → admin http://localhost:1337/admin (Node 22 via nvm)
+make strapi-seed      # charge + publie la fixture « édition 01 » (docs/editorial/fixtures/edition-01.json)
+make dev-vitrine      # vitrine → le blog rend /fr/blog et /fr/blog/[slug] (fetch Strapi au build/runtime)
+```
+
+- **Modèle** : content-type `article` avec une **dynamic zone `corps`** de blocs réutilisables
+  (`blocs.rich-text`, `le-chiffre`, `etagere`…). Newsletter = `type=newsletter` + preset de blocs
+  (voir `docs/editorial/preset-quote-part.md`). Contrat : `docs/editorial/block-contract.md`.
+- **Newsletter (envoi)** : espace `apps/web` `/admin/newsletter` (aperçu → test → envoi campagne Brevo).
+  Variables (server-only) : `BREVO_API_KEY`, `BREVO_MEMBERS_LIST_ID`, `NEWSLETTER_TEST_RECIPIENTS`,
+  `NEWSLETTER_SENDER_EMAIL/NAME`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_STRAPI_API_URL` (cf. `apps/web/.env.example`).
+- ⚠ Le blog se **build vide si Strapi ne tourne pas** (try/catch → `[]`). Deploy vitrine = manuel local,
+  Strapi up requis (cf. `apps/cms/CLAUDE.md`).
+
+---
+
 ### Aide-mémoire
 
 ```bash
 make help          # liste les cibles Make
 make dev-web        # app sur :3001
 make db-start       # supabase (préférer: supabase start -x vector,logflare)
+make strapi-dev     # Strapi (CMS blog/newsletter) — apps/cms, :1337
+make strapi-seed    # charge la fixture « édition 01 » dans Strapi
 make typecheck lint test
 make test-e2e       # Playwright (penser à la clé service_role)
 ```
