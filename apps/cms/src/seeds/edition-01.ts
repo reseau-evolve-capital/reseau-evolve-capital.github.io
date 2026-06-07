@@ -63,8 +63,37 @@ async function uploadPlaceholder(strapi: Core.Strapi, ref: MediaRef): Promise<nu
   return file?.id ?? null
 }
 
+const CATEGORY_NAME = 'La Quote-Part'
+
+/** Upsert (idempotent) la catégorie « La Quote-Part » et la publie. Renvoie son documentId. */
+async function ensureCategory(strapi: Core.Strapi): Promise<string | null> {
+  const found = await strapi.db
+    .query('api::category.category')
+    .findOne({ where: { name: CATEGORY_NAME }, select: ['documentId'] })
+  let documentId = found?.documentId as string | undefined
+  if (!documentId) {
+    const created = await strapi.documents('api::category.category').create({
+      data: {
+        name: CATEGORY_NAME,
+        description: 'Les éditions de la newsletter La Quote-Part.',
+      },
+      locale: 'fr',
+      status: 'draft',
+    })
+    documentId = created.documentId
+  }
+  if (documentId) {
+    await strapi
+      .documents('api::category.category')
+      .publish({ documentId, locale: 'fr' })
+      .catch(() => undefined)
+  }
+  return documentId ?? null
+}
+
 export async function seedEdition01(strapi: Core.Strapi): Promise<void> {
   const slug = 'evitons-l-empressement'
+  const categoryId = await ensureCategory(strapi)
   // Existence FIABLE via la couche DB (indépendante du statut draft/published — le
   // documents().findMany filtre par défaut le publié, ce qui casserait l'idempotence
   // et créerait des doublons à chaque reload).
@@ -72,10 +101,17 @@ export async function seedEdition01(strapi: Core.Strapi): Promise<void> {
     .query('api::article.article')
     .findOne({ where: { slug }, select: ['documentId'] })
   if (existing?.documentId) {
+    if (categoryId) {
+      await strapi.documents('api::article.article').update({
+        documentId: existing.documentId,
+        locale: 'fr',
+        data: { category: categoryId },
+      })
+    }
     await strapi
       .documents('api::article.article')
       .publish({ documentId: existing.documentId, locale: 'fr' })
-    strapi.log.info('[seed] édition 01 déjà présente — publiée (idempotent).')
+    strapi.log.info('[seed] édition 01 déjà présente — catégorie + publication (idempotent).')
     return
   }
 
@@ -114,6 +150,7 @@ export async function seedEdition01(strapi: Core.Strapi): Promise<void> {
       auteurRole: fixture.auteurRole,
       featuredImage: coverId,
       corps,
+      ...(categoryId ? { category: categoryId } : {}),
     },
     locale: 'fr',
     status: 'draft',
