@@ -101,11 +101,17 @@ export function EvolveEmailShell({
                   ·{' '}
                 </>
               )}
-              <Link href="https://reseauevolvecapital.com/preferences" style={footerLink}>
-                Préférences
-              </Link>{' '}
-              ·{' '}
-              <Link href="https://reseauevolvecapital.com/mentions-legales" style={footerLink}>
+              {/*
+                TODO(préférences) : futur centre de préférences de notifications
+                (opt-in/out granulaire par catégorie/canal/fréquence des emails
+                non-essentiels — alternative douce à l'unsubscribe, lié à NTF-007).
+                Commenté tant que la page /preferences n'existe pas.
+                <Link href="https://app.reseauevolvecapital.com/preferences" style={footerLink}>
+                  Préférences
+                </Link>{' '}
+                ·{' '}
+              */}
+              <Link href="https://app.reseauevolvecapital.com/legal/charter" style={footerLink}>
                 Mentions légales
               </Link>
             </Text>

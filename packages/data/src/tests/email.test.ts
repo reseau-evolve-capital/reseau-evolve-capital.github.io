@@ -43,9 +43,9 @@ describe('EvolveEmailShell', () => {
     // Plus de lien de désinscription ni de token Brevo…
     expect(html).not.toMatch(/désinscrire/i)
     expect(html).not.toContain('{{unsubscribe}}')
-    // …mais le reste du footer demeure.
+    // …mais les mentions légales demeurent (→ /legal/charter).
     expect(html).toMatch(/mentions légales/i)
-    expect(html).toMatch(/préférences/i)
+    expect(html).toContain('/legal/charter')
   })
 
   it('rend le preview text passé en prop', async () => {
