@@ -38,6 +38,16 @@ Captures dans `docs/audits/shots/` (gitignoré).
    `?type=newsletter` retiré (un filtre par type serait client-side). `fix(vitrine)`.
 2. **Contraste** `LeChiffre` source `text-gray-500` → `text-gray-700` (AA). `fix(vitrine)`.
 3. **Seed** : doublons (idempotence cassée) + non publié → `strapi.db.query` + `publish(locale:'fr')`. `fix(cms)`.
+4. **Aperçu admin « localhost refuse la connexion »** : la réponse de `/api/newsletter/preview` porte
+   `X-Frame-Options: DENY` + CSP `frame-ancestors 'none'` (OPS-004) → non iframable par URL. Passage en
+   `iframe srcDoc` (fetch client + contenu inline) + `sandbox=""`. `fix(web)`.
+5. **Admin « Impossible de charger les éditions »** : `NEXT_PUBLIC_STRAPI_API_URL` manquait dans
+   `apps/web/.env.local` (présent dans `.env.example`) → ajoutée ; catch loggué pour diagnostic.
+
+> **Image « Le Chiffre » en email** : en local le `src` pointe sur `http://localhost:1337/uploads/…`,
+> injoignable par un client mail distant (Gmail) → image coupée, le `fallbackTexte` prend le relais.
+> En **prod**, `NEXT_PUBLIC_STRAPI_API_URL` = CMS public → l'image se charge. L'aperçu local, lui,
+> affiche l'image (le navigateur de l'admin atteint `localhost:1337`). Aucun bug code.
 
 ## Findings hors scope (préexistants, NON introduits par E-EDI)
 
