@@ -16,6 +16,8 @@ export interface DashboardHeroProps {
   historicalData?: number[]
   isLoading?: boolean
   onClick?: () => void
+  /** Met le bloc en avant (bordure accent), comme « valeur nette détenue » des cotisations. */
+  highlight?: boolean
   className?: string
   /** Libellé du hero. Défaut FR. */
   label?: string
@@ -34,6 +36,7 @@ export function DashboardHero({
   historicalData,
   isLoading = false,
   onClick,
+  highlight = false,
   className,
   label = 'Ta quote-part',
   detailLabel = ', voir le détail',
@@ -55,7 +58,8 @@ export function DashboardHero({
       <Wrapper
         {...(onClick ? { onClick, type: 'button' as const, 'aria-label': accessibleName } : {})}
         className={cn(
-          'w-full text-left bg-card border border-border rounded-[14px] shadow-[var(--sh-card)] p-6',
+          'w-full text-left bg-card rounded-[14px] shadow-[var(--sh-card)] p-6',
+          highlight ? 'border-2 border-accent' : 'border border-border',
           'flex flex-col gap-2 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-[220ms]',
           onClick && 'focus-visible:shadow-[var(--sh-glow)] outline-none cursor-pointer',
           className
