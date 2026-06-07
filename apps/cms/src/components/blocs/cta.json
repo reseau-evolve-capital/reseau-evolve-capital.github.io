@@ -1,0 +1,22 @@
+{
+  "collectionName": "components_blocs_ctas",
+  "info": {
+    "displayName": "CTA",
+    "icon": "cursor",
+    "description": "Bouton d'appel à l'action. url externe OU urlInterne (route connue résolue par le renderer). Le « Lire en ligne » du mail est résolu dynamiquement, pas saisi (cf. EDI-006)."
+  },
+  "options": {},
+  "attributes": {
+    "libelle": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string"
+    },
+    "urlInterne": {
+      "type": "enumeration",
+      "enum": ["quote-part", "blog", "contact", "espace-membre"]
+    }
+  }
+}

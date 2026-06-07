@@ -1,0 +1,29 @@
+{
+  "collectionName": "components_blocs_images",
+  "info": {
+    "displayName": "Image",
+    "icon": "picture",
+    "description": "Image unique avec variante sombre optionnelle (rendu <picture> clair/sombre), légende et alt obligatoire."
+  },
+  "options": {},
+  "attributes": {
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": ["images"]
+    },
+    "imageDark": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "legende": {
+      "type": "string"
+    },
+    "alt": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

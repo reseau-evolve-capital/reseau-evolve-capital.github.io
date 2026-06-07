@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_blocs_separateurs",
+  "info": {
+    "displayName": "Separateur",
+    "icon": "minus",
+    "description": "Filet de séparation entre rubriques. `style` au cas où (Strapi refuse un composant sans attribut)."
+  },
+  "options": {},
+  "attributes": {
+    "style": {
+      "type": "enumeration",
+      "enum": ["filet", "espace"],
+      "default": "filet"
+    }
+  }
+}

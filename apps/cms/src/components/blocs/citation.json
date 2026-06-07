@@ -1,0 +1,18 @@
+{
+  "collectionName": "components_blocs_citations",
+  "info": {
+    "displayName": "Citation",
+    "icon": "quote",
+    "description": "Exergue / pull-quote. Bordure gauche dorée + italique côté rendu."
+  },
+  "options": {},
+  "attributes": {
+    "texte": {
+      "type": "text",
+      "required": true
+    },
+    "attribution": {
+      "type": "string"
+    }
+  }
+}

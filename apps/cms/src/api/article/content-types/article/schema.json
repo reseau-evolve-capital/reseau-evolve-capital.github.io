@@ -5,7 +5,7 @@
     "singularName": "article",
     "pluralName": "articles",
     "displayName": "Article",
-    "description": ""
+    "description": "Contenu éditorial générique : newsletters (« La Quote-Part ») et articles libres. Le corps est une dynamic zone de blocs réutilisables — aucun nouveau format n'exige de changer le schéma."
   },
   "options": {
     "draftAndPublish": true
@@ -45,10 +45,73 @@
     },
     "content": {
       "type": "blocks",
-      "required": true,
       "pluginOptions": {
         "i18n": {
           "localized": true
+        }
+      }
+    },
+    "corps": {
+      "type": "dynamiczone",
+      "components": [
+        "blocs.label-rubrique",
+        "blocs.rich-text",
+        "blocs.citation",
+        "blocs.image",
+        "blocs.galerie",
+        "blocs.le-chiffre",
+        "blocs.etagere",
+        "blocs.cta",
+        "blocs.separateur"
+      ],
+      "pluginOptions": {
+        "i18n": {
+          "localized": true
+        }
+      }
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["newsletter", "article"],
+      "default": "article",
+      "required": true,
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "numeroEdition": {
+      "type": "integer",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "datePublication": {
+      "type": "datetime",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "auteurNom": {
+      "type": "string",
+      "default": "Olivier Ouedraogo",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
+        }
+      }
+    },
+    "auteurRole": {
+      "type": "string",
+      "default": "Co-founder & Comité d'investissement",
+      "pluginOptions": {
+        "i18n": {
+          "localized": false
         }
       }
     },
