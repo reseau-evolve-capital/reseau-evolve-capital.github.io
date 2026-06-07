@@ -76,7 +76,7 @@ export type Database = {
           currency: string
           id: string
           last_error_email_sent_at: string | null
-          min_contribution: number | null
+          min_contribution: number
           name: string
           settings: Json
           sheet_id: string | null
@@ -93,7 +93,7 @@ export type Database = {
           currency?: string
           id?: string
           last_error_email_sent_at?: string | null
-          min_contribution?: number | null
+          min_contribution?: number
           name: string
           settings?: Json
           sheet_id?: string | null
@@ -110,7 +110,7 @@ export type Database = {
           currency?: string
           id?: string
           last_error_email_sent_at?: string | null
-          min_contribution?: number | null
+          min_contribution?: number
           name?: string
           settings?: Json
           sheet_id?: string | null
@@ -797,6 +797,7 @@ export type Database = {
           p_city?: string
           p_club_id: string
           p_country?: string
+          p_min_contribution?: number
           p_name?: string
         }
         Returns: undefined
