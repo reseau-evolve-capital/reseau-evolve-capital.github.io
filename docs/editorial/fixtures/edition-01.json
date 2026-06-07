@@ -1,0 +1,169 @@
+{
+  "id": 1,
+  "documentId": "edition-01-quote-part",
+  "title": "Évitons l'empressement.",
+  "slug": "evitons-l-empressement",
+  "excerpt": "Le club des +1 000 Md$ se resserre. Et nous, on regarde. Deux trimestres calmes, une discipline de long terme.",
+  "type": "newsletter",
+  "numeroEdition": 1,
+  "datePublication": "2026-06-15T08:00:00.000Z",
+  "auteurNom": "Olivier Ouedraogo",
+  "auteurRole": "Co-founder & Comité d'investissement",
+  "locale": "fr",
+  "featuredImage": {
+    "url": "/uploads/quote_part_01_cover.png",
+    "alternativeText": "La Quote-Part — Édition n°01, juin 2026",
+    "width": 1200,
+    "height": 630
+  },
+  "content": null,
+  "corps": [
+    { "__component": "blocs.label-rubrique", "id": 1, "texte": "ÉDITO" },
+    {
+      "__component": "blocs.rich-text",
+      "id": 2,
+      "contenu": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "Nous avons traversé deux trimestres calmes. C'est précieux. Pendant que les places s'agitent au moindre titre et que les portefeuilles se réécrivent à chaque ouverture, le réseau, lui, a regardé. Sans rien faire — ce qui, certains jours, est la décision la plus difficile."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "On pense souvent à Kobe Bryant pour ses paniers décisifs. On oublie les heures avant l'aube, dans une salle vide, quand personne ne regardait. Le marché, comme la mer, ne récompense pas l'impatience : il récompense ceux qui ont construit pendant que les autres réagissaient. Évitons l'empressement."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "__component": "blocs.citation",
+      "id": 3,
+      "texte": "La vraie performance n'est pas celle qu'on regarde, c'est celle qu'on construit pendant qu'on dort.",
+      "attribution": null
+    },
+    { "__component": "blocs.separateur", "id": 4, "style": "filet" },
+    { "__component": "blocs.label-rubrique", "id": 5, "texte": "LE CHIFFRE" },
+    {
+      "__component": "blocs.le-chiffre",
+      "id": 6,
+      "imageClaire": {
+        "url": "/uploads/le_chiffre_01_clair.png",
+        "alternativeText": "Le club des +1 000 Md$ : 11 membres confirmés, 3 challengers",
+        "width": 1104,
+        "height": 736
+      },
+      "imageSombre": {
+        "url": "/uploads/le_chiffre_01_sombre.png",
+        "alternativeText": "Le club des +1 000 Md$ : 11 membres confirmés, 3 challengers (sombre)",
+        "width": 1104,
+        "height": 736
+      },
+      "legende": "Le club des +1 000 Md$ — 11 membres confirmés, 3 challengers à la porte. Source : données de marché, juin 2026.",
+      "source": "Données de marché, juin 2026.",
+      "fallbackTexte": "1 000 Md$ : le seuil le plus exclusif du capitalisme."
+    },
+    { "__component": "blocs.separateur", "id": 7, "style": "filet" },
+    { "__component": "blocs.label-rubrique", "id": 8, "texte": "LA BOUSSOLE" },
+    {
+      "__component": "blocs.rich-text",
+      "id": 9,
+      "contenu": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "Trois principes pour traverser le bruit sans se laisser happer par le FOMO :"
+            }
+          ]
+        },
+        {
+          "type": "list",
+          "format": "unordered",
+          "children": [
+            {
+              "type": "list-item",
+              "children": [
+                { "type": "text", "text": "Ne jamais acheter au son du tambour. ", "bold": true },
+                {
+                  "type": "text",
+                  "text": "Quand tout le monde en parle, le prix a déjà intégré l'histoire."
+                }
+              ]
+            },
+            {
+              "type": "list-item",
+              "children": [
+                { "type": "text", "text": "Mesurer le temps avant la vélocité. ", "bold": true },
+                {
+                  "type": "text",
+                  "text": "La durée de détention pèse plus que la rapidité d'entrée."
+                }
+              ]
+            },
+            {
+              "type": "list-item",
+              "children": [
+                { "type": "text", "text": "Se relire avant de réagir. ", "bold": true },
+                {
+                  "type": "text",
+                  "text": "Une thèse écrite hier vaut mieux qu'une intuition de ce matin."
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    { "__component": "blocs.separateur", "id": 10, "style": "filet" },
+    { "__component": "blocs.label-rubrique", "id": 11, "texte": "L'ÉTAGÈRE" },
+    {
+      "__component": "blocs.etagere",
+      "id": 12,
+      "items": [
+        {
+          "titre": "One Up on Wall Street",
+          "auteur": "Peter Lynch",
+          "pourquoi": "Pour se rappeler que le portefeuille du dimanche soir bat souvent celui du lundi matin."
+        },
+        {
+          "titre": "The Intelligent Investor",
+          "auteur": "Benjamin Graham",
+          "pourquoi": "Parce que la patience est un actif à intérêts composés."
+        }
+      ]
+    },
+    { "__component": "blocs.separateur", "id": 13, "style": "filet" },
+    { "__component": "blocs.label-rubrique", "id": 14, "texte": "LE MOT DU RÉSEAU" },
+    {
+      "__component": "blocs.rich-text",
+      "id": 15,
+      "contenu": [
+        {
+          "type": "paragraph",
+          "children": [
+            {
+              "type": "text",
+              "text": "Le réseau accueille deux nouveaux membres ce semestre. La prochaine échéance de cotisation tombe le 15 juillet — l'occasion de relire vos quote-parts."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "__component": "blocs.cta",
+      "id": 16,
+      "libelle": "Voir ma quote-part",
+      "url": null,
+      "urlInterne": "quote-part"
+    }
+  ]
+}
