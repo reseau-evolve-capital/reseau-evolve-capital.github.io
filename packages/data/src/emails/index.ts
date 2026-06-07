@@ -19,6 +19,10 @@ export { SyncErrorEmail } from './SyncErrorEmail.tsx'
 export type { SyncErrorEmailProps } from './SyncErrorEmail.tsx'
 export { AttestationEmail } from './AttestationEmail.tsx'
 export type { AttestationEmailProps, AttestationEmailKpis } from './AttestationEmail.tsx'
+export { NewsletterEmail } from './NewsletterEmail.tsx'
+export type { NewsletterEmailProps } from './NewsletterEmail.tsx'
+export { mapArticleToEmail } from './mappers/article-to-email.ts'
+export type { MapArticleOptions } from './mappers/article-to-email.ts'
 
 /** Rend un email React Email en chaîne HTML prête à l'envoi. */
 export function renderEmailHtml(element: ReactElement): Promise<string> {
