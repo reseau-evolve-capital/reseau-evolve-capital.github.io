@@ -620,13 +620,15 @@
         "city": "City",
         "country": "Country",
         "brokerAccountRef": "Club broker account ID",
-        "annualInvestmentCap": "Annual investment cap"
+        "annualInvestmentCap": "Annual investment cap",
+        "minContribution": "Minimum contribution"
       },
       "hints": {
         "city": "City where the club is based.",
         "country": "ISO 2-letter country code (e.g. FR, BE, LU).",
         "brokerAccountRef": "The club's account reference at the broker. Sensitive field.",
-        "annualInvestmentCap": "Maximum amount investable per year, in euros. Sensitive field."
+        "annualInvestmentCap": "Maximum amount investable per year, in euros. Sensitive field.",
+        "minContribution": "Minimum contribution amount per member, in euros (default 100)."
       },
       "readonly": {
         "brokerName": "Broker: {value}"
@@ -634,7 +636,8 @@
       "errors": {
         "name_required": "The club name is required.",
         "country_invalid": "Invalid country code (2 letters expected, e.g. FR).",
-        "cap_invalid": "Invalid cap (a positive amount is expected)."
+        "cap_invalid": "Invalid cap (a positive amount is expected).",
+        "min_contribution_invalid": "Invalid minimum contribution (a positive amount is expected)."
       },
       "confirm": {
         "title": "Sensitive operation",

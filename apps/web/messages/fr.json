@@ -620,13 +620,15 @@
         "city": "Ville",
         "country": "Pays",
         "brokerAccountRef": "Identifiant du club chez le courtier",
-        "annualInvestmentCap": "Plafond annuel d’investissement"
+        "annualInvestmentCap": "Plafond annuel d’investissement",
+        "minContribution": "Cotisation minimale"
       },
       "hints": {
         "city": "Ville où le club est domicilié.",
         "country": "Code pays ISO à 2 lettres (ex. FR, BE, LU).",
         "brokerAccountRef": "Référence du compte du club chez le courtier. Champ sensible.",
-        "annualInvestmentCap": "Montant maximum investissable par an, en euros. Champ sensible."
+        "annualInvestmentCap": "Montant maximum investissable par an, en euros. Champ sensible.",
+        "minContribution": "Montant minimum de cotisation par membre, en euros (défaut 100)."
       },
       "readonly": {
         "brokerName": "Courtier : {value}"
@@ -634,7 +636,8 @@
       "errors": {
         "name_required": "Le nom du club est obligatoire.",
         "country_invalid": "Code pays invalide (2 lettres attendues, ex. FR).",
-        "cap_invalid": "Plafond invalide (montant positif attendu)."
+        "cap_invalid": "Plafond invalide (montant positif attendu).",
+        "min_contribution_invalid": "Cotisation minimale invalide (montant positif attendu)."
       },
       "confirm": {
         "title": "Opération sensible",

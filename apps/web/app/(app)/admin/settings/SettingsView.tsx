@@ -45,6 +45,7 @@ function toFormState(s: ClubSettings): ClubSettingsInput {
     country: s.country ?? '',
     brokerAccountRef: s.brokerAccountRef ?? '',
     annualInvestmentCap: s.annualInvestmentCap === null ? '' : String(s.annualInvestmentCap),
+    minContribution: String(s.minContribution),
   }
 }
 
@@ -197,6 +198,25 @@ export function SettingsView({ initialSettings }: { initialSettings: ClubSetting
               )}
             </FormField>
           </div>
+
+          {/* Cotisation minimale du club (EUR) — éditable par le staff, défaut 100. Non sensible. */}
+          <FormField
+            label={t('fields.minContribution')}
+            helpText={t('hints.minContribution')}
+            required
+            {...errorProp(fieldError('min_contribution_invalid'))}
+          >
+            {(p) => (
+              <Input
+                {...p}
+                inputMode="decimal"
+                value={form.minContribution}
+                onChange={set('minContribution')}
+                placeholder="100"
+                disabled={isPending}
+              />
+            )}
+          </FormField>
         </section>
 
         {/* Paramètres sensibles (double-confirmation). */}
