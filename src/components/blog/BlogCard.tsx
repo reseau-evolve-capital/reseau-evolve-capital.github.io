@@ -1,22 +1,21 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { Article } from '@/lib/api';
-import { getStrapiMediaUrl } from '@/lib/api';
-import { formatDate } from '@/lib/utils';
+import Image from 'next/image'
+import Link from 'next/link'
+import { Article } from '@/lib/api'
+import { getStrapiMediaUrl } from '@/lib/api'
+import { formatDate } from '@/lib/utils'
 
 interface BlogCardProps {
-  article: Article;
-  locale: string;
+  article: Article
+  locale: string
 }
 
 export default function BlogCard({ article, locale }: BlogCardProps) {
-
   // Access properties directly from article instead of using attributes
-  const imageUrl = getStrapiMediaUrl(article.featuredImage);
-  
+  const imageUrl = getStrapiMediaUrl(article.featuredImage)
+
   // Create the article URL
-  const articleUrl = `/${locale}/blog/${article.slug}`;
-  
+  const articleUrl = `/${locale}/blog/${article.slug}`
+
   return (
     <div className="group flex flex-col h-full overflow-hidden rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl bg-white">
       {/* Featured Image */}
@@ -35,30 +34,38 @@ export default function BlogCard({ article, locale }: BlogCardProps) {
           </div>
         )}
       </div>
-      
+
       {/* Content */}
       <div className="flex flex-col flex-grow p-6">
-        {/* Category */}
-        {article.category && (
+        {/* Badge newsletter (La Quote-Part n°X) — prioritaire sur la catégorie */}
+        {article.type === 'newsletter' && article.numeroEdition ? (
+          <div className="mb-2">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full bg-[#FDC70C] px-3 py-1 font-mono text-xs font-semibold uppercase tracking-wide text-[#231F20]"
+              data-testid="blog-card-newsletter-badge"
+            >
+              {locale === 'en' ? 'The Quote-Part' : 'La Quote-Part'} n°
+              {article.numeroEdition}
+            </span>
+          </div>
+        ) : article.category ? (
           <div className="mb-2">
             <span className="inline-block rounded-full bg-[#F3903F] px-3 py-1 text-xs font-semibold text-white">
               {article.category.name}
             </span>
           </div>
-        )}
-        
+        ) : null}
+
         {/* Title */}
         <h3 className="mb-2 text-xl font-bold leading-tight text-gray-900 transition-colors group-hover:text-[#E93E3A]">
           <Link href={articleUrl} className="hover:underline">
             {article.title}
           </Link>
         </h3>
-        
+
         {/* Excerpt */}
-        <p className="mb-4 flex-grow text-sm text-gray-700">
-          {article.excerpt || article.title}
-        </p>
-        
+        <p className="mb-4 flex-grow text-sm text-gray-700">{article.excerpt || article.title}</p>
+
         {/* Footer */}
         <div className="mt-auto flex items-center justify-between">
           {/* Author */}
@@ -77,13 +84,13 @@ export default function BlogCard({ article, locale }: BlogCardProps) {
               {article.author ? article.author.name : 'Admin'}
             </span>
           </div>
-          
-          {/* Date */}
+
+          {/* Date (préfère la date de publication éditoriale) */}
           <span className="text-xs text-gray-500">
-            {formatDate(article.publishedAt, locale)}
+            {formatDate(article.datePublication || article.publishedAt, locale)}
           </span>
         </div>
       </div>
     </div>
-  );
-} 
+  )
+}
