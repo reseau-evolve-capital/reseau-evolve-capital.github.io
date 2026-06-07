@@ -25,7 +25,16 @@ export function registerServiceWorker(): void {
 export function clearPwaDataCaches(): void {
   try {
     if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
-    navigator.serviceWorker.controller?.postMessage('clear-data-cache')
+    const sw = navigator.serviceWorker
+    if (sw.controller) {
+      sw.controller.postMessage('clear-data-cache')
+      return
+    }
+    // Pas encore de controller (juste après activation / hard reload) → via la registration active.
+    void sw
+      .getRegistration()
+      .then((reg) => reg?.active?.postMessage('clear-data-cache'))
+      .catch(() => {})
   } catch {
     /* noop */
   }
