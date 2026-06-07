@@ -1,5 +1,8 @@
 packages:
   - 'apps/*'
+  # apps/cms = Strapi (yarn classic, Node 22, hors pnpm). Le glob apps/* le capturerait
+  # sinon → collision avec son setup yarn/corepack. Cf. EDI-000 (extraction depuis vitrine).
+  - '!apps/cms'
   - 'packages/*'
 allowBuilds:
   esbuild: true

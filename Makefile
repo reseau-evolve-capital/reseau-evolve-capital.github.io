@@ -78,8 +78,9 @@ docker-down:
 	docker compose down
 
 ## Vitrine — Strapi (blog) & deploy GitHub Pages (LOCAL, Strapi doit tourner)
+# Strapi (CMS) extrait dans apps/cms (app autonome, déployable seule — cf. EDI-000).
 VITRINE_DIR         = apps/vitrine
-STRAPI_DIR          = apps/vitrine/content
+STRAPI_DIR          = apps/cms
 STRAPI_COMPOSE      = cd $(STRAPI_DIR) && docker compose
 STRAPI_COMPOSE_PROD = cd $(STRAPI_DIR) && docker compose -f docker-compose.prod.yml
 
@@ -94,8 +95,8 @@ vitrine-export:
 vitrine-deploy: vitrine-export
 	pnpm --filter @evolve/vitrine run deploy
 
-# Strapi en dev natif — content/ est en YARN. Exige Node 22 LTS (engines <=22.x) :
-# bascule auto via nvm (lit content/.nvmrc=22). Node 23/24 = refusé par yarn.
+# Strapi en dev natif — apps/cms est en YARN. Exige Node 22 LTS (engines <=22.x) :
+# bascule auto via nvm (lit apps/cms/.nvmrc=22). Node 23/24 = refusé par yarn.
 strapi-dev:
 	cd $(STRAPI_DIR) && bash -c '. "$${NVM_DIR:-$$HOME/.nvm}/nvm.sh"; nvm use && yarn develop'
 
