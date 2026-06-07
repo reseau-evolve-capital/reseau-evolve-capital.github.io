@@ -19,9 +19,9 @@ const NOOP_SUBSCRIBE = (): (() => void) => () => {}
 const getClientPwaCase = (): PwaCase => detectPwaCase()
 const getServerPwaCase = (): PwaCase => 'unsupported'
 
-export type UsePwaInstallReturn = {
+/** Actions PWA sans la machine de trigger/visite — réutilisable hors dashboard (ex. /profil). */
+export type PwaActions = {
   pwaCase: PwaCase
-  shouldShowBanner: boolean
   isInstructionModalOpen: boolean
   promptInstall: () => Promise<PromptOutcome>
   openInstructionModal: () => void
@@ -30,19 +30,21 @@ export type UsePwaInstallReturn = {
   copyUrlToClipboard: () => Promise<boolean>
 }
 
+export type UsePwaInstallReturn = PwaActions & {
+  shouldShowBanner: boolean
+}
+
 /**
- * Hook racine de la bannière PWA : compose détection plateforme + store de refus +
- * capture `beforeinstallprompt` + machine de trigger, et expose l'API publique (spec §2).
+ * Détection + actions PWA, SANS comptage de visite ni timer de bannière. À utiliser là où
+ * l'on veut déclencher l'install à la demande (section /profil) sans armer la logique de la
+ * bannière du dashboard (qui, elle, incrémente le compteur de visites).
  *
- * Crash-safety : `pwaCase` démarre à `'unsupported'` au render SSR/premier paint puis se
- * résout au mount (aucun accès `window`/`navigator` pendant le render). Tous les effets de
- * bord (prompt natif, clipboard, storage) sont gardés en try/catch — jamais de throw React.
+ * Crash-safety : tous les effets de bord (prompt natif, clipboard, storage) sont gardés en
+ * try/catch — jamais de throw dans l'arbre React.
  */
-export function usePwaInstall(): UsePwaInstallReturn {
+export function usePwaActions(): PwaActions {
   const pwaCase = useSyncExternalStore(NOOP_SUBSCRIBE, getClientPwaCase, getServerPwaCase)
   const [isInstructionModalOpen, setInstructionModalOpen] = useState(false)
-
-  const { shouldShow } = useInstallBannerState(pwaCase)
 
   const promptInstall = useCallback(async (): Promise<PromptOutcome> => {
     const event = consumeDeferredPrompt()
@@ -88,7 +90,6 @@ export function usePwaInstall(): UsePwaInstallReturn {
 
   return {
     pwaCase,
-    shouldShowBanner: shouldShow,
     isInstructionModalOpen,
     promptInstall,
     openInstructionModal,
@@ -96,4 +97,14 @@ export function usePwaInstall(): UsePwaInstallReturn {
     dismiss,
     copyUrlToClipboard,
   }
+}
+
+/**
+ * Hook racine de la bannière PWA (spec §2) : actions PWA + machine de trigger (visite≥2,
+ * cooldown, timer 8 s gaté focus/visibilité). Exposé tel quel à `InstallBannerMount`.
+ */
+export function usePwaInstall(): UsePwaInstallReturn {
+  const actions = usePwaActions()
+  const { shouldShow } = useInstallBannerState(actions.pwaCase)
+  return { ...actions, shouldShowBanner: shouldShow }
 }
