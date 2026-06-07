@@ -905,5 +905,49 @@
         }
       ]
     }
+  },
+  "pwa": {
+    "badge": "Web app · no App Store",
+    "dismiss": "Later",
+    "androidChrome": {
+      "headline": "Keep it within reach.",
+      "subline": "Install Evolve Capital on your home screen. Open your share in one tap, without the browser.",
+      "cta": "Install"
+    },
+    "iosSafari": {
+      "headline": "Your share, always with you.",
+      "subline": "Add Evolve Capital to your home screen in two steps. We'll show you where to tap.",
+      "cta": "Show me how"
+    },
+    "iosOther": {
+      "headline": "Open it in Safari.",
+      "subline": "Installing works from Safari on iPhone. We'll copy the address — just paste it.",
+      "cta": "Continue in Safari"
+    },
+    "toastCopied": {
+      "title": "Address copied",
+      "message": "Open Safari and paste it into the address bar."
+    },
+    "modal": {
+      "dialogTitle": "Install Evolve Capital",
+      "stepLabel": "Step {current} of {total}",
+      "step1TitleIphone": "The Share icon, at the bottom of Safari.",
+      "step1TitleIpad": "The Share icon, top right.",
+      "step1Body": "Tap the Share icon to open the share menu.",
+      "step1CaptionIphone": "BOTTOM OF SAFARI",
+      "step1CaptionIpad": "TOP RIGHT",
+      "step2Title": "\"Add to Home Screen\".",
+      "step2Body": "In the menu, scroll down and choose this option. Evolve is added to your home screen.",
+      "step2Caption": "FIFTH ITEM FROM TOP",
+      "step2HighlightLabel": "Add to Home Screen",
+      "next": "Next step",
+      "done": "Done",
+      "close": "Close"
+    },
+    "profileSection": {
+      "title": "Install the app on your phone",
+      "body": "Keep Evolve Capital on your home screen — open your share in one tap.",
+      "button": "Install the app"
+    }
   }
 }
