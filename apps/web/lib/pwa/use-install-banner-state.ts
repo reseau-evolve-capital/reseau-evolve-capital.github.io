@@ -48,6 +48,10 @@ function browserTriggerEnv(): TriggerEnv {
   return {
     hasFocus: () => {
       try {
+        // Seam de test : `window.__PWA_FORCE_FOCUS__` force le focus pour des E2E déterministes
+        // (un navigateur headless n'a pas toujours le focus OS → document.hasFocus() false). Jamais posé en prod.
+        const forced = (window as unknown as { __PWA_FORCE_FOCUS__?: unknown }).__PWA_FORCE_FOCUS__
+        if (forced === true) return true
         return document.hasFocus()
       } catch {
         return false
