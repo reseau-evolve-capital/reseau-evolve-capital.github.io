@@ -183,6 +183,27 @@ d'un membre :
 - **Débloquer** : rétablit l'accès du membre.
 - L'action est **réversible** à tout moment, et le blocage est **propre à ce club**.
 
+### 4.6 Newsletter « La Quote-Part » & blog
+
+Le contenu éditorial se rédige **une seule fois** dans l'outil de contenu (Strapi), puis il a
+**deux sorties** : un **article web** (blog public) et un **email** envoyé aux membres — sans
+recopier ni remettre en forme.
+
+1. **Rédiger** : dans l'admin de contenu, créer un article (type « newsletter » pour une édition
+   de _La Quote-Part_, avec un numéro d'édition). Le corps se compose de **blocs** (édito, citation,
+   « Le Chiffre », étagère, image…). Un gabarit de départ existe pour la newsletter.
+2. **Publier** : passer l'article en **Publié** — il apparaît alors sur le **blog** (`/blog`) et son
+   URL est partageable (vignette LinkedIn correcte).
+3. **Envoyer l'email** : depuis l'espace trésorier, onglet **Newsletter**, le parcours est **guidé
+   et sécurisé** :
+   - **Prévisualiser** l'email tel que les membres le recevront ;
+   - **Envoyer un test** (à soi / au comité) ;
+   - **cocher « j'ai vérifié »** pour **déverrouiller** l'envoi ;
+   - **Envoyer la campagne** aux membres.
+
+   > L'envoi est **bloqué** tant que l'article n'est pas publié, et une même édition ne peut pas
+   > être envoyée deux fois. Le bouton « Lire en ligne » de l'email pointe vers l'article réel.
+
 ---
 
 ## 5. Accès suspendu
