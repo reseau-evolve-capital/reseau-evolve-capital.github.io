@@ -73,4 +73,38 @@ export const analyticsEvents = {
         action: 'Magic Link Sent',
       }),
   },
+  // PWA-001 — instrumentation bannière d'installation. NON remontés par Cloudflare
+  // Web Analytics (no-op) ; prêts pour un provider à events en V1 (cf. limite en tête).
+  pwa: {
+    bannerShown: (pwaCase: string, visitCount: number, dismissCount: number) =>
+      trackEvent({
+        type: 'event',
+        category: 'PWA',
+        action: 'Banner Shown',
+        label: pwaCase,
+        value: visitCount * 100 + dismissCount,
+      }),
+    ctaClicked: (pwaCase: string) =>
+      trackEvent({ type: 'event', category: 'PWA', action: 'Banner CTA Clicked', label: pwaCase }),
+    dismissed: (pwaCase: string, dismissCount: number) =>
+      trackEvent({
+        type: 'event',
+        category: 'PWA',
+        action: 'Banner Dismissed',
+        label: pwaCase,
+        value: dismissCount,
+      }),
+    installCompleted: (pwaCase: string) =>
+      trackEvent({ type: 'event', category: 'PWA', action: 'Install Completed', label: pwaCase }),
+    iosInstructionsViewed: (pwaCase: string, step: number) =>
+      trackEvent({
+        type: 'event',
+        category: 'PWA',
+        action: 'iOS Instructions Viewed',
+        label: pwaCase,
+        value: step,
+      }),
+    clipboardCopied: () =>
+      trackEvent({ type: 'event', category: 'PWA', action: 'Clipboard Copied' }),
+  },
 } as const
