@@ -6,7 +6,7 @@
 // la case n'est pas cochée. États succès/erreur explicites (jamais d'undefined/crash).
 // a11y : focus visible (composants UI), boutons ≥44px, iframe titrée, statuts en role="status".
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { formatDate } from '@evolve/utils'
 import { Heading, Text, Button, Icon, Checkbox, Spinner, EmptyState } from '@evolve/ui'
@@ -30,24 +30,47 @@ export function NewsletterView({ editions, loadError }: Props) {
   const [verified, setVerified] = useState(false)
   const [testState, setTestState] = useState<SendState>({ kind: 'idle' })
   const [sendState, setSendState] = useState<SendState>({ kind: 'idle' })
+  // Aperçu : on charge le HTML de l'email côté client et on l'injecte via `srcDoc`
+  // (PAS `src`) — la réponse de /api/newsletter/preview porte X-Frame-Options: DENY +
+  // CSP frame-ancestors 'none' (durcissement OPS-004) et ne peut donc PAS être iframée
+  // par URL, même en same-origin. `srcDoc` rend le contenu inline → pas de réponse à framer.
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null)
+  const [previewError, setPreviewError] = useState(false)
 
   const selected = useMemo(
     () => editions.find((e) => e.slug === selectedSlug) ?? null,
     [editions, selectedSlug]
   )
 
-  // Changer d'édition réinitialise la confirmation et les états (sécurité : on ne garde jamais
-  // une case cochée d'une édition précédente) — fait dans le handler, pas dans un effet.
+  // Changer d'édition réinitialise la confirmation et l'aperçu (sécurité : on ne garde jamais
+  // une case cochée ni un aperçu d'une édition précédente) — fait dans le handler, pas dans un effet.
   function selectEdition(slug: string) {
     setSelectedSlug(slug)
     setVerified(false)
     setTestState({ kind: 'idle' })
     setSendState({ kind: 'idle' })
+    setPreviewHtml(null)
+    setPreviewError(false)
   }
 
-  const previewSrc = selectedSlug
-    ? `/api/newsletter/preview?slug=${encodeURIComponent(selectedSlug)}`
-    : null
+  // Récupère le HTML de l'aperçu à chaque changement d'édition (fetch = pas de framing,
+  // non bloqué par X-Frame-Options ; setState uniquement dans la réponse async).
+  useEffect(() => {
+    if (!selectedSlug) return
+    const controller = new AbortController()
+    fetch(`/api/newsletter/preview?slug=${encodeURIComponent(selectedSlug)}`, {
+      signal: controller.signal,
+    })
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`preview ${res.status}`)
+        const html = await res.text()
+        setPreviewHtml(html)
+      })
+      .catch((err: unknown) => {
+        if (!(err instanceof DOMException && err.name === 'AbortError')) setPreviewError(true)
+      })
+    return () => controller.abort()
+  }, [selectedSlug])
 
   async function sendTest() {
     if (!selectedSlug) return
@@ -145,16 +168,30 @@ export function NewsletterView({ editions, loadError }: Props) {
               </select>
             </div>
 
-            {/* Aperçu */}
-            {previewSrc && (
+            {/* Aperçu (srcDoc — cf. note plus haut) */}
+            {selectedSlug && (
               <div className="flex flex-col gap-2">
                 <Text className="text-[13px] font-semibold">{t('preview.title')}</Text>
-                <iframe
-                  key={previewSrc}
-                  src={previewSrc}
-                  title={t('preview.iframeTitle')}
-                  className="h-[640px] w-full rounded-[10px] border border-border bg-white"
-                />
+                {previewError ? (
+                  <p
+                    role="status"
+                    className="rounded-[10px] border border-border bg-card p-4 text-[13px] text-data-negative"
+                  >
+                    {t('preview.error')}
+                  </p>
+                ) : previewHtml === null ? (
+                  <div className="flex h-[640px] w-full items-center justify-center rounded-[10px] border border-border bg-card">
+                    <Spinner size={20} />
+                  </div>
+                ) : (
+                  <iframe
+                    key={selectedSlug}
+                    srcDoc={previewHtml}
+                    title={t('preview.iframeTitle')}
+                    sandbox=""
+                    className="h-[640px] w-full rounded-[10px] border border-border bg-white"
+                  />
+                )}
                 <Text className="text-[12px] text-text-ter">{t('preview.note')}</Text>
               </div>
             )}

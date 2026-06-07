@@ -128,9 +128,15 @@
       "aria": "Onboarding steps",
       "statusCurrent": "In progress",
       "statusUpcoming": "Up next",
-      "profile": { "label": "Minimal profile" },
-      "consents": { "label": "Consents" },
-      "tour": { "label": "Guided tour" }
+      "profile": {
+        "label": "Minimal profile"
+      },
+      "consents": {
+        "label": "Consents"
+      },
+      "tour": {
+        "label": "Guided tour"
+      }
     },
     "timeCard": {
       "eyebrow": "In under",
@@ -141,8 +147,8 @@
       "lead": "“We built Evolve to",
       "highlight": "make visible",
       "tail": "what investment clubs have been doing for decades.”",
-      "author": "Louis Martin",
-      "role": "Co-founder · Cercle Arago"
+      "author": "Lionel ZOCLANCLOUNON",
+      "role": "Co-founder · Réseau Evolve Capital"
     },
     "step1": {
       "eyebrow": "Step 01 · Minimal profile",
@@ -588,7 +594,8 @@
       "preview": {
         "title": "Preview",
         "iframeTitle": "Newsletter preview",
-        "note": "Indicative rendering. The final result may vary across email clients."
+        "note": "Indicative rendering. The final result may vary across email clients.",
+        "error": "Could not load the preview. Make sure the CMS is reachable, then try again."
       },
       "test": {
         "title": "1. Send a test",
