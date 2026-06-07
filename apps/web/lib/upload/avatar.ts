@@ -6,14 +6,18 @@ import type { createBrowserClient } from '@evolve/data/supabase/client'
 
 type SupabaseBrowser = ReturnType<typeof createBrowserClient>
 
-const MAX_BYTES = 2 * 1024 * 1024
+// Garde-fou mémoire uniquement : la fonction RECOMPRESSE de toute façon en 200×200 WebP
+// (sortie ~quelques Ko), donc inutile de rejeter une photo iPhone de 3–12 Mo — on la
+// redimensionne côté client. La limite haute évite juste de charger un fichier absurde.
+// (QA 2026-06-07 : « image trop lourde (max 2 Mo) » cassait l'UX pour des photos normales.)
+const MAX_BYTES = 25 * 1024 * 1024
 
 export async function resizeAndUploadAvatar(
   supabase: SupabaseBrowser,
   userId: string,
   file: File
 ): Promise<string> {
-  if (file.size > MAX_BYTES) throw new Error('Image trop lourde (max 2 Mo).')
+  if (file.size > MAX_BYTES) throw new Error('Image trop lourde (max 25 Mo).')
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type))
     throw new Error('Format non supporté (JPG, PNG, WebP).')
 
