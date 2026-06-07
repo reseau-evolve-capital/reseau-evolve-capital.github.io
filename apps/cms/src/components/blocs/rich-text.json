@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_blocs_rich_texts",
+  "info": {
+    "displayName": "RichText",
+    "icon": "align-left",
+    "description": "Prose libre (édito, boussole, mot du réseau, paragraphe). Champ blocks Strapi rendu en HTML sémantique."
+  },
+  "options": {},
+  "attributes": {
+    "contenu": {
+      "type": "blocks",
+      "required": true
+    }
+  }
+}

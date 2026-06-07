@@ -1,0 +1,25 @@
+{
+  "collectionName": "components_blocs_galeries",
+  "info": {
+    "displayName": "Galerie",
+    "icon": "images",
+    "description": "N images (absorbe « plus d'images demain » sans migration). Grille responsive en web, pile verticale en email."
+  },
+  "options": {},
+  "attributes": {
+    "images": {
+      "type": "media",
+      "multiple": true,
+      "required": true,
+      "allowedTypes": ["images"]
+    },
+    "legende": {
+      "type": "string"
+    },
+    "disposition": {
+      "type": "enumeration",
+      "enum": ["grille", "colonne"],
+      "default": "grille"
+    }
+  }
+}

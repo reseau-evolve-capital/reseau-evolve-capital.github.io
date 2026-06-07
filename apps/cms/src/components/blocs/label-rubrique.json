@@ -1,0 +1,15 @@
+{
+  "collectionName": "components_blocs_label_rubriques",
+  "info": {
+    "displayName": "LabelRubrique",
+    "icon": "hashtag",
+    "description": "Intertitre de rubrique (ÉDITO, LA BOUSSOLE…). Rendu = marqueur carré doré + texte sombre (jamais jaune-sur-blanc)."
+  },
+  "options": {},
+  "attributes": {
+    "texte": {
+      "type": "string",
+      "required": true
+    }
+  }
+}

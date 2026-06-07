@@ -337,7 +337,7 @@ export interface AdminUser extends Struct.CollectionTypeSchema {
 export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
   collectionName: 'articles'
   info: {
-    description: ''
+    description: "Contenu \u00E9ditorial g\u00E9n\u00E9rique : newsletters (\u00AB La Quote-Part \u00BB) et articles libres. Le corps est une dynamic zone de blocs r\u00E9utilisables \u2014 aucun nouveau format n'exige de changer le sch\u00E9ma."
     displayName: 'Article'
     pluralName: 'articles'
     singularName: 'article'
@@ -351,10 +351,41 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     }
   }
   attributes: {
+    auteurNom: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.DefaultTo<'Olivier Ouedraogo'>
+    auteurRole: Schema.Attribute.String &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.DefaultTo<"Co-founder & Comit\u00E9 d'investissement">
     author: Schema.Attribute.Relation<'manyToOne', 'api::author.author'>
     category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>
     content: Schema.Attribute.Blocks &
-      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: true
+        }
+      }>
+    corps: Schema.Attribute.DynamicZone<
+      [
+        'blocs.label-rubrique',
+        'blocs.rich-text',
+        'blocs.citation',
+        'blocs.image',
+        'blocs.galerie',
+        'blocs.le-chiffre',
+        'blocs.etagere',
+        'blocs.cta',
+        'blocs.separateur',
+      ]
+    > &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
           localized: true
@@ -362,6 +393,12 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
       }>
     createdAt: Schema.Attribute.DateTime
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
+    datePublication: Schema.Attribute.DateTime &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
     excerpt: Schema.Attribute.Text &
       Schema.Attribute.SetPluginOptions<{
         i18n: {
@@ -371,6 +408,12 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
     featuredImage: Schema.Attribute.Media<'images' | 'files'> & Schema.Attribute.Required
     locale: Schema.Attribute.String
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::article.article'>
+    numeroEdition: Schema.Attribute.Integer &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }>
     publishedAt: Schema.Attribute.DateTime
     SEOMetaDescription: Schema.Attribute.Text &
       Schema.Attribute.SetPluginOptions<{
@@ -400,6 +443,14 @@ export interface ApiArticleArticle extends Struct.CollectionTypeSchema {
           localized: true
         }
       }>
+    type: Schema.Attribute.Enumeration<['newsletter', 'article']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetPluginOptions<{
+        i18n: {
+          localized: false
+        }
+      }> &
+      Schema.Attribute.DefaultTo<'article'>
     updatedAt: Schema.Attribute.DateTime
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> & Schema.Attribute.Private
   }

@@ -1,0 +1,21 @@
+{
+  "collectionName": "components_blocs_etagere_items",
+  "info": {
+    "displayName": "EtagereItem",
+    "icon": "book",
+    "description": "Une entrée de l'étagère : titre, auteur, et pourquoi le lire."
+  },
+  "options": {},
+  "attributes": {
+    "titre": {
+      "type": "string",
+      "required": true
+    },
+    "auteur": {
+      "type": "string"
+    },
+    "pourquoi": {
+      "type": "text"
+    }
+  }
+}

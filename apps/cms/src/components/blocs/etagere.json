@@ -1,0 +1,16 @@
+{
+  "collectionName": "components_blocs_etageres",
+  "info": {
+    "displayName": "Etagere",
+    "icon": "bulletList",
+    "description": "Rubrique « L'Étagère » : liste répétable de recommandations (titre, auteur, pourquoi)."
+  },
+  "options": {},
+  "attributes": {
+    "items": {
+      "type": "component",
+      "repeatable": true,
+      "component": "blocs.etagere-item"
+    }
+  }
+}

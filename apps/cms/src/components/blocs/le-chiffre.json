@@ -1,0 +1,31 @@
+{
+  "collectionName": "components_blocs_le_chiffres",
+  "info": {
+    "displayName": "LeChiffre",
+    "icon": "chartBubble",
+    "description": "Infographie data (générée via PROMPT_infographie_le_chiffre.md). Variante claire requise + sombre optionnelle + fallback texte si image bloquée."
+  },
+  "options": {},
+  "attributes": {
+    "imageClaire": {
+      "type": "media",
+      "multiple": false,
+      "required": true,
+      "allowedTypes": ["images"]
+    },
+    "imageSombre": {
+      "type": "media",
+      "multiple": false,
+      "allowedTypes": ["images"]
+    },
+    "legende": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string"
+    },
+    "fallbackTexte": {
+      "type": "string"
+    }
+  }
+}
