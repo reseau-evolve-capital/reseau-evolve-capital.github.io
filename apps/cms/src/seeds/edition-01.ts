@@ -65,12 +65,17 @@ async function uploadPlaceholder(strapi: Core.Strapi, ref: MediaRef): Promise<nu
 
 export async function seedEdition01(strapi: Core.Strapi): Promise<void> {
   const slug = 'evitons-l-empressement'
-  const existing = await strapi.documents('api::article.article').findMany({
-    filters: { slug },
-    status: 'draft',
-  })
-  if (existing.length > 0) {
-    strapi.log.info('[seed] édition 01 déjà présente — rien à faire.')
+  // Existence FIABLE via la couche DB (indépendante du statut draft/published — le
+  // documents().findMany filtre par défaut le publié, ce qui casserait l'idempotence
+  // et créerait des doublons à chaque reload).
+  const existing = await strapi.db
+    .query('api::article.article')
+    .findOne({ where: { slug }, select: ['documentId'] })
+  if (existing?.documentId) {
+    await strapi
+      .documents('api::article.article')
+      .publish({ documentId: existing.documentId, locale: 'fr' })
+    strapi.log.info('[seed] édition 01 déjà présente — publiée (idempotent).')
     return
   }
 
@@ -97,7 +102,7 @@ export async function seedEdition01(strapi: Core.Strapi): Promise<void> {
     })
   )
 
-  await strapi.documents('api::article.article').create({
+  const created = await strapi.documents('api::article.article').create({
     data: {
       title: fixture.title,
       slug: fixture.slug,
@@ -114,5 +119,9 @@ export async function seedEdition01(strapi: Core.Strapi): Promise<void> {
     status: 'draft',
   })
 
-  strapi.log.info("[seed] édition 01 « Évitons l'empressement. » créée (brouillon).")
+  // Publie l'édition démo (l'API publique ne sert que le publié → rendu blog vitrine).
+  await strapi
+    .documents('api::article.article')
+    .publish({ documentId: created.documentId, locale: 'fr' })
+  strapi.log.info("[seed] édition 01 « Évitons l'empressement. » créée et publiée.")
 }
