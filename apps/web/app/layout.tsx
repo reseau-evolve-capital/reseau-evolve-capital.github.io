@@ -1,12 +1,28 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale } from 'next-intl/server'
 import { Analytics } from '@/components/Analytics'
+import { PwaServiceWorkerRegistrar } from '@/components/pwa/PwaServiceWorkerRegistrar'
 import './globals.css'
 
 export const metadata: Metadata = {
   title: 'Evolve Capital',
   description: "Plateforme d'investissement participatif",
+  // PWA-001 : le manifest est généré par app/manifest.ts (route /manifest.webmanifest).
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Evolve',
+  },
+  icons: {
+    apple: '/icons/apple-touch-icon-180.png',
+  },
+}
+
+// theme-color = fond brand (cohérent avec le manifest + la barre de statut en standalone).
+export const viewport: Viewport = {
+  themeColor: '#0E0C0D',
 }
 
 // Applique le thème (clair/sombre) AVANT la peinture pour éviter tout flash.
@@ -38,6 +54,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* NextIntlClientProvider hérite locale + messages de la config de requête
             (rendu dans un Server Component) → dispo pour les composants client. */}
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        {/* PWA-001 : enregistre le service worker (prod/https) + capture beforeinstallprompt. */}
+        <PwaServiceWorkerRegistrar />
         {/* Cloudflare Web Analytics (OPS-002) — beacon client, pageviews + SPA.
             Rend null si le token est absent (dev/CI). Cf. docs/analytics.md. */}
         <Analytics />

@@ -114,6 +114,9 @@ function buildCsp(): string {
     // https en prod) — sans ça, l'avatar est bloqué par la CSP en dev (BUG 4).
     'img-src': ["'self'", 'data:', 'blob:', 'https:', ...supabaseImgSources()],
     'connect-src': connectSrc,
+    // PWA-001 : le service worker (/sw.js) et le manifest (/manifest.webmanifest) sont same-origin.
+    'worker-src': ["'self'"],
+    'manifest-src': ["'self'"],
     // Verrous de durcissement : aucun plugin/embed, l'app n'est jamais iframée,
     // <base> et les soumissions de formulaires restent sur l'origine.
     'object-src': ["'none'"],
