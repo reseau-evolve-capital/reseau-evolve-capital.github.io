@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0E0C0D" />
+    <title>Hors-ligne — Evolve Capital</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        background: #0e0c0d;
+        color: #f5f4f2;
+        font-family:
+          ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        min-height: 100dvh;
+      }
+      main {
+        max-width: 360px;
+        width: 100%;
+        text-align: center;
+      }
+      .pastille {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 20px;
+        border-radius: 16px;
+        background: #fdc70c;
+        color: #0e0c0d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        font-weight: 700;
+      }
+      h1 {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0 0 12px;
+        line-height: 1.3;
+      }
+      p {
+        font-size: 15px;
+        font-weight: 500;
+        line-height: 1.5;
+        color: #b8b5b1;
+        margin: 0 0 28px;
+      }
+      button {
+        appearance: none;
+        border: 0;
+        cursor: pointer;
+        background: #fdc70c;
+        color: #0e0c0d;
+        font-size: 15px;
+        font-weight: 600;
+        height: 48px;
+        min-width: 44px;
+        padding: 0 24px;
+        border-radius: 10px;
+        width: 100%;
+      }
+      button:focus-visible {
+        outline: 2px solid #f5f4f2;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="pastille" aria-hidden="true">€</div>
+      <h1>Tu es hors-ligne.</h1>
+      <p>Reconnecte-toi pour voir tes données à jour.</p>
+      <button type="button" onclick="location.reload()">Réessayer</button>
+    </main>
+  </body>
+</html>
