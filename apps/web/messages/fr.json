@@ -905,5 +905,49 @@
         }
       ]
     }
+  },
+  "pwa": {
+    "badge": "Web app · sans App Store",
+    "dismiss": "Plus tard",
+    "androidChrome": {
+      "headline": "Garde-la sous la main.",
+      "subline": "Installe Evolve Capital sur ton écran d'accueil. Ouvre ta part d'un geste, sans passer par le navigateur.",
+      "cta": "Installer"
+    },
+    "iosSafari": {
+      "headline": "Ta part. Toujours avec toi.",
+      "subline": "Ajoute Evolve Capital à ton écran d'accueil en deux étapes. On te montre où appuyer.",
+      "cta": "Voir comment"
+    },
+    "iosOther": {
+      "headline": "Ouvre-la dans Safari.",
+      "subline": "L'installation se fait depuis Safari sur iPhone. On copie l'adresse — tu n'as qu'à la coller.",
+      "cta": "Continuer dans Safari"
+    },
+    "toastCopied": {
+      "title": "Adresse copiée",
+      "message": "Ouvre Safari et colle-la dans la barre d'adresse."
+    },
+    "modal": {
+      "dialogTitle": "Installer Evolve Capital",
+      "stepLabel": "Étape {current} sur {total}",
+      "step1TitleIphone": "L'icône Partager, en bas de Safari.",
+      "step1TitleIpad": "L'icône Partager, en haut à droite.",
+      "step1Body": "Appuie sur l'icône Partager pour ouvrir le menu de partage.",
+      "step1CaptionIphone": "EN BAS DE SAFARI",
+      "step1CaptionIpad": "EN HAUT À DROITE",
+      "step2Title": "« Sur l'écran d'accueil ».",
+      "step2Body": "Dans le menu, fais défiler puis choisis cette option. Evolve s'ajoute à ton écran d'accueil.",
+      "step2Caption": "5E EN PARTANT DU HAUT",
+      "step2HighlightLabel": "Sur l'écran d'accueil",
+      "next": "Étape suivante",
+      "done": "C'est fait",
+      "close": "Fermer"
+    },
+    "profileSection": {
+      "title": "Installer l'app sur ton téléphone",
+      "body": "Garde Evolve Capital sur ton écran d'accueil — ouvre ta part d'un geste.",
+      "button": "Installer l'app"
+    }
   }
 }
