@@ -130,11 +130,11 @@ function buildColumns(columnLabels: PortfolioTableColumnLabels) {
     }),
     col.accessor('livePrice', {
       header: columnLabels.livePrice,
-      cell: (c) => (
-        <span className={numClass}>
-          {c.getValue() == null ? '—' : formatEUR(c.getValue() as number)}
-        </span>
-      ),
+      // Repli sur le cours matrice (snapshot) si pas de prix live, plutôt que "—" (QA 2026-06-07).
+      cell: (c) => {
+        const v = (c.getValue() as number | null) ?? c.row.original.marketPrice
+        return <span className={numClass}>{v == null ? '—' : formatEUR(v)}</span>
+      },
     }),
     col.accessor('currentValue', {
       header: columnLabels.currentValue,

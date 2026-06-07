@@ -25,7 +25,7 @@
       "clubTitle": "Club actif"
     },
     "bottom": {
-      "dashboard": "Tableau",
+      "dashboard": "Dashboard",
       "portfolio": "Portefeuille",
       "contributions": "Cotisations",
       "navLabel": "Navigation mobile"
@@ -77,7 +77,7 @@
       "submit": "Recevoir mon lien →",
       "submitting": "Envoi du lien…",
       "submittingHint": "On prépare ton lien de connexion, un instant…",
-      "reassurance": "Lien valable 15 min. Aucun mot de passe, aucun spam.",
+      "reassurance": "Lien valable 10 min. Aucun mot de passe, aucun spam.",
       "invalidEmail": "Adresse email invalide."
     },
     "passkey": {
@@ -149,7 +149,7 @@
       "welcome": "Bienvenue, {name}",
       "welcomeFallback": "ravi de te voir",
       "subtitle": "Quelques infos pour ton profil membre. Elles seront visibles par les autres membres de ton club.",
-      "avatarTitle": "Ajouter une photo de profil",
+      "avatarTitle": "Photo de profil",
       "avatarHint": "Optionnel · tu pourras l'ajouter à l'étape suivante",
       "avatarPreviewAria": "Aperçu de la photo de profil",
       "firstname": "Prénom",
@@ -248,6 +248,16 @@
       "pending": "En attente",
       "late": "En retard",
       "exempt": "Exempté"
+    },
+    "contributionMessage": {
+      "ok": "Tu es à jour de tes cotisations.",
+      "pending": "Ta cotisation du mois est en cours de traitement.",
+      "late": "Il te manque des cotisations. Régularise pour rester à jour.",
+      "exempt": "Tu es exempté de cotisation pour le moment."
+    },
+    "capacity": {
+      "title": "Capacité d'investissement restante",
+      "subtitle": "Il te reste {amount} à investir cette année. Profites-en pour faire grandir ta quote-part."
     },
     "detail": {
       "title": "Ta quote-part",

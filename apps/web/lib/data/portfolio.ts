@@ -191,6 +191,8 @@ export function buildPortfolio(
       quantity: r.quantity,
       pru: r.pump,
       livePrice,
+      // Cours matrice (snapshot) — repli d'affichage du cours quand pas de prix live.
+      marketPrice: Number(r.market_price_eur) > 0 ? Number(r.market_price_eur) : null,
       currentValue,
       gainLossEur,
       gainLossPct,

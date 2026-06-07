@@ -10,6 +10,7 @@ const sample: DashboardData = {
   detentionPct: 0.25,
   totalContributed: 500,
   contribution: { status: 'ok', amountDue: 0 },
+  investment: { cap: 5500, yearInvested: 500, remaining: 5000 },
   club: { name: 'Club Test' },
   syncedAt: '2026-05-31T10:00:00.000Z',
 }

@@ -54,7 +54,8 @@ export function LocaleSwitcher({
             aria-pressed={isActive}
             lang={locale.value}
             className={cn(
-              'inline-flex min-h-[36px] min-w-[36px] items-center justify-center rounded-[8px] px-2.5',
+              // Toggle compact sur mobile (hauteur réduite), pleine taille ≥ md.
+              'inline-flex min-h-[30px] min-w-[34px] items-center justify-center rounded-[8px] px-2 md:min-h-[36px] md:min-w-[36px] md:px-2.5',
               'font-mono text-[12px] font-semibold uppercase tracking-[0.08em] transition-colors duration-[150ms]',
               'focus:outline-none focus-visible:shadow-[var(--sh-glow)]',
               isActive

@@ -55,6 +55,16 @@ export function CarouselSlider({
     }
   }
 
+  // Synchronise l'indicateur (dots) avec le swipe/scroll tactile : sans ça les dots
+  // ne bougeaient pas quand on faisait défiler le carousel au doigt (QA 2026-06-07).
+  function onScroll() {
+    const el = trackRef.current
+    if (!el || el.clientWidth === 0) return
+    const i = Math.round(el.scrollLeft / el.clientWidth)
+    const clamped = Math.min(slides.length - 1, Math.max(0, i))
+    if (clamped !== active) onActiveChange(clamped)
+  }
+
   return (
     <div
       role="region"
@@ -66,6 +76,7 @@ export function CarouselSlider({
     >
       <div
         ref={trackRef}
+        onScroll={onScroll}
         className="flex w-full min-w-0 snap-x snap-mandatory overflow-x-auto motion-reduce:scroll-auto"
       >
         {slides.map((slide, i) => (

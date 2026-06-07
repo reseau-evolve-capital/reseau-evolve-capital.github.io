@@ -213,7 +213,9 @@ export async function GET(request: Request): Promise<NextResponse> {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        // `inline` : permet l'ouverture du PDF dans le viewer du navigateur (UX mobile,
+        // QA 2026-06-07) ; l'utilisateur peut toujours enregistrer depuis là.
+        'Content-Disposition': `inline; filename="${filename}"`,
         'Content-Length': String(pdf.length),
         'Cache-Control': 'private, no-store',
       },

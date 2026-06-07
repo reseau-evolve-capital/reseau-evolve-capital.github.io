@@ -81,14 +81,19 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
       const match = /filename="?([^"]+)"?/.exec(disposition)
       const filename = match?.[1] ?? 'attestation-detention.pdf'
       const objectUrl = URL.createObjectURL(blob)
+      // Ouvre le PDF dans un nouvel onglet (lecture inline, meilleure UX mobile — QA 2026-06-07)
+      // plutôt que de forcer le téléchargement. `filename` reste dispo si l'utilisateur enregistre.
       const a = document.createElement('a')
       a.href = objectUrl
-      a.download = filename
+      a.target = '_blank'
+      a.rel = 'noopener'
+      a.setAttribute('aria-label', filename)
       document.body.appendChild(a)
       a.click()
       a.remove()
-      URL.revokeObjectURL(objectUrl)
-      // Confirmation éphémère (le téléchargement n'est pas toujours visible selon le navigateur).
+      // Libération différée : révoquer tout de suite viderait l'onglet PDF fraîchement ouvert.
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
+      // Confirmation éphémère (l'ouverture n'est pas toujours visible selon le navigateur).
       toast.success({ title: t('attestation.success') })
     } catch {
       // Toast d'erreur + message inline persistant (role=alert) pour l'accessibilité.

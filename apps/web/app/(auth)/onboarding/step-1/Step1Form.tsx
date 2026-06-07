@@ -162,22 +162,18 @@ export function Step1Form({
           </h1>
           <p className="mt-3 text-[15px] leading-relaxed text-text-sec">{t('step1.subtitle')}</p>
 
-          {/* Zone avatar — placeholder visuel (upload réel = étape 2 / V1, F8). */}
+          {/* Zone avatar — APERÇU visuel uniquement (initiales). L'upload réel se fait à
+              l'étape 2 (cf. avatarHint). Pas de badge « + » ici : il laissait croire à tort
+              que la zone était cliquable (QA 2026-06-07). */}
           <div className="mt-6 flex items-center gap-4 rounded-lg border border-dashed border-border bg-card-sub p-4">
             <span
               role="img"
               aria-label={t('step1.avatarPreviewAria')}
-              className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-neutral-900 font-display text-[20px] font-black tracking-wide text-brand-yellow"
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-neutral-900 font-display text-[20px] font-black tracking-wide text-brand-yellow"
             >
               {previewInitials || (
                 <Icon name="User" size={24} aria-hidden="true" className="text-brand-yellow" />
               )}
-              <span
-                aria-hidden="true"
-                className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-brand-yellow text-neutral-900"
-              >
-                <Icon name="Plus" size={16} aria-hidden="true" />
-              </span>
             </span>
             <div className="flex min-w-0 flex-col gap-0.5">
               <p className="text-[14px] font-semibold text-text">{t('step1.avatarTitle')}</p>

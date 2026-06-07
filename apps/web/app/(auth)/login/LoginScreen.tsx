@@ -96,13 +96,17 @@ export function LoginScreen() {
 
       {/* Panneau formulaire — thémé */}
       <main className="flex flex-1 flex-col px-6 py-6 md:px-12 lg:px-20">
-        <div className="flex items-center justify-end gap-3">
-          <LocaleSwitcherClient />
-          <ThemeToggle
-            toggleLabel={t('themeToggle.toggle')}
-            switchToLightLabel={t('themeToggle.switchToLight')}
-            switchToDarkLabel={t('themeToggle.switchToDark')}
-          />
+        {/* Mobile : groupe toggles à gauche + « Besoin d'aide » à droite (space-between).
+            Desktop (md+) : tout aligné à droite. */}
+        <div className="flex items-center justify-between gap-3 md:justify-end">
+          <div className="flex items-center gap-3">
+            <LocaleSwitcherClient />
+            <ThemeToggle
+              toggleLabel={t('themeToggle.toggle')}
+              switchToLightLabel={t('themeToggle.switchToLight')}
+              switchToDarkLabel={t('themeToggle.switchToDark')}
+            />
+          </div>
           <a
             href={HELP_URL}
             target="_blank"

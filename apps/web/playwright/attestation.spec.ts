@@ -76,7 +76,8 @@ test('un membre télécharge son attestation → PDF (200, content-type, filenam
   )
   expect(res.status()).toBe(200)
   expect(res.headers()['content-type']).toContain('application/pdf')
-  expect(res.headers()['content-disposition']).toMatch(/attachment; filename=".*\.pdf"/)
+  // H1 (QA 2026-06-07) : ouverture inline (viewer navigateur) plutôt que download forcé.
+  expect(res.headers()['content-disposition']).toMatch(/inline; filename=".*\.pdf"/)
   expect(res.headers()['content-disposition']).toContain('2026-06')
 
   const body = await res.body()

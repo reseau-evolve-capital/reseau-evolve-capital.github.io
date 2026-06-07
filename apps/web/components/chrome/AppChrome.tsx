@@ -97,11 +97,13 @@ export function AppChromeTopbar({
   isStaff,
   syncLabel,
   dateLabel,
+  clubActif,
 }: {
   user: AppHeaderUser
   isStaff: boolean
   syncLabel?: string
   dateLabel?: string
+  clubActif?: SidebarClub
 }) {
   const t = useTranslations('nav')
   const router = useRouter()
@@ -133,6 +135,7 @@ export function AppChromeTopbar({
         />
       }
       logoSrc={LOGO_SRC}
+      clubName={clubActif?.name}
       labels={{
         userMenu: t('topbar.userMenu'),
         admin: t('topbar.admin'),

@@ -48,6 +48,7 @@ function makeDashboardData(syncedAt: string): DashboardData {
     detentionPct: 0.1234,
     totalContributed: 8_000,
     contribution: { status: 'ok', amountDue: 0 },
+    investment: { cap: 5500, yearInvested: 2000, remaining: 3500 },
     club: { name: 'Club E2E' },
     syncedAt,
   }

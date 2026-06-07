@@ -82,8 +82,9 @@ const SENDER = {
   name: 'Evolve Capital',
 }
 
-// Durée de validité du lien (miroir de auth.email.otp_expiry = 3600s → 60 min).
-const OTP_EXPIRY_MIN = Math.round(Number(Deno.env.get('OTP_EXPIRY_SECONDS') ?? '3600') / 60)
+// Durée de validité du lien (miroir de auth.email.otp_expiry = 600s → 10 min).
+// DOIT rester aligné avec config.toml otp_expiry et les textes UI (cf. QA 2026-06-07).
+const OTP_EXPIRY_MIN = Math.round(Number(Deno.env.get('OTP_EXPIRY_SECONDS') ?? '600') / 60)
 
 // ---- Entrypoint de production ----
 if (import.meta.main) {
@@ -92,7 +93,7 @@ if (import.meta.main) {
       { verifyPayload, renderMagicLinkHtml, sendBrevoEmail, sender: SENDER },
       {
         fallbackSiteUrl: Deno.env.get('SUPABASE_URL') ?? 'http://localhost:54321',
-        otpExpiryMin: Number.isFinite(OTP_EXPIRY_MIN) && OTP_EXPIRY_MIN > 0 ? OTP_EXPIRY_MIN : 60,
+        otpExpiryMin: Number.isFinite(OTP_EXPIRY_MIN) && OTP_EXPIRY_MIN > 0 ? OTP_EXPIRY_MIN : 10,
       }
     )
   )

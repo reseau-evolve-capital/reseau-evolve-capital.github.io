@@ -43,6 +43,9 @@ export interface AppTopbarProps {
   localeSwitcher?: React.ReactNode
   /** Affiche le logo sur mobile (la sidebar étant cachée). Défaut true. */
   showLogoOnMobile?: boolean
+  /** Nom du club actif. Sur MOBILE, remplace le logotype de marque (le logo reste) —
+   *  tronqué en ellipsis pour les noms longs (QA 2026-06-07). Absent → logotype complet. */
+  clubName?: string
   /** URL du logo de marque (l'app injecte `/logo.jpg`). Fallback SVG si absent. */
   logoSrc?: string
   /** Libellés textuels (i18n). Chaque clé absente retombe sur son défaut FR. */
@@ -71,6 +74,7 @@ export function AppTopbar({
   localeSwitcher,
   showLogoOnMobile = true,
   logoSrc,
+  clubName,
   labels,
   className,
 }: AppTopbarProps) {
@@ -88,11 +92,21 @@ export function AppTopbar({
         className
       )}
     >
-      {/* Gauche : logo (mobile) ou statut sync (desktop). */}
-      <div className="flex items-center">
+      {/* Gauche : logo + nom de club (mobile) ou statut sync (desktop). min-w-0 pour
+          autoriser l'ellipsis du nom de club. */}
+      <div className="flex min-w-0 items-center">
         {showLogoOnMobile ? (
-          <div className="md:hidden">
-            <Logo variant="full" src={logoSrc} />
+          <div className="flex min-w-0 items-center gap-2 md:hidden">
+            {clubName ? (
+              <>
+                <Logo variant="mark" src={logoSrc} />
+                <span className="truncate font-display text-[15px] font-bold leading-tight text-text">
+                  {clubName}
+                </span>
+              </>
+            ) : (
+              <Logo variant="full" src={logoSrc} />
+            )}
           </div>
         ) : null}
 
@@ -106,15 +120,18 @@ export function AppTopbar({
         ) : null}
       </div>
 
-      {/* Droite : date, langue, thème, menu utilisateur. */}
-      <div className="flex items-center gap-2 md:gap-3">
+      {/* Droite : date, langue (desktop), thème, menu utilisateur. shrink-0 pour ne pas
+          être compressé par le nom de club à gauche. */}
+      <div className="flex shrink-0 items-center gap-2 md:gap-3">
         {dateLabel ? (
           <span className="hidden md:inline-flex rounded-full border border-border px-3 py-1 text-[13px] text-text-sec">
             {dateLabel}
           </span>
         ) : null}
 
-        {localeSwitcher}
+        {/* Langue : dans le header sur desktop ; déplacée dans le menu profil sur mobile
+            (aère le header — QA 2026-06-07). */}
+        {localeSwitcher ? <span className="hidden md:inline-flex">{localeSwitcher}</span> : null}
         {themeToggle}
 
         <DropdownMenu.Root>
@@ -138,6 +155,13 @@ export function AppTopbar({
                 'bg-card border border-border shadow-[var(--sh-pop)]'
               )}
             >
+              {/* Langue dans le menu sur mobile uniquement (déplacée hors du header). */}
+              {localeSwitcher ? (
+                <div className="md:hidden">
+                  <div className="flex justify-center px-3 py-2">{localeSwitcher}</div>
+                  <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                </div>
+              ) : null}
               {canAccessAdmin ? (
                 <DropdownMenu.Item
                   onSelect={() => onAdmin?.()}

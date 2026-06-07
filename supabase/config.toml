@@ -235,8 +235,9 @@ secure_password_change = false
 max_frequency = "1s"
 # Number of characters used in the email OTP.
 otp_length = 6
-# Number of seconds before the email OTP expires (defaults to 1 hour).
-otp_expiry = 3600
+# Number of seconds before the email OTP expires. 600s = 10 min (source de vérité ;
+# l'email magic link + les textes UI doivent afficher la MÊME valeur — cf. QA 2026-06-07).
+otp_expiry = 600
 
 # SMTP de production — Brevo (NTF-001).
 # ⚠️ LAISSÉ COMMENTÉ EN LOCAL : la stack Supabase CLI capte tous les emails via
