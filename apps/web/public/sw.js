@@ -79,7 +79,10 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // GET API data: stale-while-revalidate
+  // GET API data: stale-while-revalidate, MAIS on respecte `Cache-Control: no-store`.
+  // Les routes de données sensibles (portfolio, cotisations, attestation) posent
+  // `private, no-store` : elles ne doivent JAMAIS être persistées sur l'appareil. Seules
+  // les réponses cachables (ex. /api/dashboard, résumé déjà horodaté) entrent dans DATA.
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       caches
@@ -88,7 +91,13 @@ self.addEventListener('fetch', (event) => {
           const cached = await cache.match(request)
           const network = fetch(request)
             .then((res) => {
-              cache.put(request, res.clone()).catch(() => {})
+              const cc = res.headers.get('cache-control') || ''
+              if (!/no-store/i.test(cc)) {
+                cache.put(request, res.clone()).catch(() => {})
+              } else {
+                // Réponse non-cachable : on purge toute copie héritée d'une version antérieure.
+                cache.delete(request).catch(() => {})
+              }
               return res
             })
             .catch(() => cached)
