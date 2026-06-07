@@ -9,7 +9,8 @@
     "./supabase/server": "./src/supabase/server.ts",
     "./prices": "./src/prices/index.ts",
     "./emails": "./src/emails/index.ts",
-    "./pdf": "./src/pdf/index.ts"
+    "./pdf": "./src/pdf/index.ts",
+    "./brevo": "./src/brevo/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

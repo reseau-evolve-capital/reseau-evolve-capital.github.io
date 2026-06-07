@@ -11,7 +11,7 @@ import { useTranslations } from 'next-intl'
 import { Icon, type IconName } from '@evolve/ui'
 
 interface Tab {
-  key: 'dashboard' | 'members' | 'cotisations' | 'invitations' | 'settings'
+  key: 'dashboard' | 'members' | 'cotisations' | 'invitations' | 'newsletter' | 'settings'
   href: string
   icon: IconName
 }
@@ -21,6 +21,7 @@ const TABS: Tab[] = [
   { key: 'members', href: '/admin/members', icon: 'Users' },
   { key: 'cotisations', href: '/admin/cotisations', icon: 'Calendar' },
   { key: 'invitations', href: '/admin/invitations', icon: 'Mail' },
+  { key: 'newsletter', href: '/admin/newsletter', icon: 'Newspaper' },
   { key: 'settings', href: '/admin/settings', icon: 'Settings' },
 ]
 
