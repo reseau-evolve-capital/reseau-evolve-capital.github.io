@@ -95,6 +95,7 @@ export function MagicLinkEmail({
       preview={t.preview(expiresInMin)}
       clubName={clubName}
       footerNote={t.footerNote}
+      hideUnsubscribe
     >
       <Text style={eyebrow}>{t.eyebrow}</Text>
       <Heading as="h1" style={h1}>

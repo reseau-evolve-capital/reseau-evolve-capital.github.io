@@ -66,6 +66,7 @@ export function SyncErrorEmail({ clubName, syncTime, errorMessage, appUrl }: Syn
       preview={`Erreur de synchronisation — ${safeClubName}`}
       clubName={clubName.trim() === '' ? undefined : clubName.trim()}
       footerNote="Email essentiel — cette alerte est envoyée aux trésoriers indépendamment de leurs préférences."
+      hideUnsubscribe
     >
       <Text style={eyebrow}>Synchronisation · Alerte</Text>
       <Heading as="h1" style={h1}>

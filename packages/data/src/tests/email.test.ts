@@ -32,6 +32,22 @@ describe('EvolveEmailShell', () => {
     expect(html).toMatch(/mentions légales/i)
   })
 
+  it('hideUnsubscribe retire le lien de désinscription (emails transactionnels)', async () => {
+    const html = await renderEmailHtml(
+      createElement(EvolveEmailShell, {
+        preview: 'Aperçu',
+        hideUnsubscribe: true,
+        children: createElement('p', null, 'Contenu'),
+      })
+    )
+    // Plus de lien de désinscription ni de token Brevo…
+    expect(html).not.toMatch(/désinscrire/i)
+    expect(html).not.toContain('{{unsubscribe}}')
+    // …mais les mentions légales demeurent (→ /legal/charter).
+    expect(html).toMatch(/mentions légales/i)
+    expect(html).toContain('/legal/charter')
+  })
+
   it('rend le preview text passé en prop', async () => {
     const html = await renderEmailHtml(
       createElement(EvolveEmailShell, {

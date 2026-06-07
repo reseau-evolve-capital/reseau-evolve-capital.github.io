@@ -111,6 +111,7 @@ export function AttestationEmail({
     <EvolveEmailShell
       preview={`Ton attestation de détention de ${monthLabel} est disponible`}
       clubName={clubName.trim() === '' ? undefined : clubName.trim()}
+      hideUnsubscribe
     >
       <Text style={eyebrow}>Attestation · {monthLabel}</Text>
       <Heading as="h1" style={h1}>
