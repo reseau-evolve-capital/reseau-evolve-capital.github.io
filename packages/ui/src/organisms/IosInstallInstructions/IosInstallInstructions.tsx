@@ -60,8 +60,6 @@ export function IosInstallInstructions({
   copy,
 }: IosInstallInstructionsProps) {
   const [step, setStep] = React.useState<IosInstallStep>(1)
-  const titleId = React.useId()
-  const descId = React.useId()
 
   // Réinitialise à l'étape 1 à chaque (ré)ouverture.
   React.useEffect(() => {
@@ -92,8 +90,6 @@ export function IosInstallInstructions({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[60] bg-[var(--overlay)] motion-safe:animate-in motion-safe:fade-in" />
         <Dialog.Content
-          aria-labelledby={titleId}
-          aria-describedby={descId}
           className={cn(
             'fixed left-1/2 top-1/2 z-[60] w-[calc(100vw-2rem)] max-w-[400px] -translate-x-1/2 -translate-y-1/2',
             'overflow-hidden rounded-[16px] bg-card shadow-[var(--sh-modal)]',
@@ -107,10 +103,7 @@ export function IosInstallInstructions({
               <p className="text-[11px] font-semibold uppercase tracking-wide text-text-ter">
                 {copy.stepLabel(step, 2)}
               </p>
-              <Dialog.Title
-                id={titleId}
-                className="mt-1 font-display text-[18px] font-bold text-text"
-              >
+              <Dialog.Title className="mt-1 font-display text-[18px] font-bold text-text">
                 {title}
               </Dialog.Title>
             </div>
@@ -152,10 +145,10 @@ export function IosInstallInstructions({
             </div>
           </div>
 
-          {/* Corps + caption mono. Dialog.Description relie le corps via aria-describedby
-              (Radix l'exige, sinon warning a11y). */}
+          {/* Corps + caption mono. Radix relie automatiquement Title→aria-labelledby et
+              Description→aria-describedby sur Content (pas d'ids/aria manuels = pas de warning). */}
           <div className="px-5 pt-4">
-            <Dialog.Description id={descId} className="text-[14px] leading-relaxed text-text-sec">
+            <Dialog.Description className="text-[14px] leading-relaxed text-text-sec">
               {body}
             </Dialog.Description>
             <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-text-ter">
