@@ -77,7 +77,7 @@
       "submit": "Recevoir mon lien →",
       "submitting": "Envoi du lien…",
       "submittingHint": "On prépare ton lien de connexion, un instant…",
-      "reassurance": "Lien valable 15 min. Aucun mot de passe, aucun spam.",
+      "reassurance": "Lien valable 10 min. Aucun mot de passe, aucun spam.",
       "invalidEmail": "Adresse email invalide."
     },
     "passkey": {
@@ -149,7 +149,7 @@
       "welcome": "Bienvenue, {name}",
       "welcomeFallback": "ravi de te voir",
       "subtitle": "Quelques infos pour ton profil membre. Elles seront visibles par les autres membres de ton club.",
-      "avatarTitle": "Ajouter une photo de profil",
+      "avatarTitle": "Photo de profil",
       "avatarHint": "Optionnel · tu pourras l'ajouter à l'étape suivante",
       "avatarPreviewAria": "Aperçu de la photo de profil",
       "firstname": "Prénom",

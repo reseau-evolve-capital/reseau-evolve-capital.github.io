@@ -77,7 +77,7 @@
       "submit": "Send my link →",
       "submitting": "Sending link…",
       "submittingHint": "Preparing your sign-in link, one moment…",
-      "reassurance": "Link valid for 15 min. No password, no spam.",
+      "reassurance": "Link valid for 10 min. No password, no spam.",
       "invalidEmail": "Invalid email address."
     },
     "passkey": {
@@ -149,7 +149,7 @@
       "welcome": "Welcome, {name}",
       "welcomeFallback": "great to see you",
       "subtitle": "A few details for your member profile. They'll be visible to the other members of your club.",
-      "avatarTitle": "Add a profile photo",
+      "avatarTitle": "Profile photo",
       "avatarHint": "Optional · you can add it on the next step",
       "avatarPreviewAria": "Profile photo preview",
       "firstname": "First name",
