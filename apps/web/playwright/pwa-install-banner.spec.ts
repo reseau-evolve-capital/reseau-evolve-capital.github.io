@@ -56,7 +56,13 @@ async function seedPwaState(
   }
   await page.addInitScript(
     ([key, value]) => {
-      ;(window as unknown as { __PWA_TRIGGER_DELAY_MS__: number }).__PWA_TRIGGER_DELAY_MS__ = 50
+      const w = window as unknown as {
+        __PWA_TRIGGER_DELAY_MS__: number
+        __PWA_FORCE_FOCUS__: boolean
+      }
+      w.__PWA_TRIGGER_DELAY_MS__ = 50
+      // Headless n'a pas toujours le focus OS → on force le focus pour un déclenchement déterministe.
+      w.__PWA_FORCE_FOCUS__ = true
       try {
         window.localStorage.setItem(key as string, value as string)
       } catch {
