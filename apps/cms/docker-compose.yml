@@ -1,0 +1,68 @@
+# ⚠ Nom de projet compose ÉPINGLÉ à `content` (≠ nom du dossier `apps/cms`).
+# Raison : le volume Postgres du blog restauré est `content_strapi-data` (préfixé par
+# l'ancien nom de dossier `content`). Sans cet épinglage, déplacer le dossier en `apps/cms`
+# ferait dériver le projet vers `cms` → volume vide `cms_strapi-data` → DB blog orpheline.
+# On garde donc `content` pour réutiliser le volume existant (zéro migration). Cf. EDI-000.
+name: content
+
+services:
+  strapi:
+    container_name: strapi
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: react-strapi:latest
+    env_file: .env
+    environment:
+      DATABASE_CLIENT: postgres
+      # DATABASE_HOST: strapiDB
+      # DATABASE_PORT: 5432
+      # DATABASE_NAME: strapi
+      # DATABASE_USERNAME: strapi
+      # DATABASE_PASSWORD: strapi_password
+      DATABASE_SSL: false
+      NODE_ENV: ${NODE_ENV:-development}
+      # JWT_SECRET: ${JWT_SECRET}
+      # ADMIN_JWT_SECRET: ${ADMIN_JWT_SECRET}
+      # APP_KEYS: ${APP_KEYS}
+    volumes:
+      - ./config:/opt/app/config
+      - ./src:/opt/app/src
+      - ./package.json:/opt/app/package.json
+      - ./package-lock.json:/opt/app/package-lock.json
+      - ./.env:/opt/app/.env
+      - ./public/uploads:/opt/app/public/uploads
+    ports:
+      - '1337:1337'
+    networks:
+      - strapi
+
+  # Postgres LOCAL pour Strapi (la DB Supabase distante est morte — projet en pause >90j).
+  # superuser bootstrap = "strapi" (≠ rôles contenus dans le dump → pas de rétrogradation).
+  strapiDB:
+    container_name: strapiDB
+    restart: unless-stopped
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: strapi_password
+      POSTGRES_DB: strapi
+    volumes:
+      - strapi-data:/var/lib/postgresql/data/
+    ports:
+      - '5433:5432' # 5433 hôte → évite Supabase local (54322) & postgres système (5432)
+    networks:
+      - strapi
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U strapi -d strapi']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  strapi-data:
+
+networks:
+  strapi:
+    name: strapi
+    driver: bridge
