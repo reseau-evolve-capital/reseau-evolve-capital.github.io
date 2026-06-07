@@ -2,3 +2,4 @@
 export * from './portfolio'
 // Contrat de blocs éditoriaux (E-EDI) — newsletter + blog
 export * from './editorial'
+export * from './pwa'
