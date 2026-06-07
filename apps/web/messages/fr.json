@@ -25,7 +25,7 @@
       "clubTitle": "Club actif"
     },
     "bottom": {
-      "dashboard": "Tableau",
+      "dashboard": "Dashboard",
       "portfolio": "Portefeuille",
       "contributions": "Cotisations",
       "navLabel": "Navigation mobile"
@@ -248,6 +248,16 @@
       "pending": "En attente",
       "late": "En retard",
       "exempt": "Exempté"
+    },
+    "contributionMessage": {
+      "ok": "Tu es à jour de tes cotisations.",
+      "pending": "Ta cotisation du mois est en cours de traitement.",
+      "late": "Il te manque des cotisations. Régularise pour rester à jour.",
+      "exempt": "Tu es exempté de cotisation pour le moment."
+    },
+    "capacity": {
+      "title": "Capacité d'investissement restante",
+      "subtitle": "Il te reste {amount} à investir cette année. Profites-en pour faire grandir ta quote-part."
     },
     "detail": {
       "title": "Ta quote-part",

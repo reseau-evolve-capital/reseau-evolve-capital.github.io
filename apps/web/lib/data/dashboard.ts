@@ -32,6 +32,10 @@ export interface DashboardData {
   detentionPct: number // fraction 0..1
   totalContributed: number
   contribution: { status: ContributionStatus; amountDue: number }
+  /** Capacité d'investissement annuelle (E3) — réutilise le calcul de l'attestation :
+   *  `remaining = annual_investment_cap − investissement payé de l'année en cours`.
+   *  `cap`/`remaining` null si le plafond n'est pas renseigné sur le club. */
+  investment: { cap: number | null; yearInvested: number; remaining: number | null }
   club: { name: string }
   syncedAt: string | null
 }
@@ -86,10 +90,33 @@ export async function getDashboardData(
       .maybeSingle<Pick<UserRow, 'firstname' | 'full_name'>>(),
     supabase
       .from('clubs')
-      .select('name, synced_at')
+      .select('name, synced_at, annual_investment_cap')
       .eq('id', clubId)
-      .maybeSingle<Pick<ClubRow, 'name' | 'synced_at'>>(),
+      .maybeSingle<Pick<ClubRow, 'name' | 'synced_at' | 'annual_investment_cap'>>(),
   ])
+
+  // E3 — capacité d'investissement restante de l'année (même calcul que l'attestation :
+  // plafond annuel du club − somme des mois cotisés `paid` de l'année en cours).
+  // membership_id requis pour cibler contribution_months (clé par adhésion).
+  const cap = club?.annual_investment_cap != null ? Number(club.annual_investment_cap) : null
+  let yearInvested = 0
+  const { data: membership } = await supabase
+    .from('memberships')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('club_id', clubId)
+    .maybeSingle<{ id: string }>()
+  if (membership?.id) {
+    const currentYear = new Date().getFullYear()
+    const { data: months } = await supabase
+      .from('contribution_months')
+      .select('amount')
+      .eq('membership_id', membership.id)
+      .eq('year', currentYear)
+      .eq('status', 'paid')
+    yearInvested = (months ?? []).reduce((sum, m) => sum + Number(m.amount ?? 0), 0)
+  }
+  const remaining = cap === null ? null : Math.max(0, cap - yearInvested)
 
   return {
     member: {
@@ -106,6 +133,7 @@ export async function getDashboardData(
       status: mqp.contribution_status ?? 'pending',
       amountDue: Number(mqp.amount_due ?? 0),
     },
+    investment: { cap, yearInvested, remaining },
     club: { name: club?.name ?? '—' },
     // E2 : statut de sync unifié sur le timestamp du CLUB (≠ member_quote_part.synced_at par-membre).
     syncedAt: club?.synced_at ?? null,

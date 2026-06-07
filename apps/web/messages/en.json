@@ -249,6 +249,16 @@
       "late": "Overdue",
       "exempt": "Exempt"
     },
+    "contributionMessage": {
+      "ok": "You're up to date with your contributions.",
+      "pending": "This month's contribution is being processed.",
+      "late": "You have outstanding contributions. Catch up to stay current.",
+      "exempt": "You're exempt from contributions for now."
+    },
+    "capacity": {
+      "title": "Remaining investment capacity",
+      "subtitle": "You have {amount} left to invest this year. Make the most of it to grow your stake."
+    },
     "detail": {
       "title": "Your stake",
       "description": "It represents {pct} of {clubName}'s portfolio. It evolves with your contributions and the performance of the holdings.",

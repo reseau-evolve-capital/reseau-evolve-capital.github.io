@@ -13,8 +13,18 @@ import { useTranslations, useLocale } from 'next-intl'
 
 import { useQueryClient } from '@tanstack/react-query'
 
-import { DashboardHero, KPICard, EmptyState, Spinner, SyncBanner, useToast } from '@evolve/ui'
-import { formatRelativeTime } from '@evolve/utils'
+import {
+  DashboardHero,
+  KPICard,
+  ContributionStatusCard,
+  CurrencyAmount,
+  Icon,
+  EmptyState,
+  Spinner,
+  SyncBanner,
+  useToast,
+} from '@evolve/ui'
+import { formatRelativeTime, formatEUR } from '@evolve/utils'
 
 import { type DashboardData } from '@/lib/data/dashboard'
 import { useDashboard } from '@/lib/hooks/useDashboard'
@@ -128,10 +138,13 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
           refreshAriaLabel={t('syncBanner.refreshAria')}
         />
       </div>
+      {/* E1 : le bloc quote-part est mis en avant (bordure accent), comme « valeur nette
+          détenue » des cotisations — info clé au 1er coup d'œil sur mobile. */}
       <DashboardHero
         netMarketValue={data.netMarketValue}
         syncedAt={data.syncedAt}
         onClick={() => setDetailOpen(true)}
+        highlight
         label={t('hero.label')}
         detailLabel={t('hero.viewDetail')}
         accessibleNameTemplate={(amount) => t('hero.aria', { amount })}
@@ -150,13 +163,36 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
           format="eur"
           icon="TrendingUp"
         />
-        <KPICard
+        {/* E4 : statut cotisation explicite (icône + état + message + montant dû) au lieu
+            du « En attente » brut peu parlant. En retard → carte mise en avant (orange). */}
+        <ContributionStatusCard
+          status={data.contribution.status}
           title={t('kpi.contributionStatus')}
-          value={t(`statusValue.${data.contribution.status}`)}
-          format="raw"
-          icon="Calendar"
+          statusLabel={t(`statusValue.${data.contribution.status}`)}
+          message={t(`contributionMessage.${data.contribution.status}`)}
+          amountDueLabel={
+            data.contribution.amountDue > 0 ? formatEUR(data.contribution.amountDue) : null
+          }
         />
       </div>
+
+      {/* E3 : capacité d'investissement restante de l'année (réutilise le calcul de
+          l'attestation) — pousse à investir le maximum. Affiché si le plafond est défini.
+          Mise en avant subtile (bordure accent). */}
+      {data.investment.remaining != null && (
+        <div className="flex flex-col gap-1 rounded-[14px] border border-accent bg-card p-5 shadow-[var(--sh-card)]">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-ter">
+              {t('capacity.title')}
+            </p>
+            <Icon name="TrendingUp" size={20} aria-hidden="true" className="text-accent" />
+          </div>
+          <CurrencyAmount amount={data.investment.remaining} size="lg" />
+          <p className="text-[13px] leading-snug text-text-sec">
+            {t('capacity.subtitle', { amount: formatEUR(data.investment.remaining) })}
+          </p>
+        </div>
+      )}
       <HeroDetailDialog
         open={detailOpen}
         onOpenChange={setDetailOpen}
