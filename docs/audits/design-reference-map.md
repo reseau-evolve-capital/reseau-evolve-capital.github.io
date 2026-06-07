@@ -191,3 +191,31 @@
 - **Dette e2e harness (PRÉ-EXISTANTE, pas une régression du sprint)** : (1) `a11y.spec /portfolio` rouge car le **seed e2e a 0 position** → `getPortfolioData` renvoie null → EmptyState (le `return null` sur 0 ligne pré-date le sprint) ; fix = mocker l'API portfolio dans a11y.spec ou seeder des positions. (2) `auth.spec:37` rouge **en suite** mais **vert en isolation** = contamination cross-spec (toggle de rôle seed). Specs touchées ré-alignées : `access.spec` (modèle B5), `admin.spec` (wording F1). Suite sur **seed propre = 43/45** (2 dettes ci-dessus).
 - **Migrations 029/030/031 local-only** (projet non lié) — à pousser remote au déploiement.
 - **Actions owner** : (1) activer le hook `[auth.hook.send_email]` + secrets Brevo/SEND_EMAIL_HOOK_SECRET en prod (localisation emails) ; (2) DSN Sentry régional ; (3) fournir un asset logo SVG/PNG transparent (note antérieure).
+
+---
+
+## PWA-001 — Système d'installation PWA (worktree `feat/pwa-001-install-banner`, base `main`, 2026-06-07)
+
+Réf visuelle : `REC/standalone-exports/PWA Install Banners (standalone).html` (:8770, light+dark). Spec validée : `docs/superpowers/specs/2026-06-07-pwa-install-banner-design.md` ; plan : `docs/superpowers/plans/2026-06-07-pwa-install-banner.md`.
+
+### Arbitrages vs ticket (validés avec l'owner)
+
+- **Persistance = localStorage (par-appareil)**, PAS Supabase : l'install PWA est par nature liée à un appareil → plus correct + supprime migration/RLS/route/mode d'échec réseau. (Ticket prévoyait `member_pwa_dismiss` + RLS → abandonné.)
+- **Hors-ligne complet** mais **isolé + garde-fous** : SW versionné ; navigations network-first→cache→`offline.html` ; assets cache-first ; données GET en stale-while-revalidate **qui respecte `Cache-Control: no-store`** (portfolio/cotisations/attestation = `no-store` → jamais cachés ; dashboard cachable, fraîcheur via l'indicateur « synchronisé il y a X » existant) ; cache de données **purgé à toute fin de session** (`PwaCacheCleaner` dans le layout `(auth)` + clear immédiat au logout topbar).
+- **Trigger robuste simplifié** : visite≥2 + cooldown (7j/30j/permanent ; Android refusé=3j) + non-standalone + onglet visible & focus 8 s + pas pendant saisie. (Pas de reset-sur-chaque-interaction du ticket → machine d'état plus simple/testable.)
+- **1 composant paramétré** `PwaInstallSheet` (au lieu de 3 variants) + `IosInstallInstructions` (modale Radix 2 étapes, illustrations iPhone/iPad) → `packages/ui` (Storybook + play + axe).
+- **Analytics** : 6 events câblés via le wrapper `trackEvent` existant (no-op aujourd'hui — Cloudflare Web Analytics n'a pas d'API events ; prêts pour un sink V1). Critère #10 « vérifier dans Umami » non atteignable.
+
+### Vérification runtime (build prod isolé, port dédié 3019)
+
+- Manifest `/manifest.webmanifest` servi (`application/manifest+json`, icônes 192/512/maskable + apple-touch-icon 180), `theme-color`, `apple-mobile-web-app-*` OK.
+- **App installable** : Chrome a tiré `beforeinstallprompt` (manifest + SW + icônes OK) et la capture app a fait `preventDefault()` (prompt différé stocké).
+- **SW enregistré + controlling** ; ne casse pas la navigation ; clear du cache de données prouvé (`postMessage('clear-data-cache')` → entrée purgée).
+- 0 erreur console issue du code PWA (les 2 erreurs = CF RUM CORS local pré-existant ; 1 warning = police MADE Tommy Soft gitignorée, pré-existant).
+
+### Dette / suivis PWA
+
+- **E2E auth-dépendant non exécuté dans cette session** (env contendu : un autre serveur occupait :3001, pas de `.env.local` dans le worktree, SW prod-only). Le spec `apps/web/playwright/pwa-install-banner.spec.ts` est écrit + committé, runnable sur **Supabase local seedé (`db-reset`) + :3001 libre** (cf. en-tête du spec). Seams de test guardés (`__PWA_TRIGGER_DELAY_MS__`, `__PWA_FORCE_FOCUS__`) jamais posés en prod.
+- **offline.html** : palette dark uniquement (acceptable V0 ; `prefers-color-scheme` = amélioration future).
+- **Action owner** : logo source idéal = SVG/PNG transparent (les icônes maskables sont générées depuis `logo.jpg` fond noir). Script reproductible : `apps/web/scripts/generate-pwa-icons.mjs`.
+- **Branche non poussée** (worktree isolé) — push/PR sur demande.
