@@ -8,9 +8,6 @@ interface BlogPageProps {
   params: Promise<{
     locale: string
   }>
-  searchParams: Promise<{
-    type?: string
-  }>
 }
 
 export const revalidate = 3600 // Revalidate at most once per hour
@@ -44,25 +41,21 @@ export async function generateMetadata({ params }: BlogPageProps): Promise<Metad
   }
 }
 
-export default async function BlogPage({ params, searchParams }: BlogPageProps) {
+export default async function BlogPage({ params }: BlogPageProps) {
   const { locale } = await params
-  const { type } = await searchParams
 
   // Fetch articles and categories
   const allArticles = await getAllArticles(locale)
   const categories = await getAllCategories(locale)
 
   // Tri par date de publication éditoriale (fallback publishedAt) décroissant.
-  // Newsletters ET articles mélangés.
-  const sortedArticles = [...allArticles].sort((a, b) => {
+  // Newsletters ET articles mélangés. (Vitrine en export statique → pas de filtre
+  // serveur par searchParams ; un filtre par type serait à faire côté client.)
+  const articles = [...allArticles].sort((a, b) => {
     const da = new Date(a.datePublication || a.publishedAt).getTime()
     const db = new Date(b.datePublication || b.publishedAt).getTime()
     return db - da
   })
-
-  // Filtre optionnel ?type=newsletter
-  const articles =
-    type === 'newsletter' ? sortedArticles.filter((a) => a.type === 'newsletter') : sortedArticles
 
   // Translations
   const translations = {
