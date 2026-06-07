@@ -22,6 +22,7 @@ import {
 } from '@evolve/ui'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
+import { clearPwaDataCaches } from '@/lib/pwa/register-sw'
 
 /** Logo de marque servi par l'app (apps/web/public/logo.jpg). */
 const LOGO_SRC = '/logo.jpg'
@@ -110,6 +111,9 @@ export function AppChromeTopbar({
   const supabase = useSupabase()
 
   const handleLogout = async () => {
+    // PWA-001 : purge le cache de données du SW pour ne pas laisser de données financières
+    // en cache sur l'appareil après déconnexion.
+    clearPwaDataCaches()
     await supabase.auth.signOut()
     router.push('/login')
   }
