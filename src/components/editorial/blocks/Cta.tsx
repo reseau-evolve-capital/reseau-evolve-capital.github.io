@@ -13,11 +13,15 @@ export default function Cta({ block, locale }: { block: CtaBloc; locale: string 
   if (!href) return null
 
   const external = isExternalUrl(href)
+  // Cible l'espace membre → on précise « si tu es membre » (un lecteur public n'est pas concerné).
+  const isMemberTarget = block.urlInterne === 'quote-part' || block.urlInterne === 'espace-membre'
+  const memberHint =
+    locale === 'en' ? 'If you are a member of the network' : 'Si tu es membre du réseau'
   const className =
     'inline-flex min-h-[44px] items-center justify-center rounded-md bg-[#FDC70C] px-6 py-3 text-sm font-semibold text-[#231F20] no-underline transition-colors hover:bg-[#e6b40a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#231F20]'
 
   return (
-    <div className="my-8 flex justify-center">
+    <div className="my-8 flex flex-col items-center gap-2">
       {external ? (
         <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
           {block.libelle}
@@ -27,6 +31,7 @@ export default function Cta({ block, locale }: { block: CtaBloc; locale: string 
           {block.libelle}
         </Link>
       )}
+      {isMemberTarget ? <p className="m-0 text-xs text-gray-500">{memberHint}</p> : null}
     </div>
   )
 }
