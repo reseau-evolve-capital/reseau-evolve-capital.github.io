@@ -909,6 +909,7 @@
   "pwa": {
     "badge": "Web app · no App Store",
     "dismiss": "Later",
+    "close": "Close",
     "androidChrome": {
       "headline": "Keep it within reach.",
       "subline": "Install Evolve Capital on your home screen. Open your share in one tap, without the browser.",

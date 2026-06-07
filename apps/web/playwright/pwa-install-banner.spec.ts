@@ -156,7 +156,8 @@ test.describe('android chrome', () => {
     await ensureFocus(page)
 
     await expect(page.getByText('Garde-la sous la main.')).toBeVisible({ timeout: 5000 })
-    await page.getByRole('button', { name: 'Plus tard' }).click()
+    // Le bouton ghost « Plus tard » (le X porte un libellé distinct « Fermer »).
+    await page.getByRole('button', { name: 'Plus tard', exact: true }).click()
     await expect(page.getByText('Garde-la sous la main.')).toHaveCount(0)
 
     const state = await page.evaluate(() =>
@@ -198,9 +199,9 @@ test.describe('ios safari', () => {
     await expect(page.getByText('Ta part. Toujours avec toi.')).toBeVisible({ timeout: 5000 })
     await page.getByRole('button', { name: 'Voir comment' }).click()
 
-    // La modale (Radix Dialog) affiche le titre de l'étape 1.
+    // La modale (Radix Dialog) affiche le titre (heading) de l'étape 1.
     const dialog = page.getByRole('dialog')
-    await expect(dialog.getByText(/Partager/i)).toBeVisible()
+    await expect(dialog.getByRole('heading', { name: /Partager/i })).toBeVisible()
 
     await page.keyboard.press('Escape')
     await expect(page.getByText('Ta part. Toujours avec toi.')).toHaveCount(0)

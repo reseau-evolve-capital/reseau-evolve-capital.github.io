@@ -909,6 +909,7 @@
   "pwa": {
     "badge": "Web app · sans App Store",
     "dismiss": "Plus tard",
+    "close": "Fermer",
     "androidChrome": {
       "headline": "Garde-la sous la main.",
       "subline": "Installe Evolve Capital sur ton écran d'accueil. Ouvre ta part d'un geste, sans passer par le navigateur.",
