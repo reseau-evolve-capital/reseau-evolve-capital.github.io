@@ -128,9 +128,15 @@
       "aria": "Étapes de l'onboarding",
       "statusCurrent": "En cours",
       "statusUpcoming": "À venir",
-      "profile": { "label": "Profil minimal" },
-      "consents": { "label": "Consentements" },
-      "tour": { "label": "Tour guidé" }
+      "profile": {
+        "label": "Profil minimal"
+      },
+      "consents": {
+        "label": "Consentements"
+      },
+      "tour": {
+        "label": "Tour guidé"
+      }
     },
     "timeCard": {
       "eyebrow": "En moins de",
@@ -141,8 +147,8 @@
       "lead": "« On a construit Evolve pour",
       "highlight": "rendre visible",
       "tail": "ce que les clubs d'investissement font depuis des décennies. »",
-      "author": "Louis Martin",
-      "role": "Co-fondateur · Cercle Arago"
+      "author": "Lionel ZOCLANCLOUNON",
+      "role": "Co-fondateur · Réseau Evolve Capital"
     },
     "step1": {
       "eyebrow": "Étape 01 · Profil minimal",
@@ -588,7 +594,8 @@
       "preview": {
         "title": "Aperçu",
         "iframeTitle": "Aperçu de la newsletter",
-        "note": "Rendu indicatif. Le rendu final peut varier selon le client de messagerie."
+        "note": "Rendu indicatif. Le rendu final peut varier selon le client de messagerie.",
+        "error": "Impossible de charger l'aperçu. Vérifie que le CMS est accessible, puis réessaie."
       },
       "test": {
         "title": "1. Envoyer un test",
