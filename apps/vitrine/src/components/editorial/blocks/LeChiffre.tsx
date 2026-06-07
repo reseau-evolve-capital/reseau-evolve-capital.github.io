@@ -34,7 +34,7 @@ export default function LeChiffre({ block }: { block: LeChiffreBloc }) {
         <figcaption className="mt-3 text-center text-sm text-gray-600">
           {block.legende ? <span>{block.legende}</span> : null}
           {block.source ? (
-            <span className="mt-1 block text-xs italic text-gray-500">{block.source}</span>
+            <span className="mt-1 block text-xs italic text-gray-700">{block.source}</span>
           ) : null}
         </figcaption>
       )}
