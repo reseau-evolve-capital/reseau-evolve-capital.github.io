@@ -7,6 +7,7 @@ export default {
       [
         'web',
         'vitrine',
+        'cms',
         'ui',
         'design-system',
         'data',
