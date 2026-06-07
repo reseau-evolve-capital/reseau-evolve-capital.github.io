@@ -90,6 +90,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                 isStaff={isStaff}
                 syncLabel={syncLabel}
                 dateLabel={dateLabel}
+                clubActif={clubActif}
               />
               <main className="flex-1 px-4 pb-24 pt-6 md:px-8 md:pb-10 md:pt-8">
                 <div className="mx-auto w-full max-w-[1280px]">{children}</div>
