@@ -14,7 +14,7 @@
 
 services:
   strapi:
-    image: ghcr.io/lionelzoc/rec-cms:latest
+    image: ghcr.io/reseau-evolve-capital/rec-cms:latest
     container_name: strapi
     restart: always
     env_file: .env

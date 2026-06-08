@@ -25,7 +25,7 @@ consommera ensuite ce Strapi distant au build.
 - **A — Image & build (CI only).** Multi-stage `apps/cms/Dockerfile.production` (node:22-alpine,
   yarn, non-root, `NODE_OPTIONS=--max-old-space-size=512`). CI `.github/workflows/deploy-cms.yml`
   sur push `main` filtré `apps/cms/**`, auth GHCR autonome (`GITHUB_TOKEN`), `platforms:
-linux/amd64`, tags `:latest` + `:${{ github.sha }}`, cache GHA. Image **`ghcr.io/lionelzoc/rec-cms`**.
+linux/amd64`, tags `:latest` + `:${{ github.sha }}`, cache GHA. Image **`ghcr.io/reseau-evolve-capital/rec-cms`**.
 - **B — Compose prod.** `apps/cms/docker-compose.production.yml`, projet `-p strapi`. Service
   `strapi` (image GHCR, **pas de `build:`**, pas de port public, réseaux `[web, internal]`, labels
   Traefik host `strapi.reseauevolvecapital.com` / resolver `le` / port 1337, volume `strapi-uploads`)

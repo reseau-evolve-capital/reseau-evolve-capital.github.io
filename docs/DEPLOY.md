@@ -230,5 +230,5 @@ Obligatoires : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEX
 
 - `ci.yml` : lint + typecheck + test + build `apps/web` sur PR → `main`. Gate qualité. ⚠ **Ne couvre PAS les tests Deno ni e2e** (les lancer à part, cf. `docs/qa/README.md`). Ne couvre **pas** `apps/cms` (hors workspace pnpm).
 - `deploy-vitrine.yml` : **RÉACTIVÉ** (push `main` `apps/vitrine/**` + `repository_dispatch strapi-content-update` + manuel) avec **garde anti-blog-vide** ; consomme le Strapi distant. Bascule de la source Pages → §0.
-- `deploy-cms.yml` : build multi-stage `apps/cms` (node:22, yarn, `linux/amd64`) → push GHCR `ghcr.io/lionelzoc/rec-cms:{latest,<sha>}` sur push `main` (`apps/cms/**`). Le droplet **pull** (jamais de build sur la box). Cf. `docs/infra/RUNBOOK-cms-digitalocean.md`.
+- `deploy-cms.yml` : build multi-stage `apps/cms` (node:22, yarn, `linux/amd64`) → push GHCR `ghcr.io/reseau-evolve-capital/rec-cms:{latest,<sha>}` sur push `main` (`apps/cms/**`). Le droplet **pull** (jamais de build sur la box). Cf. `docs/infra/RUNBOOK-cms-digitalocean.md`.
 - `lighthouse.yml` : Lighthouse CI sur pages publiques d'`apps/web`.
