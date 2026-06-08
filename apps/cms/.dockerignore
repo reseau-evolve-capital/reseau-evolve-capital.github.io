@@ -1,6 +1,39 @@
-.tmp/
-.cache/
-.git/
-build/
-node_modules/
-data/
+# Contexte de build = apps/cms. On exclut tout ce qui est lourd, secret ou inutile à
+# l'image. NE PAS exclure : config/, src/, package.json, yarn.lock, public/robots.txt,
+# favicon.png, tsconfig.json, tailwind/postcss, database/migrations, types/.
+
+# Dépendances & sorties de build (régénérées dans l'image)
+node_modules
+dist
+build
+.strapi
+.cache
+.tmp
+
+# Secrets & env (JAMAIS dans l'image — montés via env_file/.env au runtime)
+.env
+.env.*
+!.env.production.example
+
+# Médias locaux (servis depuis un volume nommé en prod, pas depuis l'image)
+public/uploads
+
+# Dumps / archives lourds présents dans le dossier (ex. export-local-28.tar.gz ~9.6 Mo)
+*.tar.gz
+*.gz
+*.zip
+database/*.sql
+*.sqlite
+*.sqlite3
+
+# Métadonnées & VCS
+.git
+.github
+.strapi-updater.json
+.strapi-cloud.json
+*.log
+transfer_*.log
+
+# Docs (inutiles au runtime Strapi)
+README*.md
+CLAUDE.md

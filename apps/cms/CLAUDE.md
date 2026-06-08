@@ -32,8 +32,8 @@ Le fichier `apps/cms/docker-compose.yml` déclare **`name: content`** (≠ nom d
 
 `next build` lance `generateStaticParams` côté vitrine → si **Strapi ne tourne pas**, les `try/catch` de `api.ts` renvoient `[]` et **le blog se build vide, sans erreur**.
 
-- **Le deploy se fait en local**, Strapi démarré, **pas en CI** (le conteneur Strapi ne tourne pas sur GitHub Actions).
-- ⚠ Le workflow `.github/workflows/deploy-vitrine.yml` build **sans** Strapi → il publierait un **blog vide** sur merge `main`. Le garder **dormant** tant que Strapi n'est pas hébergé sur un serveur distant.
+- **En local**, le deploy manuel se fait Strapi démarré : `make vitrine-deploy`.
+- ✅ **Depuis le déploiement DigitalOcean**, `.github/workflows/deploy-vitrine.yml` est **réactivé** (push `main` + `repository_dispatch` + manuel) et consomme le Strapi distant `strapi.reseauevolvecapital.com`. Une **garde anti-blog-vide** (étape « Vérifier Strapi ») échoue le job si l'API ne renvoie aucun article → le site en ligne n'est jamais écrasé par un blog vide.
 
 ## Démarrer Strapi en local
 
@@ -82,6 +82,25 @@ Les variables de consommation côté vitrine (`NEXT_PUBLIC_STRAPI_API_URL`, `NEX
 
 Le `package.json` racine du monorepo déclare `packageManager: pnpm`, donc `yarn` lancé dans `apps/cms/` serait bloqué par corepack (« This project is configured to use pnpm »). Pour maintenir yarn ici, le `package.json` de `apps/cms` épingle `"packageManager": "yarn@1.22.22"` — corepack prend le champ le plus proche du cwd. **Ne pas retirer ce champ**, sinon `make strapi-dev` / `yarn …` cassent dans `apps/cms`.
 
-## Roadmap : Strapi distant
+## Déploiement : Strapi distant (DigitalOcean derrière Traefik)
 
-À moyen terme, héberger Strapi sur un **serveur distant** (DigitalOcean). Le build CI (`deploy-vitrine.yml`) redevient alors viable en pointant `NEXT_PUBLIC_STRAPI_API_URL` sur l'instance distante. `apps/cms/docker-compose.prod.yml` (multi-stage `Dockerfile.prod`) est le point de départ self-host, **mais** il relance un `strapiDB` postgres local → à réconcilier avec le choix de DB en production avant usage.
+Strapi est déployé sur un **droplet DigitalOcean** (Ubuntu, derrière un Traefik v3 partagé)
+sur le domaine **`strapi.reseauevolvecapital.com`**. Artefacts dans ce dossier :
+
+- **`Dockerfile.production`** — build multi-stage `node:22-alpine` (yarn), **construit en CI**,
+  jamais sur le droplet (2 Go → OOM). Contexte de build = `apps/cms` (app autonome).
+- **`docker-compose.production.yml`** — projet compose isolé `-p strapi` : service `strapi`
+  (image GHCR `ghcr.io/lionelzoc/rec-cms:latest`, labels Traefik, réseaux `web`+`internal`,
+  volume `strapi-uploads`) + `strapi-db` (`postgres:16-alpine`, réseau `internal` only,
+  volume `strapi-db-data`). **PROPRE base Postgres** (≠ la DB locale de dev).
+- **`.env.production.example`** — modèle des secrets + DB + `URL` + `IS_PROXIED`.
+- **`scripts/deploy-production.sh`** (pull + up sur le droplet, jamais `down -v`) et
+  **`scripts/backup-db.sh`** (pg_dump nocturne, rétention).
+- CI : **`.github/workflows/deploy-cms.yml`** build+push l'image sur GHCR (push `main`,
+  `paths: apps/cms/**`).
+- Médias : provider **local** + volume nommé `strapi-uploads`. Une fois `URL` posée, les
+  URLs `/uploads/...` deviennent publiques (`https://strapi.reseauevolvecapital.com/uploads/...`)
+  → la vitrine statique les sert correctement. (DO Spaces / S3 = upgrade DIFFÉRÉ, single-instance.)
+
+**Runbook droplet complet (DNS, secrets, migration contenu, TLS, smoke test) :**
+`docs/infra/RUNBOOK-cms-digitalocean.md`.

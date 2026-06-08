@@ -122,6 +122,8 @@ coverage
 ############################
 
 .env
+# Modèle de prod versionné (négation explicite : la racine .gitignore ignore `.env*`)
+!.env.production.example
 license.txt
 exports
 .strapi
