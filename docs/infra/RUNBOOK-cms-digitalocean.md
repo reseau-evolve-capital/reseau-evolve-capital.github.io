@@ -153,6 +153,34 @@ docker volume ls | grep strapi   # confirmer strapi_strapi-uploads & strapi_stra
 > les médias **re-uploadés** (présents dans `public/uploads`) sont migrés. Re-uploader le reste
 > via l'admin si besoin.
 
+### 5-bis. Migration quand Strapi a DÉJÀ démarré → `strapi transfer`
+
+Si l'instance distante a déjà booté (schéma créé, admin enregistré), **ne pas** faire de restore
+SQL brut (conflits + n'amène pas les fichiers médias). Utiliser le transfert natif Strapi, qui
+pousse **contenu + médias** depuis le local par-dessus le distant. Versions identiques requises
+(5.12.6 des deux côtés). ⚠ Le transfert **REMPLACE** les données du distant (efface d'abord).
+
+1. **Sur le distant (admin)** : Settings → Global Settings → **Transfer Tokens** → Create →
+   type **Full access** → copier le token.
+2. **Sur le poste de dev** (DB locale `strapiDB` démarrée) :
+
+   ```bash
+   cd apps/cms
+   . "${NVM_DIR:-$HOME/.nvm}/nvm.sh"; nvm use   # Node 22
+   yarn strapi transfer \
+     --to https://strapi.reseauevolvecapital.com/admin \
+     --to-token '<TRANSFER_TOKEN_DU_DISTANT>'
+   # répondre "yes" : les données du distant seront remplacées
+   ```
+
+3. **Après transfert** : les comptes admin sont devenus ceux du local. Se reconnecter avec un
+   identifiant admin **local** ; si le mot de passe est inconnu, le réinitialiser sur le droplet :
+
+   ```bash
+   docker exec -it strapi yarn strapi admin:reset-user-password \
+     --email <email-admin-local> --password '<nouveau>'
+   ```
+
 ## 6. Premier déploiement
 
 ```bash
@@ -231,6 +259,70 @@ ne renvoie aucun article → ne publie jamais un blog vide par-dessus le live).
 - Pour rebuild le blog **quand le contenu change** (sans commit) : câbler un **webhook Strapi**
   (Settings → Webhooks) vers un `repository_dispatch` GitHub de type `strapi-content-update`
   (suivi non bloquant — à faire après le premier déploiement).
+
+---
+
+## 12. Mise à jour & maintenance (revenir plus tard)
+
+### Mettre à jour Strapi après un changement de code `apps/cms/**`
+
+1. Modifier `apps/cms/**`, ouvrir une PR, **merger sur `main`**.
+2. `deploy-cms.yml` reconstruit l'image et la pousse sur GHCR **automatiquement** (trigger push
+   `main`, paths `apps/cms/**`). Vérifier la run verte (onglet **Actions**).
+3. Sur le droplet, **tirer la nouvelle image** :
+   ```bash
+   cd /opt/strapi && ./deploy-production.sh
+   ```
+   `up -d` ne recrée **que** le conteneur `strapi` (nouvelle image) ; `strapi-db` reste intact.
+   Les volumes (DB + médias) **persistent** — l'image ne porte que le code, jamais les données.
+
+> Le build se fait **en CI**, jamais sur le droplet (2 Go → OOM). Le droplet ne fait que `pull`.
+
+### Changements de modèle (content-types)
+
+Strapi synchronise le schéma à la DB **au boot** → le nouveau conteneur migre automatiquement.
+Avant un changement risqué, sauvegarder d'abord : `./backup-db.sh`.
+
+### Opérations courantes
+
+```bash
+C="docker compose -p strapi -f docker-compose.production.yml"
+$C ps                      # état des services
+$C logs --tail=80 strapi   # logs récents (rend la main)
+$C logs -f strapi          # suivre en direct — Ctrl-C pour sortir (n'ARRÊTE PAS Strapi)
+$C restart strapi          # redémarrer
+$C up -d                   # appliquer un changement de .env / compose
+$C down                    # arrêter   (JAMAIS -v → supprimerait DB + médias)
+```
+
+> `logs -f` **suit** le flux et ne rend pas la main : c'est normal. `Ctrl-C` détache sans rien
+> arrêter — le conteneur tourne en détaché (`up -d` + `restart: always`) et survit au logout SSH
+> et au reboot du droplet.
+
+### Hygiène disque (box 25 Go)
+
+Les anciennes images s'accumulent à chaque mise à jour. Périodiquement :
+
+```bash
+docker image prune -f
+```
+
+### App membre (`apps/web` sur Vercel) ↔ Strapi
+
+`apps/web` lit les newsletters publiées **côté serveur** (routes API `app/api/newsletter/*` →
+`lib/strapi-editorial.ts`) pour l'aperçu et l'envoi Brevo.
+
+- **À configurer sur Vercel** : `NEXT_PUBLIC_STRAPI_API_URL=https://strapi.reseauevolvecapital.com/api`
+  (sinon l'aperçu lève « NEXT_PUBLIC_STRAPI_API_URL non configurée »). `NEXT_PUBLIC_STRAPI_API_TOKEN`
+  reste optionnel (le rôle Public sert le publié).
+- **CORS** : **inutile** d'ajouter `app.reseauevolvecapital.com` à `CMS_CORS_ORIGINS`. Ces appels
+  sont **serveur-à-serveur** (pas de fetch navigateur cross-origin) et les images d'aperçu se
+  chargent via `<img>` (non soumis à CORS). `CMS_CORS_ORIGINS` ne compte que pour un éventuel appel
+  **navigateur** direct vers Strapi.
+
+### Rollback
+
+Voir la section **Rollback** ci-dessous (réépingler un tag `:<sha>` connu-bon + restaurer un dump).
 
 ---
 
