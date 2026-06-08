@@ -1,14 +1,26 @@
 name: Deploy Vitrine (GitHub Pages)
 
-# ⚠ DORMANT — déclenchement MANUEL uniquement.
-# Le blog vitrine est généré en SSG depuis un Strapi qui tourne EN LOCAL
-# (DB + assets sur Supabase). En CI, Strapi n'est pas disponible → le blog se
-# builderait VIDE (les try/catch de src/lib/api.ts renvoient []). Tant que
-# Strapi n'est pas hébergé sur un serveur distant, le déploiement se fait en
-# local : `make vitrine-deploy` (build Strapi up → push out/ sur la branche
-# gh-pages). NE PAS réactiver le trigger push sur main sans Strapi distant.
-# Voir apps/vitrine/CLAUDE.md.
+# Le blog vitrine est généré en SSG en consommant l'API Strapi DISTANTE
+# (strapi.reseauevolvecapital.com, hébergée sur DigitalOcean — cf. deploy-cms.yml).
+#
+# ⚠ Garde anti-blog-vide : si Strapi est injoignable, les try/catch de src/lib/api.ts
+# renverraient [] → blog VIDE publié par-dessus le live. L'étape « Vérifier Strapi »
+# ci-dessous ÉCHOUE le job avant tout build si l'API ne renvoie aucun article → le
+# site en ligne est préservé. Voir apps/vitrine/CLAUDE.md.
+#
+# Déclencheurs :
+#   - push main (changements code vitrine) ;
+#   - repository_dispatch « strapi-content-update » : à câbler depuis un webhook
+#     Strapi pour rebuild le blog quand le CONTENU change (sans commit) ;
+#   - workflow_dispatch (manuel).
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/vitrine/**'
+      - '.github/workflows/deploy-vitrine.yml'
+  repository_dispatch:
+    types: [strapi-content-update]
   workflow_dispatch:
 
 jobs:
@@ -39,9 +51,29 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # GARDE anti-blog-vide : on échoue le job AVANT le build si Strapi est injoignable
+      # ou ne renvoie aucun article — pour ne JAMAIS publier un blog vide par-dessus le live.
+      # Override possible de l'URL via la variable de dépôt NEXT_PUBLIC_STRAPI_API_URL.
+      - name: Vérifier que Strapi répond (garde anti-blog-vide)
+        env:
+          STRAPI_API_URL: ${{ vars.NEXT_PUBLIC_STRAPI_API_URL || 'https://strapi.reseauevolvecapital.com/api' }}
+        run: |
+          set -euo pipefail
+          echo "Vérification de ${STRAPI_API_URL}/articles…"
+          # -g/--globoff : sans ça, curl interprète les crochets [ ] de l'URL comme un glob → erreur.
+          count=$(curl -fsS -g --max-time 30 "${STRAPI_API_URL}/articles?pagination[pageSize]=1" | jq '.data | length')
+          if [ "${count:-0}" -lt 1 ]; then
+            echo "::error::Strapi ne renvoie aucun article (ou est injoignable) — déploiement annulé pour ne pas publier un blog vide."
+            exit 1
+          fi
+          echo "OK — Strapi accessible, ${count} article(s) visible(s)."
+
       - name: Build vitrine
         working-directory: apps/vitrine
         env:
+          # API Strapi distante consommée au build (SSG). Override via variables de dépôt.
+          NEXT_PUBLIC_STRAPI_API_URL: ${{ vars.NEXT_PUBLIC_STRAPI_API_URL || 'https://strapi.reseauevolvecapital.com/api' }}
+          NEXT_PUBLIC_STRAPI_URL: ${{ vars.NEXT_PUBLIC_STRAPI_URL || 'https://strapi.reseauevolvecapital.com' }}
           NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN }}
           NEXT_PUBLIC_APP_SCRIPT_URL: ${{ secrets.NEXT_PUBLIC_APP_SCRIPT_URL }}
           NEXT_PUBLIC_CONTACT_FORM_URL: ${{ secrets.NEXT_PUBLIC_CONTACT_FORM_URL }}
