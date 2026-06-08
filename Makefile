@@ -3,7 +3,7 @@
         docker-build docker-up docker-down \
         vitrine-export vitrine-deploy strapi-dev strapi-seed strapi-env strapi-build strapi-up strapi-down strapi-logs strapi-restart strapi-admin strapi-init strapi-clean \
         strapi-db-up strapi-db-down strapi-db-shell strapi-db-restore \
-        strapi-prod-build strapi-prod-up strapi-prod-down strapi-prod-logs strapi-prod-restart \
+        strapi-prod-pull strapi-prod-up strapi-prod-down strapi-prod-logs strapi-prod-restart \
         clean help
 
 ## Day-to-day
@@ -82,7 +82,7 @@ docker-down:
 VITRINE_DIR         = apps/vitrine
 STRAPI_DIR          = apps/cms
 STRAPI_COMPOSE      = cd $(STRAPI_DIR) && docker compose
-STRAPI_COMPOSE_PROD = cd $(STRAPI_DIR) && docker compose -f docker-compose.prod.yml
+STRAPI_COMPOSE_PROD = cd $(STRAPI_DIR) && docker compose -p strapi -f docker-compose.production.yml
 
 # Build + export statique (out/, .nojekyll, CNAME) — Strapi DOIT tourner sinon blog vide
 vitrine-export:
@@ -147,11 +147,14 @@ strapi-db-shell:
 strapi-db-restore:
 	cd $(STRAPI_DIR) && bash scripts/restore-cluster-dump.sh "$(abspath $(BACKUP))"
 
-## Strapi prod (serveur distant — FUTUR ; compose.prod relance un postgres local → réconcilier avec Supabase)
-strapi-prod-build:
-	$(STRAPI_COMPOSE_PROD) build
+## Strapi prod (droplet DigitalOcean derrière Traefik — image GHCR pré-buildée en CI).
+## ⚠ À exécuter SUR LE DROPLET (exige .env, réseau `web` Traefik, login GHCR si image privée).
+## L'image n'est PAS buildée ici → `strapi-prod-pull` tire la dernière depuis GHCR.
+## Cf. docs/infra/RUNBOOK-cms-digitalocean.md
+strapi-prod-pull:
+	$(STRAPI_COMPOSE_PROD) pull
 
-strapi-prod-up:
+strapi-prod-up: strapi-prod-pull
 	$(STRAPI_COMPOSE_PROD) up -d
 
 strapi-prod-down:
