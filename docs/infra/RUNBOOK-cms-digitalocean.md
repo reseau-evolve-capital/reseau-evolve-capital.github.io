@@ -80,6 +80,7 @@ scp apps/cms/docker-compose.production.yml   root@<DROPLET>:/opt/strapi/
 scp apps/cms/.env.production.example          root@<DROPLET>:/opt/strapi/
 scp apps/cms/scripts/deploy-production.sh     root@<DROPLET>:/opt/strapi/
 scp apps/cms/scripts/backup-db.sh             root@<DROPLET>:/opt/strapi/
+scp apps/cms/scripts/backup-uploads.sh        root@<DROPLET>:/opt/strapi/
 ```
 
 Sur le droplet, créer le `.env` réel (gitignoré, jamais commité) :
@@ -153,27 +154,47 @@ docker volume ls | grep strapi   # confirmer strapi_strapi-uploads & strapi_stra
 > les médias **re-uploadés** (présents dans `public/uploads`) sont migrés. Re-uploader le reste
 > via l'admin si besoin.
 
-### 5-bis. Migration quand Strapi a DÉJÀ démarré → `strapi transfer`
+### 5-bis. Migration quand Strapi a DÉJÀ démarré → `strapi transfer --exclude files` + médias
 
 Si l'instance distante a déjà booté (schéma créé, admin enregistré), **ne pas** faire de restore
-SQL brut (conflits + n'amène pas les fichiers médias). Utiliser le transfert natif Strapi, qui
-pousse **contenu + médias** depuis le local par-dessus le distant. Versions identiques requises
-(5.12.6 des deux côtés). ⚠ Le transfert **REMPLACE** les données du distant (efface d'abord).
+SQL brut (conflits). On migre le **contenu** via `strapi transfer`, puis on copie les **médias** à part.
+
+> ⚠ **Gotcha validé en prod** : un `strapi transfer` complet **échoue** sur cette stack
+> (`[FATAL] restore failed … backup folder for the assets could not be created`). Cause : le
+> dossier `uploads` est un **point de montage de volume Docker** ; l'étape de sauvegarde des assets
+> tente de le renommer/remplacer, ce qui est impossible sur un mountpoint — **indépendamment des
+> permissions** (un `chown`/`chmod` n'y change rien). On exclut donc les fichiers du transfert
+> (`--exclude files`) et on copie les binaires médias séparément dans le volume.
+
+Versions identiques requises (5.12.6 des deux côtés). ⚠ Le transfert **REMPLACE** le contenu du distant.
 
 1. **Sur le distant (admin)** : Settings → Global Settings → **Transfer Tokens** → Create →
    type **Full access** → copier le token.
-2. **Sur le poste de dev** (DB locale `strapiDB` démarrée) :
+
+2. **Contenu** — sur le poste de dev (DB locale `strapiDB` démarrée) :
 
    ```bash
    cd apps/cms
    . "${NVM_DIR:-$HOME/.nvm}/nvm.sh"; nvm use   # Node 22
    yarn strapi transfer \
      --to https://strapi.reseauevolvecapital.com/admin \
-     --to-token '<TRANSFER_TOKEN_DU_DISTANT>'
-   # répondre "yes" : les données du distant seront remplacées
+     --to-token '<TRANSFER_TOKEN_DU_DISTANT>' \
+     --exclude files            # ← saute l'étape assets (qui casse sur volume monté)
    ```
 
-3. **Après transfert** : les comptes admin sont devenus ceux du local. Se reconnecter avec un
+3. **Médias** — copier les binaires dans le volume nommé :
+
+   ```bash
+   # poste de dev :
+   tar czf /tmp/uploads.tgz -C apps/cms/public/uploads .
+   scp /tmp/uploads.tgz root@<DROPLET>:/opt/strapi/
+   # droplet :
+   docker run --rm -v strapi_strapi-uploads:/v -v /opt/strapi:/src alpine \
+     sh -c 'cd /v && tar xzf /src/uploads.tgz && chown -R 1000:1000 /v'
+   docker compose -p strapi -f docker-compose.production.yml restart strapi
+   ```
+
+4. **Après migration** : les comptes admin sont devenus ceux du local. Se reconnecter avec un
    identifiant admin **local** ; si le mot de passe est inconnu, le réinitialiser sur le droplet :
 
    ```bash
@@ -237,15 +258,22 @@ docker stats --no-stream
 
 ## 10. Sauvegardes
 
+Deux scripts (à déposer dans `/opt/strapi/`, comme le compose) — **`backup-db.sh`** (pg_dump) et
+**`backup-uploads.sh`** (archive le volume médias `strapi_strapi-uploads`). Chacun garde 7 jours.
+
 ```bash
-# Cron quotidien (pg_dump + rétention 7 j) :
+# Récupérer le script médias sur le droplet (repo public) :
+curl -fsSL https://raw.githubusercontent.com/reseau-evolve-capital/reseau-evolve-capital.github.io/main/apps/cms/scripts/backup-uploads.sh -o /opt/strapi/backup-uploads.sh
+chmod +x /opt/strapi/backup-uploads.sh
+
+# Cron quotidien (DB + médias) :
 crontab -e
 # Ajouter :
-0 3 * * * cd /opt/strapi && ./backup-db.sh >> /var/log/strapi-backup.log 2>&1
+0 3 * * * cd /opt/strapi && ./backup-db.sh && ./backup-uploads.sh >> /var/log/strapi-backup.log 2>&1
 ```
 
-Activer en plus les **DigitalOcean Droplet Backups** (panneau DO) — couverture off-droplet de
-la DB **et** du volume médias.
+Activer **en plus** les **DigitalOcean Droplet Backups** (panneau DO) — couverture off-droplet,
+hebdomadaire, de la DB **et** du volume médias (filet de sécurité complémentaire aux dumps quotidiens).
 
 ## 11. Réactiver le déploiement de la vitrine
 
