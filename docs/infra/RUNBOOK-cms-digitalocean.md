@@ -15,7 +15,7 @@
 
 | Sujet                        | Décision                                                                                                                                                 |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Nom d'image GHCR             | **`ghcr.io/lionelzoc/rec-cms`** (`:latest` + `:<sha>`)                                                                                                   |
+| Nom d'image GHCR             | **`ghcr.io/reseau-evolve-capital/rec-cms`** (`:latest` + `:<sha>`)                                                                                       |
 | Accès GHCR depuis le droplet | **Image privée + `docker login` par PAT** (`read:packages`)                                                                                              |
 | Base de données              | **Postgres dédié** (`postgres:16-alpine`), volume `strapi_strapi-db-data`                                                                                |
 | Médias                       | **Volume local** `strapi_strapi-uploads` ; DO Spaces/S3 = upgrade **différé**                                                                            |
@@ -241,7 +241,7 @@ ne renvoie aucun article → ne publie jamais un blog vide par-dessus le live).
 
   ```bash
   cd /opt/strapi
-  # éditer docker-compose.production.yml → image: ghcr.io/lionelzoc/rec-cms:<sha_precedent>
+  # éditer docker-compose.production.yml → image: ghcr.io/reseau-evolve-capital/rec-cms:<sha_precedent>
   docker compose -p strapi -f docker-compose.production.yml up -d
   ```
 

@@ -90,7 +90,7 @@ sur le domaine **`strapi.reseauevolvecapital.com`**. Artefacts dans ce dossier :
 - **`Dockerfile.production`** — build multi-stage `node:22-alpine` (yarn), **construit en CI**,
   jamais sur le droplet (2 Go → OOM). Contexte de build = `apps/cms` (app autonome).
 - **`docker-compose.production.yml`** — projet compose isolé `-p strapi` : service `strapi`
-  (image GHCR `ghcr.io/lionelzoc/rec-cms:latest`, labels Traefik, réseaux `web`+`internal`,
+  (image GHCR `ghcr.io/reseau-evolve-capital/rec-cms:latest`, labels Traefik, réseaux `web`+`internal`,
   volume `strapi-uploads`) + `strapi-db` (`postgres:16-alpine`, réseau `internal` only,
   volume `strapi-db-data`). **PROPRE base Postgres** (≠ la DB locale de dev).
 - **`.env.production.example`** — modèle des secrets + DB + `URL` + `IS_PROXIED`.

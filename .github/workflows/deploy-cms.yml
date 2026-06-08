@@ -46,7 +46,7 @@ jobs:
           platforms: linux/amd64 # le droplet est amd64
           push: true
           tags: |
-            ghcr.io/lionelzoc/rec-cms:latest
-            ghcr.io/lionelzoc/rec-cms:${{ github.sha }}
+            ghcr.io/reseau-evolve-capital/rec-cms:latest
+            ghcr.io/reseau-evolve-capital/rec-cms:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
