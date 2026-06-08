@@ -1,0 +1,68 @@
+# Compose de PRODUCTION pour Strapi (apps/cms) — destiné au droplet DigitalOcean
+# derrière le proxy Traefik existant (/opt/proxy). NE PAS l'utiliser en local.
+#
+# Lancement sur le droplet (depuis /opt/strapi) :
+#   docker compose -p strapi -f docker-compose.production.yml up -d
+#
+# L'image est PRÉ-CONSTRUITE en CI et tirée depuis GHCR — jamais buildée ici
+# (le build de l'admin Strapi part en OOM sur 2 Go de RAM).
+#
+# ⚠ Ne JAMAIS faire `docker compose down -v` (supprime les volumes → perte DB + médias).
+# ⚠ Projet compose ISOLÉ `-p strapi` → ne touche ni LibreChat ni Traefik.
+#
+# Les `${VAR}` ci-dessous sont interpolées par docker compose depuis le .env du dossier.
+
+services:
+  strapi:
+    image: ghcr.io/lionelzoc/rec-cms:latest
+    container_name: strapi
+    restart: always
+    env_file: .env
+    depends_on:
+      strapi-db:
+        condition: service_healthy
+    volumes:
+      # Médias persistants (provider d'upload « local »). Survit aux redéploiements/màj d'image.
+      - strapi-uploads:/opt/app/public/uploads
+    networks:
+      - web # réseau externe partagé avec Traefik (découverte + TLS Let's Encrypt)
+      - internal # réseau privé strapi <-> db
+    # Pas de `ports:` — Traefik joint le conteneur via le réseau `web` (port interne 1337).
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=web
+      - traefik.http.routers.strapi.rule=Host(`strapi.reseauevolvecapital.com`)
+      - traefik.http.routers.strapi.entrypoints=websecure
+      - traefik.http.routers.strapi.tls.certresolver=le
+      - traefik.http.services.strapi.loadbalancer.server.port=1337
+    # RAM serrée (2 Go + 2 Go swap, partagés avec LibreChat). Décommenter pour borner :
+    # mem_limit: 900m
+
+  strapi-db:
+    image: postgres:16-alpine
+    container_name: strapi-db
+    restart: always
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-strapi}
+      POSTGRES_USER: ${DATABASE_USERNAME:-strapi}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD requis dans .env}
+    volumes:
+      - strapi-db-data:/var/lib/postgresql/data
+    networks:
+      - internal # JAMAIS sur `web` : la DB n'est pas exposée à Traefik/Internet
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DATABASE_USERNAME:-strapi} -d ${DATABASE_NAME:-strapi}']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # mem_limit: 400m
+
+volumes:
+  strapi-uploads:
+  strapi-db-data:
+
+networks:
+  web:
+    external: true # créé par le projet Traefik (/opt/proxy) — ne pas recréer ici
+  internal:
+    driver: bridge

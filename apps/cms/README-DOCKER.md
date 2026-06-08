@@ -55,32 +55,22 @@ make strapi-down
 make strapi-admin USER=admin@example.com PASS=your_password FIRSTNAME=Admin LASTNAME=User
 ```
 
-## Production Environment
+## Production Environment (DigitalOcean + Traefik)
 
-For production deployments, we use a multi-stage Docker build to create an optimized container.
+Production ne se build PAS localement : l'image est construite **en CI** (`Dockerfile.production`,
+GitHub Actions → GHCR) puis **tirée par le droplet**. Le droplet ne fait que `pull` + `up`.
 
-### Starting Strapi in Production Mode
-
-```bash
-# From the project root directory
-make strapi-prod-init
-
-# Or manually
-make strapi-setup
-make strapi-prod-build
-make strapi-prod-up
-```
-
-### Viewing Production Logs
+- Build/push image : `.github/workflows/deploy-cms.yml` (auto sur push `main`).
+- Compose droplet : `docker-compose.production.yml` (projet `-p strapi`, Traefik, Postgres dédié).
+- Déploiement : `./scripts/deploy-production.sh` sur le droplet, ou `make strapi-prod-up`
+  (= pull + up, à lancer **sur le droplet**).
+- **Runbook complet (DNS, secrets, migration contenu, TLS, smoke test, rollback) :**
+  `docs/infra/RUNBOOK-cms-digitalocean.md`.
 
 ```bash
-make strapi-prod-logs
-```
-
-### Stopping Production Containers
-
-```bash
-make strapi-prod-down
+# Sur le droplet (depuis /opt/strapi) :
+./deploy-production.sh
+# ⚠ Ne JAMAIS faire `docker compose down -v` (supprime DB + médias).
 ```
 
 ## Database Management
@@ -121,19 +111,20 @@ make strapi-clean
 
 ## Docker Compose Files
 
-- `docker-compose.yml` - Development environment
-- `docker-compose.prod.yml` - Production environment
+- `docker-compose.yml` - Development environment (local, projet `content`, Postgres :5433)
+- `docker-compose.production.yml` - Production (droplet DO, projet `strapi`, Traefik + GHCR)
 
 ## Dockerfile
 
 - `Dockerfile` - Development Dockerfile
-- `Dockerfile.prod` - Production Dockerfile with multi-stage build
+- `Dockerfile.production` - Production multi-stage (node:22, yarn), buildé en CI → GHCR
 
 ## Ports
 
-- Strapi: `1337`
-- PostgreSQL: `5432`
+- Strapi: `1337` (en prod : exposé uniquement à Traefik via le réseau `web`, pas de port public)
+- PostgreSQL (dev) : `5433` hôte ; (prod) : interne uniquement (réseau `internal`)
 
 ## Volumes
 
-- `strapi-data` - Persistent PostgreSQL database data
+- Dev : `content_strapi-data` (Postgres)
+- Prod : `strapi_strapi-db-data` (Postgres) + `strapi_strapi-uploads` (médias)
