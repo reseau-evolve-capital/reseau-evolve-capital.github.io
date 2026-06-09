@@ -14,7 +14,6 @@ interface ArticlePageProps {
   params: Promise<{
     locale: string
     slug: string
-    documentId: string
   }>
 }
 
@@ -31,7 +30,6 @@ export async function generateStaticParams() {
     params.push({
       locale: 'fr',
       slug: article.slug,
-      documentId: article.documentId,
     })
   }
 
@@ -40,7 +38,6 @@ export async function generateStaticParams() {
     params.push({
       locale: 'en',
       slug: article.slug,
-      documentId: article.documentId,
     })
   }
 
@@ -48,7 +45,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: ArticlePageProps): Promise<Metadata> {
-  const { locale, slug, documentId } = await params
+  const { locale, slug } = await params
 
   const article = await getArticleBySlug(slug, locale)
 
@@ -57,10 +54,13 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       title: 'Article not found',
     }
   }
-  const alternateArticle = await getArticleOfLocaleAndDocumentId(
-    documentId,
-    locale === 'fr' ? 'en' : 'fr'
-  )
+  // Le `documentId` (identifiant Strapi partagé entre locales) vient de l'article
+  // fetché, PAS des params de route : `[locale]/blog/[slug]` n'a pas de segment
+  // documentId, donc `params.documentId` était `undefined` → l'alternate pointait
+  // sur le premier article de l'autre locale (mauvais article au switch de langue).
+  const alternateArticle = article.documentId
+    ? await getArticleOfLocaleAndDocumentId(article.documentId, locale === 'fr' ? 'en' : 'fr')
+    : null
 
   const alternates = {
     canonical: `/blog/${slug}`,
