@@ -104,3 +104,24 @@ sur le domaine **`strapi.reseauevolvecapital.com`**. Artefacts dans ce dossier :
 
 **Runbook droplet complet (DNS, secrets, migration contenu, TLS, smoke test) :**
 `docs/infra/RUNBOOK-cms-digitalocean.md`.
+
+## Traduction FR→EN du blog (plugin strapi-llm-translator)
+
+Plugin **`strapi-llm-translator`** (grenzbotin), version **`0.11.0`**, peer `@strapi/strapi >=5.12.3` (OK sur notre **5.12.6**, testé 5.12.x). Installé via `yarn add` puis **`yarn build` obligatoire** : le plugin injecte un bouton dans le Content Manager → l'admin doit être rebuildé, puis **redémarrer Strapi**.
+
+- **Modèle « seed-once-then-editable »** : la traduction FR→EN est une **action manuelle explicite** (bouton dans le Content Manager, sur la locale **EN**, source = French), **jamais on-save**. Une sauvegarde FR ne touche **jamais** l'EN. Retraduire **écrase** le contenu EN (donc les retouches manuelles) — c'est volontaire et **uniquement déclenché à la main**.
+- **Champs traduits** : tous les champs localisés `string`/`text`/`richtext` + `JSON`/`blocks`, **récursivement à travers les composants et la dynamic zone `corps`** : `title`, `excerpt`, `content` (blocks), `corps` (9 blocs), `SEOMetaTitle`, `SEOMetaDescription`. Les champs **non localisés** (`featuredImage`, dates, auteur, `type`, `numeroEdition`) restent partagés.
+- **Variables d'environnement** (lues par le plugin — noms **EXACTS**, ne pas renommer) :
+
+  | Var                                                | Rôle                                                                                                  |
+  | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+  | `LLM_TRANSLATOR_LLM_API_KEY`                       | **Clé OpenAI ici** — le plugin n'utilise **PAS** `OPENAI_API_KEY`.                                     |
+  | `STRAPI_ADMIN_LLM_TRANSLATOR_LLM_BASE_URL`         | Endpoint LLM, défaut OpenAI. Laisser **vide** sauf proxy/Azure.                                        |
+  | `STRAPI_ADMIN_LLM_TRANSLATOR_LLM_MODEL`            | Défaut `gpt-4o` (override possible, ex. `gpt-4o-mini`).                                                |
+  | `STRAPI_ADMIN_LLM_TRANSLATOR_AZURE_API_VERSION`    | Azure uniquement — **non utilisé** chez nous.                                                          |
+
+- **⚠ Pas de « glossaire »** : il n'existe **PAS** de champ glossaire ni d'option d'exclusion de champ. Le seul levier est le **System prompt**, réglable sur la **page de config du plugin dans l'admin** (stocké **en DB**, pas dans `config/plugins.ts` ni en env). Y mettre la consigne de marque : **ne pas traduire** « La Quote-Part », « quote-part », « Réseau Evolve Capital », noms de produits ; conserver le registre finance + ton éditorial. La **température** y est aussi réglable (défaut `0.3`).
+- **⚠ Slug** : notre champ `slug` est de type `string` (pas `uid`) → le plugin **le traduit** (il n'exclut automatiquement que les champs `uid`), et il n'y a **aucune config d'exclusion**. Décision EDI-008 : **reset manuel** — le rédacteur remet le slug EN identique au slug FR avant de publier (voir guide rédacteur). **Pas de code ajouté** pour ça (modèle seed-then-edit). SEO du slug EN = amélioration **différée**.
+- **Permissions** : **aucun** rôle/permission à accorder — le bouton apparaît automatiquement pour tout utilisateur ayant accès à l'édition dans le Content Manager (corrige le §4 du ticket qui parlait de permissions à accorder).
+- **Config `config/plugins.ts`** : une entrée explicite `'strapi-llm-translator': { enabled: true }` est ajoutée (le plugin est auto-découvert ; l'entrée explicite **documente sa présence**).
+- **Confidentialité** : le contenu transite par l'API OpenAI — OK car le blog est **public**. **Ne pas** étendre ce flux à du contenu membre/privé.
