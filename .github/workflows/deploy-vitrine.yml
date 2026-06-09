@@ -23,6 +23,12 @@ on:
     types: [strapi-content-update]
   workflow_dispatch:
 
+# Plusieurs publications Strapi rapprochées → plusieurs dispatches. On coalesce : un seul
+# déploiement Pages à la fois, sans annuler celui en cours (cancel-in-progress: false).
+concurrency:
+  group: deploy-vitrine-pages
+  cancel-in-progress: false
+
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest

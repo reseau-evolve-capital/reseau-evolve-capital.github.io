@@ -284,9 +284,28 @@ ne renvoie aucun article → ne publie jamais un blog vide par-dessus le live).
 - Optionnel : définir des **variables de dépôt** GitHub `NEXT_PUBLIC_STRAPI_API_URL`
   (`…/api`) et `NEXT_PUBLIC_STRAPI_URL` pour surcharger les valeurs par défaut.
 - Déclencher un rebuild manuel : onglet **Actions → Deploy Vitrine → Run workflow**.
-- Pour rebuild le blog **quand le contenu change** (sans commit) : câbler un **webhook Strapi**
-  (Settings → Webhooks) vers un `repository_dispatch` GitHub de type `strapi-content-update`
-  (suivi non bloquant — à faire après le premier déploiement).
+
+### Rebuild automatique au changement de contenu (implémenté)
+
+À la **publication / dépublication / suppression** d'un contenu éditorial, Strapi déclenche
+lui-même le workflow via `repository_dispatch` (code dans `apps/cms/src/index.ts`, middleware
+Document Service). **NO-OP tant que `GITHUB_DISPATCH_TOKEN` n'est pas posé.** Activation :
+
+1. **Créer un PAT** GitHub _fine-grained_ sur le dépôt `reseau-evolve-capital.github.io`
+   avec la permission **Contents: Read and write** (ou PAT classic, scope `repo`).
+2. **Sur le droplet**, ajouter à `/opt/strapi/.env` :
+   ```bash
+   GITHUB_DISPATCH_TOKEN=<le_PAT>
+   # GITHUB_DISPATCH_REPO et GITHUB_DISPATCH_EVENT_TYPE ont déjà les bons défauts.
+   ```
+3. **Recharger** (le code du middleware vit dans l'image → tirer l'image à jour puis relancer) :
+   ```bash
+   cd /opt/strapi && ./deploy-production.sh        # pull image + up -d (recrée avec le nouveau .env)
+   ```
+4. **Tester** : publier un article dans l'admin → un run **deploy-vitrine** apparaît dans Actions
+   (logs Strapi : `[rebuild] vitrine déclenchée (...)`).
+
+> Le `concurrency` du workflow coalesce les déclenchements rapprochés (un déploiement Pages à la fois).
 
 ---
 
@@ -382,7 +401,8 @@ Voir la section **Rollback** ci-dessous (réépingler un tag `:<sha>` connu-bon 
 
 ## Suivis (hors périmètre du premier déploiement)
 
-- **Webhook contenu → rebuild vitrine** (`repository_dispatch strapi-content-update`).
+- ~~Webhook contenu → rebuild vitrine~~ ✅ **implémenté** (§11 — middleware Strapi → `repository_dispatch` ;
+  reste à poser `GITHUB_DISPATCH_TOKEN` sur le droplet pour l'activer).
 - **Upgrade médias DO Spaces / S3** : justifié seulement si les médias grossissent beaucoup,
   qu'on veut un CDN, ou qu'on dépasse **une seule instance** Strapi (un volume local ne se
   partage pas entre réplicas). Les providers `strapi-provider-upload-do` et

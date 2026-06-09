@@ -12,12 +12,67 @@ const PUBLIC_READ_UIDS = [
 ] as const
 const PUBLIC_READ_ACTIONS = ['find', 'findOne'] as const
 
+// --- Rebuild de la vitrine (blog statique) au changement de contenu ----------------------
+// À la publication / dépublication / suppression d'un contenu éditorial, on déclenche un
+// `repository_dispatch` GitHub → le workflow deploy-vitrine.yml rebuild le blog SSG avec le
+// contenu à jour. Le webhook NATIF de Strapi ne convient pas (son corps ≠ `{ event_type }`
+// exigé par l'API GitHub), d'où ce déclenchement côté code.
+// NO-OP sans `GITHUB_DISPATCH_TOKEN` → inactif en local et tant que le secret n'est pas posé.
+const REBUILD_UIDS = [
+  'api::article.article',
+  'api::category.category',
+  'api::author.author',
+  'api::tag.tag',
+]
+const REBUILD_ACTIONS = ['publish', 'unpublish', 'delete']
+
+async function triggerVitrineRebuild(strapi: Core.Strapi, reason: string): Promise<void> {
+  const token = process.env.GITHUB_DISPATCH_TOKEN
+  if (!token) {
+    strapi.log.debug('[rebuild] GITHUB_DISPATCH_TOKEN absent → dispatch ignoré (no-op).')
+    return
+  }
+  const repo =
+    process.env.GITHUB_DISPATCH_REPO || 'reseau-evolve-capital/reseau-evolve-capital.github.io'
+  const eventType = process.env.GITHUB_DISPATCH_EVENT_TYPE || 'strapi-content-update'
+  try {
+    const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ event_type: eventType, client_payload: { reason } }),
+    })
+    if (res.ok) {
+      strapi.log.info(`[rebuild] vitrine déclenchée (${reason}) → ${repo} [${eventType}]`)
+    } else {
+      strapi.log.error(`[rebuild] dispatch GitHub échec ${res.status} : ${await res.text()}`)
+    }
+  } catch (err) {
+    strapi.log.error(`[rebuild] dispatch GitHub erreur : ${(err as Error).message}`)
+  }
+}
+
 export default {
   /**
-   * An asynchronous register function that runs before
-   * your application is initialized.
+   * Enregistre un middleware Document Service qui déclenche le rebuild de la vitrine
+   * sur publish/unpublish/delete des contenus éditoriaux. Fire-and-forget : ne bloque
+   * jamais l'opération admin, ne lève jamais (erreurs loggées). Cf. GITHUB_DISPATCH_* (.env).
    */
-  register(/* { strapi }: { strapi: Core.Strapi } */) {},
+  register({ strapi }: { strapi: Core.Strapi }) {
+    strapi.documents.use(async (context, next) => {
+      const result = await next()
+      const uid = String((context as { uid?: string }).uid ?? '')
+      const action = String((context as { action?: string }).action ?? '')
+      if (REBUILD_UIDS.includes(uid) && REBUILD_ACTIONS.includes(action)) {
+        void triggerVitrineRebuild(strapi, `${uid}:${action}`)
+      }
+      return result
+    })
+  },
 
   /**
    * Accorde au rôle "public" les permissions find/findOne sur les content-types du blog,
