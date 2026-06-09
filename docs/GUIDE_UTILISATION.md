@@ -204,6 +204,45 @@ recopier ni remettre en forme.
    > L'envoi est **bloqué** tant que l'article n'est pas publié, et une même édition ne peut pas
    > être envoyée deux fois. Le bouton « Lire en ligne » de l'email pointe vers l'article réel.
 
+### 4.7 Traduire un article en anglais (EN)
+
+**Pourquoi.** La vitrine est **bilingue FR/EN**. Pour ne pas tout ressaisir, on peut
+**pré-remplir automatiquement la version anglaise** d'un article à partir du français. Important :
+cette traduction automatique n'est qu'un **brouillon de départ** — on la **relit et on la corrige**
+avant de publier.
+
+**Mode opératoire :**
+
+1. **Rédiger et finaliser l'article en français**, comme d'habitude.
+2. Dans l'outil de contenu, **ouvrir l'article** puis **basculer sur la locale « English (en) »**
+   (le sélecteur de langue se trouve **en haut à droite** de la fiche).
+3. Cliquer **« Fill in from another locale »** (à côté du sélecteur de langue) et choisir **French** :
+   le contenu français est recopié tel quel dans la fiche anglaise. **Enregistrer** (Save).
+4. Cliquer le bouton **« Translate with AI »** (panneau de droite). Le **titre**, le **chapô**, le
+   **corps de l'article** (tous les blocs : édito, citation, « Le Chiffre », etc.) et les **champs
+   SEO** sont traduits en anglais **sur place**. L'**image**, les **dates** et l'**auteur** restent
+   partagés — rien à refaire de ce côté. _(Le bouton affiche ensuite « Translation completed » ; pour
+   relancer une traduction, rechargez la fiche.)_
+5. **Relire et corriger** le texte anglais. La traduction est une base, pas une vérité finale.
+6. ⚠ **Remettre le « slug » identique au français.** Le _slug_ est le morceau d'adresse de la page
+   (l'identifiant qui apparaît dans l'URL). La traduction le modifie : **recopiez-le manuellement**
+   depuis la version française **avant de publier**, pour que l'URL anglaise utilise le **même slug**
+   que la française.
+7. **Publier** la version anglaise. Au prochain build de la vitrine, l'article EN est en ligne sur
+   `/en/blog/...`.
+
+**À retenir (important) :**
+
+> - ⚠ **Retraduire écrase vos retouches.** Si vous recliquez « Translate » après avoir corrigé
+>   l'anglais à la main, le plugin **réécrit tout le contenu EN** et vos corrections sont **perdues**.
+>   Ne retraduisez que si vous voulez **repartir de zéro**.
+> - ✅ **Modifier le français ne touche jamais l'anglais** (et inversement). Ce ne sont **pas** des
+>   versions synchronisées : la traduction est un **point de départ unique**, ensuite chaque langue
+>   vit sa vie.
+> - 📝 **Termes de marque** (« La Quote-Part », « quote-part », « Réseau Evolve Capital », noms de
+>   produits) : ils sont **conservés tels quels** par la traduction. Si l'un est traduit par erreur,
+>   corrigez-le à la relecture.
+
 ---
 
 ## 5. Accès suspendu

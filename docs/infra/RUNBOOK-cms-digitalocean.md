@@ -96,8 +96,27 @@ chmod +x deploy-production.sh backup-db.sh
 ```
 
 `.env` minimum à renseigner : `APP_KEYS` (×4), `API_TOKEN_SALT`, `ADMIN_JWT_SECRET`,
-`TRANSFER_TOKEN_SALT`, `JWT_SECRET`, `DATABASE_PASSWORD`. `URL` et `IS_PROXIED=true` sont déjà
-dans le modèle.
+`TRANSFER_TOKEN_SALT`, `JWT_SECRET`, `DATABASE_PASSWORD`,
+`LLM_TRANSLATOR_LLM_API_KEY` (requis seulement pour la traduction auto EN — voir ci-dessous).
+`URL` et `IS_PROXIED=true` sont déjà dans le modèle.
+
+### Traduction auto FR→EN du blog (EDI-008)
+
+La fonctionnalité de traduction par LLM (plugin `strapi-llm-translator`) requiert **un secret
+supplémentaire** dans `/opt/strapi/.env` :
+
+- **`LLM_TRANSLATOR_LLM_API_KEY`** = la **clé API OpenAI** (utilisée par le plugin pour la
+  traduction auto FR→EN). Sans elle, le bouton de traduction renvoie une erreur — le reste de
+  Strapi fonctionne normalement.
+- Optionnel : `STRAPI_ADMIN_LLM_TRANSLATOR_LLM_MODEL` (défaut `gpt-4o` ; mettre `gpt-4o-mini`
+  pour réduire le coût) ; `STRAPI_ADMIN_LLM_TRANSLATOR_LLM_BASE_URL` (laisser vide sauf proxy/Azure).
+
+> La valeur réelle ne se commit **JAMAIS** : elle vit dans le `.env` du droplet (gitignoré). Le
+> modèle versionné `.env.production.example` ne contient que le nom de la variable, vide.
+>
+> Côté image : l'image CMS (CI GHCR) **embarque déjà le plugin** au prochain build sur `main`
+> (aucune étape CI nouvelle). Il suffit d'ajouter le secret au `.env` du droplet puis
+> `docker compose -p strapi -f docker-compose.production.yml up -d` pour recharger l'env.
 
 ## 3. Login GHCR (image privée)
 
