@@ -25,7 +25,7 @@ function isPromptable(pwaCase: PwaCase): pwaCase is PwaPromptableCase {
 
 /**
  * Override du délai de trigger via `window.__PWA_TRIGGER_DELAY_MS__` — seam de test
- * uniquement (E2E déterministes sans attendre 8 s réelles). Jamais posé en prod.
+ * uniquement (E2E déterministes sans attendre le délai réel). Jamais posé en prod.
  */
 function readTriggerDelayOverride(): number | null {
   if (typeof window === 'undefined') return null
@@ -76,15 +76,30 @@ export type UseInstallBannerState = {
   shouldShow: boolean
 }
 
+/** Options du hook de bannière PWA. */
+export type UseInstallBannerStateOptions = {
+  /**
+   * Affichage immédiat forcé : délai 0 ET bypass de l'éligibilité froide (compteur de visites,
+   * cooldown, dismiss permanent). Utilisé à l'arrivée fraîchement connecté en Safari
+   * (`/dashboard?pwa=ios`) pour que la bannière d'install iOS apparaisse tout de suite. On
+   * exige toujours un cas promptable et NON standalone (jamais de bannière si déjà installé).
+   */
+  forceImmediate?: boolean
+}
+
 /**
  * Hook fin : enregistre la visite (cas promptable & non standalone), calcule
- * l'éligibilité froide, puis arme un {@link BannerTriggerController} (timer 8 s gaté
+ * l'éligibilité froide, puis arme un {@link BannerTriggerController} (timer 2 s gaté
  * focus/visibilité/non-saisie). Toute la logique testée vit dans `install-banner-trigger.ts` ;
  * ce hook ne fait que câbler le DOM réel et exposer `shouldShow`.
  *
  * SSR-safe : rend `shouldShow=false` au premier render serveur, effets client uniquement.
  */
-export function useInstallBannerState(pwaCase: PwaCase): UseInstallBannerState {
+export function useInstallBannerState(
+  pwaCase: PwaCase,
+  options: UseInstallBannerStateOptions = {}
+): UseInstallBannerState {
+  const { forceImmediate = false } = options
   const [shouldShow, setShouldShow] = useState(false)
 
   useEffect(() => {
@@ -98,9 +113,20 @@ export function useInstallBannerState(pwaCase: PwaCase): UseInstallBannerState {
       return
     }
 
+    // Jamais de bannière si l'app est déjà installée — vrai aussi en mode forcé.
+    if (wasInstalled()) return
+
+    if (forceImmediate) {
+      // Bypass de l'éligibilité froide + délai 0 : la bannière s'affiche tout de suite.
+      const controller = new BannerTriggerController(browserTriggerEnv(), 0, () => {
+        setShouldShow(true)
+      })
+      controller.start()
+      return () => controller.stop()
+    }
+
     // Éligibilité froide.
     const state = dismissStore.read()
-    if (wasInstalled()) return
     if (!computeEligibility(state, Date.now())) return
 
     const delay = readTriggerDelayOverride() ?? TRIGGER_DELAY_MS
@@ -109,7 +135,7 @@ export function useInstallBannerState(pwaCase: PwaCase): UseInstallBannerState {
     })
     controller.start()
     return () => controller.stop()
-  }, [pwaCase])
+  }, [pwaCase, forceImmediate])
 
   return { shouldShow }
 }

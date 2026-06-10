@@ -209,7 +209,7 @@ test.describe('ios safari', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Case 3 — iOS Chrome/Firefox : copie l'URL + toast
+// Case 3 — iOS Chrome/Firefox : copie un lien de connexion portable (handoff) + toast
 // ─────────────────────────────────────────────────────────────────────────────
 test.describe('ios other', () => {
   test.use({
@@ -218,19 +218,66 @@ test.describe('ios other', () => {
     permissions: ['clipboard-read', 'clipboard-write'],
   })
 
-  test('bannière « Continuer dans Safari » → URL copiée + toast', async ({ page }) => {
+  test("bannière « Installer l'application » → lien de handoff copié + toast", async ({ page }) => {
     await seedPwaState(page, { pwaCase: 'ios-other', visitCount: 1 })
+    // L'endpoint de mint est couvert unitairement (handoff-link/route.test.ts) ; ici on le STUB
+    // pour tester de façon déterministe le câblage CLIENT (copyHandoffLink → presse-papier + toast),
+    // indépendamment de la dispo du service-role dans l'env e2e.
+    await page.route('**/api/auth/handoff-link', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          url: 'http://localhost:3001/login/verify?token_hash=E2E_HASH&type=email&pwa=ios',
+        }),
+      })
+    )
     await loginAsSeedMember(page)
     await ensureFocus(page)
 
-    await expect(page.getByText('Ouvre-la dans Safari.')).toBeVisible({ timeout: 5000 })
-    await page.getByRole('button', { name: 'Continuer dans Safari' }).click()
+    await expect(page.getByText("Installe Evolve sur ton écran d'accueil.")).toBeVisible({
+      timeout: 5000,
+    })
+    await page.getByRole('button', { name: "Installer l'application" }).click()
 
-    // Toast de confirmation visible.
-    await expect(page.getByText('Adresse copiée')).toBeVisible()
-    // Le presse-papier contient l'URL courante.
+    // Toast « handoff » : un lien de connexion (pas l'URL nue) a été copié.
+    await expect(page.getByText('Lien copié')).toBeVisible()
+    // Le presse-papier contient le lien portable retourné par l'endpoint (token_hash + pwa=ios).
     const clip = await page.evaluate(() => navigator.clipboard.readText())
-    expect(clip).toContain('/dashboard')
+    expect(clip).toContain('/login/verify')
+    expect(clip).toContain('token_hash=E2E_HASH')
+    expect(clip).toContain('pwa=ios')
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Arrivée « relais d'appareil » : /dashboard?pwa=ios force la bannière iOS-Safari
+// (bypass éligibilité froide) puis retire le marqueur de l'URL.
+// ─────────────────────────────────────────────────────────────────────────────
+test.describe('handoff arrival', () => {
+  test.use({ userAgent: UA.iosSafari, viewport: MOBILE })
+
+  test('`?pwa=ios` force la bannière malgré un dismiss permanent + strip du param', async ({
+    page,
+  }) => {
+    // État qui SUPPRIMERAIT normalement toute bannière (dismiss permanent + visites au-delà du seuil).
+    await seedPwaState(page, {
+      pwaCase: 'ios-safari',
+      visitCount: 9,
+      dismissCount: 3,
+      permanentlyMigratedAt: new Date(Date.now() - 86_400_000).toISOString(),
+    })
+    await loginAsSeedMember(page)
+    // Simule l'atterrissage Safari juste après avoir collé le lien de connexion.
+    await page.goto('/dashboard?pwa=ios')
+    await ensureFocus(page)
+
+    // forceImmediate : la bannière iOS-Safari apparaît tout de suite malgré l'éligibilité froide.
+    await expect(page.getByText('Ta part. Toujours avec toi.')).toBeVisible({ timeout: 5000 })
+    // Le marqueur ?pwa=ios est retiré de l'URL (router.replace) → pas de re-déclenchement au refresh.
+    await expect(page).toHaveURL(/\/dashboard$/)
+    // shouldShow latche : la bannière reste affichée après le strip du param.
+    await expect(page.getByText('Ta part. Toujours avec toi.')).toBeVisible()
   })
 })
 

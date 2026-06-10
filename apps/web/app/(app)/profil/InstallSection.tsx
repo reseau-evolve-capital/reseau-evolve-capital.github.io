@@ -29,7 +29,7 @@ export function InstallSection() {
     promptInstall,
     openInstructionModal,
     closeInstructionModal,
-    copyUrlToClipboard,
+    copyHandoffLink,
   } = usePwaActions()
 
   // SSR-safe : pwaCase = 'unsupported' au render serveur + hydratation → promptable false → null.
@@ -47,12 +47,20 @@ export function InstallSection() {
       openInstructionModal()
       return
     }
-    const ok = await copyUrlToClipboard()
+    // ios-other : lien de connexion portable (auto-login en Safari), fallback URL courante.
+    const { ok, usedHandoff } = await copyHandoffLink()
     if (ok) {
       analyticsEvents.pwa.clipboardCopied()
-      toast.success({ title: t('toastCopied.title'), message: t('toastCopied.message') })
+      if (usedHandoff) {
+        toast.success({ title: t('toastCopied.title'), message: t('toastCopied.message') })
+      } else {
+        toast.success({
+          title: t('toastCopiedPlain.title'),
+          message: t('toastCopiedPlain.message'),
+        })
+      }
     }
-  }, [pwaCase, promptInstall, openInstructionModal, copyUrlToClipboard, toast, t])
+  }, [pwaCase, promptInstall, openInstructionModal, copyHandoffLink, toast, t])
 
   if (!promptable) return null
 

@@ -921,11 +921,15 @@
       "cta": "Voir comment"
     },
     "iosOther": {
-      "headline": "Ouvre-la dans Safari.",
-      "subline": "L'installation se fait depuis Safari sur iPhone. On copie l'adresse — tu n'as qu'à la coller.",
-      "cta": "Continuer dans Safari"
+      "headline": "Installe Evolve sur ton écran d'accueil.",
+      "subline": "On copie un lien de connexion. Ouvre Safari, colle-le : tu seras déjà connecté(e), prêt(e) à l'installer.",
+      "cta": "Installer l'application"
     },
     "toastCopied": {
+      "title": "Lien copié",
+      "message": "Ouvre Safari et colle le lien : tu seras connecté(e) automatiquement."
+    },
+    "toastCopiedPlain": {
       "title": "Adresse copiée",
       "message": "Ouvre Safari et colle-la dans la barre d'adresse."
     },

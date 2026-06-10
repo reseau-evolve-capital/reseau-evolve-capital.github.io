@@ -36,6 +36,8 @@ const LIMITERS = {
   marketPrices: { prefix: 'market-prices', tokens: 60, window: '1 m' },
   // GET /api/attestation/detention — 30 req / 5 min par user (génération PDF coûteuse, route authentifiée).
   attestation: { prefix: 'attestation', tokens: 30, window: '5 m' },
+  // POST /api/auth/handoff-link — 10 req / 5 min par user (mint de liens de connexion portables, route authentifiée).
+  handoff: { prefix: 'handoff', tokens: 10, window: '5 m' },
 } as const satisfies Record<string, LimiterConfig>
 
 export type RateLimitName = keyof typeof LIMITERS
