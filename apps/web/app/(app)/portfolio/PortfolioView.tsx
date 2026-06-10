@@ -12,7 +12,7 @@
 // in-content est masqué ≥ md (la topbar du shell porte déjà le statut de sync) et conservé < md.
 // Réf : E-PFT, CLAUDE.md (jamais de NaN/undefined, a11y, copy FR, valo live frontend).
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslations, useLocale } from 'next-intl'
@@ -44,6 +44,7 @@ import {
   balanceAggregates,
   type PortfolioData,
 } from '@/lib/data/portfolio'
+import { analyticsEvents, countBucket, valueBucket } from '@/lib/analytics'
 import { usePortfolio } from '@/lib/hooks/usePortfolio'
 import { useLivePrices } from '@/lib/hooks/useLivePrices'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
@@ -97,6 +98,18 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   )
   // Soldes (Provision, Soldes courts/longs termes…) : tout agrégat hors « Portefeuille ».
   const balances = useMemo(() => balanceAggregates(aggregates), [aggregates])
+
+  // Analytics (Phase 2) : portfolio_viewed (key event « aha ») — une fois par montage, dès
+  // que les données sont prêtes. Valeurs BUCKETISÉES (jamais de montant exact vers GA).
+  const viewedRef = useRef(false)
+  useEffect(() => {
+    if (viewedRef.current || !data) return
+    viewedRef.current = true
+    analyticsEvents.portfolio.viewed({
+      valueBucket: valueBucket(totalValue),
+      positionsBucket: countBucket(built.positions.length),
+    })
+  }, [data, totalValue, built.positions.length])
 
   // Gain/perte total du portefeuille (somme des +/- € de toutes les positions, hors filtre).
   const totalGainLoss = useMemo(

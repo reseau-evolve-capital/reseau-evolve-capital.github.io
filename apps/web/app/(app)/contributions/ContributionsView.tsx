@@ -27,6 +27,7 @@ import {
 } from '@evolve/ui'
 import { formatEUR } from '@evolve/utils'
 
+import { analyticsEvents } from '@/lib/analytics'
 import type { ContributionsData, ContributionStatus } from '@/lib/data/contributions'
 import { useContributions } from '@/lib/hooks/useContributions'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
@@ -95,6 +96,8 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
       setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
       // Confirmation éphémère (l'ouverture n'est pas toujours visible selon le navigateur).
       toast.success({ title: t('attestation.success') })
+      // 🎯 attestation_download (key event) — succès uniquement, déclenchement in-app.
+      analyticsEvents.attestation.downloaded({ triggerSource: 'in_app' })
     } catch {
       // Toast d'erreur + message inline persistant (role=alert) pour l'accessibilité.
       setAttestationError(t('attestation.error'))
