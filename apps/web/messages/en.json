@@ -950,5 +950,24 @@
       "body": "Keep Evolve Capital on your home screen — open your share in one tap.",
       "button": "Install the app"
     }
+  },
+  "cookieConsent": {
+    "title": "We use analytics cookies",
+    "description": "Google Analytics helps us understand how members use the app, to improve it. Nothing else — no advertising cookies.",
+    "privacyLabel": "Privacy policy",
+    "acceptAll": "Accept all",
+    "rejectAll": "Reject",
+    "rejectAllLong": "Reject all",
+    "customize": "Customise",
+    "customizeChoices": "Customise my choices",
+    "save": "Save my preferences",
+    "close": "Close",
+    "back": "Back",
+    "necessaryTitle": "Necessary cookies",
+    "necessaryDesc": "Login, security and preferences. Essential to how the app works.",
+    "necessaryState": "Always on",
+    "analyticsTitle": "Analytics cookies",
+    "analyticsDesc": "Google Analytics — anonymised audience measurement to understand usage and improve the app.",
+    "regionLabel": "Cookie preferences"
   }
 }

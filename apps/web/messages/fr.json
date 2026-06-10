@@ -950,5 +950,24 @@
       "body": "Garde Evolve Capital sur ton écran d'accueil — ouvre ta part d'un geste.",
       "button": "Installer l'app"
     }
+  },
+  "cookieConsent": {
+    "title": "Nous utilisons des cookies d'analyse",
+    "description": "Google Analytics nous aide à comprendre comment les membres utilisent l'application, pour l'améliorer. Rien d'autre — aucun cookie publicitaire.",
+    "privacyLabel": "Politique de confidentialité",
+    "acceptAll": "Tout accepter",
+    "rejectAll": "Refuser",
+    "rejectAllLong": "Tout refuser",
+    "customize": "Personnaliser",
+    "customizeChoices": "Personnaliser mes choix",
+    "save": "Enregistrer mes préférences",
+    "close": "Fermer",
+    "back": "Retour",
+    "necessaryTitle": "Cookies nécessaires",
+    "necessaryDesc": "Connexion, sécurité et préférences. Indispensables au fonctionnement de l'application.",
+    "necessaryState": "Toujours actifs",
+    "analyticsTitle": "Cookies d'analyse",
+    "analyticsDesc": "Google Analytics — mesure d'audience anonymisée pour comprendre l'usage et améliorer l'app.",
+    "regionLabel": "Préférences de cookies"
   }
 }

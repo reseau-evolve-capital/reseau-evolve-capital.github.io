@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl'
 import { PwaInstallSheet, useToast, type IosInstallInstructionsCopy } from '@evolve/ui'
 
 import { analyticsEvents } from '@/lib/analytics'
+import { useConsentResolved } from '@/lib/consent/use-consent'
 import { dismissStore } from '@/lib/pwa/dismiss-storage'
 import { detectIosDevice } from '@/lib/pwa/platform-detection'
 import { usePwaInstall } from '@/lib/pwa/use-pwa-install'
@@ -37,12 +38,18 @@ function InstallBannerInner() {
   // Masquage local après une action terminée (install acceptée, dismiss, modale fermée).
   const [hidden, setHidden] = useState(false)
 
+  // Priorité au consentement RGPD : tant que le visiteur n'a pas tranché les cookies, la
+  // bannière de consentement (bottom) est affichée → on supprime le prompt PWA (lui aussi
+  // ancré en bas) pour éviter tout chevauchement. Une fois le consentement résolu, le prompt
+  // PWA peut apparaître.
+  const consentResolved = useConsentResolved()
+
   // SSR-safe : pwaCase = 'unsupported' au render serveur + pendant l'hydratation
   // (useSyncExternalStore dans usePwaInstall) → promptable false → on ne rend rien.
   const onDashboard = pathname === '/dashboard'
   const promptable =
     pwaCase === 'android-chrome' || pwaCase === 'ios-safari' || pwaCase === 'ios-other'
-  const visible = onDashboard && promptable && shouldShowBanner && !hidden
+  const visible = onDashboard && promptable && shouldShowBanner && !hidden && consentResolved
 
   // Analytics : bannière affichée (une fois).
   useEffect(() => {

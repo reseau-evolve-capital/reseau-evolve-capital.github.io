@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale } from 'next-intl/server'
 import { Analytics } from '@/components/Analytics'
+import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
+import { ConsentMount } from '@/components/consent/ConsentMount'
 import { PwaServiceWorkerRegistrar } from '@/components/pwa/PwaServiceWorkerRegistrar'
 import './globals.css'
 
@@ -49,11 +51,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           rel="stylesheet"
         />
         <script dangerouslySetInnerHTML={{ __html: THEME_NO_FLASH }} />
+        {/* GA4 (flux app) + Consent Mode v2 (default denied avant gtag.js). No-op sans ID. */}
+        <GoogleAnalytics />
       </head>
       <body>
         {/* NextIntlClientProvider hérite locale + messages de la config de requête
             (rendu dans un Server Component) → dispo pour les composants client. */}
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          {children}
+          {/* Bandeau de consentement RGPD (Consent Mode v2). DANS le provider i18n
+              (useTranslations). S'affiche sur toutes les pages tant que le choix n'est
+              pas tranché ; priorité sur la bannière PWA (cf. useConsentResolved). */}
+          <ConsentMount />
+        </NextIntlClientProvider>
         {/* PWA-001 : enregistre le service worker (prod/https) + capture beforeinstallprompt. */}
         <PwaServiceWorkerRegistrar />
         {/* Cloudflare Web Analytics (OPS-002) — beacon client, pageviews + SPA.
