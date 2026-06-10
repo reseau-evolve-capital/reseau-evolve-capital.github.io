@@ -1,0 +1,14 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:3001",
+      "localStorage": [
+        {
+          "name": "evolve.consent.v1",
+          "value": "{\"analytics\":true,\"decidedAt\":\"2099-01-01T00:00:00.000Z\"}"
+        }
+      ]
+    }
+  ]
+}
