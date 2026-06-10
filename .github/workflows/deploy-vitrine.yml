@@ -81,6 +81,10 @@ jobs:
           NEXT_PUBLIC_STRAPI_API_URL: ${{ vars.NEXT_PUBLIC_STRAPI_API_URL || 'https://strapi.reseauevolvecapital.com/api' }}
           NEXT_PUBLIC_STRAPI_URL: ${{ vars.NEXT_PUBLIC_STRAPI_URL || 'https://strapi.reseauevolvecapital.com' }}
           NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN }}
+          # GA4 (UBA) — flux vitrine. Measurement ID PUBLIC. Override via variable de dépôt.
+          NEXT_PUBLIC_GA_ID_VITRINE: ${{ vars.NEXT_PUBLIC_GA_ID_VITRINE || 'G-LP0PW78BQ5' }}
+          NEXT_PUBLIC_CONSENT_BANNER_VARIANT: ${{ vars.NEXT_PUBLIC_CONSENT_BANNER_VARIANT || 'compact' }}
+          NEXT_PUBLIC_CONSENT_BANNER_SIDE: ${{ vars.NEXT_PUBLIC_CONSENT_BANNER_SIDE || 'gauche' }}
           NEXT_PUBLIC_APP_SCRIPT_URL: ${{ secrets.NEXT_PUBLIC_APP_SCRIPT_URL }}
           NEXT_PUBLIC_CONTACT_FORM_URL: ${{ secrets.NEXT_PUBLIC_CONTACT_FORM_URL }}
         run: pnpm build
