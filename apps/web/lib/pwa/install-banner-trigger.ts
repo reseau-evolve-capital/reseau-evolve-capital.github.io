@@ -3,7 +3,7 @@ import type { PwaDismissState } from '@evolve/types'
 /** Nombre de visites minimum avant de proposer l'installation. */
 export const MIN_VISITS = 2
 /** Délai (ms) d'onglet visible & focus continu avant d'afficher la bannière. */
-export const TRIGGER_DELAY_MS = 8000
+export const TRIGGER_DELAY_MS = 2000
 
 /**
  * Éligibilité « froide » (indépendante du focus/timer) :

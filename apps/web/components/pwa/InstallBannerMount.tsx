@@ -1,8 +1,8 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { usePathname } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 import { PwaInstallSheet, useToast, type IosInstallInstructionsCopy } from '@evolve/ui'
@@ -22,8 +22,15 @@ const IosInstallInstructions = dynamic(
 
 function InstallBannerInner() {
   const pathname = usePathname()
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const t = useTranslations('pwa')
   const toast = useToast()
+
+  // Arrivée fraîchement connecté en Safari via le lien de handoff (`/dashboard?pwa=ios`) :
+  // on force l'affichage immédiat de la bannière (bypass éligibilité + délai 0).
+  const forceImmediate = searchParams.get('pwa') === 'ios'
+
   const {
     pwaCase,
     shouldShowBanner,
@@ -32,8 +39,8 @@ function InstallBannerInner() {
     openInstructionModal,
     closeInstructionModal,
     dismiss,
-    copyUrlToClipboard,
-  } = usePwaInstall()
+    copyHandoffLink,
+  } = usePwaInstall({ forceImmediate })
 
   // Masquage local après une action terminée (install acceptée, dismiss, modale fermée).
   const [hidden, setHidden] = useState(false)
@@ -62,6 +69,14 @@ function InstallBannerInner() {
     }
   }, [visible, pwaCase])
 
+  // Nettoie le paramètre `?pwa=ios` de l'URL après montage, pour qu'un refresh ne re-déclenche
+  // pas l'affichage forcé. Strip une seule fois (router.replace même chemin → pas de boucle).
+  useEffect(() => {
+    if (!onDashboard) return
+    if (searchParams.get('pwa') === null) return
+    router.replace(pathname)
+  }, [onDashboard, searchParams, router, pathname])
+
   const handleDismiss = useCallback(() => {
     try {
       const state = dismissStore.read()
@@ -86,14 +101,22 @@ function InstallBannerInner() {
       openInstructionModal()
       return
     }
-    // ios-other : copie l'URL puis invite à coller dans Safari.
-    const ok = await copyUrlToClipboard()
+    // ios-other : copie un lien de connexion portable (auto-login en Safari) puis invite à
+    // coller. Si le handoff échoue, on retombe sur la copie de l'URL courante.
+    const { ok, usedHandoff } = await copyHandoffLink()
     if (ok) {
       analyticsEvents.pwa.clipboardCopied()
-      toast.success({ title: t('toastCopied.title'), message: t('toastCopied.message') })
+      if (usedHandoff) {
+        toast.success({ title: t('toastCopied.title'), message: t('toastCopied.message') })
+      } else {
+        toast.success({
+          title: t('toastCopiedPlain.title'),
+          message: t('toastCopiedPlain.message'),
+        })
+      }
     }
     setHidden(true)
-  }, [pwaCase, promptInstall, openInstructionModal, copyUrlToClipboard, toast, t])
+  }, [pwaCase, promptInstall, openInstructionModal, copyHandoffLink, toast, t])
 
   // Fermeture de la modale iOS (Done ou Escape) = on a montré les instructions → cooldown + masquage.
   const handleModalClose = useCallback(() => {
@@ -172,12 +195,15 @@ function InstallBannerInner() {
 /**
  * Point de montage de la bannière PWA (PWA-001). Monté dans le layout (app) (persiste entre
  * onglets) mais ne s'affiche que sur /dashboard. Toute la logique est enrobée d'un
- * ErrorBoundary : une erreur ici ne peut jamais crasher le dashboard.
+ * ErrorBoundary : une erreur ici ne peut jamais crasher le dashboard. Le `Suspense` est requis
+ * par `useSearchParams` (lecture de `?pwa=ios`) — fallback `null`, rien à afficher en attente.
  */
 export function InstallBannerMount() {
   return (
     <InstallBannerErrorBoundary>
-      <InstallBannerInner />
+      <Suspense fallback={null}>
+        <InstallBannerInner />
+      </Suspense>
     </InstallBannerErrorBoundary>
   )
 }

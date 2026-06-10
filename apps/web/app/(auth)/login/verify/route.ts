@@ -44,6 +44,9 @@ export async function GET(request: Request): Promise<Response> {
   const tokenHash = url.searchParams.get('token_hash')
   const otpType = url.searchParams.get('type')
   const invited = url.searchParams.get('invited') === '1'
+  // Marqueur « relais d'appareil » PWA (cf. /api/auth/handoff-link) : propagé jusqu'au dashboard
+  // pour proposer l'installation à l'arrivée dans Safari. Sans incidence sur le flux invitation.
+  const pwa = url.searchParams.get('pwa')
 
   // Supabase renvoie ?error=…&error_code=… quand le lien est déjà consommé ou expiré.
   if (url.searchParams.get('error')) return expired()
@@ -68,6 +71,12 @@ export async function GET(request: Request): Promise<Response> {
   // /dashboard ; le middleware re-route vers /onboarding/step-1 si l'inscription n'est pas
   // terminée. Cas invitation : on entre directement dans l'onboarding avec l'accueil dédié
   // (?invited=1) — le membre invité n'est jamais onboardé à ce stade.
-  const destination = invited ? '/onboarding/step-1?invited=1' : '/dashboard'
+  // Cas invitation : onboarding dédié (le marqueur pwa ne s'applique pas à ce flux). Sinon,
+  // on vise /dashboard et on y propage ?pwa=ios pour déclencher la bannière d'installation.
+  const destination = invited
+    ? '/onboarding/step-1?invited=1'
+    : pwa === 'ios'
+      ? '/dashboard?pwa=ios'
+      : '/dashboard'
   return NextResponse.redirect(new URL(destination, origin()))
 }

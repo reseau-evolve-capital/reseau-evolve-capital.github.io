@@ -90,10 +90,10 @@ describe('BannerTriggerController', () => {
   it('fires onTrigger after the delay when focused & visible', () => {
     const fake = makeFakeEnv()
     const onTrigger = vi.fn()
-    const ctrl = new BannerTriggerController(fake.env, 8000, onTrigger)
+    const ctrl = new BannerTriggerController(fake.env, 2000, onTrigger)
     ctrl.start()
     expect(onTrigger).not.toHaveBeenCalled()
-    vi.advanceTimersByTime(8000)
+    vi.advanceTimersByTime(2000)
     expect(onTrigger).toHaveBeenCalledTimes(1)
     ctrl.stop()
   })
@@ -102,7 +102,7 @@ describe('BannerTriggerController', () => {
     const fake = makeFakeEnv()
     fake.state.hasFocus = false
     const onTrigger = vi.fn()
-    const ctrl = new BannerTriggerController(fake.env, 8000, onTrigger)
+    const ctrl = new BannerTriggerController(fake.env, 2000, onTrigger)
     ctrl.start()
     vi.advanceTimersByTime(20_000)
     expect(onTrigger).not.toHaveBeenCalled()
@@ -113,7 +113,7 @@ describe('BannerTriggerController', () => {
     const fake = makeFakeEnv()
     fake.state.visibility = 'hidden'
     const onTrigger = vi.fn()
-    const ctrl = new BannerTriggerController(fake.env, 8000, onTrigger)
+    const ctrl = new BannerTriggerController(fake.env, 2000, onTrigger)
     ctrl.start()
     vi.advanceTimersByTime(20_000)
     expect(onTrigger).not.toHaveBeenCalled()
@@ -124,7 +124,7 @@ describe('BannerTriggerController', () => {
     const fake = makeFakeEnv()
     fake.state.activeEditable = true
     const onTrigger = vi.fn()
-    const ctrl = new BannerTriggerController(fake.env, 8000, onTrigger)
+    const ctrl = new BannerTriggerController(fake.env, 2000, onTrigger)
     ctrl.start()
     vi.advanceTimersByTime(20_000)
     expect(onTrigger).not.toHaveBeenCalled()
@@ -134,18 +134,18 @@ describe('BannerTriggerController', () => {
   it('resets the timer on blur and restarts on focus', () => {
     const fake = makeFakeEnv()
     const onTrigger = vi.fn()
-    const ctrl = new BannerTriggerController(fake.env, 8000, onTrigger)
+    const ctrl = new BannerTriggerController(fake.env, 2000, onTrigger)
     ctrl.start()
-    vi.advanceTimersByTime(5000)
+    vi.advanceTimersByTime(1000)
     // perte de focus → reset
     fake.state.hasFocus = false
     fake.dispatch('blur')
-    vi.advanceTimersByTime(5000)
+    vi.advanceTimersByTime(1000)
     expect(onTrigger).not.toHaveBeenCalled()
     // retour de focus → on repart de zéro
     fake.state.hasFocus = true
     fake.dispatch('focus')
-    vi.advanceTimersByTime(7999)
+    vi.advanceTimersByTime(1999)
     expect(onTrigger).not.toHaveBeenCalled()
     vi.advanceTimersByTime(1)
     expect(onTrigger).toHaveBeenCalledTimes(1)
@@ -155,7 +155,7 @@ describe('BannerTriggerController', () => {
   it('removes all listeners and timers on stop', () => {
     const fake = makeFakeEnv()
     const onTrigger = vi.fn()
-    const ctrl = new BannerTriggerController(fake.env, 8000, onTrigger)
+    const ctrl = new BannerTriggerController(fake.env, 2000, onTrigger)
     ctrl.start()
     expect(fake.hasListeners()).toBe(true)
     ctrl.stop()
@@ -167,11 +167,11 @@ describe('BannerTriggerController', () => {
   it('fires only once even if the timer would re-run', () => {
     const fake = makeFakeEnv()
     const onTrigger = vi.fn()
-    const ctrl = new BannerTriggerController(fake.env, 8000, onTrigger)
+    const ctrl = new BannerTriggerController(fake.env, 2000, onTrigger)
     ctrl.start()
-    vi.advanceTimersByTime(8000)
+    vi.advanceTimersByTime(2000)
     fake.dispatch('focus')
-    vi.advanceTimersByTime(8000)
+    vi.advanceTimersByTime(2000)
     expect(onTrigger).toHaveBeenCalledTimes(1)
     ctrl.stop()
   })

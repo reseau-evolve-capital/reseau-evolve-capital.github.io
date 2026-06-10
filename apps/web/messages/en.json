@@ -921,11 +921,15 @@
       "cta": "Show me how"
     },
     "iosOther": {
-      "headline": "Open it in Safari.",
-      "subline": "Installing works from Safari on iPhone. We'll copy the address — just paste it.",
-      "cta": "Continue in Safari"
+      "headline": "Install Evolve on your home screen.",
+      "subline": "We'll copy a sign-in link. Open Safari, paste it — you'll already be signed in, ready to install.",
+      "cta": "Install the app"
     },
     "toastCopied": {
+      "title": "Link copied",
+      "message": "Open Safari and paste the link — you'll be signed in automatically."
+    },
+    "toastCopiedPlain": {
       "title": "Address copied",
       "message": "Open Safari and paste it into the address bar."
     },
