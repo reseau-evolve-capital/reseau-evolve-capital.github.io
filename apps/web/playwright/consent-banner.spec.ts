@@ -100,7 +100,9 @@ test('« Personnaliser » ouvre le panneau granulaire ; « Enregistrer » (analy
   await banner.getByRole('button', { name: 'Personnaliser mes choix' }).click()
 
   await expect(banner.getByText('Cookies nécessaires')).toBeVisible()
-  await expect(banner.getByText("Cookies d'analyse")).toBeVisible()
+  // `exact: true` : sinon « Cookies d'analyse » matche AUSSI le titre « Nous utilisons des
+  // cookies d'analyse » (substring) → strict mode violation. On cible le libellé de catégorie seul.
+  await expect(banner.getByText("Cookies d'analyse", { exact: true })).toBeVisible()
 
   // Analyse OFF par défaut → Enregistrer = refus de la mesure d'audience.
   await banner.getByRole('button', { name: 'Enregistrer mes préférences' }).click()
