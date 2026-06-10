@@ -1,110 +1,112 @@
 /**
- * Helper analytics (OPS-002) — parité d'API avec la vitrine.
+ * Helper analytics GA4 (UBA — Phase 2). Émet vers `window.gtag('event', …)`.
  *
- * ⚠ LIMITE HONNÊTE : Cloudflare Web Analytics (offre gratuite) NE fournit PAS d'API
- * d'events custom. Le beacon `beacon.min.js` ne définit pas `window.cfAnalytics`, donc
- * `trackEvent()` est un NO-OP sûr en l'état (la garde `window.cfAnalytics` est toujours
- * fausse). On expose tout de même ce helper pour la parité d'API avec apps/vitrine et
- * pour ne pas avoir à réécrire les appels si l'on adopte un provider à events en V1.
- * Cf. docs/analytics.md.
+ * Vie privée (cf. docs/analytics/) : aucun montant exact ni PII en paramètre — uniquement
+ * des buckets et des compteurs. Le `user_id` (pseudonyme haché) n'est posé QUE si le
+ * consentement « Mesure d'audience » est accordé (cf. AnalyticsIdentify). Consent Mode v2
+ * module la confidentialité : avant consentement, gtag n'émet que des pings cookieless.
+ *
+ * Sans GA chargé (NEXT_PUBLIC_GA_ID_APP absent en dev/CI) → no-op sûr (gtag indéfini).
  */
 
-type AnalyticsEvent = {
-  type: string
-  category: string
-  action: string
-  label?: string
-  value?: number
-}
+type GtagFn = (...args: unknown[]) => void
 
 declare global {
   interface Window {
-    cfAnalytics?: {
-      pushEvent: (event: AnalyticsEvent) => void
-    }
+    gtag?: GtagFn
   }
 }
 
-/**
- * Pousse un event analytics si un provider à events est présent.
- * Aujourd'hui no-op (Cloudflare Web Analytics ne pose pas `window.cfAnalytics`).
- */
-export function trackEvent(event: AnalyticsEvent): void {
-  if (typeof window !== 'undefined' && window.cfAnalytics) {
-    window.cfAnalytics.pushEvent(event)
-  }
+function gtag(): GtagFn | null {
+  if (typeof window === 'undefined') return null
+  return typeof window.gtag === 'function' ? window.gtag : null
+}
+
+/** Émet un event GA4. Paramètres : valeurs catégorielles / buckets uniquement (jamais de PII). */
+export function track(name: string, params?: Record<string, unknown>): void {
+  gtag()?.('event', name, params)
+}
+
+/** Pose le user_id pseudonyme + les user properties (à appeler UNIQUEMENT si consenti). */
+export function setAnalyticsUser(userIdHash: string, props: Record<string, unknown>): void {
+  const g = gtag()
+  if (!g) return
+  g('set', { user_id: userIdHash })
+  g('set', 'user_properties', props)
+}
+
+/** Retire le user_id (logout / retrait de consentement). */
+export function clearAnalyticsUser(): void {
+  gtag()?.('set', { user_id: null })
+}
+
+// ─── Bucketisation (jamais de valeur exacte vers GA) ───
+export function valueBucket(eur: number | null | undefined): string {
+  if (eur == null || !Number.isFinite(eur)) return 'unknown'
+  if (eur < 10_000) return '<10k'
+  if (eur < 50_000) return '10-50k'
+  if (eur < 100_000) return '50-100k'
+  return '>100k'
+}
+
+export function countBucket(n: number | null | undefined): string {
+  if (n == null || !Number.isFinite(n)) return 'unknown'
+  if (n <= 5) return '1-5'
+  if (n <= 10) return '6-10'
+  if (n <= 20) return '11-20'
+  return '>20'
 }
 
 /**
- * Events métier candidats (backlog Umami historique). NON remontés par Cloudflare
- * Web Analytics — fournis pour la parité d'API uniquement (cf. limite ci-dessus).
+ * Catalogue d'events (cf. docs/analytics/PLAN-DE-TAGGAGE.md). 🎯 = key event (conversion).
+ * Le bloc `pwa.*` conserve sa signature (utilisé par InstallBannerMount + profil/InstallSection).
  */
 export const analyticsEvents = {
+  auth: {
+    /** 🎯 login_completed — session établie post-magic-link. */
+    loginCompleted: (isFirstLogin?: boolean) =>
+      track('login_completed', { method: 'magic_link', is_first_login: isFirstLogin ?? undefined }),
+    magicLinkSent: () => track('magic_link_requested', {}),
+  },
+  onboarding: {
+    /** 🎯 onboarding_completed — fin du tour → dashboard. */
+    completed: () => track('onboarding_completed', {}),
+  },
   portfolio: {
-    view: () =>
-      trackEvent({
-        type: 'event',
-        category: 'Portfolio',
-        action: 'View',
+    /** 🎯 portfolio_viewed — rendu de /portfolio (1ʳᵉ vue = moment « aha »). */
+    viewed: (params: { valueBucket: string; positionsBucket: string }) =>
+      track('portfolio_viewed', {
+        portfolio_value_bucket: params.valueBucket,
+        positions_count_bucket: params.positionsBucket,
+      }),
+  },
+  attestation: {
+    /** 🎯 attestation_download — téléchargement de l'attestation de détention. */
+    downloaded: (params?: { triggerSource?: 'in_app' | 'email' }) =>
+      track('attestation_download', {
+        document_type: 'detention',
+        trigger_source: params?.triggerSource ?? 'in_app',
       }),
   },
   sync: {
-    manualTrigger: () =>
-      trackEvent({
-        type: 'event',
-        category: 'Sync',
-        action: 'Manual Trigger',
-      }),
+    manualTrigger: () => track('sync_triggered', { trigger_source: 'manual' }),
   },
   pdf: {
-    download: (document: string) =>
-      trackEvent({
-        type: 'event',
-        category: 'PDF',
-        action: 'Download',
-        label: document,
-      }),
+    download: (document: string) => track('attestation_download', { document_type: document }),
   },
-  auth: {
-    magicLinkSent: () =>
-      trackEvent({
-        type: 'event',
-        category: 'Auth',
-        action: 'Magic Link Sent',
-      }),
-  },
-  // PWA-001 — instrumentation bannière d'installation. NON remontés par Cloudflare
-  // Web Analytics (no-op) ; prêts pour un provider à events en V1 (cf. limite en tête).
   pwa: {
     bannerShown: (pwaCase: string, visitCount: number, dismissCount: number) =>
-      trackEvent({
-        type: 'event',
-        category: 'PWA',
-        action: 'Banner Shown',
-        label: pwaCase,
-        value: visitCount * 100 + dismissCount,
+      track('pwa_install_prompt_shown', {
+        pwa_case: pwaCase,
+        visit_count: visitCount,
+        dismiss_count: dismissCount,
       }),
-    ctaClicked: (pwaCase: string) =>
-      trackEvent({ type: 'event', category: 'PWA', action: 'Banner CTA Clicked', label: pwaCase }),
+    ctaClicked: (pwaCase: string) => track('pwa_install_cta_clicked', { pwa_case: pwaCase }),
     dismissed: (pwaCase: string, dismissCount: number) =>
-      trackEvent({
-        type: 'event',
-        category: 'PWA',
-        action: 'Banner Dismissed',
-        label: pwaCase,
-        value: dismissCount,
-      }),
-    installCompleted: (pwaCase: string) =>
-      trackEvent({ type: 'event', category: 'PWA', action: 'Install Completed', label: pwaCase }),
+      track('pwa_install_dismissed', { pwa_case: pwaCase, dismiss_count: dismissCount }),
+    installCompleted: (pwaCase: string) => track('pwa_install_accepted', { pwa_case: pwaCase }),
     iosInstructionsViewed: (pwaCase: string, step: number) =>
-      trackEvent({
-        type: 'event',
-        category: 'PWA',
-        action: 'iOS Instructions Viewed',
-        label: pwaCase,
-        value: step,
-      }),
-    clipboardCopied: () =>
-      trackEvent({ type: 'event', category: 'PWA', action: 'Clipboard Copied' }),
+      track('pwa_ios_instructions_viewed', { pwa_case: pwaCase, step }),
+    clipboardCopied: () => track('pwa_clipboard_copied', {}),
   },
 } as const

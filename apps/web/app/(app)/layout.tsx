@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
+import { createHash } from 'crypto'
 import { cookies } from 'next/headers'
 import { getTranslations, getLocale } from 'next-intl/server'
 import { createServerClient } from '@evolve/data'
+import { AnalyticsIdentify } from '@/components/analytics/AnalyticsIdentify'
 import { formatDateLong, formatRelativeTime } from '@evolve/utils'
 import type { SidebarClub } from '@evolve/ui'
 import { ToastProvider } from '@evolve/ui'
@@ -28,8 +30,21 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   let isStaff = false
   let clubActif: SidebarClub | undefined
   let syncLabel: string | undefined
+  // Analytics (Phase 2) : identité pseudonyme. user_id = SHA-256(salt + UUID Supabase) —
+  // jamais l'UUID brut ni d'email. Posé côté client UNIQUEMENT si consentement accordé.
+  let userIdHash: string | null = null
+  let clubCount = 0
 
   if (authUser) {
+    const salt = process.env.ANALYTICS_USER_ID_SALT ?? 'evolve-uba'
+    userIdHash = createHash('sha256').update(`${salt}:${authUser.id}`).digest('hex').slice(0, 32)
+    const { count } = await supabase
+      .from('memberships')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', authUser.id)
+      .eq('is_active', true)
+    clubCount = count ?? 0
+
     const { data } = await supabase
       .from('users')
       .select('full_name, avatar_url')
@@ -102,6 +117,17 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           {/* PWA-001 : bannière d'installation. Montée ici (persiste entre onglets) mais
               ne s'affiche que sur /dashboard. Enrobée d'un ErrorBoundary interne. */}
           <InstallBannerMount />
+          {/* Analytics GA4 (Phase 2) : user_id pseudonyme + user properties (consent-gated)
+              + login_completed une fois par session. Aucune PII. */}
+          <AnalyticsIdentify
+            userIdHash={userIdHash}
+            userProps={{
+              user_type: isStaff ? 'staff' : 'member',
+              club_count: clubCount,
+              onboarding_complete: true,
+              locale,
+            }}
+          />
         </ToastProvider>
       </SupabaseProvider>
     </QueryProvider>

@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { OnboardingShell, CarouselSlider, SlideCard, Button, Link } from '@evolve/ui'
 
+import { analyticsEvents } from '@/lib/analytics'
+
 export function TourClient() {
   const router = useRouter()
   const t = useTranslations('onboarding')
@@ -47,7 +49,10 @@ export function TourClient() {
             type="button"
             variant="primary"
             size="lg"
-            onClick={() => router.push('/dashboard')}
+            onClick={() => {
+              analyticsEvents.onboarding.completed()
+              router.push('/dashboard')
+            }}
             className="w-full"
           >
             {t('tour.enterSpace')}
