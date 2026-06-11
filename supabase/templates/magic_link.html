@@ -28,6 +28,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light" />
+    <!-- Empêche iOS d'auto-détecter (et de rendre cliquables) les longues suites
+         de chiffres du token comme des numéros de téléphone/dates. -->
+    <meta
+      name="format-detection"
+      content="telephone=no,date=no,address=no,email=no"
+    />
     <title>Connexion à Evolve Capital</title>
   </head>
   <body
@@ -124,7 +130,11 @@
                   </tr>
                 </table>
 
-                <!-- Lien en clair (backup) — toujours {{ .ConfirmationURL }}, jamais de code -->
+                <!-- Lien en clair (backup) — TEXTE BRUT, jamais une ancre : un
+                     long-press iOS pour copier une ancre ouvre un aperçu qui
+                     prefetch l'URL et consomme le lien à usage unique avant le
+                     clic. En texte, l'utilisateur copie l'URL sans la déclencher.
+                     Toujours {{ .ConfirmationURL }}, jamais de code. -->
                 <div
                   style="margin-top: 22px; border: 1px solid #e4e4df; border-radius: 10px; background-color: #fafaf9; padding: 14px 16px;"
                 >
@@ -133,12 +143,9 @@
                   >
                     Ou copie ce lien dans ton navigateur
                   </p>
-                  <a
-                    href="{{ .ConfirmationURL }}"
-                    target="_blank"
-                    style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5f6062; word-break: break-all; line-height: 1.5; text-decoration: none;"
-                    >{{ .ConfirmationURL }}</a
-                  >
+                  <p
+                    style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #5f6062; word-break: break-all; line-height: 1.5; -webkit-user-select: all; user-select: all;"
+                  >{{ .ConfirmationURL }}</p>
                 </div>
 
                 <p
