@@ -113,10 +113,22 @@ describe('MagicLinkEmail', () => {
 
   it('expose le lien en clair (backup plaintext) et un ton rassurant', async () => {
     const html = await renderEmailHtml(createElement(MagicLinkEmail, { magicLink, expiresInMin }))
-    // Lien backup en clair (apparaît au moins deux fois : href + texte).
+    // L'URL apparaît au moins deux fois : le href du CTA + le texte backup copiable.
     const occurrences = html.split(magicLink).length - 1
     expect(occurrences).toBeGreaterThanOrEqual(2)
     // L'apostrophe est échappée en entité HTML (&#x27;) par React Email.
     expect(html).toMatch(/Tu n(?:'|&#x27;)as pas demandé ce lien/i)
+  })
+
+  it('backup en TEXTE BRUT, jamais une ancre cliquable (anti-prefetch long-press iOS)', async () => {
+    const html = await renderEmailHtml(createElement(MagicLinkEmail, { magicLink, expiresInMin }))
+    // Sur iOS, un long-press pour copier une ANCRE ouvre un aperçu qui prefetch
+    // l'URL et consomme le lien à usage unique avant même le clic. Le backup doit
+    // donc être du texte : une SEULE ancre pointe vers le magic link — le CTA.
+    const escaped = magicLink.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const anchorsToMagicLink = html.match(new RegExp(`<a\\b[^>]*href="${escaped}"`, 'g')) ?? []
+    expect(anchorsToMagicLink).toHaveLength(1)
+    // …mais l'URL reste affichée en clair (copiable) dans le corps.
+    expect(html).toContain(magicLink)
   })
 })

@@ -1,4 +1,4 @@
-import { Button, Heading, Link, Section, Text } from '@react-email/components'
+import { Button, Heading, Section, Text } from '@react-email/components'
 import type { ReactNode } from 'react'
 import { brand, font, radius, semantic } from '@evolve/design-system'
 import { EvolveEmailShell } from './_layout/EvolveEmailShell.tsx'
@@ -107,11 +107,13 @@ export function MagicLinkEmail({
         {t.cta}
       </Button>
 
+      {/* Lien backup en TEXTE BRUT (jamais une ancre) : un long-press iOS pour
+          copier une ancre ouvre un aperçu qui prefetch l'URL et consomme le lien
+          à usage unique avant le clic. En texte, l'utilisateur sélectionne/copie
+          l'URL sans la déclencher. Le CTA « Se connecter » reste le seul lien. */}
       <Section style={plain}>
         <Text style={plainLabel}>{t.backupLabel}</Text>
-        <Link href={magicLink} style={plainUrl}>
-          {magicLink}
-        </Link>
+        <Text style={plainUrl}>{magicLink}</Text>
       </Section>
 
       <Text style={note}>
@@ -190,11 +192,15 @@ const plainLabel: React.CSSProperties = {
 }
 
 const plainUrl: React.CSSProperties = {
+  margin: 0,
   fontFamily: font.mono,
   fontSize: '12px',
   color: semantic.textSec,
   wordBreak: 'break-all',
   lineHeight: '1.5',
+  // Texte sélectionnable, jamais cliquable (cf. <Text> plutôt que <Link>).
+  WebkitUserSelect: 'all',
+  userSelect: 'all',
 }
 
 const note: React.CSSProperties = {
