@@ -18,6 +18,15 @@ export function parseFrDate(input: string | null | undefined): Date | null {
   return d
 }
 
+/** "dimanche, 03/05/2026" | "03/05/2026" → Date UTC à minuit (extrait la première
+ *  date dd/MM/yyyy de la chaîne puis délègue à parseFrDate). null si invalide. */
+export function parseReportingDate(input: string | null | undefined): Date | null {
+  if (input == null) return null
+  const m = input.match(/\d{1,2}[/-]\d{1,2}[/-]\d{4}/)
+  if (!m) return null
+  return parseFrDate(m[0])
+}
+
 const FR_MONTHS: Record<string, number> = {
   janvier: 1,
   fevrier: 2,
