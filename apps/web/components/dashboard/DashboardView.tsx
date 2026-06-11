@@ -26,6 +26,7 @@ import {
 } from '@evolve/ui'
 import { formatRelativeTime, formatEUR } from '@evolve/utils'
 
+import { analyticsEvents, valueBucket } from '@/lib/analytics'
 import { type DashboardData } from '@/lib/data/dashboard'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
@@ -65,6 +66,18 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
     const raf = requestAnimationFrame(() => setNow(Date.now()))
     return () => cancelAnimationFrame(raf)
   }, [data?.syncedAt])
+  // Analytics (A/B dashboard V2) : dashboard_viewed — une fois par montage, dès que les
+  // données sont prêtes. Valeurs BUCKETISÉES (jamais de montant exact vers GA), pas de setState.
+  const viewedRef = useRef(false)
+  useEffect(() => {
+    if (viewedRef.current || !data) return
+    viewedRef.current = true
+    analyticsEvents.dashboard.viewed({
+      variant: 'v1',
+      valueBucket: valueBucket(data.netMarketValue),
+      contributionStatus: data.contribution.status,
+    })
+  }, [data])
 
   async function refresh() {
     setRefreshing(true)
@@ -143,7 +156,10 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
       <DashboardHero
         netMarketValue={data.netMarketValue}
         syncedAt={data.syncedAt}
-        onClick={() => setDetailOpen(true)}
+        onClick={() => {
+          analyticsEvents.dashboard.heroDetailOpened({ variant: 'v1' })
+          setDetailOpen(true)
+        }}
         highlight
         label={t('hero.label')}
         detailLabel={t('hero.viewDetail')}

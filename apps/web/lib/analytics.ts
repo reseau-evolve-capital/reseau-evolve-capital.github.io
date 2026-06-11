@@ -72,6 +72,37 @@ export const analyticsEvents = {
     /** 🎯 onboarding_completed — fin du tour → dashboard. */
     completed: () => track('onboarding_completed', {}),
   },
+  // Expérience A/B dashboard V2 : `dashboard_variant` segmente tous les events dashboard.
+  // Signatures GELÉES (contrat partagé V1/V2 — cf. PLAN-DE-TAGGAGE.md §3.2).
+  dashboard: {
+    /** dashboard_viewed — mount de la variante active (fire-once par mount). */
+    viewed: (params: {
+      variant: 'v1' | 'v2'
+      valueBucket: string
+      contributionStatus: string
+      /** V2 uniquement, omis en V1. */
+      chartDataSource?: 'live' | 'demo'
+    }) =>
+      track('dashboard_viewed', {
+        dashboard_variant: params.variant,
+        portfolio_value_bucket: params.valueBucket,
+        contribution_status: params.contributionStatus,
+        chart_data_source: params.chartDataSource,
+      }),
+    /** dashboard_chart_period_changed — interaction toggle période (V2). */
+    chartPeriodChanged: (params: {
+      period: '7d' | '30d' | '90d' | '1y' | 'max'
+      chartDataSource: 'live' | 'demo'
+    }) =>
+      track('dashboard_chart_period_changed', {
+        dashboard_variant: 'v2',
+        period: params.period,
+        chart_data_source: params.chartDataSource,
+      }),
+    /** dashboard_hero_detail_opened — ouverture du détail quote-part. */
+    heroDetailOpened: (params: { variant: 'v1' | 'v2' }) =>
+      track('dashboard_hero_detail_opened', { dashboard_variant: params.variant }),
+  },
   portfolio: {
     /** 🎯 portfolio_viewed — rendu de /portfolio (1ʳᵉ vue = moment « aha »). */
     viewed: (params: { valueBucket: string; positionsBucket: string }) =>
