@@ -270,6 +270,28 @@
       "description": "It represents {pct} of {clubName}'s portfolio. It evolves with your contributions and the performance of the holdings.",
       "lastSync": "Last sync {time}",
       "viewPortfolio": "View my portfolio →"
+    },
+    "evolution": {
+      "title": "Evolution",
+      "periods": {
+        "7d": "7D",
+        "30d": "30D",
+        "90d": "90D",
+        "1y": "1Y",
+        "max": "MAX"
+      },
+      "sinceJoin": "since you joined",
+      "demoLabel": "Illustrative curve",
+      "periodGroup": "Period"
+    },
+    "v2": {
+      "understand": "Understand my share",
+      "position": "My position",
+      "club": {
+        "title": "Club portfolio",
+        "viewDetail": "view details"
+      },
+      "heroMetaYesterday": "yesterday · {date}"
     }
   },
   "portfolio": {

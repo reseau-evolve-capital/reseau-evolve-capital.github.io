@@ -270,6 +270,28 @@
       "description": "Elle représente {pct} du portefeuille de {clubName}. Elle évolue selon tes cotisations et la performance des titres.",
       "lastSync": "Dernière sync {time}",
       "viewPortfolio": "Voir mon portefeuille →"
+    },
+    "evolution": {
+      "title": "Évolution",
+      "periods": {
+        "7d": "7J",
+        "30d": "30J",
+        "90d": "90J",
+        "1y": "1A",
+        "max": "MAX"
+      },
+      "sinceJoin": "depuis ton adhésion",
+      "demoLabel": "Courbe illustrative",
+      "periodGroup": "Période"
+    },
+    "v2": {
+      "understand": "Comprendre ma quote-part",
+      "position": "Ma position",
+      "club": {
+        "title": "Portefeuille du club",
+        "viewDetail": "voir le détail"
+      },
+      "heroMetaYesterday": "hier · {date}"
     }
   },
   "portfolio": {
