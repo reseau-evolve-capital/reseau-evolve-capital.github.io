@@ -5,7 +5,7 @@ import { cn } from '../../lib/cn'
 
 export interface SparklineMiniProps {
   data: number[]
-  /** Couleur de trait — token CSS uniquement (défaut brand-yellow). */
+  /** Couleur de trait — token CSS uniquement (défaut data-positive, dataviz V2). */
   color?: string
   height?: number
   className?: string
@@ -14,7 +14,7 @@ export interface SparklineMiniProps {
 /** Sparkline 30j sans axes ni tooltip. <2 points → rien (caller gère l'empty). */
 export function SparklineMini({
   data,
-  color = 'var(--color-brand-yellow)',
+  color = 'var(--color-data-positive)',
   height = 40,
   className,
 }: SparklineMiniProps) {

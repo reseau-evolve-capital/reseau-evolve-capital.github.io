@@ -30,10 +30,10 @@ export const Short: Story = {
   },
 }
 
-/** Couleur token data-positive (variation positive) */
+/** Couleur custom — token brand-yellow (le défaut est désormais data-positive). */
 export const CustomColor: Story = {
   args: {
     data: Array.from({ length: 30 }, (_, i) => 100 + i * 3),
-    color: 'var(--color-data-positive)',
+    color: 'var(--color-brand-yellow)',
   },
 }
