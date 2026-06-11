@@ -47,6 +47,82 @@ export const Exempte: Story = {
   },
 }
 
+/** Compact V2 — en attente : header 1 ligne, badge pill WARNING (arbitrage maquette V2). */
+export const CompactEnAttente: Story = {
+  args: {
+    variant: 'compact',
+    status: 'pending',
+    title: 'Cotisation',
+    statusLabel: 'En attente',
+    message: 'Ta cotisation du mois est en cours de traitement.',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: 360 }}>
+        <Story />
+      </div>
+    ),
+  ],
+}
+
+/** Compact V2 — à jour. */
+export const CompactAJour: Story = {
+  args: {
+    variant: 'compact',
+    status: 'ok',
+    title: 'Cotisation',
+    statusLabel: 'À jour',
+    message: 'Tu es à jour de tes cotisations.',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: 360 }}>
+        <Story />
+      </div>
+    ),
+  ],
+}
+
+/** Compact V2 — en retard (montant dû rappelé). */
+export const CompactEnRetard: Story = {
+  args: {
+    variant: 'compact',
+    status: 'late',
+    title: 'Cotisation',
+    statusLabel: 'En retard',
+    message: 'Régularise pour continuer à investir.',
+    amountDueLabel: '150,00 €',
+  },
+  decorators: [
+    (Story) => (
+      <div style={{ width: 360 }}>
+        <Story />
+      </div>
+    ),
+  ],
+}
+
+/** Compact V2 — variante sombre (data-theme="dark"). */
+export const CompactDark: Story = {
+  args: {
+    variant: 'compact',
+    status: 'pending',
+    title: 'Cotisation',
+    statusLabel: 'En attente',
+    message: 'Ta cotisation du mois est en cours de traitement.',
+  },
+  decorators: [
+    (Story) => (
+      <div
+        data-theme="dark"
+        style={{ width: 360, padding: 16, background: 'var(--color-bg-page)', borderRadius: 12 }}
+      >
+        <Story />
+      </div>
+    ),
+  ],
+}
+
 /** Les 4 états côte à côte (revue design). */
 export const TousLesEtats: Story = {
   render: () => (

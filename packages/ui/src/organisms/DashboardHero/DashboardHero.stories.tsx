@@ -81,3 +81,59 @@ export const Clickable: Story = {
     expect(args.onClick).toHaveBeenCalledTimes(1)
   },
 }
+
+/** Hero V2 « open » mobile — sans carte, montant display 58px, méta + action. */
+export const OpenMobile: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ width: 375, padding: 16, background: 'var(--color-bg-page)' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    netMarketValue: 64_320.5,
+    appearance: 'open',
+    variation: { direction: 'up', value: '+1,2 %', subValue: '+773 €' },
+    variationMeta: 'hier · 10.06',
+    action: (
+      <a href="#" className="text-[13px] font-semibold text-text-sec underline underline-offset-2">
+        Comprendre ma quote-part
+      </a>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    expect(canvas.getByText('hier · 10.06')).toBeInTheDocument()
+    expect(canvas.getByRole('link', { name: 'Comprendre ma quote-part' })).toBeInTheDocument()
+    expect(canvas.getByText('Ta quote-part')).toBeInTheDocument()
+  },
+}
+
+/** Hero V2 « open » desktop — montant 88px (md+), variation + méta + action. */
+export const OpenDesktop: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ width: 760, padding: 24, background: 'var(--color-bg-page)' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    netMarketValue: 133_655,
+    appearance: 'open',
+    syncedAt: new Date(Date.now() - 35 * 60 * 1000),
+    variation: { direction: 'up', value: '+4,55 %', subValue: '+2 854 €' },
+    variationMeta: 'hier · 10.06',
+    action: (
+      <a href="#" className="text-[13px] font-semibold text-text-sec underline underline-offset-2">
+        Comprendre ma quote-part
+      </a>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    expect(canvas.getByText('Ta quote-part')).toBeInTheDocument()
+    expect(canvas.getByText('+4,55 %')).toBeInTheDocument()
+  },
+}
