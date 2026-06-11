@@ -70,6 +70,10 @@ export function EvolveEmailShell({
             Levier standard (Apple Mail, iOS, Outlook ; Gmail partiel). */}
         <meta name="color-scheme" content="light" />
         <meta name="supported-color-schemes" content="light" />
+        {/* Empêche iOS d'auto-détecter (et de rendre cliquables) les longues
+            suites de chiffres — ex. le token d'un magic link — comme des numéros
+            de téléphone/dates, ce qui ajouterait des liens parasites au corps. */}
+        <meta name="format-detection" content="telephone=no,date=no,address=no,email=no" />
       </Head>
       <Preview>{preview}</Preview>
       <Body style={body}>
