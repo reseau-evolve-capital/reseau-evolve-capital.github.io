@@ -146,6 +146,67 @@ describe('DashboardHero — historicalData', () => {
 // Accessibilité (jest-axe)
 // -------------------------------------------------------------------
 
+// -------------------------------------------------------------------
+// Variante V2 « open » + variationMeta + action (additif — défaut inchangé)
+// -------------------------------------------------------------------
+
+describe('DashboardHero — appearance="open" (V2)', () => {
+  it('open → le chrome de carte (bg-card) disparaît, le contenu reste', () => {
+    const { container, getByText } = render(
+      <DashboardHero netMarketValue={64_320.5} appearance="open" />
+    )
+    expect(getByText('Ta quote-part')).toBeTruthy()
+    expect(container.querySelector('.bg-card')).toBeNull()
+  })
+
+  it('défaut (card) → le chrome de carte est présent (non-régression)', () => {
+    const { container } = render(<DashboardHero netMarketValue={64_320.5} />)
+    expect(container.querySelector('.bg-card')).not.toBeNull()
+  })
+
+  it('variationMeta est rendue à côté du TrendBadge quand variation est fournie', () => {
+    const { getByText } = render(
+      <DashboardHero
+        netMarketValue={64_320.5}
+        variation={{ direction: 'up', value: '+1,2 %' }}
+        variationMeta="hier · 10.06"
+      />
+    )
+    expect(getByText('hier · 10.06')).toBeTruthy()
+  })
+
+  it('variationMeta sans variation → non rendue (elle accompagne le badge)', () => {
+    const { queryByText } = render(
+      <DashboardHero netMarketValue={64_320.5} variationMeta="hier · 10.06" />
+    )
+    expect(queryByText('hier · 10.06')).toBeNull()
+  })
+
+  it('le slot action est rendu sous la ligne de variation', () => {
+    const { getByRole } = render(
+      <DashboardHero
+        netMarketValue={64_320.5}
+        appearance="open"
+        action={<a href="#comprendre">Comprendre ma quote-part</a>}
+      />
+    )
+    expect(getByRole('link', { name: 'Comprendre ma quote-part' })).toBeTruthy()
+  })
+
+  it('open : pas de violations axe (avec méta + action)', async () => {
+    const { container } = render(
+      <DashboardHero
+        netMarketValue={64_320.5}
+        appearance="open"
+        variation={{ direction: 'up', value: '+1,2 %' }}
+        variationMeta="hier · 10.06"
+        action={<a href="#comprendre">Comprendre ma quote-part</a>}
+      />
+    )
+    expect(await axe(container)).toHaveNoViolations()
+  })
+})
+
 describe('DashboardHero — accessibilité (jest-axe)', () => {
   it('cas nominal (div) : pas de violations axe', async () => {
     const { container } = render(
