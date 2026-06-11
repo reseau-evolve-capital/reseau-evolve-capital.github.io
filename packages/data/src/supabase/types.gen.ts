@@ -66,6 +66,53 @@ export type Database = {
           },
         ]
       }
+      club_reporting_daily: {
+        Row: {
+          capital_gain: number | null
+          club_id: string
+          created_at: string
+          id: string
+          performance_ratio: number | null
+          portfolio_value: number
+          report_date: string
+          synced_at: string
+          total_contributions: number
+          updated_at: string
+        }
+        Insert: {
+          capital_gain?: number | null
+          club_id: string
+          created_at?: string
+          id?: string
+          performance_ratio?: number | null
+          portfolio_value: number
+          report_date: string
+          synced_at: string
+          total_contributions: number
+          updated_at?: string
+        }
+        Update: {
+          capital_gain?: number | null
+          club_id?: string
+          created_at?: string
+          id?: string
+          performance_ratio?: number | null
+          portfolio_value?: number
+          report_date?: string
+          synced_at?: string
+          total_contributions?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'club_reporting_daily_club_id_fkey'
+            columns: ['club_id']
+            isOneToOne: false
+            referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       clubs: {
         Row: {
           annual_investment_cap: number | null
