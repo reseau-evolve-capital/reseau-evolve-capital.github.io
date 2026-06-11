@@ -173,6 +173,9 @@ importers:
       react-hook-form:
         specifier: ^7
         version: 7.77.0(react@19.2.6)
+      server-only:
+        specifier: ^0.0.1
+        version: 0.0.1
       zod:
         specifier: ^4.4.3
         version: 4.4.3
@@ -10195,6 +10198,12 @@ packages:
       }
     engines: { node: '>= 0.8.0' }
 
+  server-only@0.0.1:
+    resolution:
+      {
+        integrity: sha512-qepMx2JxAa5jjfzxG79yPPq+8BuFToHd1hm7kI+Z4zAq1ftQiP7HcxMhDDItrbtwVeLg/cY2JnKnrcFkmiswNA==,
+      }
+
   set-blocking@2.0.0:
     resolution:
       {
@@ -18014,6 +18023,8 @@ snapshots:
       send: 0.19.2
     transitivePeerDependencies:
       - supports-color
+
+  server-only@0.0.1: {}
 
   set-blocking@2.0.0: {}
 
