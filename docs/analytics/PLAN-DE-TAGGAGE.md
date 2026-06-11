@@ -79,7 +79,9 @@ Routes : `/login`(+`/check-email`,`/verify`,`/verify/expired`,`/invite`), `/onbo
 
 | Event                         | Paramètres                                                                                     | Déclencheur                      | Objectif                      |
 | ----------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------- |
-| `dashboard_viewed`            | `portfolio_value_bucket`, `contribution_status`                                                | render `/dashboard`              | engagement cœur               |
+| `dashboard_viewed`            | `dashboard_variant` (`v1`\|`v2`), `portfolio_value_bucket`, `contribution_status`, `chart_data_source` (`live`\|`demo`, V2 uniquement) | mount de la variante active (une fois) | engagement cœur + **mesure A/B** |
+| `dashboard_chart_period_changed` | `dashboard_variant` (`v2`), `period` (`7d`\|`30d`\|`90d`\|`1y`\|`max`), `chart_data_source` | clic toggle période (V2)         | usage du graphe V2            |
+| `dashboard_hero_detail_opened` | `dashboard_variant`                                                                           | ouverture du dialog « Comprendre ma quote-part » | profondeur hero  |
 | **`portfolio_viewed`** 🎯     | `portfolio_value_bucket`, `positions_count_bucket`                                             | render `/portfolio`              | **moment « aha »** (1ʳᵉ fois) |
 | `portfolio_filter_changed`    | `filter_dimension` (`secteur`), `filter_value`                                                 | filtre/donut                     | usage analyse                 |
 | `position_detail_opened`      | `sector`                                                                                       | ouverture détail ligne           | profondeur                    |
@@ -89,6 +91,8 @@ Routes : `/login`(+`/check-email`,`/verify`,`/verify/expired`,`/invite`), `/onbo
 | **`attestation_download`** 🎯 | `document_type: "detention"`, `trigger_source` (`in_app`\|`email`), `is_first_download` (bool) | clic téléchargement              | usage livrable                |
 | `theme_toggled`               | `from_theme`, `to_theme`                                                                       | clic `ThemeToggle`               | préférence UI                 |
 | `lang_switch`                 | `from_locale`, `to_locale`                                                                     | toggle next-intl                 | usage i18n                    |
+
+> **Expérience A/B dashboard V2** : `/dashboard` rend la V1 ou la V2 selon `getDashboardVariant()`. La variante active est portée par `dashboard_variant` sur **tous** les events `dashboard_*` — c'est la dimension de comparaison de l'expérience. `chart_data_source` (V2 uniquement, omis en V1) distingue un graphe alimenté en données réelles (`live`) du mode démo (`demo`). Règle **anti-PII inchangée** (cf. §5) : jamais de montant exact — la valo passe exclusivement par `portfolio_value_bucket`.
 
 ### 3.3 Admin (trésorier)
 
