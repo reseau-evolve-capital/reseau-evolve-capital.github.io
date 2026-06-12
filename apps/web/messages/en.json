@@ -94,7 +94,20 @@
       "sentTo": "We've sent a magic link to <strong>{email}</strong>. It expires in 10 minutes.",
       "resend": "Resend",
       "resendCooldown": "Resend in {seconds}s",
-      "genericError": "Error"
+      "genericError": "Error",
+      "otp": {
+        "divider": "or",
+        "title": "Enter the code from the email",
+        "hint": "The 6-digit code is in the email, below the sign-in button.",
+        "emailLabel": "Email",
+        "codeLabel": "6-digit code",
+        "codePlaceholder": "123456",
+        "submit": "Sign in with the code",
+        "submitting": "Verifying code…",
+        "errorInvalid": "Invalid or expired code. Check the code you entered or request a new email.",
+        "errorGeneric": "Something went wrong. Please try again in a moment.",
+        "success": "Code verified, signing you in…"
+      }
     },
     "verify": {
       "expiredTitle": "This link has expired or is invalid.",
@@ -263,7 +276,9 @@
     },
     "capacity": {
       "title": "Remaining investment capacity",
-      "subtitle": "You have {amount} left to invest this year. Make the most of it to grow your stake."
+      "subtitle": "You have {amount} left to invest this year. Make the most of it to grow your stake.",
+      "info": "What you have left to invest this year: the club's annual investment cap, minus the payments you've already made this year.",
+      "infoAria": "Learn more about the investment capacity"
     },
     "detail": {
       "title": "Your stake",

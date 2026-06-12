@@ -1,6 +1,7 @@
 import { getTranslations } from 'next-intl/server'
 import { ResendButton } from './ResendButton'
 import { CheckEmailAnimation } from './CheckEmailAnimation'
+import { OtpForm } from './OtpForm'
 
 function maskEmail(email: string): string {
   return email.replace(/(.{1})(.*)(@.*)/, '$1***$3')
@@ -26,6 +27,10 @@ export default async function CheckEmailPage({
         })}
       </p>
       <ResendButton email={email} />
+      {/* Saisie du code OTP — affichée PAR DÉFAUT (choix owner, fix PWA juin) :
+          l'utilisateur clique le lien de l'email OU saisit le code ici (seule
+          option qui fonctionne DANS la PWA iOS, où le lien ouvre Safari). */}
+      <OtpForm email={email} />
     </section>
   )
 }
