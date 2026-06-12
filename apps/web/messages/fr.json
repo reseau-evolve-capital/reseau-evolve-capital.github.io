@@ -94,7 +94,20 @@
       "sentTo": "On t'a envoyé un lien magique à <strong>{email}</strong>. Il expire dans 10 minutes.",
       "resend": "Renvoyer",
       "resendCooldown": "Renvoyer dans {seconds}s",
-      "genericError": "Erreur"
+      "genericError": "Erreur",
+      "otp": {
+        "divider": "ou",
+        "title": "Saisis le code reçu par email",
+        "hint": "Le code à 6 chiffres figure dans l'email, sous le bouton de connexion.",
+        "emailLabel": "Email",
+        "codeLabel": "Code à 6 chiffres",
+        "codePlaceholder": "123456",
+        "submit": "Se connecter avec le code",
+        "submitting": "Vérification du code…",
+        "errorInvalid": "Code invalide ou expiré. Vérifie le code saisi ou demande un nouvel email.",
+        "errorGeneric": "Une erreur est survenue. Réessaie dans un instant.",
+        "success": "Code validé, connexion en cours…"
+      }
     },
     "verify": {
       "expiredTitle": "Ce lien a expiré ou est invalide.",
@@ -263,7 +276,9 @@
     },
     "capacity": {
       "title": "Capacité d'investissement restante",
-      "subtitle": "Il te reste {amount} à investir cette année. Profites-en pour faire grandir ta quote-part."
+      "subtitle": "Il te reste {amount} à investir cette année. Profites-en pour faire grandir ta quote-part.",
+      "info": "Ce qu'il te reste à investir cette année : le plafond annuel d'investissement du club, moins tes versements déjà réglés sur l'année en cours.",
+      "infoAria": "En savoir plus sur la capacité d'investissement"
     },
     "detail": {
       "title": "Ta quote-part",
