@@ -219,3 +219,15 @@ Réf visuelle : `REC/standalone-exports/PWA Install Banners (standalone).html` (
 - **offline.html** : palette dark uniquement (acceptable V0 ; `prefers-color-scheme` = amélioration future).
 - **Action owner** : logo source idéal = SVG/PNG transparent (les icônes maskables sont générées depuis `logo.jpg` fond noir). Script reproductible : `apps/web/scripts/generate-pwa-icons.mjs`.
 - **Branche non poussée** (worktree isolé) — push/PR sur demande.
+
+---
+
+## DSH-011 — pipeline data REPORTING (2026-06-12)
+
+Arbitrages lead (worktree `feat-dsh-011-reporting-sync`) :
+
+- **Pipeline data uniquement, AUCUN changement UI** : le graphe « Évolution » du dashboard V2 reste sur ses données demo jusqu'à DSH-012 (câblage UI = ticket suivant).
+- **`readSheet`** : paramètre de plage **optionnel** ajouté (défaut inchangé pour les 6 feuilles existantes) ; `REPORTING` lue en `A1:E10000` car la série compte ~2 900+ lignes > plage par défaut `A1:AZ2000` (troncature silencieuse sinon).
+- **REPORTING = 7ᵉ feuille OPTIONNELLE du sync** (insérée entre `Portefeuille` et `HISTORIQUE`) : tout échec (feuille absente, mapping KO) → **warning MOLLE** dans le rapport, jamais `success:false` — les 6 feuilles historiques restent le contrat dur.
+- **Hypothèse produit V0** : quote-part membre dérivée = `portfolio_value × detention_pct` **actuel** (approximation documentée si la détention a changé historiquement ; point de départ de la série membre = `MAX` filtré à `joined_at`).
+- Table `club_reporting_daily` (migration 034 : append-only/upsert par date, RLS lecture membres, écriture service-role) documentée dans `REC/DATA_MODEL.md` §2.10.
