@@ -16,16 +16,23 @@ export type MagicLinkLocale = 'fr' | 'en'
  * lien backup en clair (mono), note rassurante. Email essentiel : le lien de
  * désinscription du footer reste affiché mais ne gouverne que les non-essentiels.
  *
- * LIEN UNIQUEMENT (A7) : on n'affiche JAMAIS de code/OTP. Seul `magicLink` (la
- * ConfirmationURL à usage unique) est rendu — comme CTA et comme lien backup.
+ * LIEN + CODE (évolution de A7, fix PWA juin) : le CTA reste le lien
+ * ConfirmationURL à usage unique, mais on affiche AUSSI le code OTP 6 chiffres
+ * (`otpCode`) quand il est fourni. Raison : sur iOS, le lien s'ouvre toujours
+ * dans Safari, jamais dans la PWA installée — le code permet de se connecter
+ * DANS la PWA (saisie sur /login/check-email). Lien et code partagent le même
+ * token sous-jacent : utiliser l'un consomme l'autre (usage unique).
+ * Sans `otpCode`, le rendu reste lien-only (rétro-compatible).
  *
  * Localisé (A8) : prop `locale` ('fr' | 'en', défaut 'fr'). Le catalogue inline
  * couvre les deux langues à parité. Les formateurs restent neutres (la durée est
  * un simple entier de minutes).
  */
 export interface MagicLinkEmailProps {
-  /** URL de connexion à usage unique (ConfirmationURL). Jamais de code/OTP. */
+  /** URL de connexion à usage unique (ConfirmationURL). */
   magicLink: string
+  /** Code OTP 6 chiffres ({{ .Token }}), saisissable dans l'app (PWA iOS). */
+  otpCode?: string
   /** Durée de validité du lien, en minutes. */
   expiresInMin: number
   /** Nom du club, transmis au footer. */
@@ -41,6 +48,8 @@ interface Copy {
   title: string
   lead: (min: number) => ReactNode
   cta: string
+  otpLabel: string
+  otpHint: string
   backupLabel: string
   noteStrong: string
   note: string
@@ -60,6 +69,9 @@ const COPY: Record<MagicLinkLocale, Copy> = {
       </>
     ),
     cta: 'Se connecter',
+    otpLabel: "Ou saisis ce code dans l'application",
+    otpHint:
+      "Pratique depuis l'app installée sur ton téléphone — lien et code sont à usage unique.",
     backupLabel: 'Ou copie ce lien dans ton navigateur',
     noteStrong: "Tu n'as pas demandé ce lien ?",
     note: " Ignore cet email — ton compte reste protégé, aucune action n'a été engagée.",
@@ -77,6 +89,8 @@ const COPY: Record<MagicLinkLocale, Copy> = {
       </>
     ),
     cta: 'Sign in',
+    otpLabel: 'Or enter this code in the app',
+    otpHint: 'Handy from the app installed on your phone — link and code are single-use.',
     backupLabel: 'Or copy this link into your browser',
     noteStrong: "Didn't request this link?",
     note: ' Ignore this email — your account stays protected, no action was taken.',
@@ -85,6 +99,7 @@ const COPY: Record<MagicLinkLocale, Copy> = {
 
 export function MagicLinkEmail({
   magicLink,
+  otpCode,
   expiresInMin,
   clubName,
   locale = 'fr',
@@ -106,6 +121,16 @@ export function MagicLinkEmail({
       <Button href={magicLink} style={cta}>
         {t.cta}
       </Button>
+
+      {/* Code OTP 6 chiffres — saisissable dans l'app (PWA iOS où le lien ouvre
+          Safari). TEXTE BRUT sélectionnable, gros et espacé pour la copie. */}
+      {otpCode && (
+        <Section style={otpBox}>
+          <Text style={plainLabel}>{t.otpLabel}</Text>
+          <Text style={otpDigits}>{otpCode}</Text>
+          <Text style={otpHintStyle}>{t.otpHint}</Text>
+        </Section>
+      )}
 
       {/* Lien backup en TEXTE BRUT (jamais une ancre) : un long-press iOS pour
           copier une ancre ouvre un aperçu qui prefetch l'URL et consomme le lien
@@ -172,6 +197,36 @@ const cta: React.CSSProperties = {
   textDecoration: 'none',
   padding: '17px 24px',
   borderRadius: radius.md,
+}
+
+/** Encadré du code OTP : même grammaire visuelle que le bloc backup, code centré. */
+const otpBox: React.CSSProperties = {
+  marginTop: '22px',
+  border: `1px solid ${semantic.border}`,
+  borderRadius: radius.md,
+  backgroundColor: semantic.bg,
+  padding: '16px',
+  textAlign: 'center',
+}
+
+/** Code 6 chiffres : gros, espacé, sélectionnable d'un tap (user-select: all). */
+const otpDigits: React.CSSProperties = {
+  margin: '0',
+  fontFamily: font.mono,
+  fontWeight: 700,
+  fontSize: '30px',
+  letterSpacing: '0.32em',
+  lineHeight: '1.3',
+  color: semantic.text,
+  WebkitUserSelect: 'all',
+  userSelect: 'all',
+}
+
+const otpHintStyle: React.CSSProperties = {
+  margin: '8px 0 0',
+  fontSize: '12px',
+  lineHeight: '1.5',
+  color: semantic.textTer,
 }
 
 const plain: React.CSSProperties = {
