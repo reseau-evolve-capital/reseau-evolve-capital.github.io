@@ -30,7 +30,8 @@ export default async function DashboardPage() {
 
   // Expérience A/B « Dashboard V2 » — SEUL point de branchement. Précédence :
   // env DASHBOARD_V2_FORCE > cookie QA (lecture seule) > bucket déterministe
-  // hashBucket(userId) < DASHBOARD_V2_ROLLOUT (défaut 0 = fail-safe V1).
+  // hashBucket(userId) < DASHBOARD_V2_ROLLOUT (défaut 100 = V2 pour tous depuis le
+  // rollout 100 % du 2026-06-12 ; poser 0 = kill-switch retour V1).
   const variantCookie = cookieStore.get(DASHBOARD_VARIANT_COOKIE)?.value ?? null
   const variant = getDashboardVariant(auth.user.id, variantCookie)
   // Ancre des séries demo V2 : date de sync du club, sinon « maintenant » (côté serveur, OK).

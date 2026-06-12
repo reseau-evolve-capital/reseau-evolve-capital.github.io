@@ -63,13 +63,20 @@ describe('getDashboardVariant — précédence env > cookie > hash', () => {
 describe('getDashboardVariant — rollout', () => {
   const userIds = Array.from({ length: 1000 }, (_, i) => `user-synthetique-${i}`)
 
-  it('rollout absent → défaut 0 → toujours v1 (fail-safe)', () => {
+  it('rollout absent → défaut 100 → toujours v2 (rollout 100 % acté 2026-06-12)', () => {
     for (const id of userIds.slice(0, 100)) {
-      expect(getDashboardVariant(id, null)).toBe('v1')
+      expect(getDashboardVariant(id, null)).toBe('v2')
     }
   })
 
-  it('rollout 0 → toujours v1', () => {
+  it('rollout VIDE (ligne `DASHBOARD_V2_ROLLOUT=` de .env) → traité comme absent → v2', () => {
+    vi.stubEnv('DASHBOARD_V2_ROLLOUT', '')
+    for (const id of userIds.slice(0, 100)) {
+      expect(getDashboardVariant(id, null)).toBe('v2')
+    }
+  })
+
+  it('rollout 0 → toujours v1 (kill-switch : retour V1 général)', () => {
     vi.stubEnv('DASHBOARD_V2_ROLLOUT', '0')
     for (const id of userIds.slice(0, 100)) {
       expect(getDashboardVariant(id, null)).toBe('v1')
