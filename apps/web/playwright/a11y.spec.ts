@@ -12,8 +12,12 @@
  */
 import { test, expect, type Page } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import postgres from 'postgres'
 
 import { loginAsSeedMember } from './helpers'
+
+const DB_URL = process.env.E2E_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+const SEED_CLUB_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
 
 const BLOCKING = new Set(['critical', 'serious'])
 
@@ -51,6 +55,30 @@ test.describe('A11y — écrans publics', () => {
 })
 
 test.describe('A11y — écrans authentifiés', () => {
+  // Prérequis : le test /portfolio audite la vue PEUPLÉE (h1 « Portefeuille » — l'état
+  // vide rend un h2 différent). On garantit la premise en upsertant les 3 positions de
+  // démo du GUIDE_DEV_LOCAL §6 (pattern « seeding local par spec », cf. admin.spec.ts).
+  test.beforeAll(async () => {
+    const sql = postgres(DB_URL, { max: 1 })
+    try {
+      await sql`
+        INSERT INTO positions (club_id, name, symbol, category, sector, quantity, currency,
+                               market_value, book_value, allocation_pct, pump, gain_loss_pct,
+                               gain_loss_eur, is_active, synced_at)
+        VALUES
+          (${SEED_CLUB_ID}::uuid, 'META PLATFORMS', 'NASDAQ:META', 'Actions', 'Technologie', 248, 'EUR',
+            145050, 113216, 33.5, 456.5, 28.1, 31834, true, NOW()),
+          (${SEED_CLUB_ID}::uuid, 'NVIDIA', 'NASDAQ:NVDA', 'Actions', 'Technologie', 2957, 'EUR',
+            506577, 125586, 50.2, 42.5, 303.4, 380991, true, NOW()),
+          (${SEED_CLUB_ID}::uuid, 'JOHNSON & JOHNSON', 'NYSE:JNJ', 'Actions', 'Santé', 120, 'EUR',
+            18000, 16500, 12.1, 137.5, 9.1, 1500, true, NOW())
+        ON CONFLICT (club_id, symbol) DO NOTHING
+      `
+    } finally {
+      await sql.end()
+    }
+  })
+
   test.beforeEach(async ({ page }) => {
     await loginAsSeedMember(page)
   })
