@@ -28,8 +28,11 @@ export function SparklineMini({
     (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches ?? false)
 
   return (
+    // height en nombre fixe (pas "100%") : évite le warning Recharts
+    // « width(0) and height(0) … greater than 0 » quand le conteneur mesure 0×0
+    // au premier layout/hydratation (ARB-04 — même pattern que DashboardEvolutionChart).
     <div className={cn('w-full', className)} style={{ height }} aria-hidden="true">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={chartData} margin={{ top: 2, right: 0, bottom: 2, left: 0 }}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
