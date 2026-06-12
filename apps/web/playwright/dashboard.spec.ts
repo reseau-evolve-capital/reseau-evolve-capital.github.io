@@ -30,6 +30,16 @@ import type { DashboardData } from '@/lib/data/dashboard'
 
 import { loginAsSeedMember } from './helpers'
 
+// V1 = variante de contrôle : le défaut est V2 depuis le rollout 100 % (2026-06-12).
+// Cette suite teste la V1 → on épingle le cookie QA `ec_dashboard_variant=v1` AVANT le
+// premier rendu RSC de /dashboard (seul endroit du fichier ; `domain: 'localhost'` =
+// valide quel que soit le port, cf. dashboard-v2.spec.ts).
+test.beforeEach(async ({ context }) => {
+  await context.addCookies([
+    { name: 'ec_dashboard_variant', value: 'v1', domain: 'localhost', path: '/' },
+  ])
+})
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures de données mockées
 // ─────────────────────────────────────────────────────────────────────────────

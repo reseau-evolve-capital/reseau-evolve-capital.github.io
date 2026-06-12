@@ -3,7 +3,8 @@
  *
  * La variante est résolue côté SERVEUR (RSC) au premier rendu de /dashboard :
  * env `DASHBOARD_V2_FORCE` > cookie `ec_dashboard_variant` ∈ {'v1','v2'} > bucket
- * `hashBucket(userId) < DASHBOARD_V2_ROLLOUT` (défaut 0 → V1 fail-safe). Le serveur
+ * `hashBucket(userId) < DASHBOARD_V2_ROLLOUT` (défaut 100 → V2 par défaut, rollout
+ * 100 % acté 2026-06-12 ; `0` = kill-switch retour V1). Le serveur
  * étant PARTAGÉ entre specs, le forçage par test passe par le COOKIE
  * (`context.addCookies`), jamais par une env var par-test.
  *
@@ -20,7 +21,7 @@
  *      fonctionnelle (clic AU-DESSUS du pill → la période change).
  *   6. Cookie v1 explicite : pas de bloc « Évolution », hero V1 en card (bouton
  *      « Ta quote-part »).
- *   7. Sans cookie (rollout 0) : identique à V1 (fail-safe).
+ *   7. Sans cookie : V2 par défaut (rollout 100 %).
  *   8. Smoke axe (a11y) sur la V2, mobile + desktop : 0 violation critical/serious.
  *
  * + MODE LIVE (DSH-012, dernier describe du fichier) : des lignes REPORTING quotidiennes
@@ -310,9 +311,9 @@ test.describe('Dashboard V2 — cookie v2, desktop', () => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Scénarios 6, 7 : V1 — cookie v1 explicite & fail-safe sans cookie (rollout 0)
+// Scénarios 6, 7 : cookie v1 explicite (variante de contrôle) & défaut V2 sans cookie
 // ─────────────────────────────────────────────────────────────────────────────
-test.describe('Dashboard V1 — fail-safe', () => {
+test.describe('Dashboard — V1 via cookie & V2 par défaut', () => {
   test('cookie v1 explicite → pas de bloc Évolution, hero V1 en card', async ({
     page,
     context,
@@ -328,13 +329,17 @@ test.describe('Dashboard V1 — fail-safe', () => {
     await expect(page.getByRole('button', { name: /Ta quote-part/i })).toBeVisible()
   })
 
-  test('sans cookie (rollout 0) → V1 par défaut', async ({ page, context }) => {
-    // Aucun cookie de variante : DASHBOARD_V2_ROLLOUT non posé en local → bucket 0 % → V1.
+  test('sans cookie → V2 par défaut (rollout 100 %)', async ({ page, context }) => {
+    // Aucun cookie de variante : DASHBOARD_V2_ROLLOUT non posé en local → défaut 100 % → V2.
+    // (Le kill-switch `DASHBOARD_V2_ROLLOUT=0` ramène en V1 — non testable ici : env du
+    //  serveur partagé entre specs ; couvert par les tests unitaires dashboard-v2.test.ts.)
     await loginWithVariant(page, context, null)
 
-    await expect(page.getByText('Évolution', { exact: true })).toHaveCount(0)
-    await expect(page.getByText('Courbe illustrative')).toHaveCount(0)
-    await expect(page.getByRole('button', { name: /Ta quote-part/i })).toBeVisible()
+    // Marqueurs V2 présents : bloc Évolution + micro-label demo (table REPORTING purgée).
+    await expect(periodGroup(page)).toBeVisible()
+    await expect(page.getByText('Courbe illustrative').filter({ visible: true })).toBeVisible()
+    // Marqueur V1 ABSENT : le hero V2 (desktop, viewport par défaut) n'est pas un bouton.
+    await expect(page.getByRole('button', { name: /Ta quote-part/i })).toHaveCount(0)
   })
 })
 
