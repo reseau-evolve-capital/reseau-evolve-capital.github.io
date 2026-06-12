@@ -143,12 +143,15 @@ test.describe('Dashboard V2 — cookie v2, mobile', () => {
     // Micro-label demo data (l'instance desktop, display:none, est filtrée).
     await expect(page.getByText('Courbe illustrative').filter({ visible: true })).toBeVisible()
 
-    // Ribbon 3 cellules (la card desktop « Ma position » répète ces libellés mais est cachée).
+    // Ribbon 3 cellules. Capacité = label COURT « Capacité » (v2.capacityShort — le libellé
+    // complet tronquait en ellipsis sur 375px ; réf mobile = « CAPACITÉ »). `exact: true` :
+    // le libellé complet subsiste dans la card desktop « Ma position » (cachée ici).
     await expect(page.getByText('Ma détention').filter({ visible: true })).toBeVisible()
     await expect(page.getByText('Total cotisé').filter({ visible: true })).toBeVisible()
     await expect(
-      page.getByText(/Capacité d.investissement restante/).filter({ visible: true })
+      page.getByText('Capacité', { exact: true }).filter({ visible: true })
     ).toBeVisible()
+    await expect(page.getByText(/Capacité d.investissement restante/)).toBeHidden()
 
     // Pas de card « Portefeuille du club » sur mobile (teaser desktop-only).
     // Scope `main` : la Sidebar (hors main, cachée sur mobile) porte le même libellé
@@ -240,6 +243,17 @@ test.describe('Dashboard V2 — cookie v2, desktop', () => {
       await expect(group.getByRole('button', { name: label })).toBeVisible()
     }
     await expect(group.getByRole('button', { name: '30J' })).toHaveAttribute('aria-pressed', 'true')
+
+    // Titre dynamique du chart desktop : « Évolution · 30 jours » (réf) — suit la période.
+    await expect(page.getByText('Évolution · 30 jours').filter({ visible: true })).toBeVisible()
+    await group.getByRole('button', { name: 'MAX' }).click()
+    await expect(page.getByText('Évolution · max').filter({ visible: true })).toBeVisible()
+
+    // Hero desktop : label daté « Ta quote-part · au {date longue} » (réf : AU 11 JUIN 2026).
+    // La date (anchorISO, RSC) n'est pas figée → motif générique « au <jour> <mois> <année> ».
+    await expect(
+      page.getByText(/Ta quote-part · au \d{1,2}(?:er)? \S+ \d{4}/).filter({ visible: true })
+    ).toBeVisible()
 
     // Colonne droite : statut cotisation + card « Ma position ».
     await expect(page.getByText('Statut cotisation').filter({ visible: true })).toBeVisible()
