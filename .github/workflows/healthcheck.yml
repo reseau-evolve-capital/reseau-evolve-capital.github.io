@@ -1,0 +1,105 @@
+# Healthcheck sync Sheets → Postgres : interroge /api/health (prod) toutes les 30 min
+# et alerte sur Discord (mention @owner) si la santé est KO (degraded / down / timeout).
+#
+# - L'URL prod par défaut est app.reseauevolvecapital.com ; surchargée par la variable
+#   de repo HEALTHCHECK_URL si définie (Settings → Variables).
+# - Secrets/vars utilisés : secrets.DISCORD_WEBHOOK_URL, vars.DISCORD_USER_ID.
+# - Anti-bruit : on re-notifie à chaque run (30 min) tant que c'est cassé — assumé.
+# - Le job FINIT EN FAILURE quand la santé est KO (visible aussi côté GitHub).
+#
+# Réf : docs/monitoring/MONITORING.md
+name: Healthcheck sync
+
+on:
+  schedule:
+    - cron: '*/30 * * * *' # le cron GitHub peut glisser de quelques minutes
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  health:
+    name: Vérifier /api/health
+    runs-on: ubuntu-latest
+    steps:
+      - name: Appeler /api/health
+        id: check
+        env:
+          HEALTH_URL: ${{ vars.HEALTHCHECK_URL || 'https://app.reseauevolvecapital.com/api/health' }}
+        run: |
+          set -u
+          BODY_FILE="$RUNNER_TEMP/health-body.json"
+
+          # PAS de -f : un 503 « degraded » a un corps JSON qu'on veut capturer.
+          HTTP_CODE=$(curl -sS --max-time 30 -o "$BODY_FILE" -w '%{http_code}' "$HEALTH_URL") || HTTP_CODE="000"
+
+          STATUS=$(jq -r '.status // "unknown"' "$BODY_FILE" 2>/dev/null || echo "unreachable")
+
+          if [ "$HTTP_CODE" = "000" ]; then
+            REASON="timeout / injoignable (curl a échoué)"
+          elif [ "$HTTP_CODE" = "200" ] && [ "$STATUS" = "ok" ]; then
+            REASON="ok"
+          else
+            REASON="HTTP $HTTP_CODE — status: $STATUS"
+          fi
+
+          [ -s "$BODY_FILE" ] || echo '{}' > "$BODY_FILE"
+
+          {
+            echo "http_code=$HTTP_CODE"
+            echo "status=$STATUS"
+            echo "reason=$REASON"
+            echo "body_file=$BODY_FILE"
+            if [ "$HTTP_CODE" = "200" ] && [ "$STATUS" = "ok" ]; then
+              echo "ok=true"
+            else
+              echo "ok=false"
+            fi
+          } >> "$GITHUB_OUTPUT"
+
+          echo "→ $REASON"
+          jq . "$BODY_FILE" 2>/dev/null || true
+
+      - name: Alerter Discord (santé KO)
+        if: steps.check.outputs.ok != 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_USER_ID: ${{ vars.DISCORD_USER_ID }}
+          REASON: ${{ steps.check.outputs.reason }}
+          HTTP_CODE: ${{ steps.check.outputs.http_code }}
+          BODY_FILE: ${{ steps.check.outputs.body_file }}
+          HEALTH_URL: ${{ vars.HEALTHCHECK_URL || 'https://app.reseauevolvecapital.com/api/health' }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -u
+          # Extrait du JSON (tronqué) — passé via --arg/--rawfile pour éviter toute injection.
+          EXCERPT=$(head -c 900 "$BODY_FILE" 2>/dev/null || echo '(corps indisponible)')
+
+          jq -n \
+            --arg content "<@${DISCORD_USER_ID}> ⚠️ Healthcheck Evolve KO — ${REASON}" \
+            --arg reason "$REASON" \
+            --arg http_code "$HTTP_CODE" \
+            --arg excerpt "$EXCERPT" \
+            --arg health_url "$HEALTH_URL" \
+            --arg run_url "$RUN_URL" \
+            '{
+              content: $content,
+              embeds: [{
+                title: "⚠️ Healthcheck sync KO",
+                color: 15158332,
+                fields: [
+                  { name: "Raison", value: $reason, inline: false },
+                  { name: "HTTP", value: $http_code, inline: true },
+                  { name: "Endpoint", value: $health_url, inline: false },
+                  { name: "Réponse (extrait)", value: ("```json\n" + $excerpt + "\n```"), inline: false },
+                  { name: "Liens", value: ("[Run GitHub](" + $run_url + ") · [Dashboard Supabase](https://supabase.com/dashboard/project/kiwcjtilwihioswdsjjv)"), inline: false }
+                ]
+              }]
+            }' \
+          | curl -fsS -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL"
+
+      - name: Échouer le job (santé KO)
+        if: steps.check.outputs.ok != 'true'
+        run: |
+          echo "::error::Healthcheck KO — ${{ steps.check.outputs.reason }}"
+          exit 1
