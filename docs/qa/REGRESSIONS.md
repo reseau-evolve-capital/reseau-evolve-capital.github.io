@@ -4,7 +4,7 @@
 > L'agent `qa-orchestrator` croise les `git diff` récents avec les **Vigilance** ci-dessous pour cibler les tests.
 > **RÈGLE :** une session ne peut PAS être marquée « OK » si un test listé ici échoue.
 >
-> Tout livré sur `feat/monorepo` (sprint E-QA1 + suivi onboarding, 2026-06-06). Réfs flows : [FLOWS.md](./FLOWS.md).
+> Livré sur `main` (sprint E-QA1 + suivi onboarding, 2026-06-06). Réfs flows : [FLOWS.md](./FLOWS.md).
 
 ---
 

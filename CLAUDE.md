@@ -14,13 +14,16 @@ La source de vérité visuelle vit dans `REC/standalone-exports/*.html` (auto-su
 
 ## Repository state — read this first
 
-Ce dépôt est dans un état **bicéphale** :
+**La migration monorepo est terminée.** `main` est la branche de travail et d'intégration par défaut.
 
-1. **Branche `main`** : la **vitrine légacy** Next.js 14 statique, déployée sur GitHub Pages via le domaine `reseauevolvecapital.com` (voir `CNAME`). C'est le site public actuel. Elle utilise Next.js + i18n FR/EN, formulaires `contact.js` et `newsletter.js` reliés à un Apps Script (`Code.gs`), contenu MD dans `content/`. **NE JAMAIS REFACTORER cette vitrine.** Toute modification sur `main` doit être chirurgicale (fix typo, mise à jour de contenu) — pas de migration de stack, pas de réécriture.
+| Élément             | État actuel                                                                                                                                                                                  |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`main`**          | Monorepo pnpm + Turborepo : `apps/vitrine` + `apps/web` + `apps/cms` (Strapi, yarn) + 5 packages `@evolve/*` + `supabase/`                                                                   |
+| **Vitrine live**    | Déployée depuis la branche **`gh-pages`** (GitHub Pages) → `reseauevolvecapital.com`. Code source dans `apps/vitrine/`. **Ne jamais refactorer** la vitrine — fixes chirurgicaux uniquement. |
+| **`feat/monorepo`** | Branche **historique** de migration (FND-000 → merge PR #16). **Obsolète** — ne plus l'utiliser comme cible ; brancher les features depuis `main` (`feat/*`, `fix/*`).                       |
+| **App membre**      | `apps/web` → Vercel. Développement local `:3001`.                                                                                                                                            |
 
-2. **Branche `feat/monorepo`** (à créer si elle n'existe pas encore via `FND-001`) : c'est là qu'atterrit **tout le travail post-Sprint 0**. Le plan est de transformer ce repo en monorepo pnpm + Turborepo avec `apps/vitrine` (la vitrine actuelle, déplacée sans refacto) + `apps/web` (la nouvelle app membre) + 5 packages partagés. La branche ne merge sur `main` qu'une fois Sprint 0 complet, conformément au `MIGRATION_PLAN.md` (étape 11). En attendant, `main` reste l'unique source déployée.
-
-**Le Sprint 0 (POC-001) est déjà fait.** Le POC validé vit dans le dépôt voisin `REC` (`/Users/lionel/Documents/OMNIVENTUS/Projects/REC/sandbox/poc-sheets/`) — il est mappé en working dir additionnel (`./.claude/settings.local.json`). Tu peux le **référencer** pour réutiliser la logique d'auth Google Sheets et les mappers DTO, mais **ne le réimporte pas en l'état** dans le monorepo : il a été conçu jetable. Le code définitif vit dans `packages/data/src/sheets/` (créé par les tickets `SHE-*`).
+**POC Sheets (POC-001)** : le jetable validé vit dans `REC/sandbox/poc-sheets/` — référence uniquement. Le code définitif est dans `packages/data/src/sheets/` (tickets `SHE-*`).
 
 ## Source-of-truth documents
 
@@ -46,9 +49,7 @@ Toute la doc d'architecture et le backlog vivent dans le dépôt voisin `REC/` (
 
 `packages/ui` ne dépend **jamais** de `packages/data`. `apps/web/components/` héberge tout ce qui a de la logique métier (hooks Supabase, Server Actions) ; les composants présentationnels réutilisables vont dans `packages/ui`.
 
-## Commandes (post-FND-001)
-
-Ces commandes fonctionnent une fois Sprint 1 (FND-001) terminé. Avant ça, elles échouent avec "no workspace".
+## Commandes
 
 ```bash
 # Day-to-day
@@ -80,7 +81,7 @@ pnpm --filter @evolve/web playwright test
 
 Issues de `ARCHITECTURE.md` §7, `TECH_REVIEW.md`, `Phase2_Handoff/00_README.md` §7. Toute remise en cause demande validation explicite de l'utilisateur.
 
-- **La vitrine ne casse jamais.** La migration est additive — pas de refacto sur `apps/vitrine`. Tant que la branche `feat/monorepo` n'est pas mergée, `main` doit pouvoir builder et déployer comme avant.
+- **La vitrine ne casse jamais.** Pas de refacto sur `apps/vitrine`. Le site public (`gh-pages`) ne se redéploie que via `make vitrine-export` / workflow vitrine — un merge sur `main` ne casse pas le live.
 - **RLS activée sur toutes les tables dès la migration 0001.** Aucune table joignable sans policy. Helpers `get_user_club_ids()` et `get_user_role_in_club()` en `SECURITY DEFINER STABLE` pour éviter les récursions sur `memberships`.
 - **Le multi-club passe par `clubs.sheet_id` en DB, pas par env vars.** L'Edge Function `sync` reçoit `club_id` et lookupe la matrice. Un seul service account Google (`GOOGLE_SA_KEY_BASE64`) est partagé avec la matrice de chaque club.
 - **La feuille `Base` s'importe en premier** (sa colonne email est la clé de matching vers `users.email`). Les autres feuilles référencent les membres par nom et reposent sur Base déjà importée.
@@ -132,9 +133,7 @@ Le skill `component-test-writer` (`/component-test-writer`) suit ce layering —
 
 ## Format de commit
 
-**Sur la branche `main` (légacy)** : conserver le format existant `TASK($TASK_ID): description` (extrait de la branche), conformément à `.cursorrules`. Ne pas casser cette convention historique.
-
-**Sur la branche `feat/monorepo` et toute branche `feat/*` du monorepo** : Conventional Commits avec ces scopes uniquement :
+**Monorepo (`main` et branches `feat/*` / `fix/*`)** : Conventional Commits avec ces scopes uniquement :
 
 ```
 <type>(<scope>): <description>
@@ -142,7 +141,7 @@ Le skill `component-test-writer` (`/component-test-writer`) suit ce layering —
 scope ∈ { web | vitrine | cms | ui | design-system | data | types | utils | supabase | sheets | infra | ci }
 ```
 
-Husky + commitlint rejettent tout le reste (config dans FND-004). Ces hooks ne sont pas encore en place — ils arrivent dans Sprint 0/1 du monorepo.
+Husky + commitlint (FND-004) rejettent tout le reste. Le format historique `TASK($TASK_ID): description` (`.cursorrules`) ne s'applique plus qu'aux branches legacy pré-monorepo si elles existent encore localement.
 
 ## Variables d'environnement
 
@@ -153,6 +152,6 @@ Définies et scopées dans `REC/ARCHITECTURE.md` §8. Les deux pièges récurren
 
 ## État Git au moment de la session
 
-`main` est suivie sur GitHub Pages. La branche `feat/monorepo` n'existe peut-être pas encore — la créer via `FND-000` (préparation) puis `FND-001` (scaffolding monorepo + déplacement de la vitrine dans `apps/vitrine`). Tant que la branche n'est pas mergée, **ne touche pas à `main`** sauf pour des corrections critiques de la vitrine.
+**Branche par défaut : `main`** (monorepo). Nouvelles features : `feat/*` ou `fix/*` depuis `main`, PR vers `main`. CI : push sur `main` + PR vers `main` (`.github/workflows/ci.yml`).
 
-Avant toute action destructive sur des fichiers de la vitrine (`content/`, `contact.js`, `newsletter.js`, `Code.gs`, `marketing/`, `messages/`, `next.config.ts`, `Dockerfile`), confirme avec l'utilisateur — ces fichiers tournent en production.
+Avant toute action destructive sur `apps/vitrine/` (contenu, formulaires, déploiement GitHub Pages), confirme avec l'utilisateur — la vitrine tourne en production sur `reseauevolvecapital.com`.

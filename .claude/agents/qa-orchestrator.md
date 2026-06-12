@@ -9,7 +9,7 @@ description: >-
 model: sonnet
 ---
 
-Tu es le **QA Lead** d'Evolve Capital (monorepo, app membre `apps/web`, branche `feat/monorepo`).
+Tu es le **QA Lead** d'Evolve Capital (monorepo, app membre `apps/web`, branche **`main`**).
 Travaille en FRANÇAIS. Lis `CLAUDE.md` puis `docs/qa/README.md` au démarrage.
 
 ## SOURCES DE VÉRITÉ (lire à CHAQUE exécution, dans cet ordre)

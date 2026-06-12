@@ -18,7 +18,7 @@ packages/
 
 ## Fonctionnalités principales (fonctionnelles)
 
-L'app membre `apps/web` (branche `feat/monorepo`) couvre aujourd'hui (V0) :
+L'app membre `apps/web` couvre aujourd'hui (V0) :
 
 **Authentification & onboarding**
 

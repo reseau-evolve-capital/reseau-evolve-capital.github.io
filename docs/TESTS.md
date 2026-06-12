@@ -1,6 +1,6 @@
 # Evolve Capital — Tests, couverture & état fonctionnel
 
-> Branche : `feat/monorepo`. Mis à jour le 2026-06-05.
+> Branche : **`main`**. Mis à jour le 2026-06-05 (révision branche : 2026-06-11).
 > Ce document présente **ce qui est construit** et surtout **la couverture de tests** du projet,
 > du test unitaire au end-to-end. Objectif : pouvoir **détecter une régression** dès qu'un comportement change.
 
@@ -149,7 +149,7 @@ Voir le **récap « reste-à-faire »** (réponse de session / `docs/audits/ANAL
 
 ## 7. Détection de régression
 
-- **Gate CI** (`.github/workflows/ci.yml`) : `typecheck + lint + test` (570 Vitest) + 3 gardes design-system (pas de hex en dur, lucide via `Icon`, `TrendBadge` sans brand-red) + build `apps/web`. Bloquant sur PR vers `main` et push sur `feat/monorepo`.
+- **Gate CI** (`.github/workflows/ci.yml`) : `typecheck + lint + test` (570 Vitest) + 3 gardes design-system (pas de hex en dur, lucide via `Icon`, `TrendBadge` sans brand-red) + build `apps/web`. Bloquant sur PR vers `main` et push sur `main`.
 - **Lighthouse CI** (`.github/workflows/lighthouse.yml`) : seuils Perf ≥ 80 / A11y ≥ 90 / BP ≥ 90 / SEO ≥ 90 sur pages publiques.
 - **Local** : `make test-e2e` (45 parcours) + `deno test` (sync) avant toute livraison touchant données/parcours.
 - **Principe** : tout nouveau comportement UI ⇒ test à la couche la plus basse qui le couvre ; toute string ajoutée ⇒ clés `fr` **et** `en`.
