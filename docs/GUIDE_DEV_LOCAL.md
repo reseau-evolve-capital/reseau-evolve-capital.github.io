@@ -1,7 +1,7 @@
 # Guide — Lancer l'app membre en local & tester
 
-> Cible : la **nouvelle app membre** (`apps/web`, Next.js 16) du monorepo, sur la branche `feat/monorepo`.
-> La vitrine légacy (`main`) n'est pas concernée par ce guide.
+> Cible : l'**app membre** (`apps/web`, Next.js 16) du monorepo sur **`main`** (branche par défaut).
+> La vitrine publique vit dans `apps/vitrine/` — déploiement séparé (GitHub Pages / `gh-pages`).
 > Langue de travail : français.
 
 ---
@@ -25,7 +25,7 @@ docker info     # doit répondre (Docker démarré)
 
 ```bash
 cd /Users/lionel/Documents/OMNIVENTUS/Projects/reseau-evolve-capital
-git checkout feat/monorepo
+git checkout main
 pnpm install
 ```
 
@@ -312,7 +312,7 @@ grep -r 'brand-red\|E93E3A' packages/ui/src/molecules/TrendBadge/ \
   | grep -v '\.test\.' | grep -v '\.stories\.' && echo "❌ brand-red dans TrendBadge" || echo "✓ TrendBadge OK"
 ```
 
-La CI distante tourne sur `git push origin feat/monorepo` (typecheck + lint + test + 3 gardes). **Ne pas merger sur `main`** tant que le Sprint 0 monorepo n'est pas clôturé.
+La CI distante tourne sur `git push origin main` et sur les PR vers `main` (typecheck + lint + test + 3 gardes design-system).
 
 ---
 

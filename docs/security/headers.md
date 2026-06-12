@@ -1,6 +1,6 @@
 # Headers de sécurité HTTP + Content Security Policy (OPS-004)
 
-> Statut : livré sur `feat/monorepo` pour `apps/web`. Dernier ticket du sprint E-OPS —
+> Statut : livré sur `main` pour `apps/web`. Dernier ticket du sprint E-OPS —
 > il agrège les surfaces réseau introduites par les autres tickets (Sentry, Cloudflare,
 > Supabase) dans une CSP unique.
 

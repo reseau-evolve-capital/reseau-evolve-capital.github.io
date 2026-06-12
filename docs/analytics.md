@@ -1,6 +1,6 @@
 # Analytics — Cloudflare Web Analytics (OPS-002)
 
-> Statut : livré sur `feat/monorepo` pour `apps/web`. La vitrine (`apps/vitrine`) utilise déjà le même provider.
+> Statut : livré sur `main` pour `apps/web`. La vitrine (`apps/vitrine`) utilise déjà le même provider.
 
 ## Provider
 
