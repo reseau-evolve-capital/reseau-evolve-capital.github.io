@@ -77,6 +77,10 @@ Vue d'ensemble de votre situation dans le club :
   régulièrement), et non à une valeur recalculée en continu seconde par seconde.
 - La **variation (1 jour / 30 jours)** et le **mini-graphique de tendance** ne sont **pas encore
   alimentés** : l'historique nécessaire n'est pas encore enregistré (à venir).
+- **Nouveau tableau de bord (test en cours)** : certains membres voient une version enrichie avec
+  un **graphique d'évolution**. Tant que l'historique réel n'est pas disponible, la courbe affichée
+  est **illustrative** (mention « Courbe illustrative » sous le graphique) — seule la valeur de la
+  quote-part et les indicateurs chiffrés sont réels.
 - Si vos données ne sont pas encore disponibles, un message l'indique (le trésorier doit d'abord
   synchroniser les données du club). Aucun écran ne reste vide ou cassé.
 
