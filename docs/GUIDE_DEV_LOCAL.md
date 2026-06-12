@@ -233,12 +233,13 @@ REFRESH MATERIALIZED VIEW member_quote_part;   -- le dashboard lit cette vue
 3. Tap sur le Hero → **modale détail quote-part** ; `Échap` la ferme.
 4. Mobile (DevTools ≤ 768px) : **pull-to-refresh** (tirer vers le bas en haut de page) → spinner d'actualisation.
 5. `SyncBanner` : visible seulement si le rôle ≥ trésorier (le seed est `member` → masqué ; pour le voir : `UPDATE memberships SET role='treasurer' WHERE …`).
-6. **Variante V2 (A/B test)** : par défaut le rollout est à 0 → tout le monde voit la V1. Pour forcer
-   la V2 en local : `DASHBOARD_V2_FORCE=v2` dans `apps/web/.env.local` (ou cookie
-   `ec_dashboard_variant=v2` via les DevTools — utile pour basculer sans redémarrer). La V2 affiche
-   le graphe d'évolution avec une **courbe illustrative** (données demo déterministes) tant que
-   l'historique réel n'existe pas en DB. Rollout progressif : `DASHBOARD_V2_ROLLOUT=0..100`
-   (hash stable par userId). Détail : `docs/audits/design-reference-map.md` § Dashboard V2.
+6. **Variante V2 (défaut depuis le 2026-06-12)** : le rollout vaut 100 par défaut → tout le monde
+   voit la V2. Pour forcer la V1 en local : `DASHBOARD_V2_FORCE=v1` dans `apps/web/.env.local`
+   (ou cookie `ec_dashboard_variant=v1` via les DevTools — utile pour basculer sans redémarrer).
+   La V2 affiche le graphe d'évolution avec une **courbe illustrative** (données demo
+   déterministes) tant que l'historique réel n'existe pas en DB. Kill-switch / A/B :
+   `DASHBOARD_V2_ROLLOUT=0..100` (hash stable par userId ; `0` = retour V1 général).
+   Détail : `docs/audits/design-reference-map.md` § Dashboard V2.
 
 ### Parcours C — Portefeuille (`/portfolio`)
 
