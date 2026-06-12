@@ -85,7 +85,10 @@ test.describe('A11y — écrans authentifiés', () => {
 
   test('/dashboard', async ({ page }) => {
     await page.goto('/dashboard')
-    await expect(page.getByRole('button', { name: /Ta quote-part/i })).toBeVisible()
+    // Défaut = V2 depuis le rollout 100 % (2026-06-12) : le hero desktop n'est plus un
+    // bouton « Ta quote-part » → ancrage sur le toggle de périodes du bloc Évolution
+    // (getByRole ne matche que l'instance visible de la double instance responsive).
+    await expect(page.getByRole('group', { name: 'Période' })).toBeVisible()
     await expectNoSeriousA11yViolations(page, '/dashboard')
   })
 
