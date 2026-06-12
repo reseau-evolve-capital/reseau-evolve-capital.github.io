@@ -14,6 +14,39 @@ const variantClasses: Record<CotisationVariant, string> = {
   exempt: 'bg-neutral-100 opacity-50',
 }
 
+/** Icône textuelle centrée dans la cellule (md uniquement, trop petit pour sm). */
+function CellIcon({ variant }: { variant: CotisationVariant }) {
+  if (variant === 'paid') {
+    return (
+      <span
+        aria-hidden="true"
+        className="pointer-events-none select-none text-[10px] font-bold leading-none text-neutral-900/70"
+      >
+        ✓
+      </span>
+    )
+  }
+  if (variant === 'late') {
+    return (
+      <span
+        aria-hidden="true"
+        className="pointer-events-none select-none text-[10px] font-bold leading-none text-white/90"
+      >
+        !
+      </span>
+    )
+  }
+  if (variant === 'pending') {
+    return (
+      <span
+        aria-hidden="true"
+        className="pointer-events-none block h-1.5 w-1.5 rounded-full bg-text-ter/60"
+      />
+    )
+  }
+  return null
+}
+
 export interface CotisationMonthProps {
   variant: CotisationVariant
   tooltip: string
@@ -42,10 +75,12 @@ export function CotisationMonth({
               ? 'h-3 w-3'
               : // Cible tactile ≥ 44×44px sur mobile (24px de pastille + 2×10px de padding).
                 // Sur ≥ sm (pointeur fin), on revient au rendu compact 24px sans padding.
-                'h-6 w-6 min-h-[24px] min-w-[24px] p-2.5 sm:p-0',
+                'inline-flex h-6 w-6 min-h-[24px] min-w-[24px] items-center justify-center p-2.5 sm:p-0',
             variantClasses[variant]
           )}
-        />
+        >
+          {size === 'md' && <CellIcon variant={variant} />}
+        </button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content

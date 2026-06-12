@@ -117,9 +117,9 @@ export function ContributionsTimeline({
         {[0, 1].map((y) => (
           <div key={y} className="flex flex-col gap-2">
             <Skeleton height={16} width="64px" radius="6px" />
-            <div className="flex flex-wrap gap-1.5">
+            <div className="grid grid-cols-12 gap-1">
               {Array.from({ length: 12 }).map((_, i) => (
-                <Skeleton key={i} height={24} width={24} radius="4px" />
+                <Skeleton key={i} height={24} width="100%" radius="4px" />
               ))}
             </div>
           </div>
@@ -162,7 +162,10 @@ export function ContributionsTimeline({
             <h3 className="sticky top-0 z-10 bg-bg py-1 font-display font-bold text-[14px] text-text">
               {group.year}
             </h3>
-            <div className="flex flex-wrap gap-2">
+            {/* 12 colonnes fixes : tous les mois d'une année tiennent sur UNE seule ligne.
+                Les touch-areas (p-2.5 mobile) des cellules adjacentes se chevauchent légèrement
+                dans le gap=0 — comportement accepté (même pattern que les claviers mobiles). */}
+            <div className="grid grid-cols-12">
               {/* Ordre d'affichage ASCENDANT (janvier → décembre), quel que soit l'ordre
                   d'entrée. On trie une COPIE (pas de mutation de la prop). Le mapping
                   mois→statut/tooltip/aria-label suit chaque cellule par sa clé `month`. */}
@@ -171,7 +174,7 @@ export function ContributionsTimeline({
                 .map((m) => (
                   <div
                     key={`${group.year}-${m.month}`}
-                    className="flex flex-col items-center gap-1"
+                    className="flex flex-col items-center gap-0.5"
                   >
                     <CotisationMonth
                       variant={m.variant}
@@ -179,7 +182,7 @@ export function ContributionsTimeline({
                       aria-label={m.ariaLabel}
                       size="md"
                     />
-                    <span aria-hidden="true" className="text-[10px] leading-none text-text-ter">
+                    <span aria-hidden="true" className="text-[9px] leading-none text-text-ter">
                       {monthInitials[m.month - 1]}
                     </span>
                   </div>
