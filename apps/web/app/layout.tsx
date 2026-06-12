@@ -5,6 +5,7 @@ import { Analytics } from '@/components/Analytics'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { ConsentMount } from '@/components/consent/ConsentMount'
 import { PwaServiceWorkerRegistrar } from '@/components/pwa/PwaServiceWorkerRegistrar'
+import { PWA_STARTUP_IMAGES } from '@/lib/pwa/startup-images'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -14,17 +15,26 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'black-translucent',
+    // 'default' : texte de status bar lisible (noir) sur le splash crème —
+    // 'black-translucent' rendait le texte blanc, invisible sur fond clair.
+    statusBarStyle: 'default',
     title: 'Evolve',
+    // Splash screens iOS (sinon écran noir ~3 s au cold start de la PWA).
+    // Générés par scripts/generate-pwa-splash.mjs (fond crème #F4F4F2).
+    startupImage: [...PWA_STARTUP_IMAGES],
   },
   icons: {
     apple: '/icons/apple-touch-icon-180.png',
   },
 }
 
-// theme-color = fond brand (cohérent avec le manifest + la barre de statut en standalone).
+// theme-color suit le thème : crème (--n-100) en light, --bg-page dark sinon.
+// Cohérent avec le manifest (fond crème) + la barre de statut en standalone.
 export const viewport: Viewport = {
-  themeColor: '#0E0C0D',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F4F4F2' },
+    { media: '(prefers-color-scheme: dark)', color: '#07070A' },
+  ],
 }
 
 // Applique le thème (clair/sombre) AVANT la peinture pour éviter tout flash.
