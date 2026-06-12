@@ -5,10 +5,13 @@
   Pourquoi ce fichier existe
   --------------------------
   En local, la stack Supabase CLI envoie les emails d'auth via son mailer natif
-  (Go templates), captés par Mailpit. Le template PAR DÉFAUT est en anglais et
-  affiche le code OTP (« Alternatively, enter the code … {{ .Token }} »).
+  (Go templates), captés par Mailpit. Le template PAR DÉFAUT est en anglais.
   Ce template le remplace par une version BRANDÉE Evolve, en FR (locale par défaut),
-  et LIEN UNIQUEMENT : on n'utilise QUE {{ .ConfirmationURL }}, jamais {{ .Token }}.
+  avec LIEN + CODE : le CTA {{ .ConfirmationURL }} reste le chemin nominal, et le
+  code OTP {{ .Token }} est affiché en plus (fix PWA juin — sur iOS le lien s'ouvre
+  toujours dans Safari, jamais dans la PWA installée ; le code se saisit sur
+  /login/check-email DANS la PWA). Lien et code partagent le même token à usage
+  unique : utiliser l'un consomme l'autre.
 
   Portée
   ------
@@ -130,11 +133,30 @@
                   </tr>
                 </table>
 
+                <!-- Code OTP 6 chiffres — saisissable dans l'application (PWA iOS
+                     où le lien ouvre Safari). Gros, espacé, sélectionnable d'un tap
+                     (user-select: all). TEXTE BRUT, jamais une ancre. -->
+                <div
+                  style="margin-top: 22px; border: 1px solid #e4e4df; border-radius: 10px; background-color: #fafaf9; padding: 16px; text-align: center;"
+                >
+                  <p
+                    style="margin: 0 0 6px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: #67686a;"
+                  >
+                    Ou saisis ce code dans l'application
+                  </p>
+                  <p
+                    style="margin: 0; font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 30px; letter-spacing: 0.32em; line-height: 1.3; color: #231f20; -webkit-user-select: all; user-select: all;"
+                  >{{ .Token }}</p>
+                  <p style="margin: 8px 0 0; font-size: 12px; line-height: 1.5; color: #67686a;">
+                    Pratique depuis l'app installée sur ton téléphone — lien et code sont à usage
+                    unique.
+                  </p>
+                </div>
+
                 <!-- Lien en clair (backup) — TEXTE BRUT, jamais une ancre : un
                      long-press iOS pour copier une ancre ouvre un aperçu qui
                      prefetch l'URL et consomme le lien à usage unique avant le
-                     clic. En texte, l'utilisateur copie l'URL sans la déclencher.
-                     Toujours {{ .ConfirmationURL }}, jamais de code. -->
+                     clic. En texte, l'utilisateur copie l'URL sans la déclencher. -->
                 <div
                   style="margin-top: 22px; border: 1px solid #e4e4df; border-radius: 10px; background-color: #fafaf9; padding: 14px 16px;"
                 >

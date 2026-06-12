@@ -6,7 +6,8 @@
 //     headers : signature standardwebhooks (webhook-id / webhook-timestamp / webhook-signature)
 //     body    : { user, email_data }  (cf. handler.ts)
 //   → vérifie la signature avec SEND_EMAIL_HOOK_SECRET
-//   → construit la ConfirmationURL (lien uniquement, jamais de code)
+//   → construit la ConfirmationURL (lien CTA) + transmet le code OTP 6 chiffres
+//     (email_data.token — saisissable dans la PWA iOS où le lien ouvre Safari)
 //   → rend MagicLinkEmail dans la locale de l'utilisateur (user_metadata.locale, défaut 'fr')
 //   → envoie via Brevo (BREVO_API_KEY)
 //   → 200 { sent: true } : Supabase n'enverra PAS d'email natif.
@@ -67,9 +68,11 @@ async function sendBrevoEmail(payload: BrevoEmailPayload): Promise<void> {
   }
 }
 
-/** Rendu réel du composant MagicLinkEmail en HTML (React Email), localisé. */
+/** Rendu réel du composant MagicLinkEmail en HTML (React Email), localisé.
+ *  `otpCode` (code 6 chiffres) est rendu en plus du lien quand il est fourni. */
 function renderMagicLinkHtml(args: {
   magicLink: string
+  otpCode?: string
   expiresInMin: number
   locale: EmailLocale
 }): Promise<string> {
