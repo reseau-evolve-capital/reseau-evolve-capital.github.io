@@ -12,8 +12,8 @@
 //
 // CE QUI EST TESTÉ
 // ----------------
-// 1. Magic link FR (locale défaut) : ConfirmationURL = lien uniquement (pas de code),
-//    locale 'fr', payload Brevo assemblé, 200.
+// 1. Magic link FR (locale défaut) : ConfirmationURL = token_hash (jamais le code
+//    dans l'URL), code OTP transmis au rendu, locale 'fr', payload Brevo, 200.
 // 2. Locale EN lue depuis user_metadata.locale → l'email est rendu en 'en'.
 // 3. Signature invalide → 401, AUCUN envoi.
 // 4. Action non gérée → 200 { skipped: true }, AUCUN envoi.
@@ -29,14 +29,14 @@ const OPTS = { fallbackSiteUrl: 'https://proj.supabase.co', otpExpiryMin: 60 }
 
 function makeDeps(opts: { brevoFails?: boolean; badSignature?: boolean } = {}) {
   const sent: BrevoEmailPayload[] = []
-  const rendered: { locale: EmailLocale; magicLink: string }[] = []
+  const rendered: { locale: EmailLocale; magicLink: string; otpCode?: string }[] = []
   const deps: SendEmailDeps = {
     verifyPayload: (raw) => {
       if (opts.badSignature) throw new Error('No matching signature')
       return raw
     },
-    renderMagicLinkHtml: ({ magicLink, locale }) => {
-      rendered.push({ locale, magicLink })
+    renderMagicLinkHtml: ({ magicLink, locale, otpCode }) => {
+      rendered.push({ locale, magicLink, otpCode })
       return Promise.resolve(`<html lang="${locale}"><a href="${magicLink}">link</a></html>`)
     },
     sendBrevoEmail: (payload) => {
@@ -80,23 +80,40 @@ function payload(over: Record<string, unknown> = {}) {
   }
 }
 
-// ---- Test 1 — Magic link FR : lien-only, locale fr, payload Brevo ----
-Deno.test('magic link FR (défaut) : ConfirmationURL sans code, locale fr, 200', async () => {
-  const { deps, sent, rendered } = makeDeps()
-  const res = await createSendEmailHandler(deps, OPTS)(req(payload()))
-  const json = await res.json()
+// ---- Test 1 — Magic link FR : lien token_hash + code OTP transmis, locale fr ----
+Deno.test(
+  'magic link FR (défaut) : ConfirmationURL + code OTP transmis, locale fr, 200',
+  async () => {
+    const { deps, sent, rendered } = makeDeps()
+    const res = await createSendEmailHandler(deps, OPTS)(req(payload()))
+    const json = await res.json()
 
+    assertEquals(res.status, 200)
+    assertEquals(json.sent, true)
+    assertEquals(sent.length, 1)
+    assertEquals(sent[0].to[0].email, 'membre@example.com')
+    assert(sent[0].subject.length > 0)
+    // Locale FR par défaut.
+    assertEquals(rendered[0].locale, 'fr')
+    // Le lien est une ConfirmationURL (token_hash), JAMAIS le code OTP brut dans l'URL.
+    assertStringIncludes(rendered[0].magicLink, 'token=abc_hash_def')
+    assertStringIncludes(rendered[0].magicLink, '/auth/v1/verify')
+    assert(!rendered[0].magicLink.includes('123456')) // le code n'apparaît pas dans l'URL
+    // Le code OTP ({{ .Token }}) est transmis au rendu (saisie dans la PWA iOS).
+    assertEquals(rendered[0].otpCode, '123456')
+  }
+)
+
+// ---- Test 1bis — payload sans token : rendu lien-only (otpCode undefined) ----
+Deno.test('payload sans email_data.token → otpCode undefined (rendu lien-only)', async () => {
+  const { deps, rendered } = makeDeps()
+  const res = await createSendEmailHandler(
+    deps,
+    OPTS
+  )(req(payload({ email_data: { token: null } })))
+  await res.json()
   assertEquals(res.status, 200)
-  assertEquals(json.sent, true)
-  assertEquals(sent.length, 1)
-  assertEquals(sent[0].to[0].email, 'membre@example.com')
-  assert(sent[0].subject.length > 0)
-  // Locale FR par défaut.
-  assertEquals(rendered[0].locale, 'fr')
-  // Le lien est une ConfirmationURL (token_hash), JAMAIS le code OTP brut.
-  assertStringIncludes(rendered[0].magicLink, 'token=abc_hash_def')
-  assertStringIncludes(rendered[0].magicLink, '/auth/v1/verify')
-  assert(!rendered[0].magicLink.includes('123456')) // le code OTP n'apparaît pas
+  assertEquals(rendered[0].otpCode, undefined)
 })
 
 // ---- Test 2 — Locale EN depuis user_metadata.locale ----

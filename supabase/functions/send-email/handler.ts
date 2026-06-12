@@ -62,9 +62,11 @@ export interface SendEmailDeps {
   /** Vérifie la signature standardwebhooks du hook. Doit throw si invalide.
    *  Renvoie le corps JSON brut (string) vérifié, à parser ensuite. */
   verifyPayload: (rawBody: string, headers: Headers) => string
-  /** Rend le HTML de l'email magic link (composant React Email, localisé). */
+  /** Rend le HTML de l'email magic link (composant React Email, localisé).
+   *  `otpCode` = code 6 chiffres saisissable dans l'app (PWA iOS) — optionnel. */
   renderMagicLinkHtml: (args: {
     magicLink: string
+    otpCode?: string
     expiresInMin: number
     locale: EmailLocale
   }) => Promise<string>
@@ -100,7 +102,8 @@ export function resolveLocale(meta: Record<string, unknown> | null | undefined):
  * dans le payload du hook, `site_url` porte l'URL externe de GoTrue (déjà suffixée `/auth/v1`),
  * donc l'utiliser produisait un chemin doublé `/auth/v1/auth/v1/verify` → lien cassé
  * (« No API key found »). On normalise donc en retirant un éventuel `/auth/v1` final.
- * On encode les composants (open-redirect/injection safe). JAMAIS de code/OTP exposé.
+ * On encode les composants (open-redirect/injection safe). Le code OTP n'apparaît
+ * jamais dans l'URL — il est rendu séparément dans le corps de l'email (PWA iOS).
  */
 export function buildConfirmationUrl(
   data: SendEmailPayload['email_data'],
@@ -165,14 +168,19 @@ export function createSendEmailHandler(
       return json({ skipped: true, reason: `action non gérée: ${action}` })
     }
 
-    // 3. Locale + ConfirmationURL (lien uniquement, jamais de code).
+    // 3. Locale + ConfirmationURL + code OTP. Le lien reste le CTA principal ;
+    // le code 6 chiffres ({{ .Token }}) permet la connexion DANS la PWA iOS,
+    // où le lien s'ouvre toujours dans Safari. Lien et code partagent le même
+    // token sous-jacent (usage unique : utiliser l'un consomme l'autre).
     const locale = resolveLocale(payload.user.user_metadata)
     const magicLink = buildConfirmationUrl(payload.email_data, opts.fallbackSiteUrl)
+    const otpCode = payload.email_data.token ?? undefined
 
     // 4. Rendu + envoi Brevo.
     try {
       const htmlContent = await deps.renderMagicLinkHtml({
         magicLink,
+        otpCode,
         expiresInMin: opts.otpExpiryMin,
         locale,
       })
