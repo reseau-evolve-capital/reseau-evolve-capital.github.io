@@ -22,17 +22,19 @@
 //    (seam d'injection), ce qui rend les 5 tests handler RUNNABLES sans stack
 //    Supabase locale ni `functions serve`.
 //
-// Les 5 tests handler couvrent : sync complète (200, 6 feuilles), idempotence
-// (2 syncs → même état), panne partielle (HISTORIQUE throw → snapshot failed,
-// les autres feuilles passent), club introuvable (404), ordre impératif
-// (PARAMETRAGES traité avant Base).
+// Les tests handler couvrent : sync complète (200, 7 feuilles dont REPORTING),
+// idempotence (2 syncs → même état), panne partielle (HISTORIQUE throw → snapshot
+// failed, les autres feuilles passent), club introuvable (404), ordre impératif
+// (PARAMETRAGES traité avant Base), et la feuille OPTIONNELLE REPORTING (DSH-011 :
+// tout échec → warnings[], jamais errors[], success reste true).
 
-import { assert, assertEquals, assertNotEquals } from 'jsr:@std/assert@^1'
+import { assert, assertAlmostEquals, assertEquals, assertNotEquals } from 'jsr:@std/assert@^1'
 
 import {
   parseParametrages,
   parseBase,
   parsePortefeuille,
+  parseReporting,
   parseHistorique,
   parseCotisations,
 } from '../sheetParsers.ts'
@@ -266,6 +268,31 @@ Deno.test(
   }
 )
 
+Deno.test(
+  'parseReporting : seules les lignes datées passent (titre/en-têtes écartés sans warning)',
+  () => {
+    const raw: string[][] = [
+      ['REPORTING — Évolve Capital', '', '', '', ''], // ligne 0 : titre matrice
+      ['Date', 'Valorisation', 'Cotisations', 'Plus-value', 'Performance'], // ligne 1 : en-têtes
+      ['dimanche, 03/05/2026', '697 286,83', '311 301,24', '385 985,59', '2,24'],
+      ['lundi, 04/05/2026', '698 000,00', '311 301,24', '', ''], // D/E vides → null
+      ['', '', '', '', ''], // ligne vide → écartée
+    ]
+    const rows = parseReporting(raw)
+    // Titre + en-têtes + ligne vide écartés ICI (pas de quarantaine côté mapper).
+    assertEquals(rows.length, 2)
+    assertEquals(rows[0].reportDateRaw, 'dimanche, 03/05/2026')
+    // Numériques FR (espace milliers + virgule décimale) normalisés par toNumOrNull.
+    assertEquals(rows[0].portfolioValue, 697286.83)
+    assertEquals(rows[0].totalContributions, 311301.24)
+    assertEquals(rows[0].capitalGain, 385985.59)
+    assertEquals(rows[0].performanceRatio, 2.24)
+    // Cols D/E vides → null (le recalcul est l'affaire du mapper, pas du parser).
+    assertEquals(rows[1].capitalGain, null)
+    assertEquals(rows[1].performanceRatio, null)
+  }
+)
+
 // ===========================================================================
 // 2. CHECKSUM SNAPSHOT (sha256Hex) — déterministe & sensible
 // ===========================================================================
@@ -338,6 +365,14 @@ const SHEETS: Readonly<Record<string, readonly (readonly string[])[]>> = Object.
     ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours'],
     ['Apple', 'AAPL', 'Action', '10', 'EUR', '1 234,56'],
     ['TOTAL', '', 'Agrégat', '', '', '5 000,00'],
+  ]),
+  // Série quotidienne REPORTING (DSH-011) : ligne 0 = titre matrice, ligne 1 = en-têtes,
+  // puis lignes datées. La 2e ligne de données a D/E VIDES → recalcul attendu du mapper.
+  REPORTING: Object.freeze([
+    ['REPORTING — Évolve Capital', '', '', '', ''],
+    ['Date', 'Valorisation', 'Cotisations', 'Plus-value', 'Performance'],
+    ['samedi, 02/05/2026', '697 000,00', '311 301,24', '385 698,76', '2,24'],
+    ['dimanche, 03/05/2026', '697 286,83', '311 301,24', '', ''],
   ]),
   // Layout RÉEL : col 0 = n° de ligne, type=1, qté=2, nom=3, ticker=4, typo=5, prix=6, coût=7, date=8, justif=9.
   HISTORIQUE: Object.freeze([
@@ -416,6 +451,7 @@ interface Store {
   transactions: Row[]
   contributions: Row[]
   contribution_months: Row[]
+  club_reporting_daily: Row[]
   sheet_snapshots: Row[]
 }
 
@@ -430,6 +466,8 @@ function emptyStore(seedClub: boolean): Store {
     transactions: [],
     contributions: [],
     contribution_months: [],
+    // Série quotidienne club (REPORTING, DSH-011) — migration 034.
+    club_reporting_daily: [],
     sheet_snapshots: [],
   }
 }
@@ -484,7 +522,14 @@ interface RpcCalls {
   names: string[]
 }
 
-function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLike } {
+/** Erreur Postgrest injectée sur les upserts d'une table (ex. 42P01 = table absente). */
+type TableErrors = Partial<Record<keyof Store, { code: string; message: string }>>
+
+function makeMockClient(
+  store: Store,
+  rpcCalls?: RpcCalls,
+  tableErrors?: TableErrors
+): { client: SupabaseLike } {
   // Builder par requête : accumule la table, l'opération et les filtres, puis
   // calcule le résultat au moment du `await` (then).
   class QueryBuilder implements PromiseLike<{ data: unknown; error: unknown }> {
@@ -568,7 +613,11 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
       switch (this.op) {
         case 'select':
           return { data: this.computeSelectData(), error: null }
-        case 'upsert':
+        case 'upsert': {
+          // Erreur injectée (ex. 42P01 « relation does not exist ») : le vrai client
+          // renvoie { error } SANS throw — le store n'est pas muté.
+          const injected = tableErrors?.[this.table]
+          if (injected) return { data: null, error: injected }
           upsertRows(
             table,
             this.withUserIds(this.payload),
@@ -576,6 +625,7 @@ function makeMockClient(store: Store, rpcCalls?: RpcCalls): { client: SupabaseLi
             this.table === 'memberships' ? { role: 'member' } : {}
           )
           return { data: null, error: null }
+        }
         case 'insert':
           for (const row of this.withUserIds(this.payload)) table.push({ ...row })
           return { data: null, error: null }
@@ -702,10 +752,19 @@ function buildHandler(
     overrides?: Record<string, string[][]>
     rpcCalls?: RpcCalls
     emailSends?: EmailSends
+    /** Erreur Postgrest injectée sur les upserts d'une table (cf. TableErrors). */
+    tableErrors?: TableErrors
+    /** Capture les plages A1 demandées par feuille (vérifie A1:E10000 pour REPORTING). */
+    ranges?: Record<string, string | undefined>
   }
 ): (req: Request) => Promise<Response> {
-  const mockReadSheet: SyncDeps['readSheet'] = (_sheetId: string, sheetName: string) => {
+  const mockReadSheet: SyncDeps['readSheet'] = (
+    _sheetId: string,
+    sheetName: string,
+    range?: string
+  ) => {
     opts?.order?.push(sheetName)
+    if (opts?.ranges) opts.ranges[sheetName] = range
     if (opts?.throwOn && sheetName === opts.throwOn) {
       return Promise.reject(new Error(`lecture ${sheetName} indisponible (stub)`))
     }
@@ -713,7 +772,7 @@ function buildHandler(
     if (override) return Promise.resolve(override.map((row) => [...row]))
     return Promise.resolve(cloneSheet(sheetName))
   }
-  const { client } = makeMockClient(store, opts?.rpcCalls)
+  const { client } = makeMockClient(store, opts?.rpcCalls, opts?.tableErrors)
   const sendSyncErrorEmail: SyncDeps['sendSyncErrorEmail'] = (ctx) => {
     opts?.emailSends?.calls.push({
       clubName: ctx.clubName,
@@ -753,10 +812,12 @@ interface SyncResponseBody {
 
 // Étiquettes internes des feuilles (= valeurs de body.synced_sheets et clés de snapshots).
 // L'étiquette « Portefeuille » est conservée même si l'onglet réel lu est « POSITIONS ».
+// REPORTING (optionnelle, DSH-011) s'intercale entre Portefeuille et HISTORIQUE.
 const SHEET_ORDER = [
   'PARAMETRAGES',
   'Base',
   'Portefeuille',
+  'REPORTING',
   'HISTORIQUE',
   'COTISATIONS',
   'Details cotisations',
@@ -767,13 +828,14 @@ const READ_ORDER = [
   'PARAMETRAGES',
   'Base',
   'POSITIONS',
+  'REPORTING',
   'HISTORIQUE',
   'COTISATIONS',
   'Details cotisations',
 ]
 
-// Test 1 — sync complète : 200, success=true, les 6 feuilles synchronisées.
-Deno.test('handler : sync complète → 200, success=true, 6 feuilles synchronisées', async () => {
+// Test 1 — sync complète : 200, success=true, les 7 feuilles synchronisées.
+Deno.test('handler : sync complète → 200, success=true, 7 feuilles synchronisées', async () => {
   const store = emptyStore(true)
   const rpcCalls: RpcCalls = { names: [] }
   const handler = buildHandler(store, { rpcCalls })
@@ -784,15 +846,16 @@ Deno.test('handler : sync complète → 200, success=true, 6 feuilles synchronis
   assertEquals(body.errors.length, 0)
   // Fixtures propres : aucun warning non plus.
   assertEquals(body.warnings.length, 0)
-  assertEquals(body.synced_sheets.length, 6)
+  assertEquals(body.synced_sheets.length, 7)
   assertEquals(body.synced_sheets, SHEET_ORDER)
   // Données effectivement importées dans le store.
   assertEquals(store.users.length, 2)
   assertEquals(store.memberships.length, 2)
   assertEquals(store.positions.length, 1) // AAPL ; la ligne d'agrégat (symbole vide) exclue
   assertEquals(store.transactions.length, 1)
+  assertEquals(store.club_reporting_daily.length, 2) // titre + en-têtes REPORTING écartés
   // Un snapshot par feuille, tous en succès.
-  assertEquals(Object.keys(body.snapshots).length, 6)
+  assertEquals(Object.keys(body.snapshots).length, 7)
   for (const name of SHEET_ORDER) {
     assertEquals(body.snapshots[name].status, 'success')
   }
@@ -821,6 +884,7 @@ Deno.test('handler : idempotence → 2 syncs produisent le même état final', a
     transactions: stripVolatile(structuredClone(store.transactions)),
     contributions: stripVolatile(structuredClone(store.contributions)),
     contribution_months: stripVolatile(structuredClone(store.contribution_months)),
+    club_reporting_daily: stripVolatile(structuredClone(store.club_reporting_daily)),
   })
 
   const res1 = await handler(syncRequest(CLUB_ID))
@@ -837,6 +901,7 @@ Deno.test('handler : idempotence → 2 syncs produisent le même état final', a
   assertEquals(store.memberships.length, 2)
   assertEquals(store.positions.length, 1)
   assertEquals(store.transactions.length, 1) // delete+insert : pas d'accumulation
+  assertEquals(store.club_reporting_daily.length, 2) // onConflict (club_id, report_date)
 })
 
 // Test 3 — erreur DURE : HISTORIQUE.readSheet throw → exception attrapée par runSheet →
@@ -1170,6 +1235,122 @@ Deno.test('handler : agrégats portefeuille persistés + agrégat fantôme désa
   assert(ghost !== undefined)
   assertEquals(ghost.is_active, false)
 })
+
+// ===========================================================================
+// 3quater. REPORTING (DSH-011) — feuille OPTIONNELLE, série quotidienne club
+// ===========================================================================
+// RÈGLE D'OR testée ici : AUCUN scénario REPORTING ne fait success=false ni ne
+// crashe le run — tout échec part dans warnings[], jamais errors[].
+
+// Test R1 — sync complète avec REPORTING OK : lignes en base, D/E recalculés, ordre respecté.
+Deno.test(
+  'handler : REPORTING ok → lignes upsertées, D/E recalculés, plage A1:E10000',
+  async () => {
+    const store = emptyStore(true)
+    const ranges: Record<string, string | undefined> = {}
+    const handler = buildHandler(store, { ranges })
+    const res = await handler(syncRequest(CLUB_ID))
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as SyncResponseBody
+    assertEquals(body.success, true)
+    // REPORTING figure dans synced_sheets APRÈS Portefeuille et AVANT HISTORIQUE.
+    const idxPortefeuille = body.synced_sheets.indexOf('Portefeuille')
+    const idxReporting = body.synced_sheets.indexOf('REPORTING')
+    const idxHistorique = body.synced_sheets.indexOf('HISTORIQUE')
+    assert(idxReporting >= 0)
+    assert(idxPortefeuille < idxReporting, 'REPORTING doit suivre Portefeuille')
+    assert(idxReporting < idxHistorique, 'REPORTING doit précéder HISTORIQUE')
+    // La plage élargie est bien demandée (la série déborderait du défaut A1:AZ2000).
+    assertEquals(ranges['REPORTING'], 'A1:E10000')
+    // Les 2 lignes datées sont en base (titre + en-têtes écartés par le parser).
+    assertEquals(store.club_reporting_daily.length, 2)
+    const d1 = store.club_reporting_daily.find((r) => r.report_date === '2026-05-02')
+    const d2 = store.club_reporting_daily.find((r) => r.report_date === '2026-05-03')
+    assert(d1 !== undefined)
+    assert(d2 !== undefined)
+    assertEquals(d1.club_id, CLUB_ID)
+    // Ligne 1 : D/E fournis par la feuille → conservés tels quels.
+    assertEquals(d1.portfolio_value, 697000)
+    assertEquals(d1.capital_gain, 385698.76)
+    assertEquals(d1.performance_ratio, 2.24)
+    // Ligne 2 : cols D/E VIDES en source → recalculées (D = B−C ; E = B/C, C > 0).
+    assertAlmostEquals(d2.capital_gain as number, 697286.83 - 311301.24, 1e-6)
+    assertAlmostEquals(d2.performance_ratio as number, 697286.83 / 311301.24, 1e-9)
+    // Snapshot REPORTING en succès (fixture propre, aucune quarantaine).
+    assertEquals(body.snapshots['REPORTING'].status, 'success')
+  }
+)
+
+// Test R2 — idempotence : 2 syncs consécutives → mêmes lignes, mêmes valeurs.
+Deno.test('handler : REPORTING idempotent → 2 syncs, mêmes lignes et valeurs', async () => {
+  const store = emptyStore(true)
+  const handler = buildHandler(store)
+  const strip = (rows: Row[]): Row[] =>
+    rows.map((r) => {
+      const { synced_at: _omit, ...rest } = r as Row & { synced_at?: unknown }
+      return rest
+    })
+
+  await handler(syncRequest(CLUB_ID))
+  const first = strip(structuredClone(store.club_reporting_daily))
+  await handler(syncRequest(CLUB_ID))
+  const second = strip(structuredClone(store.club_reporting_daily))
+
+  // Même nombre de lignes (onConflict club_id,report_date) et valeurs identiques.
+  assertEquals(second.length, first.length)
+  assertEquals(second, first)
+})
+
+// Test R3 — readSheet throw UNIQUEMENT pour REPORTING (onglet absent / HTTP 400) :
+// la sync reste un SUCCÈS, warning explicite, les 6 feuilles vitales passent.
+Deno.test('handler : REPORTING illisible → warning MOLLE, success reste true', async () => {
+  const store = emptyStore(true)
+  const handler = buildHandler(store, { throwOn: 'REPORTING' })
+  const res = await handler(syncRequest(CLUB_ID))
+  assertEquals(res.status, 200)
+  const body = (await res.json()) as SyncResponseBody
+  // RÈGLE D'OR : l'échec d'une feuille optionnelle ne fait JAMAIS success=false.
+  assertEquals(body.success, true)
+  assert(!body.errors.some((e) => e.includes('REPORTING')))
+  assert(body.warnings.some((w) => w.includes('REPORTING (optionnelle)')))
+  // Les 6 feuilles vitales sont toutes synchronisées ; REPORTING absente.
+  for (const name of SHEET_ORDER.filter((s) => s !== 'REPORTING')) {
+    assert(body.synced_sheets.includes(name))
+  }
+  assert(!body.synced_sheets.includes('REPORTING'))
+  assertEquals(store.club_reporting_daily.length, 0)
+  // Snapshot d'échec posé pour l'audit (best-effort).
+  assertEquals(body.snapshots['REPORTING'].status, 'failed')
+})
+
+// Test R4 — table club_reporting_daily absente (migration 034 non déployée) : l'upsert
+// renvoie { error: { code: '42P01' } } → warning explicite, pas de crash, success=true.
+Deno.test(
+  'handler : table club_reporting_daily absente (42P01) → warning, pas de crash',
+  async () => {
+    const store = emptyStore(true)
+    const handler = buildHandler(store, {
+      tableErrors: {
+        club_reporting_daily: {
+          code: '42P01',
+          message: 'relation "club_reporting_daily" does not exist',
+        },
+      },
+    })
+    const res = await handler(syncRequest(CLUB_ID))
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as SyncResponseBody
+    assertEquals(body.success, true)
+    assert(!body.errors.some((e) => e.includes('REPORTING')))
+    assert(!body.errors.some((e) => e.includes('club_reporting_daily')))
+    // Warning explicite pointant la migration manquante.
+    assert(body.warnings.some((w) => w.includes('migration 034')))
+    // Rien n'a été écrit (l'erreur injectée ne mute pas le store) ; les autres feuilles passent.
+    assertEquals(store.club_reporting_daily.length, 0)
+    assertEquals(store.positions.length, 1)
+    assertEquals(store.transactions.length, 1)
+  }
+)
 
 // ===========================================================================
 // 4. ALERTE EMAIL TRÉSORIERS (NTF-003) — seuil anti-spam 4h
