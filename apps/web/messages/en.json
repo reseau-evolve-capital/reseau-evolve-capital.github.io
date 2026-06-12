@@ -273,12 +273,20 @@
     },
     "evolution": {
       "title": "Evolution",
+      "titleWithPeriod": "Evolution · {periodName}",
       "periods": {
         "7d": "7D",
         "30d": "30D",
         "90d": "90D",
         "1y": "1Y",
         "max": "MAX"
+      },
+      "periodNames": {
+        "7d": "7 days",
+        "30d": "30 days",
+        "90d": "90 days",
+        "1y": "1 year",
+        "max": "max"
       },
       "sinceJoin": "since you joined",
       "demoLabel": "Illustrative curve",
@@ -287,11 +295,13 @@
     "v2": {
       "understand": "Understand my share",
       "position": "My position",
+      "capacityShort": "Capacity",
       "club": {
         "title": "Club portfolio",
         "viewDetail": "view details"
       },
-      "heroMetaYesterday": "yesterday · {date}"
+      "heroMetaYesterday": "yesterday · {date}",
+      "heroLabelWithDate": "Your stake · as of {date}"
     }
   },
   "portfolio": {

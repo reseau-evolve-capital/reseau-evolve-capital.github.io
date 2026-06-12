@@ -194,6 +194,15 @@ export function DashboardViewV2({
     { value: '1y', label: t('evolution.periods.1y'), mobileHidden: true },
     { value: 'max', label: t('evolution.periods.max') },
   ]
+  // Noms longs de période (titre desktop « Évolution · 30 jours », réf desktop) — map
+  // LITTÉRALE : les clés t() doivent rester des littéraux (typage next-intl sur fr.json).
+  const periodNames: Record<EvolutionPeriod, string> = {
+    '7d': t('evolution.periodNames.7d'),
+    '30d': t('evolution.periodNames.30d'),
+    '90d': t('evolution.periodNames.90d'),
+    '1y': t('evolution.periodNames.1y'),
+    max: t('evolution.periodNames.max'),
+  }
   const chartShared = {
     points: series.points,
     period,
@@ -216,6 +225,21 @@ export function DashboardViewV2({
     value: formatPct(variation1d.percent / 100),
     subValue: signedEurNoCents(variation1d.amount),
   }
+  // Label hero DESKTOP avec date (réf : « TA QUOTE-PART · AU 11 JUIN 2026 ») — date longue
+  // localisée dérivée de anchorISO ; fallback sur le label simple si la date est invalide
+  // (jamais de NaN à l'écran). L'instance mobile garde le label court sans date.
+  const anchorDate = new Date(anchorISO)
+  const heroLabelDesktop = Number.isNaN(anchorDate.getTime())
+    ? t('hero.label')
+    : t('v2.heroLabelWithDate', {
+        date: new Intl.DateTimeFormat(locale, {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+          timeZone: 'UTC',
+        }).format(anchorDate),
+      })
+
   const yesterday = new Date(new Date(anchorISO).getTime() - DAY_MS)
   const variationMeta = t('v2.heroMetaYesterday', {
     date: Number.isNaN(yesterday.getTime())
@@ -226,11 +250,13 @@ export function DashboardViewV2({
   })
 
   // Ruban mobile — 3 colonnes constantes : capacité absente → « — » (jamais de trou).
+  // Label COURT « Capacité » (v2.capacityShort) : le libellé complet déborde en ellipsis
+  // sur 375px (réf mobile = « CAPACITÉ ») ; la card desktop garde le label complet.
   const ribbonItems = [
     { label: t('kpi.detention'), value: formatPct(data.detentionPct, { showSign: false }) },
     { label: t('kpi.totalContributed'), value: eurNoCents(data.totalContributed) },
     {
-      label: t('capacity.title'),
+      label: t('v2.capacityShort'),
       value: data.investment.remaining != null ? eurNoCents(data.investment.remaining) : '—',
     },
   ]
@@ -286,7 +312,7 @@ export function DashboardViewV2({
             netMarketValue={data.netMarketValue}
             variation={heroVariation}
             variationMeta={variationMeta}
-            label={t('hero.label')}
+            label={heroLabelDesktop}
             action={
               <button
                 type="button"
@@ -297,12 +323,15 @@ export function DashboardViewV2({
               </button>
             }
           />
-          {/* Graphe : compact (mobile, 30J|MAX visibles) / large (desktop, 5 périodes). */}
+          {/* Graphe : compact (mobile, 30J|MAX visibles) / large (desktop, 5 périodes).
+              Titre desktop dynamique « Évolution · 30 jours » (réf) ; le compact mobile
+              garde « Évolution » seul. */}
           <DashboardEvolutionChart {...chartShared} className="lg:hidden" size="compact" />
           <DashboardEvolutionChart
             {...chartShared}
             className="hidden lg:block"
             size="large"
+            title={t('evolution.titleWithPeriod', { periodName: periodNames[period] })}
             axisCenter={periodItems.find((p) => p.value === period)?.label}
           />
         </div>

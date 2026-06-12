@@ -273,12 +273,20 @@
     },
     "evolution": {
       "title": "Évolution",
+      "titleWithPeriod": "Évolution · {periodName}",
       "periods": {
         "7d": "7J",
         "30d": "30J",
         "90d": "90J",
         "1y": "1A",
         "max": "MAX"
+      },
+      "periodNames": {
+        "7d": "7 jours",
+        "30d": "30 jours",
+        "90d": "90 jours",
+        "1y": "1 an",
+        "max": "max"
       },
       "sinceJoin": "depuis ton adhésion",
       "demoLabel": "Courbe illustrative",
@@ -287,11 +295,13 @@
     "v2": {
       "understand": "Comprendre ma quote-part",
       "position": "Ma position",
+      "capacityShort": "Capacité",
       "club": {
         "title": "Portefeuille du club",
         "viewDetail": "voir le détail"
       },
-      "heroMetaYesterday": "hier · {date}"
+      "heroMetaYesterday": "hier · {date}",
+      "heroLabelWithDate": "Ta quote-part · au {date}"
     }
   },
   "portfolio": {
