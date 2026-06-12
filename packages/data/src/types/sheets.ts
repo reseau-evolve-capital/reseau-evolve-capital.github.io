@@ -83,6 +83,19 @@ export interface CotisationsRowDTO {
   status: string | null
   amountDue: number | null
 }
+/** REPORTING (série quotidienne club, DSH-011) — cols A–E brutes de la matrice. */
+export interface ReportingRowDTO {
+  /** Col A brute, date avec jour de semaine (« dimanche, 03/05/2026 »). */
+  reportDateRaw: string | null
+  /** Col B — valorisation portefeuille. */
+  portfolioValue: number | null
+  /** Col C — cotisations cumulées. */
+  totalContributions: number | null
+  /** Col D — plus-value (= B−C, parfois vide en source). */
+  capitalGain: number | null
+  /** Col E — performance (ratio B/C, PAS un % ; parfois vide en source). */
+  performanceRatio: number | null
+}
 
 // ---- Types métier upsertables ----
 export interface UserUpsert {
@@ -181,6 +194,19 @@ export interface ContributionUpsert {
   net_market_value: number | null
   status: 'ok' | 'pending' | 'late' | 'exempt'
   amount_due: number
+}
+/** Ligne upsertable dans club_reporting_daily (migration 034) — clé (club_id, report_date). */
+export interface ClubReportingDailyUpsert {
+  club_id: string
+  /** Format ISO 'yyyy-mm-dd' pour colonne Postgres DATE. */
+  report_date: string
+  portfolio_value: number
+  total_contributions: number
+  /** Plus-value (col D, recalculée B−C par le mapper si absente en source). */
+  capital_gain: number | null
+  /** Ratio B/C (col E, recalculé par le mapper si absent ET C > 0 ; null si C = 0). */
+  performance_ratio: number | null
+  synced_at: string
 }
 export interface ContributionMonthUpsert {
   membership_id: string

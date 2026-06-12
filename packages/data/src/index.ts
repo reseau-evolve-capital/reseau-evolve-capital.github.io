@@ -6,6 +6,7 @@ export { mapPortefeuilleRows, mapAggregateRows } from './sheets/mappers/portefeu
 export { mapHistoriqueRows } from './sheets/mappers/historique.mapper.ts'
 export { mapCotisationsRows } from './sheets/mappers/cotisations.mapper.ts'
 export { mapDetailsCotisationsRows } from './sheets/mappers/detailsCotisations.mapper.ts'
+export { mapReportingRows } from './sheets/mappers/reporting.mapper.ts'
 export * from './types/sheets.ts'
 export { createBrowserClient } from './supabase/client.ts'
 export { createServerClient } from './supabase/server.ts'
