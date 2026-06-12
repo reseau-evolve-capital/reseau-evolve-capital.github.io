@@ -355,6 +355,16 @@ make dev-vitrine      # vitrine → le blog rend /fr/blog et /fr/blog/[slug] (fe
 
 ---
 
+## 12. PWA : icônes & splash screens
+
+- **Régénérer** : `pnpm --filter @evolve/web generate:icons` (icônes + favicon.ico) et
+  `pnpm --filter @evolve/web generate:splash` (splash iOS + `lib/pwa/startup-images.ts`, généré — ne pas éditer).
+- **Source de marque** : `apps/web/assets/brand/icone-evolve.png` (PNG transparent, fond crème `#F4F4F2` appliqué par les scripts).
+- **Splash designé** : poser `apps/web/assets/brand/splash-master.png` → `generate:splash` l'utilise en cover-crop centré à la place de la composition logo.
+- Les PNG générés (`public/icons/`, `public/splash/`) **sont versionnés** ; sur iPhone, réinstaller la PWA pour voir la nouvelle icône/splash.
+
+---
+
 ### Aide-mémoire
 
 ```bash
