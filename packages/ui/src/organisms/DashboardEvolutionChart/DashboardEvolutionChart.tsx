@@ -167,10 +167,13 @@ export function DashboardEvolutionChart({
         ) : null}
       </p>
 
-      {/* Graphe — décoratif (le résumé textuel porte l'information) */}
+      {/* Graphe — décoratif (le résumé textuel porte l'information).
+          height en nombre fixe (pas "100%") : tant qu'une dimension calculée est > 0,
+          Recharts ne logge pas « width(0) and height(0) … greater than 0 » quand le
+          conteneur mesure 0×0 au premier layout/hydratation (ARB-04). */}
       {hasCurve ? (
         <div style={{ height: chartHeight }} aria-hidden="true">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={chartHeight}>
             <AreaChart data={chartData} margin={{ top: 8, right: 8, bottom: 2, left: 8 }}>
               <defs>
                 <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
