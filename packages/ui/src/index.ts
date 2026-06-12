@@ -9,6 +9,7 @@ export * from './atoms/AccessBadge'
 export * from './atoms/InvitationStatusBadge'
 export * from './atoms/Avatar'
 export * from './atoms/Icon'
+export * from './atoms/InfoTip'
 export * from './atoms/Divider'
 // Atoms form
 export * from './atoms/Input'

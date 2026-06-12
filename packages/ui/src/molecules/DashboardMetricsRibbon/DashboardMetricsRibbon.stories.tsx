@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { within, expect } from 'storybook/test'
+import { InfoTip } from '../../atoms/InfoTip'
 import { DashboardMetricsRibbon } from './DashboardMetricsRibbon'
 
 const meta: Meta<typeof DashboardMetricsRibbon> = {
@@ -32,6 +33,26 @@ export const Default: Story = {
     expect(terms).toHaveLength(3)
     expect(canvas.getByText('Plus-value')).toBeInTheDocument()
     expect(canvas.getByText('+2 854 €')).toBeInTheDocument()
+  },
+}
+
+/** Item avec InfoTip (cas réel : « Capacité » du dashboard V2). */
+export const AvecInfoTip: Story = {
+  args: {
+    items: [
+      { label: 'Détention', value: '12,4 %' },
+      { label: 'Cotisé', value: '9 600 €' },
+      {
+        label: 'Capacité',
+        value: '2 400 €',
+        info: (
+          <InfoTip
+            content="Capacité restante d’investissement sur l’année : le plafond annuel du club moins ce que tu as déjà versé cette année."
+            aria-label="En savoir plus sur la capacité d’investissement"
+          />
+        ),
+      },
+    ],
   },
 }
 
