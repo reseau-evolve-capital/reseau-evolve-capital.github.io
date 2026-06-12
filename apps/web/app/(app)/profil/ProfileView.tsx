@@ -1,8 +1,9 @@
 import { getTranslations } from 'next-intl/server'
-import { Avatar, Badge, Heading } from '@evolve/ui'
+import { Badge, Heading } from '@evolve/ui'
 import { formatDate } from '@evolve/utils'
 import type { MemberRole, ProfileData } from '@/lib/data/profile'
 import { InstallSection } from './InstallSection'
+import { ProfileAvatarUpload } from './ProfileAvatarUpload'
 
 const DASH = '—'
 
@@ -42,7 +43,8 @@ export async function ProfileView({ data }: { data: ProfileData }) {
 
       <section className="rounded-lg border border-border bg-card p-6 shadow-card">
         <div className="flex items-center gap-4">
-          <Avatar name={displayName} src={data.avatarUrl ?? undefined} size="lg" />
+          {/* Avatar cliquable — ouvre le sélecteur de fichier (ProfileAvatarUpload est client). */}
+          <ProfileAvatarUpload initialUrl={data.avatarUrl} name={displayName} />
           <div className="flex min-w-0 flex-col gap-1.5">
             <p className="truncate font-display text-[18px] font-bold text-text">{displayName}</p>
             {roleLabel && data.role ? (
@@ -66,7 +68,7 @@ export async function ProfileView({ data }: { data: ProfileData }) {
         </dl>
       </section>
 
-      <p className="font-body text-[13px] text-text-ter">{t('editHint')}</p>
+      <p className="font-body text-[13px] text-text-ter">{t('avatarHint')}</p>
 
       {/* PWA-001 : (ré)installer l'app à la demande (entrée permanente, surtout utile après
           3 refus de la bannière). Masquée si déjà installée (standalone) ou sur desktop. */}

@@ -806,7 +806,6 @@
     "title": "Mon profil",
     "subtitle": "Tes informations de membre.",
     "unknownName": "Membre",
-    "editHint": "L’édition de ton profil arrive bientôt. Pour corriger une information, contacte ton trésorier.",
     "fields": {
       "email": "Email",
       "phone": "Téléphone",
@@ -819,7 +818,14 @@
       "treasurer": "Trésorier",
       "president": "Président",
       "network_admin": "Administrateur réseau"
-    }
+    },
+    "avatarUpdated": "Photo mise à jour",
+    "avatarError": "Échec de la mise à jour de la photo.",
+    "avatarUploadAria": "Modifier la photo de profil de {name}",
+    "avatarEmpty": "Photo",
+    "avatarUploading": "Envoi…",
+    "avatarUploadingAria": "Envoi en cours",
+    "avatarHint": "Clique sur ta photo pour la modifier. Les autres informations sont synchronisées depuis les feuilles du club."
   },
   "accessSuspended": {
     "metaTitle": "Accès suspendu — Evolve Capital",
@@ -968,9 +974,9 @@
       "cta": "Voir comment"
     },
     "iosOther": {
-      "headline": "Installe Evolve sur ton écran d'accueil.",
-      "subline": "On copie un lien de connexion. Ouvre Safari, colle-le : tu seras déjà connecté(e), prêt(e) à l'installer.",
-      "cta": "Installer l'application"
+      "headline": "Installe Evolve sur ton écran d’accueil.",
+      "subline": "En un clic, on ouvre Safari avec ta session — prêt(e) à installer l’app depuis l’écran d’accueil.",
+      "cta": "Ouvrir dans Safari"
     },
     "toastCopied": {
       "title": "Lien copié",

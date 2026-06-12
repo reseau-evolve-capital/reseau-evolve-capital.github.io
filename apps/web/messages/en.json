@@ -806,7 +806,6 @@
     "title": "My profile",
     "subtitle": "Your member information.",
     "unknownName": "Member",
-    "editHint": "Editing your profile is coming soon. To correct any information, contact your treasurer.",
     "fields": {
       "email": "Email",
       "phone": "Phone",
@@ -819,7 +818,14 @@
       "treasurer": "Treasurer",
       "president": "President",
       "network_admin": "Network admin"
-    }
+    },
+    "avatarUpdated": "Profile photo updated",
+    "avatarError": "Failed to update profile photo.",
+    "avatarUploadAria": "Change profile photo for {name}",
+    "avatarEmpty": "Photo",
+    "avatarUploading": "Uploading…",
+    "avatarUploadingAria": "Uploading",
+    "avatarHint": "Click your photo to update it. Other information is synced from your club spreadsheet."
   },
   "accessSuspended": {
     "metaTitle": "Access suspended — Evolve Capital",
@@ -969,8 +975,8 @@
     },
     "iosOther": {
       "headline": "Install Evolve on your home screen.",
-      "subline": "We'll copy a sign-in link. Open Safari, paste it — you'll already be signed in, ready to install.",
-      "cta": "Install the app"
+      "subline": "One tap and we open Safari with your session — ready to install from the home screen.",
+      "cta": "Open in Safari"
     },
     "toastCopied": {
       "title": "Link copied",
