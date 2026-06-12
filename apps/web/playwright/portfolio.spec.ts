@@ -22,10 +22,27 @@
  */
 
 import { test, expect, type Page, type Route } from '@playwright/test'
+import postgres from 'postgres'
 
 import type { PortfolioData, PositionRow } from '@/lib/data/portfolio'
 
 import { loginAsSeedMember } from './helpers'
+
+const DB_URL = process.env.E2E_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+const SEED_CLUB_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
+
+// Prérequis (premise documentée en tête de fichier) : ZÉRO position en DB pour le club
+// de seed → initialData=null → le refetch blur/focus applique les routes mockées.
+// On garantit la premise ici (pattern « seeding local par spec », cf. admin.spec.ts) ;
+// a11y.spec.ts ré-upserte les siennes à chaque run, pas de restore nécessaire.
+test.beforeAll(async () => {
+  const sql = postgres(DB_URL, { max: 1 })
+  try {
+    await sql`DELETE FROM positions WHERE club_id = ${SEED_CLUB_ID}::uuid`
+  } finally {
+    await sql.end()
+  }
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures de données mockées
