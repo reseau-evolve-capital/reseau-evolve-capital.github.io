@@ -5,8 +5,10 @@
 //   2. cookie `ec_dashboard_variant` ∈ {'v1','v2'} — LECTURE SEULE (jamais écrit par l'app,
 //      posé manuellement par la QA / les specs e2e pour figer une variante) ;
 //   3. bucket déterministe : `hashBucket(userId) < rollout` → 'v2', avec
-//      rollout = `DASHBOARD_V2_ROLLOUT` clampé 0..100 (défaut 0 = fail-safe V1 ;
-//      la prod active 50 via les env vars Vercel).
+//      rollout = `DASHBOARD_V2_ROLLOUT` clampé 0..100 (défaut 100 = V2 pour tous,
+//      rollout 100 % acté par l'owner le 2026-06-12). Le fail-safe est inversé :
+//      poser `DASHBOARD_V2_ROLLOUT=0` (ou `DASHBOARD_V2_FORCE=v1` / cookie v1)
+//      ramène tout le monde en V1 — la mécanique A/B reste intacte.
 //
 // Déterminisme pur : FNV-1a sur l'userId, AUCUN Math.random / Date.now — un même membre
 // voit toujours la même variante tant que le rollout ne change pas.
@@ -31,11 +33,15 @@ export function hashBucket(userId: string): number {
   return (hash >>> 0) % 100
 }
 
-/** Pourcentage de rollout V2, lu de l'env et clampé 0..100 (invalide / absent → 0). */
+/** Pourcentage de rollout V2, lu de l'env et clampé 0..100.
+ *  Absent ou VIDE → 100 (V2 par défaut — `.env.example` shippe `DASHBOARD_V2_ROLLOUT=`,
+ *  la ligne vide vaut donc « non posé ») ; valeur posée mais invalide → 0 (repli prudent V1). */
 function rolloutPct(): number {
-  const raw = Number(process.env.DASHBOARD_V2_ROLLOUT ?? 0)
-  if (!Number.isFinite(raw)) return 0
-  return Math.min(100, Math.max(0, raw))
+  const raw = process.env.DASHBOARD_V2_ROLLOUT?.trim()
+  if (!raw) return 100
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed)) return 0
+  return Math.min(100, Math.max(0, parsed))
 }
 
 /** Résout la variante dashboard du membre. Cf. précédence documentée en tête de fichier. */
