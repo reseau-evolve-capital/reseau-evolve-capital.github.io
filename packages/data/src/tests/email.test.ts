@@ -85,14 +85,13 @@ describe('MagicLinkEmail', () => {
     expect(html).not.toContain('Connexion à Evolve Capital')
   })
 
-  it('LIEN UNIQUEMENT (A7) : aucun code/OTP affiché, ni fr ni en', async () => {
+  it('sans otpCode : aucun code/OTP affiché, ni fr ni en (rétro-compat lien-only)', async () => {
     for (const locale of ['fr', 'en'] as const) {
       const html = await renderEmailHtml(
         createElement(MagicLinkEmail, { magicLink, expiresInMin, locale })
       )
-      // Aucune invite à saisir un code (FR/EN), aucune mention de code/OTP.
-      expect(html.toLowerCase()).not.toMatch(/enter the code|saisis le code|saisir le code/)
-      expect(html.toLowerCase()).not.toMatch(/\bcode otp\b|\bcode de vérification\b|one-?time code/)
+      // Aucune invite à saisir un code (FR/EN) si le code n'est pas fourni.
+      expect(html.toLowerCase()).not.toMatch(/enter this code|saisis ce code/)
       // Aucun placeholder de template Supabase (Token/Code) ne doit fuiter.
       expect(html).not.toContain('{{ .Token }}')
       expect(html).not.toContain('{{ .Code }}')
@@ -100,6 +99,24 @@ describe('MagicLinkEmail', () => {
       const rendered = html.replace(/<[^>]+>/g, ' ').replace(magicLink, ' ')
       expect(rendered).not.toMatch(/(?<!\d)\d{6}(?!\d)/)
     }
+  })
+
+  it('avec otpCode : le code 6 chiffres et son invite sont rendus (fr & en, PWA iOS)', async () => {
+    const otpCode = '482913'
+    const fr = await renderEmailHtml(
+      createElement(MagicLinkEmail, { magicLink, otpCode, expiresInMin })
+    )
+    expect(fr).toContain(otpCode)
+    expect(fr).toMatch(/saisis ce code dans l(?:'|&#x27;)application/i)
+    const en = await renderEmailHtml(
+      createElement(MagicLinkEmail, { magicLink, otpCode, expiresInMin, locale: 'en' })
+    )
+    expect(en).toContain(otpCode)
+    expect(en).toMatch(/enter this code in the app/i)
+    // Le code n'est jamais une ancre cliquable : il reste du texte sélectionnable.
+    expect(fr).not.toMatch(new RegExp(`<a\\b[^>]*>[^<]*${otpCode}`))
+    // Le lien CTA reste présent à côté du code (l'utilisateur choisit).
+    expect(fr).toContain(magicLink)
   })
 
   it('utilise un CTA jaune (token brand-yellow), texte encre, jamais brand.red', async () => {
