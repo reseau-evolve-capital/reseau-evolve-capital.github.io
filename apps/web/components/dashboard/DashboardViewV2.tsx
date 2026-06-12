@@ -31,6 +31,7 @@ import {
   DashboardHero,
   DashboardMetricsRibbon,
   EmptyState,
+  InfoTip,
   Spinner,
   SyncBanner,
   TrendBadge,
@@ -316,12 +317,18 @@ export function DashboardViewV2({
   // Ruban mobile — 3 colonnes constantes : capacité absente → « — » (jamais de trou).
   // Label COURT « Capacité » (v2.capacityShort) : le libellé complet déborde en ellipsis
   // sur 375px (réf mobile = « CAPACITÉ ») ; la card desktop garde le label complet.
+  // InfoTip « capacité » : la valeur (plafond annuel − versements payés de l'année) n'est
+  // pas auto-explicative — explication au tap/hover/focus (retour owner, juin 2026).
+  const capacityInfoTip = (
+    <InfoTip content={t('capacity.info')} aria-label={t('capacity.infoAria')} />
+  )
   const ribbonItems = [
     { label: t('kpi.detention'), value: formatPct(data.detentionPct, { showSign: false }) },
     { label: t('kpi.totalContributed'), value: eurNoCents(data.totalContributed) },
     {
       label: t('v2.capacityShort'),
       value: data.investment.remaining != null ? eurNoCents(data.investment.remaining) : '—',
+      info: capacityInfoTip,
     },
   ]
 
@@ -435,7 +442,10 @@ export function DashboardViewV2({
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-3 border-t border-border py-2">
-                <dt className="text-[13px] text-text-sec">{t('capacity.title')}</dt>
+                <dt className="flex items-center gap-1.5 text-[13px] text-text-sec">
+                  {t('capacity.title')}
+                  {capacityInfoTip}
+                </dt>
                 <dd className="font-display text-[17px] font-bold tabular-nums text-text">
                   {data.investment.remaining != null ? formatEUR(data.investment.remaining) : '—'}
                 </dd>

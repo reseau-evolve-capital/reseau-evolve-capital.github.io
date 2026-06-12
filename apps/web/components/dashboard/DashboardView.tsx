@@ -19,6 +19,7 @@ import {
   ContributionStatusCard,
   CurrencyAmount,
   Icon,
+  InfoTip,
   EmptyState,
   Spinner,
   SyncBanner,
@@ -198,8 +199,11 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
       {data.investment.remaining != null && (
         <div className="flex flex-col gap-1 rounded-[14px] border border-accent bg-card p-5 shadow-[var(--sh-card)]">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-[12px] font-semibold uppercase tracking-[0.08em] text-text-ter">
+            {/* InfoTip : explication de la capacité (plafond annuel − versements payés de
+                l'année) au tap/hover/focus — même copy que la V2 (retour owner, juin 2026). */}
+            <p className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-[0.08em] text-text-ter">
               {t('capacity.title')}
+              <InfoTip content={t('capacity.info')} aria-label={t('capacity.infoAria')} />
             </p>
             <Icon name="TrendingUp" size={20} aria-hidden="true" className="text-accent" />
           </div>
