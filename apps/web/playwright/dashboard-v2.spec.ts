@@ -23,6 +23,13 @@
  *   7. Sans cookie (rollout 0) : identique à V1 (fail-safe).
  *   8. Smoke axe (a11y) sur la V2, mobile + desktop : 0 violation critical/serious.
  *
+ * + MODE LIVE (DSH-012, dernier describe du fichier) : des lignes REPORTING quotidiennes
+ *   sont seedées dans `club_reporting_daily` (beforeAll) → le graphe passe en données
+ *   réelles (résumé/axes calculés depuis la série, hero TrendBadge = variations.d1, PAS de
+ *   label « Courbe illustrative »), puis nettoyées (afterAll). Les describes demo ci-dessus
+ *   s'exécutent AVANT (ordre de déclaration, workers:1) sur une table purgée (beforeAll
+ *   file-level) : ils restent en mode demo même après un run précédent interrompu.
+ *
  * ⚠ Double instance responsive : DashboardEvolutionChart est rendu DEUX fois (mobile
  * `lg:hidden` / desktop `hidden lg:*`). Les locators par RÔLE (getByRole) ne matchent
  * que l'instance visible (display:none = hors arbre a11y) ; les locators par TEXTE
@@ -40,10 +47,30 @@
 
 import { test, expect, type BrowserContext, type Page, type Route } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
+import postgres from 'postgres'
 
 import type { DashboardData } from '@/lib/data/dashboard'
 
 import { loginAsSeedMember } from './helpers'
+
+const DB_URL = process.env.E2E_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
+const SEED_CLUB_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
+
+/** Purge les lignes REPORTING du club seed (idempotent). Garantit le mode DEMO pour les
+ *  describes ci-dessous, même si un run précédent interrompu a laissé des lignes live. */
+async function purgeReportingRows(): Promise<void> {
+  const sql = postgres(DB_URL, { max: 1 })
+  try {
+    await sql`DELETE FROM club_reporting_daily WHERE club_id = ${SEED_CLUB_ID}::uuid`
+  } finally {
+    await sql.end()
+  }
+}
+
+// File-level (workers:1) : table REPORTING propre AVANT tous les tests du fichier.
+test.beforeAll(async () => {
+  await purgeReportingRows()
+})
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures partagées
@@ -356,6 +383,134 @@ test.describe('A11y — Dashboard V2 (axe)', () => {
       await loginWithVariant(page, context, 'v2')
       await expect(periodGroup(page)).toBeVisible()
       await expectNoSeriousA11yViolations(page, '/dashboard V2 (desktop)')
+    })
+  })
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mode LIVE (DSH-012) — lignes REPORTING seedées dans club_reporting_daily.
+// DERNIER describe du fichier (ordre de déclaration, workers:1) : les describes demo
+// ci-dessus s'exécutent AVANT le seed ; afterAll purge pour ne pas polluer les autres
+// specs (dashboard.spec.ts) du même run.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** 40 lignes quotidiennes CONTIGUËS finissant au 2026-06-10 (> joined_at seed 2024-01-01,
+ *  donc aucun point coupé par le cutoff d'adhésion). Valeurs croissantes 700 000 → 708 408.
+ *  Dérivations ATTENDUES (détention seed 0.1234, calculs dashboard-chart/-view) :
+ *    - 30J : premier point du slice = 2026-05-11 (701 940) → delta +798 € (+0,92 %) ;
+ *    - d1  : 708 408 − 708 192 = 216 → badge hero +0,03 % / +27 € ;
+ *    - MAX : axe en années « 2026 » (≠ « 2018 » de la série demo) → preuve du mode live.
+ */
+const LIVE_END_DATE = '2026-06-10'
+const LIVE_ROW_COUNT = 40
+const DAY_MS = 86_400_000
+
+function makeLiveReportingRows(): Array<{
+  club_id: string
+  report_date: string
+  portfolio_value: number
+  total_contributions: number
+  synced_at: string
+}> {
+  const endMs = Date.parse(LIVE_END_DATE)
+  return Array.from({ length: LIVE_ROW_COUNT }, (_, i) => ({
+    club_id: SEED_CLUB_ID,
+    report_date: new Date(endMs - (LIVE_ROW_COUNT - 1 - i) * DAY_MS).toISOString().slice(0, 10),
+    // Croissance régulière arrondie : i=0 → 700 000, i=39 → 708 408 (exact).
+    portfolio_value: 700_000 + Math.round((i * 8_408) / (LIVE_ROW_COUNT - 1)),
+    total_contributions: 480_000,
+    synced_at: new Date().toISOString(),
+  }))
+}
+
+test.describe('Dashboard V2 — données live (REPORTING seedées)', () => {
+  test.beforeAll(async () => {
+    const sql = postgres(DB_URL, { max: 1 })
+    try {
+      // upsert (club_id, report_date) : idempotent si un run interrompu a laissé des lignes.
+      await sql`
+        INSERT INTO club_reporting_daily ${sql(makeLiveReportingRows())}
+        ON CONFLICT (club_id, report_date) DO UPDATE
+           SET portfolio_value     = EXCLUDED.portfolio_value,
+               total_contributions = EXCLUDED.total_contributions,
+               synced_at           = EXCLUDED.synced_at
+      `
+    } finally {
+      await sql.end()
+    }
+  })
+
+  test.afterAll(async () => {
+    await purgeReportingRows()
+  })
+
+  test.describe('desktop', () => {
+    test.use({ viewport: { width: 1440, height: 900 } })
+
+    test.beforeEach(async ({ page, context }) => {
+      await loginWithVariant(page, context, 'v2')
+    })
+
+    test('graphe en données réelles : résumé 30J calculé, SANS « Courbe illustrative »', async ({
+      page,
+    }) => {
+      await expect(periodGroup(page)).toBeVisible()
+      // Mode live : le label demo n'est rendu dans AUCUNE instance (absent du DOM).
+      await expect(page.getByText('Courbe illustrative')).toHaveCount(0)
+      // Résumé 30J dérivé de la série seedée : +798 € (+0,92 %) — preuve slicing+summarize.
+      await expect(page.getByText(/\+798\s*€/u).filter({ visible: true })).toBeVisible()
+      await expect(page.getByText(/\+0,92\s*%/u).filter({ visible: true })).toBeVisible()
+    })
+
+    test('hero : TrendBadge branché sur variations.d1 (+0,03 % / +27 €) + méta « hier »', async ({
+      page,
+    }) => {
+      // d1 = dernier jour vs veille (lignes contiguës) : +27 € soit +0,03 % — déterministe.
+      await expect(page.getByText(/\+0,03\s*%/u).filter({ visible: true })).toBeVisible()
+      await expect(page.getByText(/\+27\s*€/u).filter({ visible: true })).toBeVisible()
+      // La méta « hier · JJ.MM » n'est rendue QUE si le TrendBadge l'est (heroVariationMeta).
+      await expect(page.getByText(/hier · \d{2}\.\d{2}/).filter({ visible: true })).toBeVisible()
+    })
+
+    test('toggle MAX → axe = années des données seedées (2026, pas 2018 demo)', async ({
+      page,
+    }) => {
+      const group = periodGroup(page)
+      await group.getByRole('button', { name: 'MAX' }).click()
+      await expect(group.getByRole('button', { name: 'MAX' })).toHaveAttribute(
+        'aria-pressed',
+        'true'
+      )
+
+      // Axe MAX en années : début ET fin de la série seedée sont en 2026 (2 spans → .first()).
+      await expect(
+        page.getByText('2026', { exact: true }).filter({ visible: true }).first()
+      ).toBeVisible()
+      // La série demo MAX démarre en 2018 — son absence prouve que la courbe est live.
+      await expect(page.getByText('2018', { exact: true })).toHaveCount(0)
+      // Le résumé MAX garde le suffixe « depuis ton adhésion ».
+      await expect(page.getByText('depuis ton adhésion').filter({ visible: true })).toBeVisible()
+    })
+  })
+
+  test.describe('mobile', () => {
+    test.use({ viewport: { width: 375, height: 812 }, hasTouch: true })
+
+    test('smoke : ribbon 3 cellules + statut cotisation toujours OK en mode live', async ({
+      page,
+      context,
+    }) => {
+      await loginWithVariant(page, context, 'v2')
+
+      // Graphe live (sans label demo) + ribbon + statut : la mise en page mobile tient.
+      await expect(periodGroup(page)).toBeVisible()
+      await expect(page.getByText('Courbe illustrative')).toHaveCount(0)
+      await expect(page.getByText('Ma détention').filter({ visible: true })).toBeVisible()
+      await expect(page.getByText('Total cotisé').filter({ visible: true })).toBeVisible()
+      await expect(
+        page.getByText('Capacité', { exact: true }).filter({ visible: true })
+      ).toBeVisible()
+      await expect(page.getByText('Statut cotisation').filter({ visible: true })).toBeVisible()
     })
   })
 })
