@@ -31,6 +31,19 @@ describe('DashboardMetricsRibbon — rendu', () => {
     expect(container.firstChild).toBeNull()
   })
 
+  it('slot info optionnel rendu dans le <dt> à côté du label', () => {
+    render(
+      <DashboardMetricsRibbon
+        items={[
+          ...ITEMS.slice(0, 2),
+          { ...ITEMS[2]!, info: <button type="button" aria-label="Info capacité" /> },
+        ]}
+      />
+    )
+    const info = screen.getByRole('button', { name: 'Info capacité' })
+    expect(info.closest('dt')).not.toBeNull()
+  })
+
   it('la 1ʳᵉ cellule n’a pas de séparateur, les suivantes oui (border-l)', () => {
     const { container } = render(<DashboardMetricsRibbon items={ITEMS} />)
     const cells = Array.from(container.querySelectorAll('dl > div'))

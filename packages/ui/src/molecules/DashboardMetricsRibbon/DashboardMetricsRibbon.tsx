@@ -6,6 +6,8 @@ export interface DashboardMetricsRibbonItem {
   label: string
   /** Valeur déjà formatée par l'appelant (ex. « 12 400 € »). */
   value: string
+  /** Slot optionnel accolé au libellé (ex. un `<InfoTip>` explicatif). */
+  info?: React.ReactNode
 }
 
 export interface DashboardMetricsRibbonProps {
@@ -33,8 +35,11 @@ export function DashboardMetricsRibbon({ items, className }: DashboardMetricsRib
           key={`${item.label}-${i}`}
           className={cn('min-w-0 py-3 pl-4 pr-2', i > 0 && 'border-l border-border')}
         >
-          <dt className="truncate font-mono text-[10px] uppercase tracking-[0.10em] text-text-ter">
-            {item.label}
+          {/* La troncature vit sur le <span> : un overflow hidden sur le <dt> clipperait
+              le slot info (zone de hit 44px du déclencheur InfoTip). */}
+          <dt className="flex items-center gap-1 font-mono text-[10px] uppercase tracking-[0.10em] text-text-ter">
+            <span className="truncate">{item.label}</span>
+            {item.info}
           </dt>
           <dd className="whitespace-nowrap font-display text-[17px] font-bold tabular-nums text-text">
             {item.value}
