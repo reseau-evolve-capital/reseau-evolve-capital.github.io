@@ -119,19 +119,29 @@ async function fetchAccessToken(jwt: string): Promise<string> {
 }
 
 /**
- * Lit une plage A1:AZ2000 d'une feuille et renvoie une matrice string[][].
+ * Lit une plage d'une feuille et renvoie une matrice string[][].
+ * `range` est optionnel et vaut 'A1:AZ2000' par défaut — INCHANGÉ pour les 6 feuilles
+ * historiques. Raison du paramètre : la feuille REPORTING (série quotidienne, ~2 900+
+ * lignes depuis 2018) DÉPASSE cette plage par défaut, qui tronquerait silencieusement
+ * la série — elle est donc lue avec une plage explicite plus large ('A1:E10000').
  * Chaque cellule est coercée en string (null/absente → '') pour coller au contrat
  * des parsers/mappers (qui attendent tous des string).
  */
-export async function readSheet(sheetId: string, sheetName: string): Promise<string[][]> {
+export async function readSheet(
+  sheetId: string,
+  sheetName: string,
+  range = 'A1:AZ2000'
+): Promise<string[][]> {
   const sa = loadServiceAccount()
   const jwt = await buildSignedJwt(sa)
   const token = await fetchAccessToken(jwt)
 
-  const range = `${encodeURIComponent(sheetName)}!A1:AZ2000`
+  // Le nom d'onglet est encodé (espaces, accents) ; la notation A1 reste brute
+  // (`!`, `:` sont légaux en path segment — URL byte-identique à l'historique).
+  const encodedRange = `${encodeURIComponent(sheetName)}!${range}`
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${encodeURIComponent(
     sheetId
-  )}/values/${range}`
+  )}/values/${encodedRange}`
   const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
   if (!res.ok) {
     throw new Error(

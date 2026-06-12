@@ -26,11 +26,15 @@ export const ALERT_THROTTLE_MS = 4 * 60 * 60 * 1000
 /** Rôles habilités à recevoir l'alerte (staff du club). */
 const TREASURER_ROLES = ['treasurer', 'president', 'network_admin'] as const
 
-/** Noms de feuilles dont runSheet préfixe le message d'erreur (« <Feuille>: … »). */
+/** Noms de feuilles dont runSheet préfixe le message d'erreur (« <Feuille>: … »).
+ *  NB : REPORTING (optionnelle, DSH-011) ne produit QUE des warnings — jamais
+ *  d'entrée errors[] — donc jamais d'email d'alerte ; le préfixe n'est là que par
+ *  cohérence de nettoyage si un message REPORTING transite un jour par ici. */
 const SHEET_PREFIXES = [
   'PARAMETRAGES',
   'Base',
   'Portefeuille',
+  'REPORTING',
   'HISTORIQUE',
   'COTISATIONS',
   'Details cotisations',

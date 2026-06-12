@@ -1,8 +1,10 @@
 // Edge Function `sync` — ingestion d'une matrice Google Sheets vers Postgres.
 //
-// Contrat (SHE-006) :
-//   POST { club_id }  →  lit clubs.sheet_id  →  importe 6 feuilles dans l'ORDRE IMPÉRATIF
-//   PARAMETRAGES → Base → Portefeuille → HISTORIQUE → COTISATIONS → Details cotisations.
+// Contrat (SHE-006, étendu DSH-011) :
+//   POST { club_id }  →  lit clubs.sheet_id  →  importe 7 feuilles dans l'ORDRE IMPÉRATIF
+//   PARAMETRAGES → Base → Portefeuille → REPORTING → HISTORIQUE → COTISATIONS → Details cotisations.
+//   REPORTING est OPTIONNELLE (enrichissante) : son échec ne produit que des warnings,
+//   jamais d'erreur dure (success reste true). Les 6 autres feuilles sont bloquantes.
 //   Chaque feuille : readSheet → parse → map → upsert → snapshot. Aucun parallélisme.
 //   Tolérance aux pannes partielles : une feuille en échec n'interrompt pas les suivantes.
 //   Idempotence : upserts onConflict (sauf transactions : delete+insert, cf. plus bas).
@@ -25,6 +27,7 @@ import {
   parseParametrages,
   parseBase,
   parsePortefeuille,
+  parseReporting,
   parseHistorique,
   parseCotisations,
 } from './sheetParsers.ts'
@@ -41,6 +44,7 @@ import {
   mapPortefeuilleRows,
   mapAggregateRows,
 } from '../../../packages/data/src/sheets/mappers/portefeuille.mapper.ts'
+import { mapReportingRows } from '../../../packages/data/src/sheets/mappers/reporting.mapper.ts'
 import { mapHistoriqueRows } from '../../../packages/data/src/sheets/mappers/historique.mapper.ts'
 import { mapCotisationsRows } from '../../../packages/data/src/sheets/mappers/cotisations.mapper.ts'
 import { mapDetailsCotisationsRows } from '../../../packages/data/src/sheets/mappers/detailsCotisations.mapper.ts'
@@ -205,6 +209,44 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
           )
         } catch {
           // ignore : l'échec de snapshot ne doit pas masquer l'erreur d'origine.
+        }
+      }
+    }
+
+    /**
+     * Exécute une feuille OPTIONNELLE (enrichissante) — même structure que runSheet,
+     * mais TOUTE exception devient un warning MOLLE, JAMAIS une entrée errors[].
+     * DISTINCTION : une feuille BLOQUANTE (runSheet) porte des données vitales — son
+     * échec doit faire success=false et déclencher les alertes (Sentry, email trésoriers).
+     * Une feuille ENRICHISSANTE (ex. REPORTING, série historique du dashboard) ne doit
+     * ni faire échouer le run ni alerter : onglet absent, plage illisible ou table non
+     * migrée → la sync des 6 feuilles vitales reste un succès. Snapshot 'failed'
+     * best-effort pour l'audit, puis on continue.
+     */
+    async function runOptionalSheet(
+      sheetName: string,
+      handler: () => Promise<void>
+    ): Promise<void> {
+      try {
+        await handler()
+        syncedSheets.push(sheetName)
+      } catch (e) {
+        const message = errMsg(e)
+        // MOLLE uniquement : jamais errors[] pour une feuille optionnelle.
+        warnings.push(`${sheetName} (optionnelle): ${message}`)
+        // Snapshot d'échec (best-effort — on n'aggrave pas une panne par une 2e exception).
+        try {
+          snapshots[sheetName] = await createSnapshot(
+            supabase,
+            clubId,
+            sheetName,
+            { error: message },
+            0,
+            'failed',
+            message
+          )
+        } catch {
+          // ignore : l'échec de snapshot ne doit pas masquer l'anomalie d'origine.
         }
       }
     }
@@ -498,6 +540,139 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         status,
         note
       )
+    })
+
+    // 3bis) REPORTING → club_reporting_daily (feuille OPTIONNELLE/enrichissante, DSH-011)
+    // Série quotidienne (~2 900+ lignes depuis 2018) pour le graphe d'évolution du
+    // dashboard. RÈGLE D'OR : aucun scénario REPORTING ne fait success=false ni ne
+    // crashe le run — tout échec part dans warnings[] (cf. runOptionalSheet).
+    await runOptionalSheet('REPORTING', async () => {
+      // Plage explicite A1:E10000 : la série dépasse le défaut A1:AZ2000 de readSheet
+      // (qui la tronquerait silencieusement) ; seules les colonnes A–E sont utiles.
+      const raw = await deps.readSheet(sheetId, 'REPORTING', 'A1:E10000')
+      const rows = parseReporting(raw)
+      // Un SEUL horodatage pour tout le run REPORTING (cohérence des ~2 900 lignes).
+      const synced_at = new Date().toISOString()
+      const { upserts, skipped } = mapReportingRows(rows, clubId, synced_at)
+
+      // Feuille vide / aucune ligne exploitable : warning MOLLE + snapshot 'partial',
+      // return SANS exception (une absence de données n'est pas un échec de feuille).
+      if (upserts.length === 0) {
+        const emptyNote = 'feuille REPORTING vide ou sans lignes exploitables'
+        warnings.push(`REPORTING (optionnelle): ${emptyNote}`)
+        try {
+          snapshots['REPORTING'] = await createSnapshot(
+            supabase,
+            clubId,
+            'REPORTING',
+            raw,
+            raw.length,
+            'partial',
+            emptyNote
+          )
+        } catch {
+          // best-effort : un snapshot raté n'aggrave pas le cas.
+        }
+        return
+      }
+
+      // Upsert par paquets de 500 (la série complète serait un POST trop volumineux).
+      // Idempotence : onConflict (club_id, report_date) — cf. migration 034.
+      const BATCH_SIZE = 500
+      let upsertedCount = 0
+      for (let i = 0; i < upserts.length; i += BATCH_SIZE) {
+        const batch = upserts.slice(i, i + BATCH_SIZE)
+        const { error } = await supabase
+          .from('club_reporting_daily')
+          .upsert(batch, { onConflict: 'club_id,report_date' })
+        if (error) {
+          if (error.code === '42P01') {
+            // Table absente (migration 034 non déployée sur cet environnement) :
+            // inutile d'insister sur les paquets restants — warning explicite,
+            // snapshot 'failed' best-effort, return PROPRE (jamais de throw).
+            const missingNote =
+              'table club_reporting_daily absente (migration 034 non déployée) — import ignoré'
+            warnings.push(`REPORTING (optionnelle): ${missingNote}`)
+            try {
+              snapshots['REPORTING'] = await createSnapshot(
+                supabase,
+                clubId,
+                'REPORTING',
+                raw,
+                raw.length,
+                'failed',
+                missingNote
+              )
+            } catch {
+              // best-effort.
+            }
+            return
+          }
+          // Autre erreur : ce paquet est perdu mais les précédents restent acquis
+          // (idempotence : la prochaine sync les re-tentera). On continue.
+          warnings.push(
+            `REPORTING (optionnelle): échec upsert paquet ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`
+          )
+          continue
+        }
+        upsertedCount += batch.length
+      }
+
+      // MOLLE : lignes en quarantaine (date illisible, B/C manquant ou négatif) →
+      // warnings[] (pattern Portefeuille). Raisons tronquées aux 10 premières pour ne
+      // pas générer un warning pathologique sur une feuille massivement malformée.
+      const MAX_SKIPPED_SHOWN = 10
+      const skippedNote =
+        skipped.length > 0
+          ? `${skipped.length} ligne(s) en quarantaine: ${skipped
+              .slice(0, MAX_SKIPPED_SHOWN)
+              .join(' | ')}${skipped.length > MAX_SKIPPED_SHOWN ? ' | …' : ''}`
+          : null
+      const status: SnapshotStatus = skippedNote ? 'partial' : 'success'
+      if (skippedNote) warnings.push(`REPORTING (lignes ignorées): ${skippedNote}`)
+      // Snapshot best-effort (try/catch) : contrairement aux feuilles bloquantes, un
+      // échec de snapshot ne doit pas requalifier la feuille optionnelle en échec.
+      try {
+        snapshots['REPORTING'] = await createSnapshot(
+          supabase,
+          clubId,
+          'REPORTING',
+          raw,
+          raw.length,
+          status,
+          skippedNote
+        )
+      } catch {
+        // best-effort.
+      }
+
+      // SANITY CHECK (warning MOLLE, jamais bloquant) : la valorisation la plus récente
+      // de REPORTING doit rester proche de l'agrégat « Portefeuille » importé à l'étape 3
+      // (même matrice, deux feuilles — un écart > 1 % signale une feuille désynchronisée).
+      try {
+        if (upsertedCount > 0) {
+          const latest = upserts.reduce((a, b) => (a.report_date > b.report_date ? a : b))
+          const { data: agg } = await supabase
+            .from('portfolio_aggregates')
+            .select('market_value')
+            .eq('club_id', clubId)
+            .eq('label', 'Portefeuille')
+            .eq('is_active', true)
+            .maybeSingle()
+          const aggValue = (agg as { market_value: number | null } | null)?.market_value
+          if (aggValue != null && aggValue > 0) {
+            const drift = Math.abs(latest.portfolio_value - aggValue) / aggValue
+            if (drift > 0.01) {
+              warnings.push(
+                `REPORTING: écart de ${(drift * 100).toFixed(1)} % entre la dernière valorisation ` +
+                  `REPORTING (${latest.portfolio_value}) et l'agrégat Portefeuille (${aggValue}).`
+              )
+            }
+          }
+        }
+      } catch {
+        // Sanity check best-effort : jamais bloquant.
+      }
     })
 
     // 4) HISTORIQUE → transactions
