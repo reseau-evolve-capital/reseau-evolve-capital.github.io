@@ -1,15 +1,21 @@
 'use client'
 
 // Vue dashboard membre V2 (expérience A/B « Dashboard V2 ») — hero « open » + graphe
-// d'évolution DEMO + ruban de métriques (mobile) / colonne position + teaser club (desktop).
+// d'évolution + ruban de métriques (mobile) / colonne position + teaser club (desktop).
 //
 // Reprend les patterns V1 (DashboardView) : hydratation `initialData` (RSC) + TanStack
 // Query, états empty / error identiques, badge stale discret, pull-to-refresh, SyncBanner
-// mobile-only. Le graphe est ILLUSTRATIF (séries demo déterministes — pas d'historique réel
-// en V0) : le label « Courbe illustrative » reste affiché tant que la source est demo.
-// La bascule mobile/desktop passe par les classes (`lg:`) — jamais de JS resize.
+// mobile-only. La bascule mobile/desktop passe par les classes (`lg:`) — jamais de JS resize.
 //
-// Réf : PROMPT-DEV-DASHBOARD-V2-AB, CLAUDE.md (jamais de NaN/undefined, a11y, tokens only).
+// DEUX MODES de graphe (DSH-012) :
+//   - LIVE  : `chartData` non-null (série REPORTING réelle, DSH-011) → filtrage par période
+//     côté client (slicePeriod), résumé summarize, downsample ≤ 400 points ; TrendBadge hero
+//     branché sur variations.d1 (null → pas de badge — jamais de NaN). Pas de label demo.
+//   - DEMO  : `chartData` null (aucune ligne REPORTING / erreur serveur) → séries demo
+//     déterministes ILLUSTRATIVES, comportement historique STRICTEMENT inchangé, label
+//     « Courbe illustrative » affiché. Le teaser club desktop reste demo dans les deux modes.
+//
+// Réf : PROMPT-DEV-DASHBOARD-V2-AB, DSH-011/DSH-012, CLAUDE.md (jamais de NaN, a11y, tokens).
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -36,11 +42,15 @@ import { formatEUR, formatPct, formatRelativeTime } from '@evolve/utils'
 
 import { analyticsEvents, valueBucket } from '@/lib/analytics'
 import { type DashboardData } from '@/lib/data/dashboard'
+// Import type-only : dashboard-chart.ts est un module serveur (requêtes Supabase) — seul
+// son CONTRAT est consommé ici, effacé à la compilation (aucun code serveur dans le bundle).
+import type { DashboardChartData } from '@/lib/data/dashboard-chart'
 import {
   DEMO_CLUB_PORTFOLIO,
   getDemoEvolutionSeries,
   getDemoVariation1d,
 } from '@/lib/data/dashboard-chart-demo'
+import { downsample, slicePeriod, summarize } from '@/lib/data/dashboard-chart-view'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
 
@@ -73,10 +83,13 @@ function axisLabel(dateISO: string, yearOnly: boolean, locale: string): string {
 export function DashboardViewV2({
   initialData,
   anchorISO,
+  chartData = null,
 }: {
   initialData: DashboardData | null
   /** Date d'ancrage de la série demo (dernier point) — calculée côté RSC (syncedAt ?? now). */
   anchorISO: string
+  /** Série historique live (DSH-011, RSC) — null = mode demo (fallback illustratif). */
+  chartData?: DashboardChartData | null
 }) {
   const t = useTranslations('dashboard')
   const tCommon = useTranslations('common')
@@ -106,6 +119,8 @@ export function DashboardViewV2({
     const raf = requestAnimationFrame(() => setNow(Date.now()))
     return () => cancelAnimationFrame(raf)
   }, [data?.syncedAt])
+  // Source du graphe : live dès que la série REPORTING est fournie, demo sinon (DSH-012).
+  const chartSource: 'live' | 'demo' = chartData ? 'live' : 'demo'
   // Analytics (contrat gelé) : dashboard_viewed — fire-once au montage, dès que les données
   // sont prêtes. Valeurs BUCKETISÉES (jamais de montant exact vers GA).
   const viewedRef = useRef(false)
@@ -116,19 +131,28 @@ export function DashboardViewV2({
       variant: 'v2',
       valueBucket: valueBucket(data.netMarketValue),
       contributionStatus: data.contribution.status,
-      chartDataSource: 'demo',
+      chartDataSource: chartSource,
     })
-  }, [data])
-  // Séries demo déterministes, ancrées sur la quote-part réelle (dernier point = valeur réelle).
+  }, [data, chartSource])
+  // Séries demo déterministes, ancrées sur la quote-part réelle (dernier point = valeur
+  // réelle). Calculées UNIQUEMENT en mode demo (null en live — pas de travail inutile).
   const netMarketValue = data?.netMarketValue ?? 0
   const series = useMemo(
-    () => getDemoEvolutionSeries(period, anchorISO, netMarketValue),
-    [period, anchorISO, netMarketValue]
+    () => (chartData ? null : getDemoEvolutionSeries(period, anchorISO, netMarketValue)),
+    [chartData, period, anchorISO, netMarketValue]
   )
   const variation1d = useMemo(
-    () => getDemoVariation1d(anchorISO, netMarketValue),
-    [anchorISO, netMarketValue]
+    () => (chartData ? null : getDemoVariation1d(anchorISO, netMarketValue)),
+    [chartData, anchorISO, netMarketValue]
   )
+  // Mode LIVE : slice calendaire de la période active (résumé/axes sur le slice ENTIER),
+  // puis downsample ≤ 400 points pour le tracé (premier/dernier points conservés).
+  const liveSlice = useMemo(
+    () => (chartData ? slicePeriod(chartData.series, period) : null),
+    [chartData, period]
+  )
+  const livePoints = useMemo(() => (liveSlice ? downsample(liveSlice) : null), [liveSlice])
+  const liveSummary = useMemo(() => (liveSlice ? summarize(liveSlice) : null), [liveSlice])
 
   async function refresh() {
     setRefreshing(true)
@@ -155,7 +179,7 @@ export function DashboardViewV2({
 
   function onPeriodChange(p: EvolutionPeriod) {
     setPeriod(p)
-    analyticsEvents.dashboard.chartPeriodChanged({ period: p, chartDataSource: 'demo' })
+    analyticsEvents.dashboard.chartPeriodChanged({ period: p, chartDataSource: chartSource })
   }
 
   if (isError) {
@@ -185,8 +209,31 @@ export function DashboardViewV2({
 
   // ── Dérivations d'affichage (formatters @evolve/utils, fr-FR par défaut — I18N-001) ──
   const isMax = period === 'max'
-  const firstPoint = series.points[0]
-  const lastPoint = series.points[series.points.length - 1]
+  // Données du graphe selon le mode (live prioritaire, demo fallback strictement inchangé).
+  // LIVE : résumé sur le slice COMPLET (deltaPct = fraction → formatPct direct) ; résumé
+  // null (< 2 points / base ≤ 0) → « — » (le chart affiche déjà « — » sous 2 points) ;
+  // pas de label « Courbe illustrative ». DEMO : deltaPct en % → ÷ 100 avant formatPct.
+  const demoPoints = series?.points ?? []
+  const chart =
+    chartData && livePoints && liveSlice
+      ? {
+          points: livePoints,
+          summaryValue: liveSummary ? signedEurNoCents(liveSummary.deltaEur) : '—',
+          summarySub: liveSummary ? `(${formatPct(liveSummary.deltaPct)})` : '',
+          direction: (liveSummary && liveSummary.deltaEur < 0 ? 'down' : 'up') as 'up' | 'down',
+          firstDate: liveSlice[0]?.date ?? null,
+          lastDate: liveSlice[liveSlice.length - 1]?.date ?? null,
+          demoLabel: undefined,
+        }
+      : {
+          points: demoPoints,
+          summaryValue: signedEurNoCents(series?.deltaEur ?? 0),
+          summarySub: `(${formatPct((series?.deltaPct ?? 0) / 100)})`,
+          direction: ((series?.deltaEur ?? 0) >= 0 ? 'up' : 'down') as 'up' | 'down',
+          firstDate: demoPoints[0]?.date ?? null,
+          lastDate: demoPoints[demoPoints.length - 1]?.date ?? null,
+          demoLabel: t('evolution.demoLabel'),
+        }
   const periodItems: Array<{ value: EvolutionPeriod; label: string; mobileHidden?: boolean }> = [
     { value: '7d', label: t('evolution.periods.7d'), mobileHidden: true },
     { value: '30d', label: t('evolution.periods.30d') },
@@ -204,26 +251,41 @@ export function DashboardViewV2({
     max: t('evolution.periodNames.max'),
   }
   const chartShared = {
-    points: series.points,
+    points: chart.points,
     period,
     onPeriodChange,
     periods: periodItems,
-    summaryValue: signedEurNoCents(series.deltaEur),
-    summarySub: `(${formatPct(series.deltaPct / 100)})`,
+    summaryValue: chart.summaryValue,
+    summarySub: chart.summarySub,
     summarySuffix: isMax ? t('evolution.sinceJoin') : undefined,
     title: t('evolution.title'),
-    axisStart: firstPoint ? axisLabel(firstPoint.date, isMax, locale) : '—',
-    axisEnd: lastPoint ? axisLabel(lastPoint.date, isMax, locale) : '—',
-    direction: (series.deltaEur >= 0 ? 'up' : 'down') as 'up' | 'down',
-    demoLabel: t('evolution.demoLabel'),
+    axisStart: chart.firstDate ? axisLabel(chart.firstDate, isMax, locale) : '—',
+    axisEnd: chart.lastDate ? axisLabel(chart.lastDate, isMax, locale) : '—',
+    direction: chart.direction,
+    demoLabel: chart.demoLabel,
     periodGroupLabel: t('evolution.periodGroup'),
   }
 
-  // Variation « depuis hier » du hero — demo, toujours haussière par construction.
-  const heroVariation: TrendBadgeProps = {
-    direction: 'up',
-    value: formatPct(variation1d.percent / 100),
-    subValue: signedEurNoCents(variation1d.amount),
+  // Variation « depuis hier » du hero. LIVE : variations.d1 (fraction → formatPct direct),
+  // direction selon le signe (négatif → 'down' = data-negative ; nul → 'flat') ; d1 null →
+  // PAS de TrendBadge ni de méta (variation optionnelle sur le hero — jamais de NaN).
+  // DEMO : inchangé (toujours haussière par construction, percent en % → ÷ 100).
+  let heroVariation: TrendBadgeProps | undefined
+  if (chartData) {
+    const d1 = chartData.variations.d1
+    if (d1) {
+      heroVariation = {
+        direction: d1.amount > 0 ? 'up' : d1.amount < 0 ? 'down' : 'flat',
+        value: formatPct(d1.percent),
+        subValue: signedEurNoCents(d1.amount),
+      }
+    }
+  } else if (variation1d) {
+    heroVariation = {
+      direction: 'up',
+      value: formatPct(variation1d.percent / 100),
+      subValue: signedEurNoCents(variation1d.amount),
+    }
   }
   // Label hero DESKTOP avec date (réf : « TA QUOTE-PART · AU 11 JUIN 2026 ») — date longue
   // localisée dérivée de anchorISO ; fallback sur le label simple si la date est invalide
@@ -248,6 +310,8 @@ export function DashboardViewV2({
           .format(yesterday)
           .replace(/\//g, '.'),
   })
+  // Méta « hier · {date} » rendue UNIQUEMENT avec un TrendBadge (d1 live null → ni l'un ni l'autre).
+  const heroVariationMeta = heroVariation ? variationMeta : undefined
 
   // Ruban mobile — 3 colonnes constantes : capacité absente → « — » (jamais de trou).
   // Label COURT « Capacité » (v2.capacityShort) : le libellé complet déborde en ellipsis
@@ -298,7 +362,7 @@ export function DashboardViewV2({
             appearance="open"
             netMarketValue={data.netMarketValue}
             variation={heroVariation}
-            variationMeta={variationMeta}
+            variationMeta={heroVariationMeta}
             onClick={openDetail}
             label={t('hero.label')}
             detailLabel={t('hero.viewDetail')}
@@ -311,7 +375,7 @@ export function DashboardViewV2({
             appearance="open"
             netMarketValue={data.netMarketValue}
             variation={heroVariation}
-            variationMeta={variationMeta}
+            variationMeta={heroVariationMeta}
             label={heroLabelDesktop}
             action={
               <button
