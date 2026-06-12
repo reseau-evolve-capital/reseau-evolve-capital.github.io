@@ -143,8 +143,8 @@ select membership_id, club_id, 2026, g.month, 100, 'paid', make_date(2026, g.mon
 from mb, generate_series(1, 6) as g(month)
 on conflict (membership_id, year, month) do nothing;
 
--- Le dashboard lit la vue matérialisée : la rafraîchir après insert
-refresh materialized view member_quote_part;
+-- NB : depuis la migration 030, member_quote_part est une VUE classique (security_invoker),
+-- recalculée à chaque requête — aucun refresh nécessaire après insert.
 ```
 
 > Recharge la page : `/dashboard` et `/portfolio` montrent désormais des données. Adapte/duplique librement.
