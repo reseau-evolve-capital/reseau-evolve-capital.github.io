@@ -11,6 +11,7 @@ import type {
   PortefeuilleRowDTO,
   HistoriqueRowDTO,
   CotisationsRowDTO,
+  ReportingRowDTO,
 } from '../../../packages/data/src/types/sheets.ts'
 
 /** Cellule à l'index `i` → string trimée, ou '' si hors limites. */
@@ -185,4 +186,28 @@ export function parseCotisations(rows: string[][]): CotisationsRowDTO[] {
     status: cellOrNull(row, 7), // Statut (≠ col 6 "Nb normal")
     amountDue: toNumOrNull(cell(row, 8)), // Montant dû
   }))
+}
+
+/** Motif date jj/mm/aaaa (ou j-m-aaaa) — discrimine les lignes de données REPORTING. */
+const REPORTING_DATE_PATTERN = /\d{1,2}[/-]\d{1,2}[/-]\d{4}/
+
+/**
+ * REPORTING → ReportingRowDTO[] (série quotidienne club, DSH-011).
+ * Layout RÉEL : ligne 0 = titre de la matrice, ligne 1 = en-têtes, puis ~2 900+
+ * lignes quotidiennes depuis 2018. Plutôt que de sauter 2 lignes « en dur »
+ * (fragile si la mise en page bouge), on ne garde que les lignes dont la col A
+ * contient un motif de date jj/mm/aaaa : titres/en-têtes/lignes vides sont écartés
+ * ICI et ne génèrent donc JAMAIS de warnings de quarantaine côté mapper.
+ * Aucune logique métier (recalculs D/E, doublons) : projection pure colonne → champ.
+ */
+export function parseReporting(rows: string[][]): ReportingRowDTO[] {
+  return rows
+    .filter((row) => REPORTING_DATE_PATTERN.test(cell(row, 0)))
+    .map((row) => ({
+      reportDateRaw: cellOrNull(row, 0), // A Date avec jour de semaine («dimanche, 03/05/2026»)
+      portfolioValue: toNumOrNull(cell(row, 1)), // B Valorisation portefeuille
+      totalContributions: toNumOrNull(cell(row, 2)), // C Cotisations cumulées
+      capitalGain: toNumOrNull(cell(row, 3)), // D Plus-value (= B−C, parfois vide)
+      performanceRatio: toNumOrNull(cell(row, 4)), // E Performance (ratio B/C, parfois vide)
+    }))
 }
