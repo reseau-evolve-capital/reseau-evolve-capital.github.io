@@ -1,0 +1,63 @@
+# Notification Discord à chaque déploiement PRODUCTION réussi sur Vercel (apps/web).
+#
+# L'intégration Vercel ↔ GitHub crée des `deployments` ; on écoute `deployment_status`
+# et on ne notifie que les succès de l'environnement « Production » (casse Vercel).
+# Embed vert, informatif — PAS de mention @ (info, pas alerte).
+#
+# Secrets utilisés : secrets.DISCORD_WEBHOOK_URL.
+# Réf : docs/monitoring/MONITORING.md
+name: Notification déploiement
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    name: Notifier Discord (deploy prod réussi)
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      contains(github.event.deployment.environment, 'Production')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (sha déployé)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.deployment.sha }}
+          fetch-depth: 1
+
+      - name: Notifier Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DEPLOY_URL: ${{ github.event.deployment_status.environment_url || github.event.deployment_status.target_url }}
+          ENVIRONMENT: ${{ github.event.deployment.environment }}
+          SHA: ${{ github.event.deployment.sha }}
+          DEPLOY_REF: ${{ github.event.deployment.ref }}
+        run: |
+          set -u
+          SHORT_SHA="${SHA:0:7}"
+          COMMIT_MSG=$(git log -1 --format=%s "$SHA" 2>/dev/null || echo '(message indisponible)')
+          DEPLOY_URL="${DEPLOY_URL:-https://app.reseauevolvecapital.com}"
+
+          jq -n \
+            --arg url "$DEPLOY_URL" \
+            --arg env "$ENVIRONMENT" \
+            --arg sha "$SHORT_SHA" \
+            --arg ref "$DEPLOY_REF" \
+            --arg msg "$COMMIT_MSG" \
+            '{
+              embeds: [{
+                title: "✅ Nouvelle version déployée",
+                url: $url,
+                color: 3066993,
+                fields: [
+                  { name: "Environnement", value: $env, inline: true },
+                  { name: "Commit", value: ($sha + " (" + $ref + ")"), inline: true },
+                  { name: "Message", value: $msg, inline: false },
+                  { name: "URL", value: $url, inline: false }
+                ]
+              }]
+            }' \
+          | curl -fsS -H 'Content-Type: application/json' -d @- "$DISCORD_WEBHOOK_URL"
