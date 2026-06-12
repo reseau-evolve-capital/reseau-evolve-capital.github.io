@@ -11,6 +11,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider'
 import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
 import { AppChromeSidebar, AppChromeTopbar, AppChromeBottom } from '@/components/chrome/AppChrome'
 import { InstallBannerMount } from '@/components/pwa/InstallBannerMount'
+import { getSessionUser, getActiveClubMembership } from '@/lib/data/request'
 
 // Les pages app/* nécessitent l'auth Supabase — pas de prérendu statique
 export const dynamic = 'force-dynamic'
@@ -22,9 +23,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const t = await getTranslations('nav.shell')
   const locale = await getLocale()
 
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser()
+  // Identité via getClaims() (vérif locale du JWT, mémoïsée par requête) : le middleware
+  // AUT-005 a déjà revalidé la session par getUser() réseau — cf. lib/data/request.ts.
+  const authUser = await getSessionUser()
 
   let profile: { full_name: string | null; avatar_url: string | null } | null = null
   let isStaff = false
@@ -38,45 +39,37 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (authUser) {
     const salt = process.env.ANALYTICS_USER_ID_SALT ?? 'evolve-uba'
     userIdHash = createHash('sha256').update(`${salt}:${authUser.id}`).digest('hex').slice(0, 32)
-    const { count } = await supabase
-      .from('memberships')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', authUser.id)
-      .eq('is_active', true)
+
+    // 4 lectures indépendantes → parallélisées (fix latence par-navigation, ticket C).
+    // Club actif = dernière adhésion active (helper mémoïsé, PARTAGÉ avec les pages) ;
+    // alimente la carte « CLUB ACTIF » + le statut sync.
+    const [{ count }, { data: profileData }, { data: staffData }, membership] = await Promise.all([
+      supabase
+        .from('memberships')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', authUser.id)
+        .eq('is_active', true),
+      supabase.from('users').select('full_name, avatar_url').eq('id', authUser.id).single(),
+      supabase.rpc('user_is_staff'),
+      getActiveClubMembership(authUser.id),
+    ])
     clubCount = count ?? 0
-
-    const { data } = await supabase
-      .from('users')
-      .select('full_name, avatar_url')
-      .eq('id', authUser.id)
-      .single()
-    profile = data
-    const { data: staffData } = await supabase.rpc('user_is_staff')
+    profile = profileData
     isStaff = staffData ?? false
-
-    // Club actif = dernière adhésion active ; alimente la carte « CLUB ACTIF » + le statut sync.
-    const { data: membership } = await supabase
-      .from('memberships')
-      .select('club_id, clubs(name, city, synced_at)')
-      .eq('user_id', authUser.id)
-      .eq('is_active', true)
-      .order('joined_at', { ascending: false })
-      .limit(1)
-      .maybeSingle<{
-        club_id: string
-        clubs: { name: string; city: string | null; synced_at: string | null } | null
-      }>()
 
     const club = membership?.clubs
     if (club) {
       // Nombre de membres actifs (RLS : silencieux/ignoré si non autorisé).
-      const { count } = await supabase
+      const { count: memberCount } = await supabase
         .from('memberships')
         .select('id', { count: 'exact', head: true })
         .eq('club_id', membership!.club_id)
         .eq('is_active', true)
 
-      const meta = [count && count > 0 ? t('clubMembers', { count }) : null, club.city]
+      const meta = [
+        memberCount && memberCount > 0 ? t('clubMembers', { count: memberCount }) : null,
+        club.city,
+      ]
         .filter(Boolean)
         .join(' · ')
 

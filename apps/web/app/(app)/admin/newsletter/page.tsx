@@ -1,9 +1,7 @@
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
-import { cookies } from 'next/headers'
-import { createServerClient } from '@evolve/data'
-import { resolveAdminContext } from '@/lib/data/admin'
 import { listNewsletters, type NewsletterSummary } from '@/lib/strapi-editorial'
+import { getSessionUser, getAdminContext } from '@/lib/data/request'
 import { Forbidden } from '../Forbidden'
 import { NewsletterView } from './NewsletterView'
 
@@ -14,15 +12,12 @@ export async function generateMetadata(): Promise<Metadata> {
 
 // RSC gardée staff (même pattern que /admin/invitations). La liste Strapi est tolérante :
 // CMS indisponible → liste vide, jamais de crash (l'UI affiche un état vide/erreur).
+// Identité + contexte admin mémoïsés par requête — cf. lib/data/request.ts (ticket C).
 export default async function AdminNewsletterPage() {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(cookieStore)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const user = await getSessionUser()
   if (!user) return <Forbidden />
 
-  const ctx = await resolveAdminContext(supabase, user.id)
+  const ctx = await getAdminContext(user.id)
   if (!ctx) return <Forbidden />
 
   let editions: NewsletterSummary[] = []
