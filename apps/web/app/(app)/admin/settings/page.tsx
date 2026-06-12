@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
-import { resolveAdminContext } from '@/lib/data/admin'
 import { getClubSettings } from '@/lib/data/clubSettings'
+import { getSessionUser, getAdminContext } from '@/lib/data/request'
 import { SettingsView } from './SettingsView'
 import { Forbidden } from '../Forbidden'
 
@@ -15,13 +15,13 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AdminSettingsPage() {
   const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Identité + contexte admin mémoïsés par requête (partagés avec le layout admin) ;
+  // le middleware a déjà revalidé la session par getUser() réseau. Cf. lib/data/request.ts.
+  const user = await getSessionUser()
   if (!user) return <Forbidden />
 
   // Garde par-club en défense (le middleware garde déjà la session + user_is_staff).
-  const ctx = await resolveAdminContext(supabase, user.id)
+  const ctx = await getAdminContext(user.id)
   if (!ctx) return <Forbidden />
 
   const settings = await getClubSettings(supabase, ctx.clubId)

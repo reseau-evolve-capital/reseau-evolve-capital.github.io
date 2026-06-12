@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
 import { createServerClient } from '@evolve/data'
 import { getProfileData } from '@/lib/data/profile'
+import { getSessionUser } from '@/lib/data/request'
 import { ProfileView } from './ProfileView'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -13,10 +14,10 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ProfilPage() {
   const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  // Le middleware (AUT-005 + guard onboarding A1) protège déjà la route ; garde-fou défensif.
+  // Identité via getClaims() (vérif locale du JWT, mémoïsée par requête) : le middleware
+  // (AUT-005 + guard onboarding A1) a DÉJÀ revalidé la session par getUser() réseau.
+  const user = await getSessionUser()
+  // Garde-fou défensif (le middleware protège déjà la route).
   if (!user) return null
 
   const data = await getProfileData(supabase, user.id)

@@ -161,6 +161,19 @@ const nextConfig: NextConfig = {
   // Complète l'autorisation CSP `ws://127.0.0.1:*` : la CSP débloque le schéma côté navigateur,
   // `allowedDevOrigins` débloque le host côté serveur Next. Option dev-only, sans effet en prod.
   ...(isDev ? { allowedDevOrigins: ['127.0.0.1'] } : {}),
+  // Router Cache CLIENT (fix « flash skeleton » à chaque navigation mobile) :
+  // le groupe (app) est en `dynamic = 'force-dynamic'` → par défaut Next garde le payload
+  // RSC des segments dynamiques 0 s côté client, donc CHAQUE tap bottom-nav re-demande la
+  // page au serveur (middleware + auth + loaders) et re-affiche loading.tsx — même en
+  // revenant sur un onglet visité 5 s avant. `staleTimes.dynamic: 60` réutilise le payload
+  // en cache pendant 60 s (retour instantané, pas de skeleton) ; React Query (staleTime
+  // 5 min + refetchOnWindowFocus) revalide les données en arrière-plan sans état de
+  // chargement. Option toujours `experimental.staleTimes` en Next 16.2.6 (vérifié dans
+  // node_modules/next/dist/server/config-shared.d.ts:331) — inchangée depuis la 14.2.
+  // `static: 300` = défaut documenté pour les segments statiques (min 30 s).
+  experimental: {
+    staleTimes: { dynamic: 60, static: 300 },
+  },
   async headers() {
     return [{ source: '/:path*', headers: SECURITY_HEADERS }]
   },

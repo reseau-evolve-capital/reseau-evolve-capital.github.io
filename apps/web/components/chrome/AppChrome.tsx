@@ -8,6 +8,7 @@
 //
 // Composants client distincts pour respecter la frontière RSC : la sidebar et la
 // topbar reçoivent leurs données (user, club, sync, date) depuis le layout serveur.
+import { useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
@@ -109,6 +110,16 @@ export function AppChromeTopbar({
   const t = useTranslations('nav')
   const router = useRouter()
   const supabase = useSupabase()
+
+  // Ticket C : les entrées « Profil »/« Admin » du menu utilisateur naviguent via
+  // `router.push` (callbacks AppTopbar de @evolve/ui) — contrairement à <Link>, push ne
+  // préfetch RIEN → payload RSC demandé au tap = skeleton garanti. On préfetch au mount
+  // pour que le Router Cache (staleTimes.dynamic) soit déjà chaud au moment du clic.
+  // (Changer l'API AppTopbar vers linkComponent = chantier packages/ui, non indispensable.)
+  useEffect(() => {
+    router.prefetch('/profil')
+    if (isStaff) router.prefetch('/admin')
+  }, [router, isStaff])
 
   const handleLogout = async () => {
     // PWA-001 : purge le cache de données du SW pour ne pas laisser de données financières

@@ -58,54 +58,55 @@ export async function getDashboardData(
   userId: string,
   clubId: string
 ): Promise<DashboardData | null> {
-  const { data: mqp, error } = await supabase
-    .from('member_quote_part')
-    .select(
-      'role, joined_at, detention_pct, total_contributed, net_market_value, contribution_status, amount_due'
-    )
-    .eq('user_id', userId)
-    .eq('club_id', clubId)
-    .maybeSingle<
-      Pick<
-        MemberQuotePartRow,
-        | 'role'
-        | 'joined_at'
-        | 'detention_pct'
-        | 'total_contributed'
-        | 'net_market_value'
-        | 'contribution_status'
-        | 'amount_due'
-      >
-    >()
+  // 4 lectures indépendantes → parallélisées (fix latence par-navigation, ticket C).
+  // La vue ne porte PAS les colonnes de nom : profil lu séparément (DATA_MODEL.md §2).
+  // `clubs.synced_at` : source unique du statut de sync (E2), partagée avec la topbar.
+  // `memberships.id` : requis pour cibler contribution_months (clé par adhésion, E3).
+  const [{ data: mqp, error }, { data: profile }, { data: club }, { data: membership }] =
+    await Promise.all([
+      supabase
+        .from('member_quote_part')
+        .select(
+          'role, joined_at, detention_pct, total_contributed, net_market_value, contribution_status, amount_due'
+        )
+        .eq('user_id', userId)
+        .eq('club_id', clubId)
+        .maybeSingle<
+          Pick<
+            MemberQuotePartRow,
+            | 'role'
+            | 'joined_at'
+            | 'detention_pct'
+            | 'total_contributed'
+            | 'net_market_value'
+            | 'contribution_status'
+            | 'amount_due'
+          >
+        >(),
+      supabase
+        .from('users')
+        .select('firstname, full_name')
+        .eq('id', userId)
+        .maybeSingle<Pick<UserRow, 'firstname' | 'full_name'>>(),
+      supabase
+        .from('clubs')
+        .select('name, synced_at, annual_investment_cap')
+        .eq('id', clubId)
+        .maybeSingle<Pick<ClubRow, 'name' | 'synced_at' | 'annual_investment_cap'>>(),
+      supabase
+        .from('memberships')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('club_id', clubId)
+        .maybeSingle<{ id: string }>(),
+    ])
   if (error) throw error
   if (!mqp) return null
 
-  // La vue ne porte PAS les colonnes de nom : on lit le profil séparément (DATA_MODEL.md §2).
-  // On lit aussi `clubs.synced_at` : source unique du statut de sync (E2), partagée avec la topbar.
-  const [{ data: profile }, { data: club }] = await Promise.all([
-    supabase
-      .from('users')
-      .select('firstname, full_name')
-      .eq('id', userId)
-      .maybeSingle<Pick<UserRow, 'firstname' | 'full_name'>>(),
-    supabase
-      .from('clubs')
-      .select('name, synced_at, annual_investment_cap')
-      .eq('id', clubId)
-      .maybeSingle<Pick<ClubRow, 'name' | 'synced_at' | 'annual_investment_cap'>>(),
-  ])
-
   // E3 — capacité d'investissement restante de l'année (même calcul que l'attestation :
   // plafond annuel du club − somme des mois cotisés `paid` de l'année en cours).
-  // membership_id requis pour cibler contribution_months (clé par adhésion).
   const cap = club?.annual_investment_cap != null ? Number(club.annual_investment_cap) : null
   let yearInvested = 0
-  const { data: membership } = await supabase
-    .from('memberships')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('club_id', clubId)
-    .maybeSingle<{ id: string }>()
   if (membership?.id) {
     const currentYear = new Date().getFullYear()
     const { data: months } = await supabase

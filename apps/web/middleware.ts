@@ -75,22 +75,25 @@ export async function middleware(request: NextRequest) {
   // current_user_access_blocked() est SECURITY DEFINER (migration 016). /acces-suspendu n'étant
   // pas un préfixe protégé, il n'est jamais redirigé ici → pas de boucle.
   if (user && PROTECTED_PREFIXES.some((p) => pathname.startsWith(p))) {
-    const { data: blocked } = await supabase.rpc('current_user_access_blocked')
-    if (blocked) {
-      return redirectWithCookies(new URL('/acces-suspendu', request.url), response())
-    }
-
     // Guard onboarding (A1) : tant que l'inscription n'est pas terminée, l'espace membre
     // n'est pas accessible — on force le parcours /onboarding/* à CHAQUE requête protégée
     // (pas seulement juste après le verify : un refresh ou un lien direct doit aussi rediriger).
     // self-read autorisé par la policy « users: self read » (migration 011). Requête légère
     // (une colonne), uniquement sur les routes protégées (jamais sur les publiques/statics).
+    //
+    // Les 2 lectures (verrou ADM-007 + onboarding) sont indépendantes → parallélisées
+    // (ticket C : latence middleware par-navigation). La PRIORITÉ des redirections est
+    // préservée : le verrou d'accès est évalué AVANT le guard onboarding.
+    const [{ data: blocked }, { data: profile }] = await Promise.all([
+      supabase.rpc('current_user_access_blocked'),
+      supabase.from('users').select('onboarding_completed').eq('id', user.id).maybeSingle(),
+    ])
+
+    if (blocked) {
+      return redirectWithCookies(new URL('/acces-suspendu', request.url), response())
+    }
+
     const onOnboarding = pathname.startsWith('/onboarding')
-    const { data: profile } = await supabase
-      .from('users')
-      .select('onboarding_completed')
-      .eq('id', user.id)
-      .maybeSingle()
     const onboardingCompleted = profile?.onboarding_completed ?? false
 
     if (!onboardingCompleted && !onOnboarding) {

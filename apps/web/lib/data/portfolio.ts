@@ -110,27 +110,29 @@ export async function getPortfolioData(
   userId: string,
   clubId: string
 ): Promise<PortfolioData | null> {
-  const { data: rows, error } = await supabase
-    .from('positions')
-    .select(
-      'id, name, symbol, category, sector, typologie, quantity, pump, market_price_eur, market_value, book_value, allocation_pct, gain_loss_eur, gain_loss_pct, synced_at'
-    )
-    .eq('club_id', clubId)
-    .eq('is_active', true)
-    .order('market_value', { ascending: false, nullsFirst: false })
+  // Les 3 lectures sont indépendantes → parallélisées (fix latence par-navigation, ticket C).
+  // Lignes d'agrégat : un échec de lecture ne doit pas casser le portefeuille (fallback
+  // total = somme live). RLS filtre par club sur chaque requête.
+  const [{ data: rows, error }, userRole, { data: aggRows }] = await Promise.all([
+    supabase
+      .from('positions')
+      .select(
+        'id, name, symbol, category, sector, typologie, quantity, pump, market_price_eur, market_value, book_value, allocation_pct, gain_loss_eur, gain_loss_pct, synced_at'
+      )
+      .eq('club_id', clubId)
+      .eq('is_active', true)
+      .order('market_value', { ascending: false, nullsFirst: false }),
+    getMemberRole(supabase, userId, clubId),
+    supabase
+      .from('portfolio_aggregates')
+      .select('label, market_value, book_value, allocation_pct')
+      .eq('club_id', clubId)
+      .eq('is_active', true),
+  ])
 
   if (error) throw error
   if (!rows || rows.length === 0) return null
 
-  const userRole = await getMemberRole(supabase, userId, clubId)
-
-  // Lignes d'agrégat actives (total « Portefeuille », « Provision », soldes…). RLS filtre par club.
-  // Un échec de lecture des agrégats ne doit pas casser le portefeuille (fallback total = somme live).
-  const { data: aggRows } = await supabase
-    .from('portfolio_aggregates')
-    .select('label, market_value, book_value, allocation_pct')
-    .eq('club_id', clubId)
-    .eq('is_active', true)
   const aggregates: PortfolioAggregate[] = (aggRows as PortfolioAggregate[] | null) ?? []
 
   // `synced_at` n'est pas dans le Pick PositionRow — cast unique sur le résultat de la query.

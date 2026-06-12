@@ -1,8 +1,11 @@
 import { Skeleton } from '@evolve/ui'
 
+// PAS de wrapper largeur/padding ici : le layout (app) fournit déjà
+// `px-4 pt-6 … max-w-[1280px]` — un wrapper dupliqué décale le skeleton
+// par rapport au contenu réel (saut visuel skeleton → page). Ticket C.
 export default function ContributionsLoading() {
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 py-6 flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       {/* Titre + Pill statut */}
       <Skeleton height={32} width="50%" radius="8px" />
       {/* SyncBanner */}
