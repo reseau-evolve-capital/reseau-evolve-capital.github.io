@@ -15,6 +15,39 @@ const IosInstallInstructions = dynamic(
   { ssr: false }
 )
 
+const HANDOFF_ENDPOINT = '/api/auth/handoff-link'
+
+/**
+ * Ouvre le lien de connexion directement dans Safari via le scheme x-safari-https://.
+ * Sur iOS, cette redirection force l'ouverture du lien dans Safari (peu importe le navigateur courant),
+ * ce qui permet à l'utilisateur d'être connecté automatiquement et d'installer la PWA depuis Safari.
+ * Fallback sur la copie dans le presse-papier si la redirection échoue.
+ */
+async function openHandoffInSafari(): Promise<'redirected' | 'copied' | 'failed'> {
+  try {
+    const r = await fetch(HANDOFF_ENDPOINT, { method: 'POST' })
+    if (!r.ok) return 'failed'
+    const { url } = (await r.json()) as { url: string }
+    // x-safari-https:// force Safari à s'ouvrir sur iOS (Chrome, Firefox, etc.).
+    const safariUrl = url.replace(/^https:\/\//, 'x-safari-https://')
+    window.location.href = safariUrl
+    return 'redirected'
+  } catch {
+    // Dernier recours : copie dans le presse-papier (ancien comportement).
+    try {
+      const r = await fetch(HANDOFF_ENDPOINT, { method: 'POST' })
+      if (r.ok) {
+        const { url } = (await r.json()) as { url: string }
+        await navigator.clipboard.writeText(url)
+        return 'copied'
+      }
+    } catch {
+      /* noop */
+    }
+    return 'failed'
+  }
+}
+
 /**
  * Section « Installer l'app sur ton téléphone » de /profil (PWA-001). Entrée permanente
  * pour (ré)installer à la demande — utile notamment après 3 refus (migration permanente de
@@ -29,7 +62,6 @@ export function InstallSection() {
     promptInstall,
     openInstructionModal,
     closeInstructionModal,
-    copyHandoffLink,
   } = usePwaActions()
 
   // SSR-safe : pwaCase = 'unsupported' au render serveur + hydratation → promptable false → null.
@@ -47,20 +79,16 @@ export function InstallSection() {
       openInstructionModal()
       return
     }
-    // ios-other : lien de connexion portable (auto-login en Safari), fallback URL courante.
-    const { ok, usedHandoff } = await copyHandoffLink()
-    if (ok) {
+    // ios-other (Chrome, Firefox iOS…) : ouvre Safari directement avec le lien de handoff.
+    // L'utilisateur atterrit sur Safari connecté et peut installer la PWA depuis l'écran d'accueil.
+    const outcome = await openHandoffInSafari()
+    if (outcome === 'redirected') {
+      analyticsEvents.pwa.ctaClicked('ios-other')
+    } else if (outcome === 'copied') {
       analyticsEvents.pwa.clipboardCopied()
-      if (usedHandoff) {
-        toast.success({ title: t('toastCopied.title'), message: t('toastCopied.message') })
-      } else {
-        toast.success({
-          title: t('toastCopiedPlain.title'),
-          message: t('toastCopiedPlain.message'),
-        })
-      }
+      toast.success({ title: t('toastCopied.title'), message: t('toastCopied.message') })
     }
-  }, [pwaCase, promptInstall, openInstructionModal, copyHandoffLink, toast, t])
+  }, [pwaCase, promptInstall, openInstructionModal, toast, t])
 
   if (!promptable) return null
 
@@ -86,7 +114,7 @@ export function InstallSection() {
       <button
         type="button"
         onClick={() => void handleClick()}
-        className="mt-4 inline-flex h-12 items-center justify-center rounded-[var(--r-md)] bg-accent px-6 font-body text-[16px] font-semibold text-accent-ink transition-opacity hover:opacity-90"
+        className="mt-4 inline-flex h-12 items-center justify-center rounded-(--r-md) bg-accent px-6 font-body text-[16px] font-semibold text-accent-ink transition-opacity hover:opacity-90"
       >
         {pwaCase === 'ios-other' ? t('iosOther.cta') : t('profileSection.button')}
       </button>
