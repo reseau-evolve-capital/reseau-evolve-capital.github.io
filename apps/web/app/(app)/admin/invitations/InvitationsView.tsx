@@ -137,7 +137,8 @@ export function InvitationsView({ initialData }: { initialData: ClubInvitationsP
               value={link}
               aria-label={t('linkLabel')}
               onFocus={(e) => e.currentTarget.select()}
-              className="min-w-0 flex-1 rounded-md border border-border bg-bg px-3 py-2 text-[13px] text-text"
+              // 16px sur mobile pour empêcher le zoom auto d'iOS au focus (input < 16px), 13px dès `md`.
+              className="min-w-0 flex-1 rounded-md border border-border bg-bg px-3 py-2 text-[16px] text-text md:text-[13px]"
             />
             <Button variant="secondary" onClick={() => void copyLink()}>
               <Icon name={copied ? 'Check' : 'Copy'} size={16} aria-hidden="true" />
