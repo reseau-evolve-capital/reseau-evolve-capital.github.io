@@ -4,7 +4,8 @@
 //   - validation du corps { email } (zod, format email) → 400
 //   - vérification invitation via RPC email_is_invited (anon, SECURITY DEFINER) → 403
 //   - rate limit Upstash : 5 requêtes / 10 min par IP — fail-open si Upstash absent
-//   - envoi du lien via supabase.auth.signInWithOtp → 502 en cas d'échec
+//   - envoi du lien via supabase.auth.signInWithOtp → 429 si Supabase rate-limite,
+//     502 pour une vraie panne d'envoi
 //   - succès : { sent: true }
 //
 // Réf : ARCHITECTURE.md §1, DATA_MODEL.md, CLAUDE.md (conventions auth).
@@ -40,6 +41,25 @@ function emailDomain(email: string): string {
 // (risque d'open-redirect). On utilise la variable d'env publique, sinon le défaut dev.
 function origin(): string {
   return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3001'
+}
+
+// Retry-After (secondes) renvoyé quand c'est Supabase (et non notre limiteur Upstash) qui
+// rate-limite : l'AuthApiError n'expose pas de délai fiable, on retombe sur une minute.
+const SUPABASE_RATE_LIMIT_RETRY_SECONDS = 60
+
+// L'erreur de signInWithOtp est-elle un rate-limit côté Supabase (GoTrue) ? On reconnaît :
+//   - le code HTTP 429 (AuthApiError.status) ;
+//   - le code GoTrue `over_email_send_rate_limit` (AuthApiError.code) ;
+//   - à défaut, un message contenant « rate limit » (filet de sécurité, versions plus anciennes).
+// Objectif : ne plus masquer un 429 derrière le 502 générique « échec d'envoi » (incident prod).
+function isSupabaseRateLimit(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) return false
+  const e = error as { status?: unknown; code?: unknown; message?: unknown }
+  if (e.status === 429) return true
+  if (typeof e.code === 'string' && /rate.?limit|over_email_send_rate_limit/i.test(e.code)) {
+    return true
+  }
+  return typeof e.message === 'string' && /rate.?limit|over_email_send_rate_limit/i.test(e.message)
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -105,6 +125,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       tags: { endpoint: '/api/auth/magic-link', step: 'signInWithOtp' },
       extra: { email_domain: emailDomain(email) },
     })
+    // Rate-limit Supabase (429 / over_email_send_rate_limit) : on renvoie le MÊME 429 que notre
+    // limiteur Upstash plutôt qu'un 502 trompeur — sinon un dépassement de quota d'envoi (Supabase
+    // ou Brevo) est indistinguable d'une vraie panne SMTP (cf. incident prod).
+    if (isSupabaseRateLimit(otpError)) {
+      return rateLimitedResponse(SUPABASE_RATE_LIMIT_RETRY_SECONDS)
+    }
     return NextResponse.json({ error: "Impossible d'envoyer le lien." }, { status: 502 })
   }
 
