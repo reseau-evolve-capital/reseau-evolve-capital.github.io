@@ -228,3 +228,20 @@
 4. Aucune string en dur non internationalisée sur un écran membre (FR-only = défaut).
 
 **Régressions connues :** #R-024 (temps relatif non traduit en EN), #R-024b (app n'hydrate pas via 127.0.0.1 → toggle mort).
+
+---
+
+## FLOW-014 · Feedback widget (retour membre)
+
+**Criticité :** MOYENNE · **Spec e2e :** `apps/web/playwright/feedback.spec.ts` · **Spec design :** `docs/superpowers/specs/2026-06-13-feedback-widget-design.md`
+
+**Étapes :**
+
+1. Icône `MessageCircle` (aria-label « Retour ») dans l'`AppTopbar`, **entre le sélecteur de langue et le toggle thème** (desktop ET mobile, à côté de l'avatar). Sur mobile, le toggle thème est masqué de la barre et réinjecté dans le dropdown avatar (pattern `localeSwitcher`).
+2. Clic icône → `FeedbackSheet` (modale centrée 480px desktop / bottom-sheet mobile). Titre « Un retour à partager ? ». 5 états : **idle** (sélecteur Bug/Idée/Question + message + route capturée + joindre) → **screenshot-preview** (vignette 16:9 + mention vie privée honnête + Retirer) → **loading** (form opacity 0.5 + spinner) → **success** (check vert 56px + « Merci pour ton retour. » + « Vérifie ta boîte mail » + Fermer) → **error** (bandeau `data-negative` + Réessayer, conserve type+message).
+3. Capture **opt-in strict** : screenshot pris uniquement après clic « Joindre » (html2canvas, sheet masqué pendant la capture). Aucun screenshot sinon.
+4. Submit → Server Action (`apps/web/lib/feedback/actions.ts`) : auth membre (RLS), upload optionnel bucket privé `screenshots` (échec non fatal), INSERT `feedback`. Le trigger PG (`feedback_dispatch`) est NO-OP en local (Vault vide) ; en prod il déclenche l'Edge Function (tri IA Haiku + fan-out Discord/Notion/GitHub bug-only/Brevo).
+5. Copy **tutoiement** (arbitrage lead, aligné maquette + voix « Ta quote-part »), parité fr/en. Tokens design only, focus glow, cibles ≥44px, dialog accessible (focus-trap + Escape).
+
+**Régressions à ne pas réintroduire :** R-035 (cursor-pointer sur l'icône + boutons du sheet). **Critères visuels :** [VISUAL.md#feedback](./VISUAL.md) (`FeedbackSheet - Maquettes (standalone).html`, basculer light **et** dark, desktop **et** mobile). **RGAA :** axe 0 violation sur le sheet ouvert ; mention vie privée **honnête** (pas de claim de floutage non implémenté).
+**Note env QA :** :3001 squatté par Cursor (IPv4) → lancer l'app/e2e sur **:3011** via `E2E_BASE_URL=http://localhost:3011 NEXT_PUBLIC_SITE_URL=http://localhost:3011`.

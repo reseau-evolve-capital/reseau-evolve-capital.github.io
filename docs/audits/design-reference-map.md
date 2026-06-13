@@ -5,7 +5,7 @@
 > Source de vérité fonctionnelle : `REC/Phase2_Handoff/docs/screens/*`, `design.md`, tickets `BACKLOG_E-*`.
 > Réutilisable par les futurs audits ET les sessions d'implémentation. **Mettre à jour, ne pas régénérer.**
 >
-> Dernière mise à jour : 2026-06-05 (Sprint E-NTF : feedback in-app, emails, attestation). Captures de réf sous `docs/audits/shots/ref-*`.
+> Dernière mise à jour : 2026-06-13 (Feedback Widget V0 : FeedbackSheet, AppTopbar, Server Action + Supabase). Captures de réf sous `docs/audits/shots/ref-*` et `docs/audits/shots/qa-feedback-*`.
 
 ## Fondations / tokens (réf : `ref-foundations-fullpage.jpeg`)
 
@@ -241,3 +241,25 @@ Arbitrages lead (worktree `feat-dsh-011-reporting-sync`) :
 - **REPORTING = 7ᵉ feuille OPTIONNELLE du sync** (insérée entre `Portefeuille` et `HISTORIQUE`) : tout échec (feuille absente, mapping KO) → **warning MOLLE** dans le rapport, jamais `success:false` — les 6 feuilles historiques restent le contrat dur.
 - **Hypothèse produit V0** : quote-part membre dérivée = `portfolio_value × detention_pct` **actuel** (approximation documentée si la détention a changé historiquement ; point de départ de la série membre = `MAX` filtré à `joined_at`).
 - Table `club_reporting_daily` (migration 034 : append-only/upsert par date, RLS lecture membres, écriture service-role) documentée dans `REC/DATA_MODEL.md` §2.10.
+
+---
+
+## Feedback Widget V0 (2026-06-13)
+
+- **Réf** : `REC/standalone-exports/FeedbackSheet - Maquettes (standalone).html` (5 sections : topbar desktop, topbar mobile + dropdown thème, FeedbackSheet desktop 480px × 5 états, bottom-sheet mobile, GitHub Issue). Spec : `docs/superpowers/specs/2026-06-13-feedback-widget-design.md`. FLOW-014. QA : `docs/qa/QA_REPORT_2026-06-13-feedback.md` (**CONVERGÉ 97 %**, 14 captures `docs/audits/shots/qa-feedback-*`).
+- **Architecture** : `FeedbackSheet` présentationnel pur (`packages/ui`, Radix Dialog, copy par props, **zéro dép i18n/data/html2canvas** — screenshot délégué via callback `onCaptureScreenshot`) ; `AppTopbar` reçoit `onFeedback`/`feedbackLabel` ; câblage dans `AppChromeTopbar` (`useMessages()` pour l'objet labels). Server Action `apps/web/lib/feedback/actions.ts` (auth RLS, upload bucket privé `screenshots` + URL signée, INSERT). Migration **036** (table `feedback` + RLS + bucket + trigger pg_net→edge NO-OP-sans-Vault). Edge Function `feedback-dispatch` (Claude **Haiku** — 1er usage Anthropic du repo — + fan-out résilient `Promise.allSettled` Discord/Notion/GitHub bug-only/Brevo).
+
+### Arbitrages lead (NE PAS flaguer en QA)
+
+- **A-FW-1 — Tutoiement (maquette) > vouvoiement (spec §6).** La maquette est intégralement au tutoiement et c'est la voix de l'app (« Ta quote-part »). Copy alignée maquette : « Un retour à partager ? », « Décris… », « Merci pour ton retour. », « Vérifie ta boîte mail », « Route capturée ». La spec §6 (vouvoiement) est un **placeholder déprécié**.
+- **A-FW-2 — Mention vie privée honnête > claim maquette.** La maquette affiche « Les champs sensibles sont floutés automatiquement avant l'envoi » — **non implémenté en V0**. Shipper ce claim serait mensonger → l'app affiche « Cette capture sera partagée uniquement avec l'équipe technique. ». Une divergence de **ce seul texte** vs maquette est attendue. (Follow-up owner possible : floutage auto réel = V1.)
+- **A-FW-3 — `feedbackLabel` hors objet `AppTopbarLabels`** (prop simple `feedbackLabel ?? 'Retour'`) — choix d'API additif, non destructif.
+- **M-001 corrigé** : titre d'erreur enrichi « Une erreur est survenue à l'envoi. Tes données ont été conservées. » (l'état error préserve déjà type+message → vrai et rassurant).
+- **M-002 accepté** : aria-label « Retour » = libellé de la maquette (le widget s'appelle « Retour ») ; conservé pour cohérence visuelle + e2e.
+
+### Dette / actions owner
+
+- **Déploiement prod** : appliquer migration 036, déployer `feedback-dispatch` (`--use-api`, imports `.ts` explicites), peupler Vault (`feedback_dispatch_url`), poser secrets (`ANTHROPIC_API_KEY`, `DISCORD_FEEDBACK_WEBHOOK_URL`, `GITHUB_TOKEN`+`GITHUB_REPO`, `NOTION_TOKEN`+`NOTION_FEEDBACK_DB_ID`), créer la **DB Notion `feedback`** (propriétés Name/Type/Severity/Category/Page/Message/Screenshot).
+- **Dette Storybook (hors prod, non aggravée)** : la story `Dark` pose `data-theme` sur un wrapper alors que le Radix Portal monte sur `<body>` → la story dark est trompeuse (l'app prod est correcte). Fix = `data-theme` sur `document.documentElement` dans le ThemeDecorator.
+- **Env QA** : :3001 squatté par Cursor en IPv4 → dev server + e2e sur **:3011** (`E2E_BASE_URL`/`NEXT_PUBLIC_SITE_URL=http://localhost:3011`).
+- **Floutage auto des champs sensibles** = follow-up V1 (cf. A-FW-2).
