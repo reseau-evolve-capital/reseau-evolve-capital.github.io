@@ -33,6 +33,10 @@ export interface AppTopbarProps {
   canAccessAdmin?: boolean
   /** Action déclenchée par l'entrée admin (ex: router.push('/admin')). */
   onAdmin?: () => void
+  /** Action déclenchée par le bouton de feedback. Si absent, l'icône n'est pas rendue (non destructif). */
+  onFeedback?: () => void
+  /** Libellé du bouton de feedback (aria-label). Défaut : « Retour ». */
+  feedbackLabel?: string
   /** Statut de synchronisation (ex. « Synchronisé il y a 14 min »), desktop seulement. */
   syncLabel?: string
   /** Pilule date (ex. « Vendredi 24 avril 2026 »), desktop seulement. */
@@ -68,6 +72,8 @@ export function AppTopbar({
   onLogout,
   canAccessAdmin = false,
   onAdmin,
+  onFeedback,
+  feedbackLabel,
   syncLabel,
   dateLabel,
   themeToggle,
@@ -82,6 +88,7 @@ export function AppTopbar({
   const adminLabel = labels?.admin ?? 'Espace trésorier'
   const profileLabel = labels?.profile ?? 'Profil'
   const logoutLabel = labels?.logout ?? 'Déconnexion'
+  const feedbackText = feedbackLabel ?? 'Retour'
 
   return (
     <header
@@ -132,7 +139,29 @@ export function AppTopbar({
         {/* Langue : dans le header sur desktop ; déplacée dans le menu profil sur mobile
             (aère le header — QA 2026-06-07). */}
         {localeSwitcher ? <span className="hidden md:inline-flex">{localeSwitcher}</span> : null}
-        {themeToggle}
+
+        {/* Feedback : visible desktop ET mobile (à côté de l'avatar). Rendu seulement si
+            l'action est fournie (non destructif). Hit-target 44×44. */}
+        {onFeedback ? (
+          <button
+            type="button"
+            aria-label={feedbackText}
+            onClick={onFeedback}
+            className={cn(
+              'inline-flex h-11 w-11 items-center justify-center rounded-[var(--r-md)]',
+              'bg-transparent text-text-sec',
+              'transition-[background-color,color,box-shadow] duration-[150ms]',
+              'hover:bg-card-sub hover:text-text',
+              'focus:outline-none focus-visible:shadow-[var(--sh-glow)]'
+            )}
+          >
+            <Icon name="MessageCircle" size={20} aria-hidden="true" />
+          </button>
+        ) : null}
+
+        {/* Thème : dans le header sur desktop ; déplacé dans le menu profil sur mobile
+            (miroir de localeSwitcher). */}
+        {themeToggle ? <span className="hidden md:inline-flex">{themeToggle}</span> : null}
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger
@@ -159,6 +188,13 @@ export function AppTopbar({
               {localeSwitcher ? (
                 <div className="md:hidden">
                   <div className="flex justify-center px-3 py-2">{localeSwitcher}</div>
+                  <DropdownMenu.Separator className="my-1 h-px bg-border" />
+                </div>
+              ) : null}
+              {/* Thème dans le menu sur mobile uniquement (miroir de localeSwitcher). */}
+              {themeToggle ? (
+                <div className="md:hidden">
+                  <div className="flex justify-center px-3 py-2">{themeToggle}</div>
                   <DropdownMenu.Separator className="my-1 h-px bg-border" />
                 </div>
               ) : null}
