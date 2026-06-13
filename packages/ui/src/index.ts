@@ -52,5 +52,8 @@ export * from './molecules/SegmentedToggle'
 export * from './molecules/ConsentRow'
 export * from './molecules/SlideCard'
 export * from './molecules/CarouselDots'
+// Molecules votes (vote anonyme)
+export * from './molecules/PollBanner'
+export * from './molecules/PollCard'
 // Organisms
 export * from './organisms'
