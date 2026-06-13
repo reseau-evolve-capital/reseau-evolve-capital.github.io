@@ -1,12 +1,17 @@
 import * as Sentry from '@sentry/nextjs'
 import { cookies } from 'next/headers'
-import { createServerClient } from '@evolve/data'
+import { createServerClient, hasVoted } from '@evolve/data'
 import { getDashboardData } from '@/lib/data/dashboard'
 import { getDashboardChartData, type DashboardChartData } from '@/lib/data/dashboard-chart'
+import { getOpenPolls } from '@/lib/data/polls'
 import { DASHBOARD_VARIANT_COOKIE, getDashboardVariant } from '@/lib/experiments/dashboard-v2'
 import { getSessionUser, getActiveClubMembership } from '@/lib/data/request'
 import { DashboardView } from '@/components/dashboard/DashboardView'
 import { DashboardViewV2 } from '@/components/dashboard/DashboardViewV2'
+import {
+  DashboardPollBanners,
+  type DashboardPollItem,
+} from '@/components/dashboard/DashboardPollBanners'
 
 export default async function DashboardPage() {
   const cookieStore = await cookies()
@@ -53,11 +58,39 @@ export default async function DashboardPage() {
     }
   }
 
+  // Bannières de vote (spec §5) : pour chaque vote OUVERT du club, on vérifie has_voted ; on
+  // ne garde QUE ceux non encore votés. Non bloquant : une erreur de lecture polls ne casse
+  // jamais le dashboard (bannières simplement absentes). Affichées au-dessus des KPI.
+  let pollBanners: DashboardPollItem[] = []
+  if (m?.club_id) {
+    try {
+      const openPolls = await getOpenPolls(supabase)
+      const notVoted = await Promise.all(
+        openPolls.map(async (p) => ((await hasVoted(supabase, p.id)) ? null : p))
+      )
+      pollBanners = notVoted
+        .filter((p): p is NonNullable<typeof p> => p !== null)
+        .map((p) => ({
+          id: p.id,
+          title: p.title,
+          questionType: p.questionType,
+          closesAt: p.closesAt,
+        }))
+    } catch (error) {
+      console.error('[dashboard] chargement des bannières de vote — ignoré :', error)
+    }
+  }
+
   // Le layout (app) fournit padding + centrage + max-w-[1280px] : pas de wrapper ici
   // (sinon double largeur/padding + niveau DOM en trop qui décale le conteneur tactile).
-  return variant === 'v2' ? (
-    <DashboardViewV2 initialData={initialData} anchorISO={anchorISO} chartData={chartData} />
-  ) : (
-    <DashboardView initialData={initialData} />
+  return (
+    <div className="flex flex-col gap-4">
+      {pollBanners.length > 0 ? <DashboardPollBanners polls={pollBanners} /> : null}
+      {variant === 'v2' ? (
+        <DashboardViewV2 initialData={initialData} anchorISO={anchorISO} chartData={chartData} />
+      ) : (
+        <DashboardView initialData={initialData} />
+      )}
+    </div>
   )
 }
