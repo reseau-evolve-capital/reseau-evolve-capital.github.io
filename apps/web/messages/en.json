@@ -1058,7 +1058,7 @@
       "close": "Close"
     },
     "error": {
-      "title": "Couldn't send.",
+      "title": "Something went wrong while sending. Your input has been kept.",
       "retry": "Try again"
     }
   }
