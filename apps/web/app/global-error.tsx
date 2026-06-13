@@ -1,14 +1,21 @@
 'use client'
+import { useEffect } from 'react'
+
+import * as Sentry from '@sentry/nextjs'
 
 // Boundary racine : Next exige que global-error rende son propre <html>/<body>
 // car il remplace le root layout quand celui-ci a planté. On reste sobre et FR.
 // Aucune stack n'est affichée à l'utilisateur ; `error` est typé mais non rendu.
 export default function GlobalError({
+  error,
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  useEffect(() => {
+    Sentry.captureException(error)
+  }, [error])
   return (
     <html lang="fr">
       <body
