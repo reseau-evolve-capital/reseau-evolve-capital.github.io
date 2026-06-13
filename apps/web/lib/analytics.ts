@@ -103,6 +103,28 @@ export const analyticsEvents = {
     heroDetailOpened: (params: { variant: 'v1' | 'v2' }) =>
       track('dashboard_hero_detail_opened', { dashboard_variant: params.variant }),
   },
+  // Vote anonyme (spec §9). Aucune PII : poll_id (UUID non-PII), type de vote, type de
+  // question — jamais le contenu d'une réponse ni le user_id.
+  polls: {
+    /** poll_page_view — visite de /votes. */
+    pageView: () => track('poll_page_view', {}),
+    /** poll_banner_view — bannière rendue sur le dashboard. */
+    bannerView: (params: { pollId: string; pollType: string }) =>
+      track('poll_banner_view', { poll_id: params.pollId, poll_type: params.pollType }),
+    /** poll_banner_click — clic « Voter » / « Voir tous » depuis une bannière dashboard. */
+    bannerClick: (params: { pollId?: string; pollType?: string }) =>
+      track('poll_banner_click', { poll_id: params.pollId, poll_type: params.pollType }),
+    /** poll_vote_submitted — soumission réussie. */
+    voteSubmitted: (params: { pollId: string; pollType: string; questionType: string }) =>
+      track('poll_vote_submitted', {
+        poll_id: params.pollId,
+        poll_type: params.pollType,
+        question_type: params.questionType,
+      }),
+    /** poll_results_viewed — ouverture des résultats agrégés. */
+    resultsViewed: (params: { pollId: string; pollType: string }) =>
+      track('poll_results_viewed', { poll_id: params.pollId, poll_type: params.pollType }),
+  },
   portfolio: {
     /** 🎯 portfolio_viewed — rendu de /portfolio (1ʳᵉ vue = moment « aha »). */
     viewed: (params: { valueBucket: string; positionsBucket: string }) =>
