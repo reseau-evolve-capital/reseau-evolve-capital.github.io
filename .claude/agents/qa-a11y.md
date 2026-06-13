@@ -23,6 +23,10 @@ Cible : **AA minimum, AAA sur les chiffres-clés** (quote-part, variation, valor
   ```bash
   pnpm --filter @evolve/web exec playwright test cursor-pointer.spec.ts --workers=1
   ```
+- **Font-size ≥16px sur tout `input`/`textarea`/`select`** (anti-zoom iOS) : `apps/web/playwright/input-min-fontsize.spec.ts` — scanne les routes au viewport mobile, ouvre le widget Feedback, échoue (message verbeux) si un champ de saisie visible a un `font-size` < 16px. À relancer à chaque NOUVEAU champ introduit. Lancer :
+  ```bash
+  pnpm --filter @evolve/web exec playwright test input-min-fontsize.spec.ts --workers=1
+  ```
 
 ## Méthode
 
@@ -30,6 +34,7 @@ Cible : **AA minimum, AAA sur les chiffres-clés** (quote-part, variation, valor
 2. Lance axe sur les écrans du périmètre (nouveaux composants / markup modifié en priorité).
 3. Vérifie manuellement les points non couverts par axe : focus visible au clavier, ordre de tabulation, cibles ≥44px mobile, `prefers-reduced-motion` (animations figées), états non-couleur-seule, `lang` correct.
    - Lance `cursor-pointer.spec.ts` — **0 cliquable sans `cursor: pointer`** (et `disabled` → `not-allowed`, cf. #R-035). Signale tout cliquable custom (`div`/`span` `onClick`) sans `role="button"` + `tabIndex={0}` + `onKeyDown`.
+   - Lance `input-min-fontsize.spec.ts` — **0 `input`/`textarea`/`select` visible avec `font-size` < 16px** (anti-zoom iOS). À vérifier surtout sur tout NOUVEAU champ de saisie.
 4. ⚠ Piège contraste : ne pas signaler les dettes connues comme nouvelles régressions, MAIS signaler toute NOUVELLE chute (ex. opacité sur texte coloré → #R-026). Le contraste rouge texte fin doit utiliser `--data-negative-strong`.
 
 ## Sortie
