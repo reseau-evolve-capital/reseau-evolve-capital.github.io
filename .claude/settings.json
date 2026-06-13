@@ -1,0 +1,23 @@
+{
+  "extraKnownMarketplaces": {
+    "omniventus-workshop": {
+      "source": {
+        "source": "github",
+        "repo": "OMNIVENTUS/ai-workshop"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "playwright@claude-plugins-official": true,
+    "superpowers@claude-plugins-official": true,
+    "vercel@claude-plugins-official": true,
+    "claude-md-management@claude-plugins-official": true,
+    "component-test-writer@omniventus-workshop": true,
+    "monorepo-navigator@omniventus-workshop": true,
+    "spec-driven-workflow@omniventus-workshop": true,
+    "git-pull-request@omniventus-workshop": true,
+    "commit-and-push@omniventus-workshop": true,
+    "pr-tech-lead-review@omniventus-workshop": true
+  }
+}
