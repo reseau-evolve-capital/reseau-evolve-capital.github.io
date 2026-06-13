@@ -245,3 +245,29 @@
 
 **Régressions à ne pas réintroduire :** R-035 (cursor-pointer sur l'icône + boutons du sheet). **Critères visuels :** [VISUAL.md#feedback](./VISUAL.md) (`FeedbackSheet - Maquettes (standalone).html`, basculer light **et** dark, desktop **et** mobile). **RGAA :** axe 0 violation sur le sheet ouvert ; mention vie privée **honnête** (pas de claim de floutage non implémenté).
 **Note env QA :** :3001 squatté par Cursor (IPv4) → lancer l'app/e2e sur **:3011** via `E2E_BASE_URL=http://localhost:3011 NEXT_PUBLIC_SITE_URL=http://localhost:3011`.
+
+---
+
+## FLOW-015 · Vote anonyme (consultation des membres)
+
+**Criticité :** HAUTE · **Spec e2e :** `apps/web/playwright/votes.spec.ts` · **Spec design :** `docs/superpowers/specs/2026-06-13-vote-anonyme-design.md` · **DB :** `supabase/migrations/037_polls.sql` (tables `polls`/`poll_responses`, RLS, RPC `submit_vote`/`get_poll_results`/`has_voted`, cron `close_due_polls`).
+
+**Garantie d'anonymat (by design, niveau DB) :** `user_id` est stocké dans `poll_responses` uniquement pour la contrainte `UNIQUE (poll_id, user_id)` (1 vote/membre) et `has_voted()`. Il n'est **jamais** exposé : aucune policy SELECT pour `authenticated` (REVOKE effectif), et la RPC `get_poll_results` (SECURITY DEFINER) ne retourne **jamais** `user_id`. Preuve psql : `SELECT * FROM poll_responses` en rôle `authenticated` → `permission denied`.
+
+**Étapes (membre) :**
+
+1. **Découverte — bannière dashboard :** un vote `open` non répondu → `PollBanner` dorée (bordure gauche 3px) au-dessus des KPI cards. ≥2 votes → max 2 bannières ; au-delà, variante `aggregate` « X votes en attente → Voir tous » vers `/votes`. GA4 `poll_banner_view` (rendu) / `poll_banner_click` (CTA « Voter → »).
+2. **Accès secondaire — entrée « Votes »** dans le dropdown avatar `AppTopbar` (entre Profil et Déconnexion), conditionnelle `hasPollActivity` (≥1 poll `open`|`closed` du club), badge count des votes à faire. **Pas** dans la BottomNav (décision spec §5). GA4 `poll_page_view` sur `/votes`.
+3. **Page `/votes` :** onglets En cours / Clôturés, `PollCard` (badge doré « à voter », vert « ✓ Voté », participation + « Résultats → » pour les clôturés), `EmptyState` si vide.
+4. **Voter (`/votes/[id]`) :** `PollVoteSheet` (modale 480px desktop / bottom-sheet mobile), badge « Vote anonyme ». 4 types : `yes_no` (Oui/Non/Abstention), `single_choice` (radio), `multiple_choice` (checkbox), `short_text` (textarea ≤280 + compteur + mention « visible de l'équipe sous forme anonyme »). Submit **désactivé** sans sélection. Mention « Votre réponse est définitive et ne pourra pas être modifiée. » avant le CTA. Submit → Server Action → RPC `submit_vote`. GA4 `poll_vote_submitted`.
+5. **Après vote :** la bannière disparaît (`has_voted` = true). `after_close` → écran « résultats disponibles à la clôture » ; `live` → `PollResultsView` immédiat. GA4 `poll_results_viewed`.
+6. **Vote définitif :** re-soumission impossible (UNIQUE + garde RPC `vote deja enregistre`).
+
+**Étapes (admin — président/trésorier) :**
+
+7. `/admin/votes` : `AdminPollsView` (onglets En cours / Brouillons / Clôturés, `AdminPollRow` = mini-barre participation + Voir résultats / Clôturer / kebab), CTA « + Nouveau vote ».
+8. `/admin/votes/nouveau` : `PollCreateForm` 2 steps (titre+description+type 2×2 → options + paramètres `results_visibility`/`notify_by_email`/`closes_at`). Enregistrer brouillon (`draft`) ou Publier (`open`).
+9. `/admin/votes/[id]` : résultats agrégés (jamais d'attribution) + clôture manuelle (`status='closed'`). L'admin voit les textes `short_text` sans pouvoir les relier à un membre.
+
+**Régressions à ne pas réintroduire :** R-035 (cursor-pointer sur CTA bannière, options de vote, switches du form). **Anonymat** : aucune route/composant ne doit exposer `user_id` d'une réponse. **Critères visuels :** [VISUAL.md#votes](./VISUAL.md) (`Votes - Maquettes (standalone).html` à la racine, basculer light **et** dark, desktop **et** mobile). **RGAA :** axe 0 violation sur `PollVoteSheet` (radio group / checkbox group, focus, ≥44px), AAA sur les chiffres-clés des résultats. Parité i18n fr/en (namespace `votes`).
+**Note env QA :** :3001 squatté par Cursor (IPv4) → lancer l'app/e2e sur **:3011** via `E2E_BASE_URL=http://localhost:3011 NEXT_PUBLIC_SITE_URL=http://localhost:3011`. Supabase local requis avec seed votes (migration 037 + `supabase/seed.sql`).
