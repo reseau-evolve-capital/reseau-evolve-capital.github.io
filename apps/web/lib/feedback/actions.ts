@@ -28,6 +28,7 @@ import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
 import type { FeedbackSubmission } from '@evolve/ui'
 import { MAX_FEEDBACK_IMAGES } from '@evolve/ui'
+import { captureActionError } from '@/lib/monitoring/sentry'
 
 /** Résultat discriminé (jamais de throw) — l'UI mappe l'erreur sur un message i18n. */
 export type FeedbackActionResult = { ok: true } | { ok: false; error: string }
@@ -123,7 +124,14 @@ export async function submitFeedbackAction(
     // ai_* / github_issue_url / notion_page_id / discord_notified / email_sent / status :
     // laissés aux défauts DB — remplis par l'Edge Function feedback-dispatch (service_role).
   })
-  if (insertError) return { ok: false, error: 'insert_failed' }
+  if (insertError) {
+    captureActionError(insertError, {
+      action: 'submitFeedback',
+      userId: user.id,
+      extra: { step: 'insert', code: insertError.code },
+    })
+    return { ok: false, error: 'insert_failed' }
+  }
 
   return { ok: true }
 }
