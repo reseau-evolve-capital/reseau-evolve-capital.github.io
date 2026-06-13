@@ -483,7 +483,8 @@ function FormView({
           className={cn(
             'mt-2 block w-full resize-y rounded-[var(--r-md)] p-3',
             hasImages ? 'min-h-[72px]' : 'min-h-[120px]',
-            'border border-border-strong bg-card-sub text-[14px] text-text placeholder:text-text-ter',
+            // text-[16px] sur mobile : empêche le zoom auto iOS Safari/Chrome au focus (< 16px) ; 14px ≥ md.
+            'border border-border-strong bg-card-sub text-[16px] text-text placeholder:text-text-ter md:text-[14px]',
             'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]'
           )}
         />
