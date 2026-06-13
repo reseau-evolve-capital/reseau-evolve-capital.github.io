@@ -101,12 +101,18 @@ export function PollDetailView({ data }: { data: PollDetailData }) {
     }))
   }
 
+  // Dénominateur = membres actifs du club, fourni par la RPC (SECURITY DEFINER) car un membre
+  // ne peut pas compter ses pairs via RLS. Si indisponible (0), on retombe sur le nb de votants.
   const participation = data.results
-    ? t('participation.value', {
-        voted: data.results.totalResponses,
-        total: data.results.totalResponses,
-        pct: formatPct(1, { showSign: false }),
-      })
+    ? (() => {
+        const voted = data.results.totalResponses
+        const total = data.results.eligibleMembers > 0 ? data.results.eligibleMembers : voted
+        return t('participation.value', {
+          voted,
+          total,
+          pct: formatPct(total > 0 ? voted / total : 0, { showSign: false }),
+        })
+      })()
     : undefined
 
   // Cas 1 — sheet de vote (ouvert + pas voté).
