@@ -67,10 +67,39 @@ describe('POST /api/auth/magic-link', () => {
     expect(mocks.signInWithOtp).not.toHaveBeenCalled()
   })
 
-  it('502 si signInWithOtp échoue', async () => {
+  it("502 si signInWithOtp échoue (vraie panne d'envoi)", async () => {
     mocks.rpc.mockResolvedValue({ data: true, error: null })
     mocks.signInWithOtp.mockResolvedValue({ error: { message: 'smtp down' } })
     const res = await POST(req({ email: 'test@example.com' }))
     expect(res.status).toBe(502)
+    expect(await res.json()).toEqual({ error: "Impossible d'envoyer le lien." })
+  })
+
+  it('429 si signInWithOtp est rate-limité par Supabase (status 429)', async () => {
+    mocks.rpc.mockResolvedValue({ data: true, error: null })
+    // AuthApiError de GoTrue : status HTTP 429 → on doit renvoyer notre 429, pas le 502 générique.
+    mocks.signInWithOtp.mockResolvedValue({
+      error: {
+        status: 429,
+        code: 'over_email_send_rate_limit',
+        message: 'email rate limit exceeded',
+      },
+    })
+    const res = await POST(req({ email: 'test@example.com' }))
+    expect(res.status).toBe(429)
+    expect(res.headers.get('Retry-After')).toBeTruthy()
+    expect(await res.json()).toEqual({
+      error: 'Trop de tentatives. Réessaie dans quelques minutes.',
+    })
+  })
+
+  it('429 si signInWithOtp expose le code over_email_send_rate_limit sans status', async () => {
+    mocks.rpc.mockResolvedValue({ data: true, error: null })
+    // Filet : certaines versions n'exposent que le code GoTrue (pas de status HTTP exploitable).
+    mocks.signInWithOtp.mockResolvedValue({
+      error: { code: 'over_email_send_rate_limit', message: 'over_email_send_rate_limit' },
+    })
+    const res = await POST(req({ email: 'test@example.com' }))
+    expect(res.status).toBe(429)
   })
 })
