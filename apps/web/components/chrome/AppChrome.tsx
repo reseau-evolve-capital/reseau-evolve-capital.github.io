@@ -25,8 +25,9 @@ import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
 import { clearPwaDataCaches } from '@/lib/pwa/register-sw'
 
-/** Logo de marque servi par l'app (apps/web/public/logo.jpg). */
-const LOGO_SRC = '/logo.jpg'
+// icon-192.png : icône PWA générée (fond crème #F4F4F2, artwork centré).
+// Remplace logo.jpg (fond noir opaque) pour la topbar et la sidebar web.
+const LOGO_SRC = '/icons/icon-192.png'
 
 /**
  * Type des libellés de nav traduits, indexé par fonction `t` du namespace `nav`.
