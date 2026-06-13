@@ -1058,7 +1058,7 @@
       "close": "Fermer"
     },
     "error": {
-      "title": "L'envoi a échoué.",
+      "title": "Une erreur est survenue à l'envoi. Tes données ont été conservées.",
       "retry": "Réessayer"
     }
   }
