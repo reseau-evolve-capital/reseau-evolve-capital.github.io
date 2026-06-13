@@ -2,7 +2,7 @@
 --
 -- QUOI : table `public.feedback` (source de vérité des retours membres), bucket Storage
 --   PRIVÉ `screenshots`, et un trigger AFTER INSERT qui appelle l'Edge Function
---   `feedback-dispatch` (tri IA Claude Haiku + fan-out Discord/Notion/GitHub/Brevo).
+--   `feedback-dispatch` (tri IA multi-providers + fan-out Discord/Notion/GitHub/Brevo).
 --
 -- RLS (CLAUDE.md : RLS obligatoire, least privilege) :
 --   - INSERT  : tout membre authentifié, mais seulement pour SOI (user_id = auth.uid()).
@@ -40,7 +40,7 @@ CREATE TABLE public.feedback (
   -- Contenu
   type            text NOT NULL CHECK (type IN ('bug', 'feature', 'question')),
   message         text NOT NULL,
-  screenshot_url  text,                    -- null si pas de capture
+  screenshot_urls text[],                  -- jusqu'à 3 images jointes par l'utilisateur (URLs signées du bucket privé)
 
   -- Contexte auto
   page_url        text NOT NULL,
