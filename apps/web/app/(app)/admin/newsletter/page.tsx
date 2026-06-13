@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { listNewsletters, type NewsletterSummary } from '@/lib/strapi-editorial'
@@ -26,6 +27,9 @@ export default async function AdminNewsletterPage() {
     editions = await listNewsletters()
   } catch (err) {
     // Log serveur pour diagnostic (env STRAPI manquante, CMS down, 4xx…) ; l'UI reste tolérante.
+    Sentry.captureException(err, {
+      tags: { endpoint: 'admin/newsletter' },
+    })
     console.error('[newsletter] échec du chargement des éditions depuis le CMS :', err)
     loadError = true
   }
