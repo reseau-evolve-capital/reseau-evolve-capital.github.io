@@ -441,6 +441,30 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Edge Functions — verify_jwt ÉPINGLÉ (durabilité post-incident prod 2026-06)
+# ─────────────────────────────────────────────────────────────────────────────
+# Le défaut de `supabase functions deploy` est verify_jwt = true. Un redeploy CLI
+# qui ne précise pas ces blocs RÉINITIALISE verify_jwt à true et casse les deux
+# fonctions ci-dessous, qui ne sont PAS appelées avec un JWT Supabase. Ces blocs
+# rendent le réglage explicite et reproductible (plus de --no-verify-jwt à ne pas
+# oublier à la main).
+
+[functions.send-email]
+# Auth Hook « Send Email » : appelé par GoTrue, authentifié par SIGNATURE HMAC
+# (standardwebhooks / SEND_EMAIL_HOOK_SECRET), PAS par un JWT Supabase.
+# verify_jwt DOIT rester false, sinon le gateway rejette l'appel de GoTrue
+# (« Hook requires authorization token » → 500, magic link KO). Un redeploy CLI
+# sans cette ligne réinitialise verify_jwt=true et casse l'envoi du lien.
+verify_jwt = false
+
+[functions.feedback-dispatch]
+# Appelée par le trigger Postgres feedback_after_insert (pg_net), authentifiée par
+# le Bearer service-role (== SUPABASE_SERVICE_ROLE_KEY, vérifié dans la fonction).
+# verify_jwt DOIT rester false (le gateway ne peut pas valider une clé sb_secret
+# non-JWT) sinon le trigger reçoit 401 et aucun retour n'est distribué.
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
