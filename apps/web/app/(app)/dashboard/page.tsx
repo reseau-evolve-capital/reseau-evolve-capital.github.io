@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/nextjs'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
 import { getDashboardData } from '@/lib/data/dashboard'
@@ -44,6 +45,10 @@ export default async function DashboardPage() {
       })
     } catch (error) {
       // Log serveur uniquement (jamais à l'écran) — fallback demo assuré par chartData=null.
+      Sentry.captureException(error, {
+        level: 'warning',
+        tags: { endpoint: 'dashboard/chart' },
+      })
       console.error('[dashboard] getDashboardChartData a échoué — fallback demo :', error)
     }
   }
