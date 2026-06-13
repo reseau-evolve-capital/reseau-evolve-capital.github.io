@@ -316,3 +316,21 @@ Arbitrages lead (worktree `feat-dsh-011-reporting-sync`) :
 - **`make db-types`** échoue sur le CLI Supabase 2.106.0 (`LegacyPlatformAuthRequiredError` — token requis même en local). Contournement appliqué : `SUPABASE_ACCESS_TOKEN=sbp_local npx supabase gen types typescript --local`. **Ticket infra mineur** : ajouter ce dummy token à la cible `db-types` du Makefile.
 - **Supabase local** : `edge-runtime` ne démarre pas dans l'enveloppe sandbox (rlimit type 7 `operation not permitted`) ; démarrage avec `-x edge-runtime,imgproxy,studio,pooler,vector,realtime`. Sans impact sur le DB layer (tables/RLS/RPC) ni les e2e via PostgREST/Auth.
 - **Env QA** : :3001 squatté par Cursor en IPv4 → dev server + e2e sur **:3011** (`E2E_BASE_URL`/`NEXT_PUBLIC_SITE_URL=http://localhost:3011`).
+
+### QA runtime 2026-06-13 — bugs trouvés à l'écran (que les gates verts ne voyaient pas)
+
+Vérif runtime (login réel membre seed + Playwright MCP). Le gate unitaire était vert **mais l'écran était cassé** — d'où ces correctifs :
+
+- **BUG-VA-1 (CRITIQUE, corrigé — commit `715a6a4`)** : `42501 permission denied` sur toute la feature. La migration 037 s'appuyait sur l'auto-exposition des tables aux rôles Data API, **désactivée depuis 2026-05-30** (`auto_expose_new_tables`). Sans `GRANT` explicite, RLS autorise la ligne mais Postgres refuse l'opération. Fix : `GRANT SELECT,INSERT,UPDATE,DELETE ON polls` + `GRANT INSERT ON poll_responses` à `authenticated` (SELECT toujours révoqué → anonymat). ⚠ **`feedback` (036) a le même trou** mais ne fait que des INSERT server-side → latent ; à auditer.
+- **BUG-VA-2 (corrigé — `2b759d8`)** : `IntlError FORMATTING_ERROR` — `vote.success.afterClose` (`{date}`) et `results.moreResponses` (`{count}`) rendus sans leur variable. `afterClose` reçoit désormais la date de clôture ; `moreResponses` passé en `t.raw()` (le composant fait le `.replace('{count}')`).
+- **BUG-VA-3 (corrigé — `2b759d8`)** : participation affichait `+100,00 %` (signe de delta). `formatPct(1, { showSign: false })` → `100,00 %`.
+- **BUG-VA-4 (corrigé — `d885e15`)** : le seed `yes_no` utilisait `['oui']` au lieu des valeurs canoniques `['yes'|'no'|'abstain']` émises par `PollVoteSheet` → libellés non localisés dans les résultats. Seed aligné.
+
+**Vérifié OK au runtime** : `/votes` (4 votes, badges, types), `PollVoteSheet` yes_no (badge « Vote anonyme », radios Oui/Non/Abstention, « Confirmer » désactivé sans sélection), **soumission bout-en-bout** (Server Action → RPC `submit_vote` → INSERT confirmé en DB), `PollResultsView` (libellé localisé « Oui », ● majoritaire, 67/33 %, participation sans signe). **Gate final `make lint typecheck test` → exit 0** (web : 28 fichiers / 300 tests, dont parité i18n).
+
+### Reste à faire (non terminé dans le budget)
+
+- **BUG-VA-5 (NON corrigé)** : participation du détail membre = `voted/voted = 100 %` (n'utilise pas `getActiveMemberCount` comme dénominateur). À brancher dans `votes/[id]/page.tsx`.
+- **Bannière dashboard & vues admin** : non confirmées visuellement (quirk onboarding/middleware sandbox bloquant la nav `/dashboard` ; code committé, typecheck + 300 tests verts). À revérifier au runtime.
+- **Diff visuel ≤2 % vs maquette** (light/dark, mobile), **scorecard agents `qa-*` ≥97 %**, **`votes.spec.ts` e2e**, **`cursor-pointer` étendu aux routes vote** : non réalisés. NB : les routes vote ne sont pas dans la liste figée de `cursor-pointer.spec.ts` ; les snapshots runtime montrent `cursor=pointer` sur tous les interactifs vote.
+- **Note nav** : `/votes` n'est apparemment pas dans le matcher onboarding du middleware (passe le gate alors que `/dashboard` redirige) — à vérifier (les routes vote doivent rester protégées par l'auth).
