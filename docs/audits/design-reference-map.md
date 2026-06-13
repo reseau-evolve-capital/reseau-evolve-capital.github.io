@@ -289,3 +289,30 @@ Arbitrages lead (worktree `feat-dsh-011-reporting-sync`) :
 - **e2e non exécuté en session** (`:3001` squatté + stack Supabase/seed requis) : gate unit/story/typecheck/lint VERT (470 UI + 337 web) + QA visuel Storybook light/dark. Lancer côté owner : `pnpm --filter @evolve/web exec playwright test attestation.spec.ts cursor-pointer.spec.ts --workers=1` (sur `:3011`, cf. env QA). Test client attestation (event popup) ajouté.
 - **Validation iPhone réel** : ouverture du PDF attestation (geste synchrone) + tutoriel PWA adaptatif sur ≥2 versions iOS.
 - **Dette locale mois EN** : `monthLabel()` via `formatMonth` est figé fr-FR → le `{month}` des tooltips cellules reste en français même en locale EN (pré-existant, hors périmètre).
+
+## Vote Anonyme V0 (2026-06-13)
+
+- **Réf** : `Votes - Maquettes (standalone).html` — **à la racine du repo** (et non dans `REC/standalone-exports/`), servie sur `:8770`, toggle light/dark. 7 sections : 1·PollBanner, 2·PollVoteSheet (yes_no / single_choice / multiple_choice / short_text), 3·états post-vote (after_close/live), 4·PollResultsView, 5·page `/votes` (liste membre), 6·admin liste (`AdminPollRow`) + PollCreateForm (2 steps), 7·entrée menu avatar. Spec : `docs/superpowers/specs/2026-06-13-vote-anonyme-design.md`. FLOW-015. Critères visuels : `docs/qa/VISUAL.md#votes`.
+- **Mapping standalone ↔ composants/routes** :
+  - section 1 `PollBanner` (`packages/ui` molecule) → intégré `app/(app)/dashboard/page.tsx` (au-dessus des KPI, max 2 + variante `aggregate`).
+  - section 2 `PollVoteSheet` (organism, 4 `questionType`) → `app/(app)/votes/[id]` (PollDetailView).
+  - section 3 états post-vote → `PollResultsView` ou écran « résultats à la clôture » selon `results_visibility`.
+  - section 4 `PollResultsView` (organism) → `/votes/[id]` (voté/clôturé) + `/admin/votes/[id]`.
+  - section 5 page `/votes` → `PollsView` + `PollCard` (molecule), accès via menu avatar (pas BottomNav).
+  - section 6 admin → `app/(app)/admin/votes` (`AdminPollsView`/`AdminPollRow`) + `app/(app)/admin/votes/nouveau` (`PollCreateForm` organism).
+  - section 7 entrée « Votes » → dropdown avatar `AppTopbar`/`AppChrome` (conditionnel `hasPollActivity`).
+- **Architecture** : composants `@evolve/ui` présentationnels purs (copy par prop `labels`, défauts FR, pattern `resolveLabels` comme `FeedbackSheet`, **zéro dép i18n/data**). `apps/web` câble nav, GA4 (`poll_banner_view`/`poll_banner_click`/`poll_vote_submitted`/`poll_results_viewed`/`poll_page_view`) et les Server Actions. Données via `@evolve/data/polls` (`hasVoted`/`submitVote`/`getPollResults`/`mapPollResults`). Migration **037** (`polls` + `poll_responses` + RLS + RPC `submit_vote`/`get_poll_results`/`has_voted` SECURITY DEFINER + cron `close_due_polls`).
+- **Anonymat by design (niveau DB)** : `user_id` stocké uniquement pour `UNIQUE(poll_id,user_id)` + `has_voted()` ; **aucune policy SELECT** pour `authenticated` (REVOKE), `get_poll_results` ne retourne jamais `user_id`. Prouvé psql : `permission denied` sur `SELECT poll_responses` en rôle authenticated.
+
+### Arbitrages lead (NE PAS flaguer en QA)
+
+- **A-VA-1 — `get_poll_results` renvoie un `jsonb` enveloppé** `{ poll_id, question_type, total_responses, options:[{option,count,pct}], text_responses:[] }` (et non un `{option,count,pct}[]` nu de la spec §6) — plus riche (porte les textes anonymes §10 + le total), mappé en `PollResults` strict côté data. Aucune perte, aucun `user_id`.
+- **A-VA-2 — `PollCreateForm` sans drag-and-drop** des options (add/remove à la place) — le DnD de l'annotation maquette est hors scope « présentationnel » et non listé dans les critères d'acceptation.
+- **A-VA-3 — `PollResultsView short_text`** plafonne l'affichage à 3 réponses + « N autres réponses » (la maquette montre 3 + « … 6 autres réponses »).
+- **A-VA-4 — Cron de clôture** planifié `0 * * * *` (horaire) via `close_due_polls()`, sans dépendre du Vault (s'exécute en local) ; renseigne aussi `closed_manually_at` (réutilise la colonne, fidèle au `UPDATE` spec §4).
+
+### Dette / actions owner
+
+- **`make db-types`** échoue sur le CLI Supabase 2.106.0 (`LegacyPlatformAuthRequiredError` — token requis même en local). Contournement appliqué : `SUPABASE_ACCESS_TOKEN=sbp_local npx supabase gen types typescript --local`. **Ticket infra mineur** : ajouter ce dummy token à la cible `db-types` du Makefile.
+- **Supabase local** : `edge-runtime` ne démarre pas dans l'enveloppe sandbox (rlimit type 7 `operation not permitted`) ; démarrage avec `-x edge-runtime,imgproxy,studio,pooler,vector,realtime`. Sans impact sur le DB layer (tables/RLS/RPC) ni les e2e via PostgREST/Auth.
+- **Env QA** : :3001 squatté par Cursor en IPv4 → dev server + e2e sur **:3011** (`E2E_BASE_URL`/`NEXT_PUBLIC_SITE_URL=http://localhost:3011`).
