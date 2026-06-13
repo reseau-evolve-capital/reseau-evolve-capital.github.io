@@ -12,3 +12,15 @@ export { createBrowserClient } from './supabase/client.ts'
 export { createServerClient } from './supabase/server.ts'
 export { createServiceRoleClient } from './supabase/admin.ts'
 export type { Database } from './supabase/types.gen.ts'
+// Vote anonyme (migration 037)
+export { hasVoted, submitVote, getPollResults, mapPollResults } from './polls/index.ts'
+export type {
+  PollQuestionType,
+  PollResultsVisibility,
+  PollStatus,
+  PollOption,
+  PollOptionResult,
+  PollOptionResultDTO,
+  PollResults,
+  PollResultsDTO,
+} from './polls/index.ts'
