@@ -105,7 +105,7 @@ export function PollDetailView({ data }: { data: PollDetailData }) {
     ? t('participation.value', {
         voted: data.results.totalResponses,
         total: data.results.totalResponses,
-        pct: formatPct(1),
+        pct: formatPct(1, { showSign: false }),
       })
     : undefined
 
@@ -128,7 +128,7 @@ export function PollDetailView({ data }: { data: PollDetailData }) {
           resultsVisibility={data.resultsVisibility}
           closesAtLabel={closesAtLabel}
           onSubmit={handleSubmit}
-          labels={voteLabels(t)}
+          labels={voteLabels(t, closesAtLabel)}
         />
         {errorCode ? (
           <p role="alert" className="text-[13px] text-data-negative">
@@ -156,7 +156,10 @@ export function PollDetailView({ data }: { data: PollDetailData }) {
             results: t('results.results'),
             majority: t('results.majority'),
             multipleHint: t('results.multipleHint'),
-            moreResponses: t('results.moreResponses'),
+            // Template à placeholder `{count}` rempli par PollResultsView (.replace) :
+            // on passe la chaîne brute, sinon next-intl tente d'interpoler {count} et lève
+            // FORMATTING_ERROR (le composant, pas next-intl, fournit le compte).
+            moreResponses: t.raw('results.moreResponses'),
             responsesLabel: t('results.responsesLabel'),
             empty: {
               title: t('results.emptyTitle'),
@@ -208,7 +211,7 @@ function BackLink({ label, onClick }: { label: string; onClick: () => void }) {
   )
 }
 
-function voteLabels(t: ReturnType<typeof useTranslations<'votes'>>) {
+function voteLabels(t: ReturnType<typeof useTranslations<'votes'>>, closesAtLabel?: string) {
   return {
     anonymous: t('vote.anonymous'),
     close: t('vote.close'),
@@ -227,7 +230,7 @@ function voteLabels(t: ReturnType<typeof useTranslations<'votes'>>) {
       title: t('vote.success.title'),
       subtitle: t('vote.success.subtitle'),
       subtitleLive: t('vote.success.subtitleLive'),
-      afterClose: t('vote.success.afterClose'),
+      afterClose: t('vote.success.afterClose', { date: closesAtLabel ?? '—' }),
       loadingLive: t('vote.success.loadingLive'),
       close: t('vote.success.close'),
     },
