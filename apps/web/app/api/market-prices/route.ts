@@ -8,6 +8,7 @@ import { createServerClient } from '@evolve/data'
 import { getPricesWithFallback } from '@evolve/data/prices'
 
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rate-limit'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
@@ -53,6 +54,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   } catch (err) {
     // Défensif : on ne casse jamais le portefeuille pour un échec de cours.
     console.error('[market-prices] erreur provider:', err)
+    captureRouteError(err, { endpoint: '/api/market-prices', extra: { symbols } })
     return NextResponse.json(
       { prices: Object.fromEntries(symbols.map((s) => [s, null])) },
       { status: 200 }

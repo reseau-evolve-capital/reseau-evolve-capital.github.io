@@ -6,6 +6,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
 import { getClubSummary, isStaffRole, type ClubSummary } from '@/lib/data/admin'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
@@ -29,7 +30,12 @@ export async function GET(request: Request): Promise<NextResponse> {
   let data: ClubSummary
   try {
     data = await getClubSummary(supabase, clubId, role)
-  } catch {
+  } catch (error) {
+    captureRouteError(error, {
+      endpoint: '/api/admin/club-summary',
+      userId: auth.user.id,
+      extra: { club_id: clubId },
+    })
     return NextResponse.json({ error: 'Erreur de chargement.' }, { status: 500 })
   }
   return NextResponse.json(data, { headers: { 'Cache-Control': 'private, no-store' } })

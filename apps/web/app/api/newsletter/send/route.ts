@@ -22,6 +22,7 @@ import { getNewsletterBySlug } from '@/lib/strapi-editorial'
 import { guardStaff } from '../_guard'
 import { renderNewsletterHtml, subjectFor } from '../_render'
 import { membersListId, newsletterSender } from '../config'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
@@ -83,7 +84,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 409 }
       )
     }
-  } catch {
+  } catch (error) {
+    captureRouteError(error, { endpoint: '/api/newsletter/send', extra: { step: 'verify-brevo' } })
     return NextResponse.json({ error: 'Erreur de vérification Brevo.' }, { status: 502 })
   }
 
@@ -98,7 +100,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     })
     await sendCampaignNow(campaign.id)
     return NextResponse.json({ ok: true, campaignId: campaign.id, name })
-  } catch {
+  } catch (error) {
+    captureRouteError(error, { endpoint: '/api/newsletter/send', extra: { step: 'send-campaign' } })
     return NextResponse.json({ error: "Échec de l'envoi de la campagne." }, { status: 502 })
   }
 }

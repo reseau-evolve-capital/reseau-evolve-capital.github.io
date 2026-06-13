@@ -7,6 +7,7 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
 import { isStaffRole } from '@/lib/data/admin'
 import { listClubInvitations, type Invitation } from '@/lib/data/invitations'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
@@ -30,7 +31,12 @@ export async function GET(request: Request): Promise<NextResponse> {
   let invitations: Invitation[]
   try {
     invitations = await listClubInvitations(supabase, clubId)
-  } catch {
+  } catch (error) {
+    captureRouteError(error, {
+      endpoint: '/api/admin/invitations',
+      userId: auth.user.id,
+      extra: { club_id: clubId },
+    })
     return NextResponse.json({ error: 'Erreur de chargement.' }, { status: 500 })
   }
   return NextResponse.json(

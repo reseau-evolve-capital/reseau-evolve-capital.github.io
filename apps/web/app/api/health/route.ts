@@ -19,6 +19,7 @@
 import { NextResponse } from 'next/server'
 
 import { createServerClient } from '@evolve/data'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -64,6 +65,7 @@ export async function GET(): Promise<NextResponse> {
     )
   } catch (e) {
     // Jamais de stack ni de secret dans la réponse — message court uniquement.
+    captureRouteError(e, { endpoint: '/api/health' })
     const message = e instanceof Error ? e.message : 'Erreur inconnue.'
     return NextResponse.json(
       { status: 'down', error: message },

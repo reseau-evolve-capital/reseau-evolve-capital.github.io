@@ -15,6 +15,7 @@ import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
 
 import { getContributionsData, type ContributionsData } from '@/lib/data/contributions'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
@@ -50,7 +51,12 @@ export async function GET(request: Request): Promise<NextResponse> {
   let data: ContributionsData | null
   try {
     data = await getContributionsData(supabase, auth.user.id, clubId)
-  } catch {
+  } catch (error) {
+    captureRouteError(error, {
+      endpoint: '/api/contributions',
+      userId: auth.user.id,
+      extra: { club_id: clubId },
+    })
     return NextResponse.json({ error: 'Erreur de chargement.' }, { status: 500 })
   }
   if (!data) {

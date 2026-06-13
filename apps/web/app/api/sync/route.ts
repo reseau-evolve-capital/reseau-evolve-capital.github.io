@@ -15,6 +15,7 @@
 
 import * as Sentry from '@sentry/nextjs'
 import { cookies } from 'next/headers'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
 
@@ -116,6 +117,14 @@ export async function POST(request: Request): Promise<NextResponse> {
   const errors = toStringArray(invokeData?.errors)
   const warnings = toStringArray(invokeData?.warnings)
   const success = invokeData?.success === true && errors.length === 0
+
+  if (errors.length > 0) {
+    captureRouteError(new Error('Sync partial failure'), {
+      endpoint: '/api/sync',
+      userId: user.id,
+      extra: { club_id, errors, success: invokeData?.success ?? false },
+    })
+  }
 
   // 8. Relecture de la date de dernière sync (best-effort, ne bloque pas la réponse).
   const { data: club } = await supabase.from('clubs').select('synced_at').eq('id', club_id).single()
