@@ -6,8 +6,9 @@
 //     headers : Authorization: Bearer <service_role_key>
 //   → vérifie le Bearer (doit valoir SUPABASE_SERVICE_ROLE_KEY)
 //   → instancie le client Supabase service-role (bypass RLS, server-only)
-//   → délègue toute la logique au handler PUR (handler.ts) : triage Claude Haiku,
-//     UPDATE ai_*, fan-out Discord/Notion/GitHub/Brevo, UPDATE des flags/liens.
+//   → délègue toute la logique au handler PUR (handler.ts) : triage IA multi-providers
+//     (anthropic/openai/deepseek selon env, cf. ai.ts), UPDATE ai_*, fan-out
+//     Discord/Notion/GitHub/Brevo, UPDATE des flags/liens.
 //   → 200 { ok: true, result } | 401 si Bearer invalide.
 //
 // Architecture : ce fichier ne contient QUE le câblage I/O (auth, client Supabase).
@@ -15,12 +16,20 @@
 // testée en isolation (deps injectées). Les imports lourds (`npm:@supabase/supabase-js`)
 // sont isolés ici pour ne pas alourdir les tests du handler.
 //
-// Sécurité : SUPABASE_SERVICE_ROLE_KEY + toutes les clés tierces (ANTHROPIC_API_KEY,
+// Sécurité : SUPABASE_SERVICE_ROLE_KEY + toutes les clés tierces (clés IA,
 // GITHUB_TOKEN, NOTION_TOKEN, BREVO_API_KEY, DISCORD_FEEDBACK_WEBHOOK_URL) sont
 // strictement server-only (Deno.env). Jamais shippées au client, jamais hardcodées.
 //
 // SECRETS À POSER (par environnement, hors code) :
-//   supabase secrets set ANTHROPIC_API_KEY=...           # 1er appel Anthropic du repo
+//   # ── IA (multi-providers, cf. ai.ts) ──
+//   supabase secrets set FEEDBACK_AI_PROVIDER=anthropic  # 'anthropic' (défaut) | 'openai' | 'deepseek'
+//   supabase secrets set FEEDBACK_AI_MODEL=...           # optionnel — défaut par provider
+//                                                        #   anthropic→claude-haiku-4-5, openai→gpt-4o-mini, deepseek→deepseek-chat
+//   supabase secrets set FEEDBACK_AI_BASE_URL=...        # optionnel — override endpoint OpenAI-compatible
+//   supabase secrets set ANTHROPIC_API_KEY=...           # si provider=anthropic
+//   supabase secrets set OPENAI_API_KEY=...              # si provider=openai
+//   supabase secrets set DEEPSEEK_API_KEY=...            # si provider=deepseek
+//   # ── Fan-out ──
 //   supabase secrets set DISCORD_FEEDBACK_WEBHOOK_URL=...
 //   supabase secrets set GITHUB_TOKEN=...                # PAT avec scope `repo` (issues)
 //   supabase secrets set GITHUB_REPO=omniventus/reseau-evolve-capital

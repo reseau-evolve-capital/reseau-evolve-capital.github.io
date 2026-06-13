@@ -16,19 +16,8 @@
     }
   },
   "workspace": {
-    "packageJson": {
-      "dependencies": [
-        "npm:@commitlint/cli@^21.0.2",
-        "npm:@commitlint/config-conventional@^21.0.2",
-        "npm:@lhci/cli@~0.15.1",
-        "npm:eslint-config-prettier@^9.1.0",
-        "npm:eslint@9",
-        "npm:husky@^9.1.7",
-        "npm:lint-staged@^17.0.5",
-        "npm:prettier@^3.3.0",
-        "npm:turbo@2",
-        "npm:typescript@^5.4.2"
-      ]
-    }
+    "dependencies": [
+      "npm:@supabase/supabase-js@2"
+    ]
   }
 }

@@ -4,8 +4,9 @@
 // ----
 // Déclenché par un trigger Postgres AFTER INSERT ON public.feedback (migration 036),
 // qui POST `{ record }` ici. Le handler :
-//   1. Construit un prompt selon `record.type` et appelle Claude Haiku (claude-haiku-4-5)
-//      pour produire { title, severity?, summary, category? } — 1er appel Anthropic du repo.
+//   1. Construit un prompt selon `record.type` et appelle le provider IA sélectionné
+//      par env (anthropic/openai/deepseek, cf. ai.ts) pour produire
+//      { title, severity?, summary, category? } — abstraction multi-modèles.
 //   2. UPDATE feedback SET ai_title, ai_severity, ai_summary, ai_category.
 //   3. Fan-out résilient (Promise.allSettled, chaque branche try/catch isolé) :
 //        a) Discord webhook (tous types)
@@ -17,11 +18,15 @@
 //
 // Résilience : si une destination échoue (API down, rate limit, secret absent), les
 // autres continuent ; le feedback reste intègre. L'IA elle-même est best-effort : si
-// Claude échoue, on fan-out quand même avec un fallback (title = message tronqué).
+// l'appel IA échoue (ou pas de clé), on fan-out quand même avec un fallback
+// (title = message tronqué).
 //
 // Architecture : AUCUN I/O concret n'est importé ici — tout passe par `FeedbackDispatchDeps`
 // (env getter, supabase updater, fetch). Donc 100% testable côté Deno sans réseau réel.
-// Les `fetch` Anthropic/Discord/Notion/GitHub/Brevo sont injectés via deps.fetch.
+// Les `fetch` IA/Discord/Notion/GitHub/Brevo sont injectés via deps.fetch. L'appel IA
+// lui-même est délégué à `callAi` (ai.ts), routé par provider via variables d'env.
+
+import { callAi, hasAiKey } from './ai.ts'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,11 +40,18 @@ export interface FeedbackRecord {
   user_email: string
   type: FeedbackType
   message: string
-  screenshot_url: string | null
+  /** Jusqu'à 3 URLs d'images jointes (bucket privé). null/[] si aucune capture. */
+  screenshot_urls: string[] | null
   page_url: string
   page_route: string
   user_agent: string | null
   created_at?: string
+}
+
+/** Normalise `screenshot_urls` (null/non-array → []), filtre les entrées vides. */
+function screenshotUrls(record: FeedbackRecord): string[] {
+  if (!Array.isArray(record.screenshot_urls)) return []
+  return record.screenshot_urls.filter((u): u is string => typeof u === 'string' && u.trim() !== '')
 }
 
 /** Résultat structuré renvoyé par Claude Haiku (parsé/normalisé). */
@@ -84,9 +96,6 @@ export interface FeedbackDispatchDeps {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const ANTHROPIC_ENDPOINT = 'https://api.anthropic.com/v1/messages'
-const ANTHROPIC_MODEL = 'claude-haiku-4-5'
-const ANTHROPIC_VERSION = '2023-06-01'
 const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email'
 const GITHUB_API = 'https://api.github.com'
 const NOTION_API = 'https://api.notion.com/v1/pages'
@@ -110,24 +119,14 @@ const TYPE_LABEL: Record<FeedbackType, string> = {
 const SEVERITY_VALUES: readonly AiSeverity[] = ['blocking', 'annoying', 'minor']
 
 /**
- * Construit le prompt Claude Haiku selon le type de feedback (spec §5 étape 2).
+ * Instructions (rôle + clés JSON attendues) selon le type — partie « system » du prompt.
  *   bug      → titre ≤ 80c, sévérité (blocking/annoying/minor), diagnostic préliminaire.
  *   feature  → titre, résumé, catégorie (UX/données/perf/admin/autre).
  *   question → titre, résumé, intention (technique/métier/facturation/autre).
  * Demande une SORTIE JSON STRICTE — parsée par `parseAiJson`.
  */
-export function buildPrompt(record: FeedbackRecord): string {
-  const ctx = [
-    `Page : ${record.page_route}`,
-    record.user_agent ? `Navigateur : ${summarizeUserAgent(record.user_agent)}` : null,
-    record.screenshot_url ? `Capture jointe : oui` : `Capture jointe : non`,
-  ]
-    .filter(Boolean)
-    .join('\n')
-
-  const verbatim = `Message de l'utilisateur (verbatim) :\n"""\n${record.message}\n"""`
-
-  if (record.type === 'bug') {
+export function buildSystemPrompt(type: FeedbackType): string {
+  if (type === 'bug') {
     return [
       "Tu es un assistant de triage de bugs pour une application web de gestion d'investissement (français).",
       'À partir du retour utilisateur ci-dessous, produis STRICTEMENT un objet JSON, sans aucun texte autour, avec les clés :',
@@ -135,14 +134,10 @@ export function buildPrompt(record: FeedbackRecord): string {
       '- "severity": l\'une de "blocking" (l\'utilisateur est bloqué), "annoying" (gênant mais contournable), "minor" (cosmétique).',
       '- "summary": un diagnostic préliminaire de 2 à 3 phrases en français (cause probable, où regarder).',
       '- "category": null.',
-      '',
-      ctx,
-      '',
-      verbatim,
     ].join('\n')
   }
 
-  if (record.type === 'feature') {
+  if (type === 'feature') {
     return [
       "Tu es un assistant de triage de demandes de fonctionnalités pour une application web de gestion d'investissement (français).",
       'À partir du retour utilisateur ci-dessous, produis STRICTEMENT un objet JSON, sans aucun texte autour, avec les clés :',
@@ -150,10 +145,6 @@ export function buildPrompt(record: FeedbackRecord): string {
       '- "severity": null.',
       '- "summary": un résumé de 2 à 3 phrases en français reformulant le besoin et la valeur attendue.',
       '- "category": l\'une de "UX", "données", "perf", "admin", "autre".',
-      '',
-      ctx,
-      '',
-      verbatim,
     ].join('\n')
   }
 
@@ -165,11 +156,30 @@ export function buildPrompt(record: FeedbackRecord): string {
     '- "severity": null.',
     '- "summary": un résumé de 2 à 3 phrases en français clarifiant ce que demande l\'utilisateur.',
     '- "category": l\'intention, l\'une de "technique", "métier", "facturation", "autre".',
-    '',
-    ctx,
-    '',
-    verbatim,
   ].join('\n')
+}
+
+/** Contexte + message verbatim — partie « user » du prompt. */
+export function buildUserPrompt(record: FeedbackRecord): string {
+  const shots = screenshotUrls(record)
+  const ctx = [
+    `Page : ${record.page_route}`,
+    record.user_agent ? `Navigateur : ${summarizeUserAgent(record.user_agent)}` : null,
+    shots.length > 0 ? `Captures jointes : ${shots.length}` : `Capture jointe : non`,
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  const verbatim = `Message de l'utilisateur (verbatim) :\n"""\n${record.message}\n"""`
+  return [ctx, '', verbatim].join('\n')
+}
+
+/**
+ * Prompt complet (system + user concaténés) — conservé pour usage mono-bloc et tests.
+ * L'appel IA réel utilise `buildSystemPrompt` / `buildUserPrompt` séparément (cf. callAi).
+ */
+export function buildPrompt(record: FeedbackRecord): string {
+  return [buildSystemPrompt(record.type), '', buildUserPrompt(record)].join('\n')
 }
 
 /** Résumé compact du user-agent pour les notifications (évite le bruit). */
@@ -240,42 +250,28 @@ function clampTitle(t: string): string {
   return trimmed.length > 80 ? `${trimmed.slice(0, 79)}…` : trimmed
 }
 
-// ── Appel Claude Haiku ──────────────────────────────────────────────────────────
+// ── Triage IA (provider-agnostique) ──────────────────────────────────────────────
 
-/** Appelle Claude Haiku et renvoie le triage IA. Best-effort : fallback si pas de clé ou erreur. */
-async function callClaude(deps: FeedbackDispatchDeps, record: FeedbackRecord): Promise<AiTriage> {
-  const apiKey = deps.env('ANTHROPIC_API_KEY')
+/**
+ * Triage IA via le provider sélectionné par env (anthropic/openai/deepseek, cf. ai.ts).
+ * Best-effort : fallback (titre = message tronqué, severity minor pour un bug) si pas
+ * de clé pour le provider sélectionné OU en cas d'erreur. Le fan-out continue toujours.
+ */
+async function triageWithAi(deps: FeedbackDispatchDeps, record: FeedbackRecord): Promise<AiTriage> {
   const fallback: AiTriage = {
     title: clampTitle(record.message),
     severity: record.type === 'bug' ? 'minor' : null,
     summary: '',
     category: record.type === 'bug' ? null : 'autre',
   }
-  if (!apiKey) return fallback
+  if (!hasAiKey(deps.env)) return fallback
 
   try {
-    const res = await deps.fetch(ANTHROPIC_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': ANTHROPIC_VERSION,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: ANTHROPIC_MODEL,
-        max_tokens: 512,
-        messages: [{ role: 'user', content: buildPrompt(record) }],
-      }),
-    })
-    if (!res.ok) {
-      const detail = await res.text().catch(() => '')
-      throw new Error(`Anthropic ${res.status}: ${detail}`)
-    }
-    const data = (await res.json()) as { content?: Array<{ type?: string; text?: string }> }
-    const text = (data.content ?? [])
-      .filter((b) => b.type === 'text' && typeof b.text === 'string')
-      .map((b) => b.text as string)
-      .join('\n')
+    const text = await callAi(
+      { env: deps.env, fetch: deps.fetch },
+      buildSystemPrompt(record.type),
+      buildUserPrompt(record)
+    )
     return parseAiJson(text, record.type)
   } catch {
     // L'IA est best-effort : on dispatche quand même avec le fallback.
@@ -294,6 +290,7 @@ async function notifyDiscord(
   const url = deps.env('DISCORD_FEEDBACK_WEBHOOK_URL')
   if (!url) throw new Error('DISCORD_FEEDBACK_WEBHOOK_URL manquante.')
 
+  const shots = screenshotUrls(record)
   const fields: Array<{ name: string; value: string; inline?: boolean }> = [
     { name: 'Type', value: TYPE_LABEL[record.type], inline: true },
     { name: 'Page', value: record.page_route, inline: true },
@@ -303,6 +300,11 @@ async function notifyDiscord(
   }
   if (ai.category) fields.push({ name: 'Catégorie', value: ai.category, inline: true })
   fields.push({ name: 'Message', value: truncate(record.message, 1000) })
+  if (shots.length > 0) {
+    // Liste toutes les captures (la 1ʳᵉ est aussi affichée en image d'embed ci-dessous).
+    const value = shots.map((u, i) => `[Capture ${i + 1}](${u})`).join(' · ')
+    fields.push({ name: `Captures (${shots.length})`, value: truncate(value, 1000) })
+  }
   fields.push({ name: 'Admin', value: deps.adminFeedbackUrl(record.id) })
 
   const res = await deps.fetch(url, {
@@ -315,6 +317,8 @@ async function notifyDiscord(
           description: ai.summary || undefined,
           color: DISCORD_COLOR[record.type],
           fields,
+          // 1ʳᵉ image en aperçu d'embed (les liens des autres sont listés dans les fields).
+          image: shots[0] ? { url: shots[0] } : undefined,
           timestamp: record.created_at ?? new Date().toISOString(),
         },
       ],
@@ -333,6 +337,7 @@ async function pushNotion(
   const dbId = deps.env('NOTION_FEEDBACK_DB_ID')
   if (!token || !dbId) throw new Error('NOTION_TOKEN / NOTION_FEEDBACK_DB_ID manquant(s).')
 
+  const shots = screenshotUrls(record)
   const properties: Record<string, unknown> = {
     Name: { title: [{ text: { content: ai.title } }] },
     Type: { select: { name: TYPE_LABEL[record.type] } },
@@ -341,7 +346,29 @@ async function pushNotion(
   }
   if (record.type === 'bug' && ai.severity) properties.Severity = { select: { name: ai.severity } }
   if (ai.category) properties.Category = { select: { name: ai.category } }
-  if (record.screenshot_url) properties.Screenshot = { url: record.screenshot_url }
+  // Propriété url = 1ʳᵉ image (Notion url accepte une seule valeur).
+  if (shots[0]) properties.Screenshot = { url: shots[0] }
+
+  // Liste toutes les captures dans un bloc texte (la propriété url n'en porte qu'une).
+  const children =
+    shots.length > 0
+      ? [
+          {
+            object: 'block',
+            type: 'paragraph',
+            paragraph: {
+              rich_text: [
+                {
+                  type: 'text',
+                  text: {
+                    content: `Captures (${shots.length}) : ${shots.join(' , ')}`,
+                  },
+                },
+              ],
+            },
+          },
+        ]
+      : undefined
 
   const res = await deps.fetch(NOTION_API, {
     method: 'POST',
@@ -350,7 +377,7 @@ async function pushNotion(
       'Notion-Version': NOTION_VERSION,
       'content-type': 'application/json',
     },
-    body: JSON.stringify({ parent: { database_id: dbId }, properties }),
+    body: JSON.stringify({ parent: { database_id: dbId }, properties, children }),
   })
   if (!res.ok) throw new Error(`Notion ${res.status}`)
   const data = (await res.json()) as { id?: string }
@@ -369,6 +396,12 @@ async function openGithubIssue(
   const repo = deps.env('GITHUB_REPO')
   if (!token || !repo) throw new Error('GITHUB_TOKEN / GITHUB_REPO manquant(s).')
 
+  const shots = screenshotUrls(record)
+  const capturesBlock =
+    shots.length > 0
+      ? ['**Captures**', ...shots.map((u, i) => `- [Capture ${i + 1}](${u})`)].join('\n')
+      : '_(pas de capture)_'
+
   const body = [
     `**Sévérité estimée** : ${ai.severity ?? 'minor'}`,
     `**Page** : \`${record.page_route}\` · ${record.user_agent ? summarizeUserAgent(record.user_agent) : 'UA inconnu'}`,
@@ -379,7 +412,7 @@ async function openGithubIssue(
     '**Diagnostic IA**',
     ai.summary || '_(aucun)_',
     '',
-    record.screenshot_url ? `**Capture** : ${record.screenshot_url}` : '_(pas de capture)_',
+    capturesBlock,
     '',
     `**Feedback Supabase** : ${deps.adminFeedbackUrl(record.id)}`,
   ].join('\n')
@@ -459,7 +492,7 @@ export async function dispatchFeedback(
   record: FeedbackRecord
 ): Promise<DispatchResult> {
   // 1 + 2 : triage IA puis persistance des champs ai_*.
-  const ai = await callClaude(deps, record)
+  const ai = await triageWithAi(deps, record)
   await deps.updater.updateAi(record.id, ai)
 
   // 3 : fan-out parallèle, branches isolées.
