@@ -126,6 +126,20 @@ CREATE POLICY "poll_responses: membre peut voter"
     )
   );
 
+-- ── Grants table explicites (Data API) ───────────────────────────────────────
+-- L'auto-exposition implicite des nouvelles tables aux rôles Data API est désactivée
+-- depuis 2026-05-30 (cf. supabase/config.toml `auto_expose_new_tables`). Sans GRANT
+-- explicite, toute requête PostgREST en rôle `authenticated` échoue en 42501 même si
+-- une policy RLS l'autorise. On accorde donc les privilèges au niveau table ; la RLS
+-- (policies ci-dessus) reste la garde fine sur les lignes/opérations.
+--   • polls : membre lit (SELECT, RLS open/closed du club), staff écrit (RLS FOR ALL).
+--   • poll_responses : le membre INSÈRE sa réponse (RLS) ; le SELECT reste révoqué
+--     (anonymat — les agrégats passent par la RPC SECURITY DEFINER get_poll_results).
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.polls TO authenticated;
+GRANT INSERT ON public.poll_responses TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.polls TO service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.poll_responses TO service_role;
+
 -- NB : AUCUNE policy SELECT/UPDATE/DELETE pour `authenticated` sur poll_responses.
 -- On révoque en plus le SELECT au niveau privilège table (défense en profondeur) :
 -- même si une policy SELECT était ajoutée par erreur, le GRANT manquant bloquerait la lecture.
