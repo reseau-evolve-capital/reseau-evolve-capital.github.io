@@ -1,4 +1,4 @@
-export { FeedbackSheet } from './FeedbackSheet'
+export { FeedbackSheet, MAX_FEEDBACK_IMAGES } from './FeedbackSheet'
 export type {
   FeedbackSheetProps,
   FeedbackLabels,

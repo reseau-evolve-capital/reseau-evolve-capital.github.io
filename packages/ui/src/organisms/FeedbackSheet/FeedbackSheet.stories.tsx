@@ -4,9 +4,18 @@ import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 
 import { FeedbackSheet, type FeedbackSheetProps } from './FeedbackSheet'
 
-// 1×1 PNG transparent (dataURL) pour la vignette de capture dans les stories.
-const SAMPLE_PNG =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAYAAAH7+ZcAAAAASUVORK5CYII='
+// 1×1 PNG transparent — sert de contenu aux File uploadés dans les play functions.
+const SAMPLE_PNG_BYTES = Uint8Array.from(
+  atob(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAYAAAH7+ZcAAAAASUVORK5CYII='
+  ),
+  (c) => c.charCodeAt(0)
+)
+
+/** Fabrique un File image pour le sélecteur de fichiers. */
+function pngFile(name: string): File {
+  return new File([SAMPLE_PNG_BYTES], name, { type: 'image/png' })
+}
 
 const meta: Meta<typeof FeedbackSheet> = {
   title: 'Organisms/FeedbackSheet',
@@ -27,6 +36,16 @@ type Story = StoryObj<typeof FeedbackSheet>
 // Les play functions ciblent le body (Radix porte la Content dans un Portal).
 const body = (canvasElement: HTMLElement) => within(canvasElement.ownerDocument.body)
 
+/** Input file caché (type="file") — pas de rôle accessible, ciblé par sélecteur. */
+const fileInput = (canvasElement: HTMLElement): HTMLInputElement => {
+  const input = canvasElement.ownerDocument.body.querySelector('input[type="file"]')
+  if (!input) throw new Error('file input introuvable')
+  return input as HTMLInputElement
+}
+
+const thumbCount = (canvasElement: HTMLElement) =>
+  canvasElement.ownerDocument.body.querySelectorAll('img[alt=""]').length
+
 /** Idle : en-tête + 3 pills + textarea + encart route + CTA. Type par défaut = Idée. */
 export const Idle: Story = {
   play: async ({ canvasElement }) => {
@@ -35,6 +54,10 @@ export const Idle: Story = {
     await expect(c.getByText('Un retour à partager ?')).toBeInTheDocument()
     await expect(c.getByRole('button', { name: 'Idée' })).toHaveAttribute('aria-pressed', 'true')
     await expect(c.getByText('/portefeuille · 18.04')).toBeInTheDocument()
+    // Bouton joindre des images présent (input file dans le DOM).
+    await expect(
+      c.getByRole('button', { name: 'Joindre des images (optionnel)' })
+    ).toBeInTheDocument()
     // Vide → CTA désactivé.
     await expect(c.getByRole('button', { name: 'Envoyer →' })).toBeDisabled()
   },
@@ -52,25 +75,38 @@ export const SelectType: Story = {
   },
 }
 
-/** Capture : onCaptureScreenshot (mocké) renvoie une dataURL → vignette + retirer. */
-export const WithScreenshot: Story = {
-  args: {
-    onCaptureScreenshot: fn(async () => SAMPLE_PNG),
-  },
-  play: async ({ args, canvasElement }) => {
+/** Images jointes : upload de 2 images via l'input file → 2 vignettes + retrait d'une. */
+export const WithImages: Story = {
+  play: async ({ canvasElement }) => {
     const c = body(canvasElement)
-    await userEvent.click(
-      c.getByRole('button', { name: "Joindre une capture d'écran (optionnel)" })
-    )
-    await waitFor(() => expect(args.onCaptureScreenshot).toHaveBeenCalledTimes(1))
-    await expect(await c.findByText('Capture jointe')).toBeInTheDocument()
-    // Mention vie privée honnête (pas de claim « floutés »).
+    await userEvent.upload(fileInput(canvasElement), [pngFile('1.png'), pngFile('2.png')])
+    await waitFor(() => expect(thumbCount(canvasElement)).toBe(2))
+    // Mention vie privée plurielle, honnête (pas de claim « floutées »).
     await expect(
-      c.getByText('Cette capture sera partagée uniquement avec l’équipe technique.')
+      c.getByText('Ces images seront partagées uniquement avec l’équipe technique.')
     ).toBeInTheDocument()
-    // Retirer → vignette disparaît.
-    await userEvent.click(c.getByRole('button', { name: 'Retirer' }))
-    await waitFor(() => expect(c.queryByText('Capture jointe')).not.toBeInTheDocument())
+    await expect(c.getByText('2/3')).toBeInTheDocument()
+    // Retirer la 1ʳᵉ image → 1 vignette restante.
+    await userEvent.click(c.getByRole('button', { name: 'Retirer l’image 1' }))
+    await waitFor(() => expect(thumbCount(canvasElement)).toBe(1))
+  },
+}
+
+/** Cap à 3 : un 4ᵉ fichier est ignoré ; le bouton joindre laisse place au hint « max ». */
+export const MaxImages: Story = {
+  play: async ({ canvasElement }) => {
+    const c = body(canvasElement)
+    await userEvent.upload(fileInput(canvasElement), [
+      pngFile('1.png'),
+      pngFile('2.png'),
+      pngFile('3.png'),
+      pngFile('4.png'),
+    ])
+    await waitFor(() => expect(thumbCount(canvasElement)).toBe(3))
+    await expect(
+      c.queryByRole('button', { name: 'Joindre des images (optionnel)' })
+    ).not.toBeInTheDocument()
+    await expect(c.getByText('3 images maximum')).toBeInTheDocument()
   },
 }
 
@@ -125,7 +161,6 @@ export const ErrorState: Story = {
 
 /** Variante sombre : data-theme="dark" sur un wrapper. */
 export const Dark: Story = {
-  args: { onCaptureScreenshot: fn(async () => SAMPLE_PNG) },
   decorators: [
     (Story) => (
       <div data-theme="dark" className="min-h-[640px] bg-bg-page">
@@ -148,6 +183,12 @@ export const English: Story = {
         feature: 'Describe your idea…',
         question: 'Ask your question…',
       },
+      attach: 'Attach images (optional)',
+      attachMax: '3 images max',
+      attached: 'Attached image',
+      remove: 'Remove',
+      removeImage: 'Remove image {n}',
+      privacyNote: 'These images will be shared only with the tech team.',
       submit: 'Send →',
       contextLabel: 'Captured route',
       success: {
@@ -163,6 +204,7 @@ export const English: Story = {
     const c = body(canvasElement)
     await expect(c.getByText('Got feedback?')).toBeInTheDocument()
     await expect(c.getByLabelText('Your message')).toBeInTheDocument()
+    await expect(c.getByRole('button', { name: 'Attach images (optional)' })).toBeInTheDocument()
   },
 }
 
