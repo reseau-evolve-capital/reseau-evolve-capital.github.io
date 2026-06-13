@@ -266,6 +266,7 @@ DECLARE
   v_question_type text;
   v_uid           uuid := auth.uid();
   v_total         int;
+  v_eligible      int;
   v_options       jsonb;
   v_texts         jsonb;
 BEGIN
@@ -296,6 +297,12 @@ BEGIN
   -- Total de réponses (= nombre de votants ; user_id agrégé, jamais listé).
   SELECT count(*) INTO v_total FROM public.poll_responses WHERE poll_id = p_poll_id;
 
+  -- Dénominateur de participation : membres actifs du club. Calculé ICI (SECURITY DEFINER)
+  -- car un membre n'a pas le droit de compter ses pairs via RLS (privacy memberships).
+  SELECT count(*) INTO v_eligible
+    FROM public.memberships
+   WHERE club_id = v_club_id AND is_active = TRUE;
+
   -- Agrégats par option (selected_options dépaqueté). pct sur le total de votants.
   SELECT COALESCE(
            jsonb_agg(jsonb_build_object(
@@ -324,6 +331,7 @@ BEGIN
     'poll_id', p_poll_id,
     'question_type', v_question_type,
     'total_responses', v_total,
+    'eligible_members', v_eligible,
     'options', v_options,
     'text_responses', v_texts
   );
