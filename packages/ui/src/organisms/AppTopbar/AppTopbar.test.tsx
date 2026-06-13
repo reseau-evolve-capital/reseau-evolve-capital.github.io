@@ -46,9 +46,35 @@ describe('AppTopbar — rendu', () => {
     expect(screen.getByRole('button', { name: 'toggle-thème' })).toBeTruthy()
   })
 
+  it('ne rend pas le bouton feedback quand onFeedback est absent (non destructif)', () => {
+    render(<AppTopbar user={user} />)
+    expect(screen.queryByRole('button', { name: 'Retour' })).toBeNull()
+  })
+
+  it('rend le bouton feedback avec son aria-label par défaut quand onFeedback est fourni', () => {
+    render(<AppTopbar user={user} onFeedback={vi.fn()} />)
+    expect(screen.getByRole('button', { name: 'Retour' })).toBeTruthy()
+  })
+
+  it('respecte feedbackLabel personnalisé', () => {
+    render(<AppTopbar user={user} onFeedback={vi.fn()} feedbackLabel="Donner mon avis" />)
+    expect(screen.getByRole('button', { name: 'Donner mon avis' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Retour' })).toBeNull()
+  })
+
   it('expose un seul landmark header', () => {
     const { container } = render(<AppTopbar user={user} />)
     expect(container.querySelectorAll('header')).toHaveLength(1)
+  })
+})
+
+describe('AppTopbar — feedback', () => {
+  it('appelle onFeedback au clic sur le bouton feedback', async () => {
+    const u = userEvent.setup()
+    const onFeedback = vi.fn()
+    render(<AppTopbar user={user} onFeedback={onFeedback} />)
+    await u.click(screen.getByRole('button', { name: 'Retour' }))
+    expect(onFeedback).toHaveBeenCalledTimes(1)
   })
 })
 

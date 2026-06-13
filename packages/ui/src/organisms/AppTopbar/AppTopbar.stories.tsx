@@ -14,6 +14,7 @@ const meta: Meta<typeof AppTopbar> = {
     onProfile: fn(),
     onLogout: fn(),
     onAdmin: fn(),
+    onFeedback: fn(),
   },
   decorators: [
     (Story) => (
@@ -52,5 +53,17 @@ export const WithAdmin: Story = {
     const menu = within(document.body)
     expect(await menu.findByText('Espace trésorier')).toBeVisible()
     expect(await menu.findByText('Profil')).toBeVisible()
+  },
+}
+
+/** Point d'entrée feedback : l'icône `MessageCircle` est visible à côté de l'avatar
+ *  (desktop ET mobile) et déclenche `onFeedback`. */
+export const WithFeedback: Story = {
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const feedback = canvas.getByRole('button', { name: /retour/i })
+    expect(feedback).toBeVisible()
+    await userEvent.click(feedback)
+    expect(args.onFeedback).toHaveBeenCalledTimes(1)
   },
 }
