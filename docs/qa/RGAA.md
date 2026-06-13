@@ -19,6 +19,7 @@
 10. **Curseur (RGAA 3.3 / UX)** : tout élément interactif affiche `cursor: pointer` (et `disabled` → `not-allowed`).
     - Couvert globalement par la règle `@layer base` du design-system (`packages/design-system/styles/index.css`) ; ne jamais surcharger avec un `cursor` en dur (cf. #R-035, régression preflight Tailwind v4).
     - Tout cliquable custom (`div`/`span` avec `onClick`) doit aussi porter `role="button"` + `tabIndex={0}` + `onKeyDown` (Enter/Espace).
+11. **Font-size ≥16px sur tout `input`/`textarea`/`select`** (anti-zoom iOS) : iOS Safari/Chrome zoome automatiquement sur un champ focusé dont le `font-size` calculé est < 16px. Viser ≥16px sur mobile, ex. `text-[16px] md:text-[14px]` (cf. atome `Input` / `TextArea`). À vérifier sur chaque NOUVEAU champ de saisie introduit.
 
 ## Outils
 
@@ -26,6 +27,7 @@
   (`new AxeBuilder({ page }).withTags(['wcag2a','wcag2aa','wcag21a','wcag21aa'])`). **Violations bloquantes = `critical`/`serious`**.
 - **Lighthouse CI** : config existante (pages publiques) — viser score a11y ≥ 90.
 - **Curseur** : `apps/web/playwright/cursor-pointer.spec.ts` scanne les routes et échoue (message verbeux) si un cliquable n'a pas `cursor: pointer` (cf. #R-035). Lancer : `pnpm --filter @evolve/web exec playwright test cursor-pointer.spec.ts --workers=1`.
+- **Font-size ≥16px** (anti-zoom iOS) : `apps/web/playwright/input-min-fontsize.spec.ts` scanne les routes au viewport mobile (390×844), ouvre le widget Feedback, et échoue (message verbeux : tag/id/name/classes/px) si un `input`/`textarea`/`select` visible a un `font-size` calculé < 16px. Lancer : `pnpm --filter @evolve/web exec playwright test input-min-fontsize.spec.ts --workers=1`.
 
 ## Critères par écran (référence FLOWS.md)
 
