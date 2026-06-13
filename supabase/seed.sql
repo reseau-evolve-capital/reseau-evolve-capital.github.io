@@ -96,11 +96,13 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ── poll_responses ──────────────────────────────────────────────────────────
--- Vote 1 (yes_no live) : Membre A a voté "oui" → has_voted(A)=true, has_voted(B)=false.
--- Vote 5 (closed) : 3 réponses pour tester les agrégats (2 oui / 1 non).
+-- Vote 1 (yes_no live) : Membre A a voté "yes" → has_voted(A)=true, has_voted(B)=false.
+--   NB : pour question_type='yes_no', les valeurs canoniques sont 'yes' | 'no' | 'abstain'
+--   (ids émis par PollVoteSheet et mappés en libellés localisés par yesNoLabel côté web).
+-- Vote 5 (closed, single_choice) : 3 réponses (options 'oui'/'non' définies dans son jsonb).
 INSERT INTO public.poll_responses (poll_id, user_id, selected_options, text_response)
 VALUES
-  ('dddddddd-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000002', ARRAY['oui'], NULL),
+  ('dddddddd-0000-0000-0000-000000000001', 'cccccccc-0000-0000-0000-000000000002', ARRAY['yes'], NULL),
 
   ('dddddddd-0000-0000-0000-000000000005', 'cccccccc-0000-0000-0000-000000000001', ARRAY['oui'], NULL),
   ('dddddddd-0000-0000-0000-000000000005', 'cccccccc-0000-0000-0000-000000000002', ARRAY['oui'], NULL),
