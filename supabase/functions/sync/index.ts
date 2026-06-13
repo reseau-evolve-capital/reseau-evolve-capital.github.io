@@ -807,8 +807,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       if (error) errors.push(`update clubs.synced_at: ${error.message}`)
     }
 
-    // Alerte Sentry si >= 2 erreurs DURES accumulées (jamais sur de simples warnings).
-    if (errors.length >= 2) {
+    // Alerte Sentry dès la 1re erreur DURE accumulée (jamais sur de simples warnings).
+    if (errors.length >= 1) {
       await alertSentry(Deno.env.get('SENTRY_DSN'), {
         club_id: clubId,
         errors,

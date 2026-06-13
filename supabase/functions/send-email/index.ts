@@ -28,6 +28,7 @@ import { Webhook } from 'npm:standardwebhooks@^1'
 
 import { createSendEmailHandler } from './handler.ts'
 import type { BrevoEmailPayload, EmailLocale } from './handler.ts'
+import { alertSentry } from '../_shared/sentry.ts'
 
 import { MagicLinkEmail } from '../../../packages/data/src/emails/MagicLinkEmail.tsx'
 import { renderEmailHtml } from '../../../packages/data/src/emails/index.ts'
@@ -52,7 +53,15 @@ function verifyPayload(rawBody: string, headers: Headers): string {
 /** POST l'email transactionnel sur l'API Brevo (`api-key` header). */
 async function sendBrevoEmail(payload: BrevoEmailPayload): Promise<void> {
   const apiKey = Deno.env.get('BREVO_API_KEY') ?? ''
-  if (apiKey === '') throw new Error('BREVO_API_KEY manquante.')
+  if (apiKey === '') {
+    const dsn = Deno.env.get('SENTRY_DSN')
+    await alertSentry(dsn, {
+      club_id: 'send-email',
+      errors: ['BREVO_API_KEY manquante'],
+      sheets: ['send-email'],
+    }).catch(() => {})
+    throw new Error('BREVO_API_KEY manquante.')
+  }
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -64,6 +73,12 @@ async function sendBrevoEmail(payload: BrevoEmailPayload): Promise<void> {
   })
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
+    const dsn = Deno.env.get('SENTRY_DSN')
+    await alertSentry(dsn, {
+      club_id: 'send-email',
+      errors: [`Brevo ${res.status}: ${detail}`],
+      sheets: ['send-email'],
+    }).catch(() => {})
     throw new Error(`Brevo ${res.status}: ${detail}`)
   }
 }
