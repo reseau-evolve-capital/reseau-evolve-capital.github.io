@@ -533,9 +533,13 @@ function FormView({
           </div>
         )}
 
-        {/* Bouton joindre (dashed) tant que < 3 images ; sinon hint « max ». */}
+        {/* Bouton joindre (dashed) tant que < 3 images ; sinon hint « max ».
+            role="status" annonce le changement aux lecteurs d'écran (WCAG 4.1.3 — M-001). */}
         {atMax ? (
-          <p className="mt-4 flex items-center justify-center gap-1.5 rounded-[var(--r-md)] border border-dashed border-border px-3 py-3 text-[12px] text-text-ter">
+          <p
+            role="status"
+            className="mt-4 flex items-center justify-center gap-1.5 rounded-[var(--r-md)] border border-dashed border-border px-3 py-3 text-[12px] text-text-ter"
+          >
             <Icon name="Image" size={16} aria-hidden="true" />
             {t.attachMax}
           </p>
