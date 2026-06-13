@@ -34,6 +34,8 @@ export interface PollResultsDTO {
   poll_id: string | null
   question_type: string | null
   total_responses: number | null
+  /** Membres actifs du club (dénominateur de participation). Calculé SECURITY DEFINER. */
+  eligible_members: number | null
   options: PollOptionResultDTO[] | null
   text_responses: (string | null)[] | null
 }
@@ -55,6 +57,8 @@ export interface PollResults {
   pollId: string
   questionType: PollQuestionType
   totalResponses: number
+  /** Membres actifs du club = dénominateur « X/Y membres ont voté ». */
+  eligibleMembers: number
   options: PollOptionResult[]
   textResponses: string[]
 }

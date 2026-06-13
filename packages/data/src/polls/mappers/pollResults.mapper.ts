@@ -43,6 +43,7 @@ export function mapPollResults(dto: PollResultsDTO): PollResults {
     pollId: dto.poll_id ?? '',
     questionType: isQuestionType(dto.question_type) ? dto.question_type : 'single_choice',
     totalResponses: dto.total_responses ?? 0,
+    eligibleMembers: dto.eligible_members ?? 0,
     options,
     textResponses,
   }
