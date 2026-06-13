@@ -35,7 +35,8 @@
       "admin": "Espace trésorier",
       "profile": "Profil",
       "logout": "Déconnexion",
-      "feedback": "Retour"
+      "feedback": "Retour",
+      "votes": "Votes"
     },
     "themeToggle": {
       "toggle": "Basculer le thème",
@@ -668,7 +669,8 @@
       "invitations": "Invitations",
       "newsletter": "Newsletter",
       "navLabel": "Navigation espace trésorier",
-      "settings": "Paramètres"
+      "settings": "Paramètres",
+      "votes": "Votes"
     },
     "newsletter": {
       "title": "Newsletter",
@@ -836,6 +838,17 @@
     },
     "nav": {
       "requestFailed": "Une erreur est survenue. Réessaie."
+    },
+    "votes": {
+      "list": {
+        "title": "On n'a pas pu charger les votes. Réessaie ?"
+      },
+      "detail": {
+        "title": "On n'a pas pu charger ce vote. Réessaie ?"
+      },
+      "admin": {
+        "title": "On n'a pas pu charger les votes du club. Réessaie ?"
+      }
     }
   },
   "notFound": {
@@ -1114,5 +1127,182 @@
     "ogDescription": "Suis ta quote-part, le portefeuille de ton club et tes cotisations. Sans mot de passe, en français.",
     "twitterDescription": "Ta quote-part, le portefeuille de ton club et tes cotisations, au même endroit.",
     "ogImageAlt": "Écran d'accueil de l'app Evolve Capital affichant la quote-part d'un membre"
+  },
+  "votes": {
+    "meta": {
+      "listTitle": "Votes",
+      "detailTitle": "Vote",
+      "adminTitle": "Votes du club",
+      "createTitle": "Nouveau vote"
+    },
+    "tabs": {
+      "open": "En cours",
+      "closed": "Clôturés",
+      "drafts": "Brouillons"
+    },
+    "list": {
+      "title": "Votes",
+      "subtitle": "Consultez et répondez aux votes de votre club.",
+      "emptyOpenTitle": "Aucun vote en cours",
+      "emptyOpenDescription": "Aucun vote n’est ouvert pour le moment. Revenez plus tard.",
+      "emptyClosedTitle": "Aucun vote clôturé",
+      "emptyClosedDescription": "Les votes clôturés et leurs résultats apparaîtront ici."
+    },
+    "questionType": {
+      "yes_no": "Oui / Non",
+      "single_choice": "Choix unique",
+      "multiple_choice": "Choix multiple",
+      "short_text": "Réponse courte"
+    },
+    "deadline": {
+      "closes": "Clôture {date}",
+      "closedAt": "Clos le {date}",
+      "noDeadline": "Sans échéance"
+    },
+    "participation": {
+      "value": "{voted}/{total} membres ont voté ({pct})",
+      "unknown": "—"
+    },
+    "card": {
+      "toVote": "À voter",
+      "voted": "✓ Voté",
+      "closed": "Clôturé",
+      "voteCta": "Voter",
+      "resultsCta": "Voir résultats",
+      "resultsPending": "Résultats disponibles à la clôture"
+    },
+    "banner": {
+      "typeLabel": "{type}",
+      "voteCta": "Voter",
+      "viewAllCta": "Voir tous",
+      "aggregateTitle": "{count} votes en attente de votre réponse",
+      "aggregateSubtitle": "Répondez depuis la page Votes."
+    },
+    "detail": {
+      "backToList": "Retour aux votes",
+      "resultsPendingTitle": "Résultats disponibles à la clôture",
+      "resultsPendingDescription": "Vous avez voté. Les résultats seront publiés une fois le vote clôturé."
+    },
+    "vote": {
+      "anonymous": "Vote anonyme",
+      "close": "Fermer",
+      "definitive": "Votre réponse est définitive et ne pourra pas être modifiée.",
+      "multipleHint": "Vous pouvez sélectionner plusieurs réponses.",
+      "textAnonymityNote": "Votre réponse sera visible de l’équipe sous forme anonyme. Votre nom n’y sera pas associé.",
+      "submit": "Confirmer mon vote",
+      "sending": "Envoi…",
+      "optionsGroupLabel": "Options de réponse",
+      "yesNo": {
+        "yes": "Oui",
+        "no": "Non",
+        "abstain": "Abstention"
+      },
+      "success": {
+        "title": "Vote enregistré",
+        "subtitle": "Votre réponse a bien été prise en compte, de façon anonyme.",
+        "subtitleLive": "Merci. Les résultats sont calculés en direct.",
+        "afterClose": "Résultats disponibles à la clôture le {date}",
+        "loadingLive": "Chargement des résultats…",
+        "close": "Fermer"
+      },
+      "errors": {
+        "already_voted": "Vous avez déjà voté à ce vote.",
+        "not_open": "Ce vote n’est plus ouvert.",
+        "forbidden": "Vous n’êtes pas autorisé à voter à ce vote.",
+        "too_long": "Votre réponse dépasse 280 caractères.",
+        "unauthorized": "Votre session a expiré. Reconnectez-vous.",
+        "invalid": "Réponse invalide.",
+        "unknown": "L’envoi a échoué. Réessayez."
+      }
+    },
+    "results": {
+      "results": "Résultats",
+      "majority": "Option majoritaire",
+      "multipleHint": "Les % dépassent 100 % car les réponses sont multiples.",
+      "moreResponses": "… {count} autres réponses",
+      "responsesLabel": "Réponses reçues",
+      "emptyTitle": "Aucun résultat",
+      "emptyDescription": "Aucune réponse n’a encore été enregistrée pour ce vote.",
+      "unavailableTitle": "Résultats indisponibles",
+      "unavailableDescription": "Les résultats de ce vote ne sont pas encore consultables."
+    },
+    "admin": {
+      "title": "Votes du club",
+      "subtitle": "Créez et pilotez les consultations anonymes de votre club.",
+      "newPoll": "Nouveau vote",
+      "emptyOpenTitle": "Aucun vote en cours",
+      "emptyOpenDescription": "Publiez un vote pour consulter vos membres.",
+      "emptyDraftsTitle": "Aucun brouillon",
+      "emptyDraftsDescription": "Vos brouillons de votes apparaîtront ici.",
+      "emptyClosedTitle": "Aucun vote clôturé",
+      "emptyClosedDescription": "Les votes clôturés apparaîtront ici.",
+      "status": {
+        "draft": "Brouillon",
+        "open": "En cours",
+        "closed": "Clôturé"
+      },
+      "row": {
+        "viewResults": "Voir résultats",
+        "close": "Clôturer",
+        "menu": "Actions",
+        "participationLabel": "Participation"
+      },
+      "detail": {
+        "back": "Retour aux votes",
+        "closeManually": "Clôturer ce vote",
+        "closeConfirm": "Clôturer définitivement ce vote ? Les membres ne pourront plus répondre.",
+        "closed": "Vote clôturé"
+      },
+      "errors": {
+        "forbidden": "Action réservée au staff du club.",
+        "invalid": "Vote invalide.",
+        "invalid_date": "Date de clôture invalide.",
+        "unauthorized": "Votre session a expiré. Reconnectez-vous.",
+        "unknown": "L’opération a échoué. Réessayez."
+      }
+    },
+    "create": {
+      "eyebrow": "Admin · Votes",
+      "step1Title": "Nouveau vote",
+      "step2Title": "Nouveau vote · {type}",
+      "titleLabel": "Intitulé du vote",
+      "titlePlaceholder": "Ex. Faut-il diversifier vers les SCPI ?",
+      "descriptionLabel": "Description (optionnel)",
+      "descriptionPlaceholder": "Contexte transmis aux membres…",
+      "typeSectionLabel": "Type de réponse",
+      "optionsLabel": "Options de réponse",
+      "optionPlaceholder": "Libellé de l’option",
+      "addOption": "Ajouter une option",
+      "removeOption": "Retirer l’option {n}",
+      "settingsLabel": "Paramètres",
+      "resultsVisibilityLabel": "Résultats visibles après la clôture",
+      "resultsVisibilityHint": "Les membres ne verront les résultats qu’une fois le vote clos.",
+      "notifyLabel": "Notifier par e-mail",
+      "notifyHint": "Envoyer une invitation à voter à tous les membres.",
+      "closesAtLabel": "Date de clôture",
+      "saveDraft": "Sauver le brouillon",
+      "publish": "Publier",
+      "footerHint": "Les membres seront notifiés à la publication.",
+      "next": "Continuer",
+      "back": "Retour",
+      "types": {
+        "yes_no": {
+          "label": "Oui / Non",
+          "hint": "Question fermée, réponse binaire."
+        },
+        "single_choice": {
+          "label": "Choix unique",
+          "hint": "Une seule réponse parmi plusieurs."
+        },
+        "multiple_choice": {
+          "label": "Choix multiple",
+          "hint": "Plusieurs réponses possibles."
+        },
+        "short_text": {
+          "label": "Réponse courte",
+          "hint": "Texte libre, transmis de façon anonyme."
+        }
+      }
+    }
   }
 }

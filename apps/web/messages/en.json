@@ -35,7 +35,8 @@
       "admin": "Treasurer area",
       "profile": "Profile",
       "logout": "Log out",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "votes": "Votes"
     },
     "themeToggle": {
       "toggle": "Toggle theme",
@@ -668,7 +669,8 @@
       "invitations": "Invitations",
       "newsletter": "Newsletter",
       "navLabel": "Treasurer area navigation",
-      "settings": "Settings"
+      "settings": "Settings",
+      "votes": "Polls"
     },
     "newsletter": {
       "title": "Newsletter",
@@ -836,6 +838,17 @@
     },
     "nav": {
       "requestFailed": "Something went wrong. Try again."
+    },
+    "votes": {
+      "list": {
+        "title": "We couldn't load the polls. Try again?"
+      },
+      "detail": {
+        "title": "We couldn't load this poll. Try again?"
+      },
+      "admin": {
+        "title": "We couldn't load the club's polls. Try again?"
+      }
     }
   },
   "notFound": {
@@ -1114,5 +1127,182 @@
     "ogDescription": "Track your share, your club's portfolio and your contributions. No password required.",
     "twitterDescription": "Your share, your club's portfolio and your contributions, all in one place.",
     "ogImageAlt": "Evolve Capital app home screen showing a member's share"
+  },
+  "votes": {
+    "meta": {
+      "listTitle": "Polls",
+      "detailTitle": "Poll",
+      "adminTitle": "Club polls",
+      "createTitle": "New poll"
+    },
+    "tabs": {
+      "open": "Open",
+      "closed": "Closed",
+      "drafts": "Drafts"
+    },
+    "list": {
+      "title": "Polls",
+      "subtitle": "View and answer your club’s polls.",
+      "emptyOpenTitle": "No open polls",
+      "emptyOpenDescription": "No poll is open right now. Check back later.",
+      "emptyClosedTitle": "No closed polls",
+      "emptyClosedDescription": "Closed polls and their results will appear here."
+    },
+    "questionType": {
+      "yes_no": "Yes / No",
+      "single_choice": "Single choice",
+      "multiple_choice": "Multiple choice",
+      "short_text": "Short answer"
+    },
+    "deadline": {
+      "closes": "Closes {date}",
+      "closedAt": "Closed on {date}",
+      "noDeadline": "No deadline"
+    },
+    "participation": {
+      "value": "{voted}/{total} members voted ({pct})",
+      "unknown": "—"
+    },
+    "card": {
+      "toVote": "To vote",
+      "voted": "✓ Voted",
+      "closed": "Closed",
+      "voteCta": "Vote",
+      "resultsCta": "View results",
+      "resultsPending": "Results available once closed"
+    },
+    "banner": {
+      "typeLabel": "{type}",
+      "voteCta": "Vote",
+      "viewAllCta": "View all",
+      "aggregateTitle": "{count} polls awaiting your answer",
+      "aggregateSubtitle": "Answer them from the Polls page."
+    },
+    "detail": {
+      "backToList": "Back to polls",
+      "resultsPendingTitle": "Results available once closed",
+      "resultsPendingDescription": "You have voted. Results will be published once the poll is closed."
+    },
+    "vote": {
+      "anonymous": "Anonymous vote",
+      "close": "Close",
+      "definitive": "Your answer is final and cannot be changed.",
+      "multipleHint": "You can select several answers.",
+      "textAnonymityNote": "Your answer will be visible to the team anonymously. Your name will not be attached to it.",
+      "submit": "Confirm my vote",
+      "sending": "Sending…",
+      "optionsGroupLabel": "Answer options",
+      "yesNo": {
+        "yes": "Yes",
+        "no": "No",
+        "abstain": "Abstain"
+      },
+      "success": {
+        "title": "Vote recorded",
+        "subtitle": "Your answer has been recorded anonymously.",
+        "subtitleLive": "Thanks. Results are computed live.",
+        "afterClose": "Results available when the poll closes on {date}",
+        "loadingLive": "Loading results…",
+        "close": "Close"
+      },
+      "errors": {
+        "already_voted": "You have already voted in this poll.",
+        "not_open": "This poll is no longer open.",
+        "forbidden": "You are not allowed to vote in this poll.",
+        "too_long": "Your answer exceeds 280 characters.",
+        "unauthorized": "Your session has expired. Please sign in again.",
+        "invalid": "Invalid answer.",
+        "unknown": "Submission failed. Please try again."
+      }
+    },
+    "results": {
+      "results": "Results",
+      "majority": "Leading option",
+      "multipleHint": "Percentages exceed 100% because answers are multiple.",
+      "moreResponses": "… {count} more answers",
+      "responsesLabel": "Answers received",
+      "emptyTitle": "No results",
+      "emptyDescription": "No answer has been recorded for this poll yet.",
+      "unavailableTitle": "Results unavailable",
+      "unavailableDescription": "The results of this poll are not available yet."
+    },
+    "admin": {
+      "title": "Club polls",
+      "subtitle": "Create and manage your club’s anonymous polls.",
+      "newPoll": "New poll",
+      "emptyOpenTitle": "No open polls",
+      "emptyOpenDescription": "Publish a poll to consult your members.",
+      "emptyDraftsTitle": "No drafts",
+      "emptyDraftsDescription": "Your poll drafts will appear here.",
+      "emptyClosedTitle": "No closed polls",
+      "emptyClosedDescription": "Closed polls will appear here.",
+      "status": {
+        "draft": "Draft",
+        "open": "Open",
+        "closed": "Closed"
+      },
+      "row": {
+        "viewResults": "View results",
+        "close": "Close",
+        "menu": "Actions",
+        "participationLabel": "Participation"
+      },
+      "detail": {
+        "back": "Back to polls",
+        "closeManually": "Close this poll",
+        "closeConfirm": "Permanently close this poll? Members will no longer be able to answer.",
+        "closed": "Poll closed"
+      },
+      "errors": {
+        "forbidden": "Action restricted to club staff.",
+        "invalid": "Invalid poll.",
+        "invalid_date": "Invalid closing date.",
+        "unauthorized": "Your session has expired. Please sign in again.",
+        "unknown": "The operation failed. Please try again."
+      }
+    },
+    "create": {
+      "eyebrow": "Admin · Polls",
+      "step1Title": "New poll",
+      "step2Title": "New poll · {type}",
+      "titleLabel": "Poll title",
+      "titlePlaceholder": "E.g. Should we diversify into REITs?",
+      "descriptionLabel": "Description (optional)",
+      "descriptionPlaceholder": "Context shared with members…",
+      "typeSectionLabel": "Answer type",
+      "optionsLabel": "Answer options",
+      "optionPlaceholder": "Option label",
+      "addOption": "Add an option",
+      "removeOption": "Remove option {n}",
+      "settingsLabel": "Settings",
+      "resultsVisibilityLabel": "Results visible after closing",
+      "resultsVisibilityHint": "Members will only see results once the poll is closed.",
+      "notifyLabel": "Notify by email",
+      "notifyHint": "Send an invitation to vote to all members.",
+      "closesAtLabel": "Closing date",
+      "saveDraft": "Save draft",
+      "publish": "Publish",
+      "footerHint": "Members will be notified when published.",
+      "next": "Continue",
+      "back": "Back",
+      "types": {
+        "yes_no": {
+          "label": "Yes / No",
+          "hint": "Closed question, binary answer."
+        },
+        "single_choice": {
+          "label": "Single choice",
+          "hint": "One answer among several."
+        },
+        "multiple_choice": {
+          "label": "Multiple choice",
+          "hint": "Several answers possible."
+        },
+        "short_text": {
+          "label": "Short answer",
+          "hint": "Free text, shared anonymously."
+        }
+      }
+    }
   }
 }
