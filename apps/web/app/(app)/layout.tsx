@@ -10,9 +10,11 @@ import type { SidebarClub } from '@evolve/ui'
 import { ToastProvider } from '@evolve/ui'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
+import { hasVoted } from '@evolve/data'
 import { AppChromeSidebar, AppChromeTopbar, AppChromeBottom } from '@/components/chrome/AppChrome'
 import { InstallBannerMount } from '@/components/pwa/InstallBannerMount'
 import { getSessionUser, getActiveClubMembership } from '@/lib/data/request'
+import { getOpenPolls, hasPollActivity as checkPollActivity } from '@/lib/data/polls'
 
 // Les pages app/* nécessitent l'auth Supabase — pas de prérendu statique
 export const dynamic = 'force-dynamic'
@@ -40,6 +42,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   // jamais l'UUID brut ni d'email. Posé côté client UNIQUEMENT si consentement accordé.
   let userIdHash: string | null = null
   let clubCount = 0
+  // Entrée « Votes » du menu (spec §5/§7) : visible si ≥ 1 vote open|closed du club.
+  let pollActivity = false
+  // Badge : nombre de votes ouverts non encore votés. Best-effort (jamais bloquant).
+  let pollsToVote = 0
 
   if (authUser) {
     const salt = process.env.ANALYTICS_USER_ID_SALT ?? 'evolve-uba'
@@ -82,6 +88,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       if (club.synced_at)
         syncLabel = t('syncedAt', { time: formatRelativeTime(club.synced_at, undefined, locale) })
     }
+
+    // Activité de votes (entrée menu) + nombre de votes à faire (badge). Non bloquant :
+    // toute erreur laisse l'entrée masquée et le badge à 0 (jamais de crash du chrome).
+    try {
+      pollActivity = await checkPollActivity(supabase)
+      if (pollActivity) {
+        const openPolls = await getOpenPolls(supabase)
+        const votedFlags = await Promise.all(openPolls.map((p) => hasVoted(supabase, p.id)))
+        pollsToVote = votedFlags.filter((v) => !v).length
+      }
+    } catch (error) {
+      console.error('[layout] activité de votes — ignorée :', error)
+    }
   }
 
   const user = {
@@ -105,6 +124,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                 syncLabel={syncLabel}
                 dateLabel={dateLabel}
                 clubActif={clubActif}
+                hasPollActivity={pollActivity}
+                pollsToVote={pollsToVote}
               />
               <main className="flex-1 px-4 pb-24 pt-6 md:px-8 md:pb-10 md:pt-8">
                 <div className="mx-auto w-full max-w-[1280px]">{children}</div>

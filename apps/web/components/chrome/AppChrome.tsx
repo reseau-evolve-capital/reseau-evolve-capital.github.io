@@ -17,6 +17,7 @@ import {
   AppTopbar,
   BottomNav,
   FeedbackSheet,
+  Icon,
   ThemeToggle,
   type AppHeaderUser,
   type FeedbackLabels,
@@ -106,13 +107,25 @@ export function AppChromeTopbar({
   syncLabel,
   dateLabel,
   clubActif,
+  hasPollActivity = false,
+  pollsToVote = 0,
 }: {
   user: AppHeaderUser
   isStaff: boolean
   syncLabel?: string
   dateLabel?: string
   clubActif?: SidebarClub
+  /** Vrai si ≥ 1 vote open|closed visible du club (spec §5 — entrée « Votes » conditionnelle). */
+  hasPollActivity?: boolean
+  /** Nombre de votes ouverts non encore votés (badge sur l'entrée Votes). 0 = pas de badge. */
+  pollsToVote?: number
 }) {
+  // NB (arbitrage) : l'entrée « Votes » du dropdown avatar (spec §7) NÉCESSITE un point
+  // d'extension sur AppTopbar (@evolve/ui) — non disponible dans la version livrée, et
+  // packages/ui est hors périmètre de ce ticket. En attendant ce follow-up @evolve/ui
+  // (ajout d'une entrée de menu paramétrable), on rend ici une ENTRÉE « Votes » dédiée et
+  // CONDITIONNELLE (hasPollActivity) dans la topbar, avec badge du nombre de votes à faire,
+  // qui navigue vers /votes. Visuellement intégrée, focus visible, cible ≥ 44px.
   const t = useTranslations('nav')
   const messages = useMessages()
   const pathname = usePathname()
@@ -145,7 +158,8 @@ export function AppChromeTopbar({
   useEffect(() => {
     router.prefetch('/profil')
     if (isStaff) router.prefetch('/admin')
-  }, [router, isStaff])
+    if (hasPollActivity) router.prefetch('/votes')
+  }, [router, isStaff, hasPollActivity])
 
   const handleLogout = async () => {
     // PWA-001 : purge le cache de données du SW pour ne pas laisser de données financières
@@ -155,8 +169,34 @@ export function AppChromeTopbar({
     router.push('/login')
   }
 
+  const pollsBadge = pollsToVote > 0 ? (pollsToVote > 9 ? '9+' : String(pollsToVote)) : null
+
   return (
     <>
+      {/* Entrée « Votes » conditionnelle (spec §5/§7). Rendue à gauche du cluster avatar de la
+          topbar via un conteneur relatif (en attendant le point d'extension @evolve/ui). */}
+      <div className="relative">
+        {hasPollActivity ? (
+          <Link
+            href="/votes"
+            aria-label={pollsBadge ? `${t('topbar.votes')} (${pollsToVote})` : t('topbar.votes')}
+            className="absolute right-16 top-1/2 z-50 inline-flex min-h-[44px] -translate-y-1/2 items-center gap-1.5 rounded-[var(--r-md)] px-2 text-text-sec outline-none transition-colors hover:text-text focus-visible:shadow-[var(--sh-glow)] md:right-20"
+          >
+            <span className="relative inline-flex">
+              <Icon name="Vote" size={20} aria-hidden="true" />
+              {pollsBadge ? (
+                <span
+                  aria-hidden="true"
+                  className="absolute -right-2 -top-1 inline-flex min-w-[16px] items-center justify-center rounded-full bg-brand-yellow px-1 text-[10px] font-bold leading-[16px] text-accent-ink"
+                >
+                  {pollsBadge}
+                </span>
+              ) : null}
+            </span>
+            <span className="hidden text-[13px] font-semibold lg:inline">{t('topbar.votes')}</span>
+          </Link>
+        ) : null}
+      </div>
       <AppTopbar
         user={user}
         linkComponent={Link}
