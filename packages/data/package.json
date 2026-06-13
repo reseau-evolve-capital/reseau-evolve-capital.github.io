@@ -8,6 +8,7 @@
     "./supabase/client": "./src/supabase/client.ts",
     "./supabase/server": "./src/supabase/server.ts",
     "./prices": "./src/prices/index.ts",
+    "./polls": "./src/polls/index.ts",
     "./emails": "./src/emails/index.ts",
     "./pdf": "./src/pdf/index.ts",
     "./brevo": "./src/brevo/index.ts"
