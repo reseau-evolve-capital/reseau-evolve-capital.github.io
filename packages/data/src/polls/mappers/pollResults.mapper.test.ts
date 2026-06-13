@@ -8,6 +8,7 @@ describe('mapPollResults', () => {
       poll_id: 'p1',
       question_type: 'single_choice',
       total_responses: 3,
+      eligible_members: 4,
       options: [
         { option: 'oui', count: 2, pct: 66.67 },
         { option: 'non', count: 1, pct: 33.33 },
@@ -18,6 +19,7 @@ describe('mapPollResults', () => {
     expect(r.pollId).toBe('p1')
     expect(r.questionType).toBe('single_choice')
     expect(r.totalResponses).toBe(3)
+    expect(r.eligibleMembers).toBe(4)
     expect(r.options).toEqual([
       { option: 'oui', count: 2, pct: 66.67 },
       { option: 'non', count: 1, pct: 33.33 },
@@ -30,6 +32,7 @@ describe('mapPollResults', () => {
       poll_id: 'p2',
       question_type: 'short_text',
       total_responses: 1,
+      eligible_members: 5,
       options: [],
       text_responses: ['Plus de visios svp'],
     }
