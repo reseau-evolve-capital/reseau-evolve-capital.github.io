@@ -62,7 +62,9 @@ export function AvatarUpload({
         onDrop={onDrop}
         aria-label={uploadAriaLabel}
         className={cn(
-          'relative grid h-[120px] w-[120px] place-items-center overflow-hidden rounded-full',
+          // Responsive : 88px sur mobile (laisse respirer le nom à côté sur les fiches denses),
+          // 120px dès `sm`. `shrink-0` garantit que l'avatar ne se déforme jamais en flex-row.
+          'relative grid h-[88px] w-[88px] shrink-0 place-items-center overflow-hidden rounded-full sm:h-[120px] sm:w-[120px]',
           'border-2 border-dashed border-border text-text-ter',
           'transition-colors duration-[150ms]',
           'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]',
