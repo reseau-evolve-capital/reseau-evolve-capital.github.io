@@ -34,7 +34,8 @@
       "userMenu": "User menu",
       "admin": "Treasurer area",
       "profile": "Profile",
-      "logout": "Log out"
+      "logout": "Log out",
+      "feedback": "Feedback"
     },
     "themeToggle": {
       "toggle": "Toggle theme",
@@ -1026,5 +1027,39 @@
     "analyticsTitle": "Analytics cookies",
     "analyticsDesc": "Google Analytics — anonymised audience measurement to understand usage and improve the app.",
     "regionLabel": "Cookie preferences"
+  },
+  "feedback": {
+    "title": "Something to share?",
+    "subtitle": "Bug, idea or question — we read every message.",
+    "close": "Close",
+    "typeLabel": "Feedback type",
+    "messageLabel": "Your message",
+    "contextLabel": "Captured route",
+    "submit": "Send →",
+    "sending": "Sending…",
+    "attach": "Attach a screenshot (optional)",
+    "attached": "Screenshot attached",
+    "remove": "Remove",
+    "privacyNote": "This screenshot will only be shared with the technical team.",
+    "types": {
+      "bug": "Bug",
+      "feature": "Idea",
+      "question": "Question"
+    },
+    "placeholders": {
+      "bug": "Describe what you noticed…",
+      "feature": "Describe your idea…",
+      "question": "Ask your question…"
+    },
+    "success": {
+      "title": "Thanks for your feedback.",
+      "subtitle": "We've received it. We'll get back to you by email if we need any details.",
+      "pill": "Check your inbox",
+      "close": "Close"
+    },
+    "error": {
+      "title": "Couldn't send.",
+      "retry": "Try again"
+    }
   }
 }

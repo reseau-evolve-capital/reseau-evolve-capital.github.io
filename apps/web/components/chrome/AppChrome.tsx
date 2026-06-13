@@ -8,21 +8,26 @@
 //
 // Composants client distincts pour respecter la frontière RSC : la sidebar et la
 // topbar reçoivent leurs données (user, club, sync, date) depuis le layout serveur.
-import { useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useMessages, useTranslations } from 'next-intl'
 import {
   Sidebar,
   AppTopbar,
   BottomNav,
+  FeedbackSheet,
   ThemeToggle,
   type AppHeaderUser,
+  type FeedbackLabels,
+  type FeedbackSubmission,
   type NavItem,
   type SidebarClub,
 } from '@evolve/ui'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
+import { submitFeedbackAction } from '@/lib/feedback/actions'
+import { captureScreenshot } from '@/lib/feedback/capture'
 import { clearPwaDataCaches } from '@/lib/pwa/register-sw'
 
 // icon-192.png : icône PWA générée (fond crème #F4F4F2, artwork centré).
@@ -109,8 +114,26 @@ export function AppChromeTopbar({
   clubActif?: SidebarClub
 }) {
   const t = useTranslations('nav')
+  const messages = useMessages()
+  const pathname = usePathname()
   const router = useRouter()
   const supabase = useSupabase()
+
+  // Feedback Widget (LOT D) : état d'ouverture local + sheet monté à côté de la topbar
+  // (résout R1 : pas de <AppChrome> racine). L'icône déclencheuse vit dans AppTopbar.
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+
+  // Objet de labels i18n : `useMessages()` renvoie l'arbre complet typé (typeof fr via
+  // global.d.ts), donc `messages.feedback` EST le sous-objet de labels — on évite `t('feedback')`
+  // qui ne renverrait qu'une string. La forme correspond à l'interface FeedbackLabels.
+  const feedbackLabels = messages.feedback as FeedbackLabels
+
+  // Submit → Server Action. Le FeedbackSheet attend une promesse qui REJETTE en cas d'échec
+  // (→ état error, type+message conservés) et résout sinon (→ état success).
+  const handleFeedbackSubmit = useCallback(async (data: FeedbackSubmission) => {
+    const res = await submitFeedbackAction(data)
+    if (!res.ok) throw new Error(res.error)
+  }, [])
 
   // Ticket C : les entrées « Profil »/« Admin » du menu utilisateur naviguent via
   // `router.push` (callbacks AppTopbar de @evolve/ui) — contrairement à <Link>, push ne
@@ -131,34 +154,46 @@ export function AppChromeTopbar({
   }
 
   return (
-    <AppTopbar
-      user={user}
-      linkComponent={Link}
-      canAccessAdmin={isStaff}
-      onAdmin={() => router.push('/admin')}
-      onProfile={() => router.push('/profil')}
-      onLogout={() => {
-        void handleLogout()
-      }}
-      syncLabel={syncLabel}
-      dateLabel={dateLabel}
-      localeSwitcher={<LocaleSwitcherClient />}
-      themeToggle={
-        <ThemeToggle
-          toggleLabel={t('themeToggle.toggle')}
-          switchToLightLabel={t('themeToggle.switchToLight')}
-          switchToDarkLabel={t('themeToggle.switchToDark')}
-        />
-      }
-      logoSrc={LOGO_SRC}
-      clubName={clubActif?.name}
-      labels={{
-        userMenu: t('topbar.userMenu'),
-        admin: t('topbar.admin'),
-        profile: t('topbar.profile'),
-        logout: t('topbar.logout'),
-      }}
-    />
+    <>
+      <AppTopbar
+        user={user}
+        linkComponent={Link}
+        canAccessAdmin={isStaff}
+        onAdmin={() => router.push('/admin')}
+        onProfile={() => router.push('/profil')}
+        onLogout={() => {
+          void handleLogout()
+        }}
+        onFeedback={() => setFeedbackOpen(true)}
+        feedbackLabel={t('topbar.feedback')}
+        syncLabel={syncLabel}
+        dateLabel={dateLabel}
+        localeSwitcher={<LocaleSwitcherClient />}
+        themeToggle={
+          <ThemeToggle
+            toggleLabel={t('themeToggle.toggle')}
+            switchToLightLabel={t('themeToggle.switchToLight')}
+            switchToDarkLabel={t('themeToggle.switchToDark')}
+          />
+        }
+        logoSrc={LOGO_SRC}
+        clubName={clubActif?.name}
+        labels={{
+          userMenu: t('topbar.userMenu'),
+          admin: t('topbar.admin'),
+          profile: t('topbar.profile'),
+          logout: t('topbar.logout'),
+        }}
+      />
+      <FeedbackSheet
+        open={feedbackOpen}
+        onOpenChange={setFeedbackOpen}
+        currentRoute={pathname ?? '/'}
+        onSubmit={handleFeedbackSubmit}
+        labels={feedbackLabels}
+        onCaptureScreenshot={captureScreenshot}
+      />
+    </>
   )
 }
 
