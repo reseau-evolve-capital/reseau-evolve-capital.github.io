@@ -34,7 +34,8 @@
       "userMenu": "Menu utilisateur",
       "admin": "Espace trésorier",
       "profile": "Profil",
-      "logout": "Déconnexion"
+      "logout": "Déconnexion",
+      "feedback": "Retour"
     },
     "themeToggle": {
       "toggle": "Basculer le thème",
@@ -1026,5 +1027,39 @@
     "analyticsTitle": "Cookies d'analyse",
     "analyticsDesc": "Google Analytics — mesure d'audience anonymisée pour comprendre l'usage et améliorer l'app.",
     "regionLabel": "Préférences de cookies"
+  },
+  "feedback": {
+    "title": "Un retour à partager ?",
+    "subtitle": "Bug, idée ou question — on lit chaque message.",
+    "close": "Fermer",
+    "typeLabel": "Type de retour",
+    "messageLabel": "Ton message",
+    "contextLabel": "Route capturée",
+    "submit": "Envoyer →",
+    "sending": "Envoi…",
+    "attach": "Joindre une capture d'écran (optionnel)",
+    "attached": "Capture jointe",
+    "remove": "Retirer",
+    "privacyNote": "Cette capture sera partagée uniquement avec l'équipe technique.",
+    "types": {
+      "bug": "Bug",
+      "feature": "Idée",
+      "question": "Question"
+    },
+    "placeholders": {
+      "bug": "Décris ce que tu as constaté…",
+      "feature": "Décris ton idée…",
+      "question": "Pose ta question…"
+    },
+    "success": {
+      "title": "Merci pour ton retour.",
+      "subtitle": "On l'a bien reçu. On revient vers toi par e-mail si on a besoin d'une précision.",
+      "pill": "Vérifie ta boîte mail",
+      "close": "Fermer"
+    },
+    "error": {
+      "title": "L'envoi a échoué.",
+      "retry": "Réessayer"
+    }
   }
 }
