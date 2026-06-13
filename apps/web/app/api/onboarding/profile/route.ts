@@ -13,6 +13,7 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import * as Sentry from '@sentry/nextjs'
 import { createServerClient } from '@evolve/data'
 
 export const runtime = 'nodejs'
@@ -83,7 +84,13 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (avatarUrl) update.avatar_url = avatarUrl
 
   const { error: updErr } = await supabase.from('users').update(update).eq('id', user.id)
-  if (updErr) return NextResponse.json({ error: "Échec de l'enregistrement." }, { status: 500 })
+  if (updErr) {
+    Sentry.captureException(updErr, {
+      tags: { endpoint: '/api/onboarding/profile' },
+      user: { id: user.id },
+    })
+    return NextResponse.json({ error: "Échec de l'enregistrement." }, { status: 500 })
+  }
 
   return NextResponse.json({ user_id: user.id, onboarding_completed: true })
 }

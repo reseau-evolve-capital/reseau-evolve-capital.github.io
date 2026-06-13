@@ -8,6 +8,7 @@ import { getNewsletterBySlug } from '@/lib/strapi-editorial'
 import { guardStaff } from '../_guard'
 import { renderNewsletterHtml, subjectFor } from '../_render'
 import { newsletterSender, testRecipients } from '../config'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
@@ -44,7 +45,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       sender: newsletterSender(),
       to: recipients,
     })
-  } catch {
+  } catch (error) {
+    captureRouteError(error, { endpoint: '/api/newsletter/send-test' })
     return NextResponse.json({ error: "Échec de l'envoi du test." }, { status: 502 })
   }
 

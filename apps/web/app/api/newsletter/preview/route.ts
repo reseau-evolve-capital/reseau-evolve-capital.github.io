@@ -6,6 +6,7 @@ import { NextResponse } from 'next/server'
 import { getNewsletterBySlug } from '@/lib/strapi-editorial'
 import { guardStaff } from '../_guard'
 import { renderNewsletterHtml } from '../_render'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
@@ -21,7 +22,8 @@ export async function GET(request: Request): Promise<Response> {
     const article = await getNewsletterBySlug(slug)
     if (!article) return NextResponse.json({ error: 'Édition introuvable.' }, { status: 404 })
     html = await renderNewsletterHtml(article)
-  } catch {
+  } catch (error) {
+    captureRouteError(error, { endpoint: '/api/newsletter/preview', extra: { slug } })
     return NextResponse.json({ error: "Erreur de rendu de l'aperçu." }, { status: 500 })
   }
 

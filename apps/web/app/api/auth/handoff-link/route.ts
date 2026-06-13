@@ -26,6 +26,7 @@ import { createServerClient, createServiceRoleClient } from '@evolve/data'
 
 import { siteOrigin } from '@/lib/invitations/token'
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rate-limit'
+import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
@@ -58,6 +59,11 @@ export async function POST(): Promise<NextResponse> {
   if (error || !hashed) {
     // Log server-only — on ne fuite jamais le détail au client (credential / surface d'attaque).
     console.error('handoff-link: échec generateLink', error?.message ?? 'hashed_token absent')
+    captureRouteError(error ?? new Error('mint_failed'), {
+      endpoint: '/api/auth/handoff-link',
+      userId: user.id,
+      extra: { reason: error?.message ?? 'hashed_token absent' },
+    })
     return NextResponse.json({ error: 'mint_failed' }, { status: 500 })
   }
 
