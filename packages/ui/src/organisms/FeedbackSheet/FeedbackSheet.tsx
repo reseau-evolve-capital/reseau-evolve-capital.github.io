@@ -3,14 +3,17 @@
 // FeedbackSheet — widget « un retour à partager ? » (bug / idée / question).
 //
 // Modale centrée sur scrim au-dessus du dashboard (desktop 480px) / bottom-sheet ancré
-// bas (mobile, grab-handle). 5 états : idle | screenshot-preview | loading | success | error.
+// bas (mobile, grab-handle). 5 états : idle | (idle avec images) | loading | success | error.
 //
 // PRÉSENTATIONNEL STRICT (CLAUDE.md) : packages/ui ne dépend JAMAIS d'i18n, de
 // packages/data, ni de html2canvas. Toute la copy arrive par props (`labels`) avec des
-// défauts FR tutoiement. La capture est DÉLÉGUÉE à l'app via le callback
-// `onCaptureScreenshot` (l'app fournit html2canvas + masque le sheet avant le rendu).
-// Le composant capture seulement `window.location.href` + `navigator.userAgent` au submit
-// (composant 'use client' → accès window OK).
+// défauts FR tutoiement.
+//
+// Pièces jointes : l'utilisateur joint SES PROPRES images (jusqu'à 3). Le bouton « Joindre »
+// déclenche un <input type="file" accept="image/*" multiple hidden> et les fichiers sont lus
+// en data URLs via FileReader (API navigateur pure — OK en 'use client', aucune dép externe).
+// Plus AUCUNE capture automatique (l'ancien flow onCaptureScreenshot / html2canvas est retiré).
+// Le composant capture `window.location.href` + `navigator.userAgent` au submit.
 //
 // Tokens uniquement, jamais de hex en dur. État error = tokens dataviz `data-negative`
 // (bg-data-negative-50, border-l --data-negative, texte --data-negative-strong) — JAMAIS
@@ -28,15 +31,29 @@ import { cn } from '../../lib/cn'
 
 export type FeedbackType = 'bug' | 'feature' | 'question'
 
+/** Nombre maximum d'images jointes. Le surplus est ignoré proprement (pas de crash). */
+export const MAX_FEEDBACK_IMAGES = 3
+
 export interface FeedbackSubmission {
   type: FeedbackType
   message: string
-  screenshotDataUrl?: string
+  /** Jusqu'à 3 data URLs d'images chargées par l'utilisateur (remplace screenshotDataUrl). */
+  imageDataUrls?: string[]
   pageUrl: string
   pageRoute: string
   userAgent: string
 }
 
+/**
+ * Chaînes user-facing + a11y (i18n). Tout est optionnel — défauts FR tutoiement.
+ * apps/web (LOT D) fournit les valeurs fr/en. Clés relatives aux pièces jointes :
+ *  - `attach`      : libellé du bouton « Joindre » (déclenche le sélecteur de fichiers).
+ *  - `attachMax`   : hint affiché quand 3 images sont jointes (bouton masqué).
+ *  - `attached`    : texte SR/badge « Image jointe » sur une vignette.
+ *  - `remove`      : libellé visible du bouton retirer.
+ *  - `removeImage` : modèle d'aria-label paramétrable, « {n} » remplacé par l'index 1-based.
+ *  - `privacyNote` : mention vie privée (plurielle, honnête — pas de claim de floutage).
+ */
 export interface FeedbackLabels {
   /** Titre de l'en-tête. */
   title?: string
@@ -52,13 +69,17 @@ export interface FeedbackLabels {
   messageLabel?: string
   /** Placeholders par type. */
   placeholders?: Partial<Record<FeedbackType, string>>
-  /** Bouton joindre une capture. */
+  /** Bouton joindre des images (déclenche le sélecteur de fichiers natif). */
   attach?: string
-  /** Badge « Capture jointe » sur la vignette. */
+  /** Hint affiché quand le maximum d'images est atteint (ex. « 3 images maximum »). */
+  attachMax?: string
+  /** Texte SR/badge sur chaque vignette (« Image jointe »). */
   attached?: string
-  /** Bouton « Retirer » la capture. */
+  /** Libellé visible du bouton « Retirer » une image. */
   remove?: string
-  /** Mention vie privée sous la vignette (honnête — pas de claim « floutés »). */
+  /** Modèle d'aria-label du bouton retirer ; « {n} » → index 1-based de l'image. */
+  removeImage?: string
+  /** Mention vie privée sous les vignettes (plurielle, honnête — pas de claim « floutées »). */
   privacyNote?: string
   /** Label de la clé route dans l'encart contexte (« Route capturée »). */
   contextLabel?: string
@@ -89,8 +110,10 @@ interface ResolvedLabels {
   messageLabel: string
   placeholders: Record<FeedbackType, string>
   attach: string
+  attachMax: string
   attached: string
   remove: string
+  removeImage: string
   privacyNote: string
   contextLabel: string
   submit: string
@@ -111,10 +134,12 @@ const DEFAULTS: ResolvedLabels = {
     feature: 'Décris ton idée…',
     question: 'Pose ta question…',
   },
-  attach: "Joindre une capture d'écran (optionnel)",
-  attached: 'Capture jointe',
+  attach: 'Joindre des images (optionnel)',
+  attachMax: '3 images maximum',
+  attached: 'Image jointe',
   remove: 'Retirer',
-  privacyNote: 'Cette capture sera partagée uniquement avec l’équipe technique.',
+  removeImage: 'Retirer l’image {n}',
+  privacyNote: 'Ces images seront partagées uniquement avec l’équipe technique.',
   contextLabel: 'Route capturée',
   submit: 'Envoyer →',
   sending: 'Envoi…',
@@ -144,17 +169,28 @@ export interface FeedbackSheetProps {
   onOpenChange: (open: boolean) => void
   /** Route lisible affichée dans l'encart contexte (ex. « /portefeuille · 18.04 »). */
   currentRoute: string
-  /** Appelé au submit. Résout → success, rejette → error (type+message conservés). */
+  /** Appelé au submit. Résout → success, rejette → error (type+message+images conservés). */
   onSubmit: (data: FeedbackSubmission) => Promise<void>
   /** Chaînes user-facing/a11y (i18n). Tout défaut est FR tutoiement. */
   labels?: FeedbackLabels
-  /** L'app fournit html2canvas + masque le sheet ; renvoie une dataURL (ou undefined). Si
-   * absent, le bouton joindre est masqué (pas de capture possible côté ui). */
-  onCaptureScreenshot?: () => Promise<string | undefined>
 }
 
 const TYPES: readonly FeedbackType[] = ['bug', 'feature', 'question'] as const
 type Phase = 'idle' | 'loading' | 'success' | 'error'
+
+/** Lit un File image en data URL (API navigateur pure ; aucune dép externe). */
+function readImageFileAsDataUrl(file: File): Promise<string | undefined> {
+  return new Promise((resolve) => {
+    if (!file.type.startsWith('image/')) {
+      resolve(undefined)
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : undefined)
+    reader.onerror = () => resolve(undefined)
+    reader.readAsDataURL(file)
+  })
+}
 
 /** Spinner inline (largeur du CTA conservée pendant le loading). */
 function CtaSpinner() {
@@ -193,25 +229,24 @@ export function FeedbackSheet({
   currentRoute,
   onSubmit,
   labels,
-  onCaptureScreenshot,
 }: FeedbackSheetProps) {
   const t = resolveLabels(labels)
   const descId = React.useId()
 
   const [type, setType] = React.useState<FeedbackType>('feature')
   const [message, setMessage] = React.useState('')
-  const [screenshot, setScreenshot] = React.useState<string | undefined>(undefined)
+  const [images, setImages] = React.useState<string[]>([])
   const [phase, setPhase] = React.useState<Phase>('idle')
-  const [capturing, setCapturing] = React.useState(false)
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null)
 
   // Réinitialise tout l'état à chaque (ré)ouverture — jamais d'état rémanent.
   React.useEffect(() => {
     if (open) {
       setType('feature')
       setMessage('')
-      setScreenshot(undefined)
+      setImages([])
       setPhase('idle')
-      setCapturing(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
     }
   }, [open])
 
@@ -219,15 +254,31 @@ export function FeedbackSheet({
   const canSubmit = trimmed.length > 0 && phase !== 'loading'
   const isLoading = phase === 'loading'
 
-  const handleCapture = async () => {
-    if (!onCaptureScreenshot || capturing) return
-    setCapturing(true)
-    try {
-      const dataUrl = await onCaptureScreenshot()
-      if (dataUrl) setScreenshot(dataUrl)
-    } finally {
-      setCapturing(false)
+  // Clic sur « Joindre » → ouvre le sélecteur de fichiers natif.
+  const openFilePicker = () => {
+    fileInputRef.current?.click()
+  }
+
+  // Lecture des fichiers choisis → data URLs, cap à MAX_FEEDBACK_IMAGES (surplus ignoré).
+  const handleFilesSelected = async (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return
+    const remaining = MAX_FEEDBACK_IMAGES - images.length
+    if (remaining <= 0) {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
     }
+    const picked = Array.from(fileList).slice(0, remaining)
+    const dataUrls = await Promise.all(picked.map(readImageFileAsDataUrl))
+    const valid = dataUrls.filter((u): u is string => typeof u === 'string')
+    if (valid.length > 0) {
+      setImages((prev) => [...prev, ...valid].slice(0, MAX_FEEDBACK_IMAGES))
+    }
+    // Réinitialise l'input pour autoriser la re-sélection du même fichier.
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const removeImageAt = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async () => {
@@ -237,14 +288,14 @@ export function FeedbackSheet({
       await onSubmit({
         type,
         message: trimmed,
-        ...(screenshot ? { screenshotDataUrl: screenshot } : {}),
+        ...(images.length > 0 ? { imageDataUrls: images } : {}),
         pageUrl: typeof window !== 'undefined' ? window.location.href : '',
         pageRoute: currentRoute,
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
       })
       setPhase('success')
     } catch {
-      // Conserve type + message pour le « Réessayer » (re-rempli).
+      // Conserve type + message + images pour le « Réessayer » (re-rempli).
       setPhase('error')
     }
   }
@@ -283,12 +334,12 @@ export function FeedbackSheet({
               setType={setType}
               message={message}
               setMessage={setMessage}
-              screenshot={screenshot}
-              onRemoveScreenshot={() => setScreenshot(undefined)}
+              images={images}
+              onRemoveImage={removeImageAt}
+              fileInputRef={fileInputRef}
+              onOpenFilePicker={openFilePicker}
+              onFilesSelected={handleFilesSelected}
               currentRoute={currentRoute}
-              onCaptureScreenshot={onCaptureScreenshot}
-              onCapture={handleCapture}
-              capturing={capturing}
               phase={phase}
               isLoading={isLoading}
               canSubmit={canSubmit}
@@ -325,12 +376,12 @@ interface FormViewProps {
   setType: (t: FeedbackType) => void
   message: string
   setMessage: (m: string) => void
-  screenshot: string | undefined
-  onRemoveScreenshot: () => void
+  images: string[]
+  onRemoveImage: (index: number) => void
+  fileInputRef: React.RefObject<HTMLInputElement | null>
+  onOpenFilePicker: () => void
+  onFilesSelected: (files: FileList | null) => void
   currentRoute: string
-  onCaptureScreenshot: (() => Promise<string | undefined>) | undefined
-  onCapture: () => void
-  capturing: boolean
   phase: Phase
   isLoading: boolean
   canSubmit: boolean
@@ -345,12 +396,12 @@ function FormView({
   setType,
   message,
   setMessage,
-  screenshot,
-  onRemoveScreenshot,
+  images,
+  onRemoveImage,
+  fileInputRef,
+  onOpenFilePicker,
+  onFilesSelected,
   currentRoute,
-  onCaptureScreenshot,
-  onCapture,
-  capturing,
   phase,
   isLoading,
   canSubmit,
@@ -360,6 +411,8 @@ function FormView({
   const msgId = React.useId()
   // Pendant le loading, le formulaire est figé (opacity + pointer-events).
   const frozen = isLoading
+  const hasImages = images.length > 0
+  const atMax = images.length >= MAX_FEEDBACK_IMAGES
 
   return (
     <>
@@ -429,58 +482,84 @@ function FormView({
           disabled={frozen}
           className={cn(
             'mt-2 block w-full resize-y rounded-[var(--r-md)] p-3',
-            screenshot ? 'min-h-[72px]' : 'min-h-[120px]',
+            hasImages ? 'min-h-[72px]' : 'min-h-[120px]',
             'border border-border-strong bg-card-sub text-[14px] text-text placeholder:text-text-ter',
             'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]'
           )}
         />
 
-        {/* Capture : bouton joindre (idle) OU vignette + mention (preview). */}
-        {screenshot ? (
+        {/* Input fichier natif (caché) — déclenché par le bouton « Joindre ». */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          hidden
+          aria-hidden="true"
+          tabIndex={-1}
+          onChange={(e) => onFilesSelected(e.target.files)}
+        />
+
+        {/* Vignettes des images jointes (grille jusqu'à 3 colonnes). */}
+        {hasImages && (
           <div className="mt-4">
-            <div className="relative aspect-video w-full overflow-hidden rounded-[var(--r-md)] border border-border bg-card-sub">
-              <img src={screenshot} alt="" className="h-full w-full object-cover" />
-              <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-[var(--r-pill)] bg-accent px-2 py-1 text-[11px] font-bold text-accent-ink">
-                <Icon name="Image" size={16} aria-hidden="true" />
-                {t.attached}
-              </span>
-              <button
-                type="button"
-                onClick={onRemoveScreenshot}
-                className={cn(
-                  'absolute right-2 top-2 inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1',
-                  'rounded-[var(--r-pill)] bg-card/90 px-2 text-[12px] font-bold text-[var(--data-negative-strong)]',
-                  'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]'
-                )}
-              >
-                <Icon name="X" size={16} aria-hidden="true" />
-                {t.remove}
-              </button>
-            </div>
+            <ul className="grid grid-cols-3 gap-2">
+              {images.map((src, index) => (
+                <li
+                  key={`${index}-${src.slice(0, 24)}`}
+                  className="relative aspect-square overflow-hidden rounded-[var(--r-md)] border border-border bg-card-sub"
+                >
+                  <img src={src} alt="" className="h-full w-full object-cover" />
+                  <span className="sr-only">{t.attached}</span>
+                  <button
+                    type="button"
+                    onClick={() => onRemoveImage(index)}
+                    aria-label={t.removeImage.replace('{n}', String(index + 1))}
+                    className={cn(
+                      'absolute right-1 top-1 inline-flex min-h-[44px] min-w-[44px] items-center justify-center',
+                      'rounded-[var(--r-pill)] bg-card/90 text-[var(--data-negative-strong)]',
+                      'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]'
+                    )}
+                  >
+                    <Icon name="X" size={16} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
             <p className="mt-2 flex items-center gap-1.5 text-[12px] italic text-text-ter">
               <Icon name="Lock" size={16} aria-hidden="true" />
               {t.privacyNote}
             </p>
           </div>
+        )}
+
+        {/* Bouton joindre (dashed) tant que < 3 images ; sinon hint « max ». */}
+        {atMax ? (
+          <p className="mt-4 flex items-center justify-center gap-1.5 rounded-[var(--r-md)] border border-dashed border-border px-3 py-3 text-[12px] text-text-ter">
+            <Icon name="Image" size={16} aria-hidden="true" />
+            {t.attachMax}
+          </p>
         ) : (
-          onCaptureScreenshot && (
-            <button
-              type="button"
-              onClick={onCapture}
-              disabled={capturing || frozen}
-              aria-busy={capturing || undefined}
-              className={cn(
-                'mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-2',
-                'rounded-[var(--r-md)] border border-dashed border-border-strong px-3 text-[13px] text-text-sec',
-                'transition-colors duration-[150ms] hover:text-text',
-                'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]',
-                'disabled:cursor-not-allowed disabled:opacity-50'
-              )}
-            >
-              {capturing ? <CtaSpinner /> : <Icon name="Image" size={20} aria-hidden="true" />}
-              {t.attach}
-            </button>
-          )
+          <button
+            type="button"
+            onClick={onOpenFilePicker}
+            disabled={frozen}
+            className={cn(
+              'mt-4 inline-flex min-h-[44px] w-full items-center justify-center gap-2',
+              'rounded-[var(--r-md)] border border-dashed border-border-strong px-3 text-[13px] text-text-sec',
+              'transition-colors duration-[150ms] hover:text-text',
+              'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)]',
+              'disabled:cursor-not-allowed disabled:opacity-50'
+            )}
+          >
+            <Icon name="Image" size={20} aria-hidden="true" />
+            {t.attach}
+            {hasImages && (
+              <span className="font-mono text-[12px] text-text-ter">
+                {images.length}/{MAX_FEEDBACK_IMAGES}
+              </span>
+            )}
+          </button>
         )}
 
         {/* Encart contexte : route capturée. */}

@@ -15,6 +15,39 @@ beforeAll(() => {
   if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => undefined
 })
 
+// FileReader.readAsDataURL déterministe (jsdom n'expose pas toujours un résultat stable) :
+// on stubbe la lecture pour renvoyer une dataURL prévisible par fichier. `result` étant
+// un getter-only sur le prototype jsdom, on le redéfinit sur l'instance avant le onload.
+beforeEach(() => {
+  vi.spyOn(FileReader.prototype, 'readAsDataURL').mockImplementation(function (
+    this: FileReader,
+    file: Blob
+  ) {
+    // Nom de fichier encodé dans la dataURL pour distinguer les vignettes.
+    const name = (file as File).name ?? 'img'
+    Object.defineProperty(this, 'result', {
+      configurable: true,
+      value: `data:image/png;base64,AAAA-${name}`,
+    })
+    this.onload?.(new ProgressEvent('load') as ProgressEvent<FileReader>)
+  })
+})
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
+function imageFile(name: string) {
+  return new File(['x'], name, { type: 'image/png' })
+}
+
+function getFileInput(): HTMLInputElement {
+  // Input file caché (type="file") — pas de rôle accessible, on le cible par sélecteur.
+  const input = document.body.querySelector('input[type="file"]')
+  if (!input) throw new Error('file input introuvable')
+  return input as HTMLInputElement
+}
+
 function setup(props: Partial<FeedbackSheetProps> = {}) {
   const onOpenChange = vi.fn()
   const onSubmit = vi.fn<(d: unknown) => Promise<void>>().mockResolvedValue(undefined)
@@ -75,16 +108,14 @@ describe('FeedbackSheet — idle', () => {
     expect(screen.getByRole('button', { name: 'Envoyer →' })).toBeEnabled()
   })
 
-  it('masque le bouton joindre quand onCaptureScreenshot est absent', () => {
+  it('le bouton joindre des images est toujours présent (input file dans le DOM)', () => {
     setup()
-    expect(screen.queryByRole('button', { name: /Joindre/i })).not.toBeInTheDocument()
-  })
-
-  it('affiche le bouton joindre quand onCaptureScreenshot est fourni', () => {
-    setup({ onCaptureScreenshot: vi.fn() })
     expect(
-      screen.getByRole('button', { name: "Joindre une capture d'écran (optionnel)" })
+      screen.getByRole('button', { name: 'Joindre des images (optionnel)' })
     ).toBeInTheDocument()
+    const input = getFileInput()
+    expect(input).toHaveAttribute('accept', 'image/*')
+    expect(input).toHaveAttribute('multiple')
   })
 })
 
@@ -104,6 +135,8 @@ describe('FeedbackSheet — submit', () => {
     })
     expect(typeof arg['pageUrl']).toBe('string')
     expect(typeof arg['userAgent']).toBe('string')
+    // Sans image jointe, imageDataUrls est absent.
+    expect(arg['imageDataUrls']).toBeUndefined()
   })
 
   it('après résolution de onSubmit, passe en success', async () => {
@@ -151,59 +184,88 @@ describe('FeedbackSheet — error', () => {
   })
 })
 
-describe('FeedbackSheet — capture', () => {
-  it('joindre → onCaptureScreenshot renvoie une dataURL → vignette + bouton retirer', async () => {
+describe('FeedbackSheet — images jointes', () => {
+  it('joindre une image → vignette + mention vie privée + bouton retirer', async () => {
     const u = userEvent.setup()
-    const onCaptureScreenshot = vi
-      .fn<() => Promise<string | undefined>>()
-      .mockResolvedValue('data:image/png;base64,AAAA')
-    setup({ onCaptureScreenshot })
-    await u.click(screen.getByRole('button', { name: "Joindre une capture d'écran (optionnel)" }))
-    await waitFor(() => expect(onCaptureScreenshot).toHaveBeenCalledTimes(1))
-    expect(await screen.findByText('Capture jointe')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Retirer' })).toBeInTheDocument()
-    // Mention vie privée honnête (pas de claim « floutés automatiquement »).
+    setup()
+    await u.upload(getFileInput(), imageFile('a.png'))
+    await waitFor(() => expect(document.body.querySelectorAll('img[alt=""]').length).toBe(1))
+    expect(screen.getByRole('button', { name: 'Retirer l’image 1' })).toBeInTheDocument()
+    expect(screen.getAllByText('Image jointe').length).toBe(1)
+    // Mention vie privée plurielle, honnête (pas de claim « floutées »).
     expect(
-      screen.getByText('Cette capture sera partagée uniquement avec l’équipe technique.')
+      screen.getByText('Ces images seront partagées uniquement avec l’équipe technique.')
+    ).toBeInTheDocument()
+    // Compteur discret 1/3 sur le bouton joindre encore visible.
+    expect(screen.getByText('1/3')).toBeInTheDocument()
+  })
+
+  it('retirer une image revient à l’état sans vignette', async () => {
+    const u = userEvent.setup()
+    setup()
+    await u.upload(getFileInput(), imageFile('a.png'))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Retirer l’image 1' })).toBeInTheDocument()
+    )
+    await u.click(screen.getByRole('button', { name: 'Retirer l’image 1' }))
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Retirer l’image 1' })).not.toBeInTheDocument()
+    )
+    expect(document.body.querySelectorAll('img[alt=""]').length).toBe(0)
+  })
+
+  it('cap à 3 : un 4ᵉ fichier est ignoré (max 3 vignettes)', async () => {
+    const u = userEvent.setup()
+    setup()
+    await u.upload(getFileInput(), [
+      imageFile('1.png'),
+      imageFile('2.png'),
+      imageFile('3.png'),
+      imageFile('4.png'),
+    ])
+    await waitFor(() => expect(document.body.querySelectorAll('img[alt=""]').length).toBe(3))
+    // À 3 images : bouton joindre masqué, hint « 3 images maximum » affiché.
+    expect(
+      screen.queryByRole('button', { name: 'Joindre des images (optionnel)' })
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('3 images maximum')).toBeInTheDocument()
+  })
+
+  it('ajout incrémental : tronque au-delà de 3 sur une 2ᵉ sélection', async () => {
+    const u = userEvent.setup()
+    setup()
+    await u.upload(getFileInput(), [imageFile('1.png'), imageFile('2.png')])
+    await waitFor(() => expect(document.body.querySelectorAll('img[alt=""]').length).toBe(2))
+    // 2 déjà + 2 nouveaux → cap à 3.
+    await u.upload(getFileInput(), [imageFile('3.png'), imageFile('4.png')])
+    await waitFor(() => expect(document.body.querySelectorAll('img[alt=""]').length).toBe(3))
+  })
+
+  it('un fichier non-image est ignoré proprement (pas de vignette)', async () => {
+    const u = userEvent.setup()
+    setup()
+    const notImage = new File(['x'], 'doc.pdf', { type: 'application/pdf' })
+    await u.upload(getFileInput(), notImage)
+    // Aucune vignette ; le composant ne crashe pas.
+    expect(document.body.querySelectorAll('img[alt=""]').length).toBe(0)
+    expect(
+      screen.getByRole('button', { name: 'Joindre des images (optionnel)' })
     ).toBeInTheDocument()
   })
 
-  it('retirer la capture revient à l’état sans vignette', async () => {
+  it('les dataURLs des images sont incluses dans le submit', async () => {
     const u = userEvent.setup()
-    const onCaptureScreenshot = vi
-      .fn<() => Promise<string | undefined>>()
-      .mockResolvedValue('data:image/png;base64,AAAA')
-    setup({ onCaptureScreenshot })
-    await u.click(screen.getByRole('button', { name: "Joindre une capture d'écran (optionnel)" }))
-    await screen.findByText('Capture jointe')
-    await u.click(screen.getByRole('button', { name: 'Retirer' }))
-    expect(screen.queryByText('Capture jointe')).not.toBeInTheDocument()
-  })
-
-  it('la dataURL capturée est incluse dans le submit', async () => {
-    const u = userEvent.setup()
-    const onCaptureScreenshot = vi
-      .fn<() => Promise<string | undefined>>()
-      .mockResolvedValue('data:image/png;base64,AAAA')
-    const { onSubmit } = setup({ onCaptureScreenshot })
-    await u.click(screen.getByRole('button', { name: "Joindre une capture d'écran (optionnel)" }))
-    await screen.findByText('Capture jointe')
-    await u.type(screen.getByLabelText('Ton message'), 'avec capture')
+    const { onSubmit } = setup()
+    await u.upload(getFileInput(), [imageFile('a.png'), imageFile('b.png')])
+    await waitFor(() => expect(document.body.querySelectorAll('img[alt=""]').length).toBe(2))
+    await u.type(screen.getByLabelText('Ton message'), 'avec images')
     await u.click(screen.getByRole('button', { name: 'Envoyer →' }))
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
     const arg = onSubmit.mock.calls[0]![0] as Record<string, unknown>
-    expect(arg['screenshotDataUrl']).toBe('data:image/png;base64,AAAA')
-  })
-
-  it('si onCaptureScreenshot renvoie undefined, pas de vignette (no-op propre)', async () => {
-    const u = userEvent.setup()
-    const onCaptureScreenshot = vi
-      .fn<() => Promise<string | undefined>>()
-      .mockResolvedValue(undefined)
-    setup({ onCaptureScreenshot })
-    await u.click(screen.getByRole('button', { name: "Joindre une capture d'écran (optionnel)" }))
-    await waitFor(() => expect(onCaptureScreenshot).toHaveBeenCalledTimes(1))
-    expect(screen.queryByText('Capture jointe')).not.toBeInTheDocument()
+    expect(arg['imageDataUrls']).toEqual([
+      'data:image/png;base64,AAAA-a.png',
+      'data:image/png;base64,AAAA-b.png',
+    ])
   })
 })
 
@@ -215,12 +277,15 @@ describe('FeedbackSheet — i18n', () => {
         types: { bug: 'Bug', feature: 'Idea', question: 'Question' },
         messageLabel: 'Your message',
         submit: 'Send →',
+        attach: 'Attach images (optional)',
+        removeImage: 'Remove image {n}',
       },
     })
     expect(screen.getByText('Share feedback?')).toBeInTheDocument()
     expect(screen.getByLabelText('Your message')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Idea' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Send →' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Attach images (optional)' })).toBeInTheDocument()
   })
 })
 
@@ -239,14 +304,24 @@ describe('FeedbackSheet — tokens & a11y', () => {
     expect(onOpenChange).toHaveBeenCalledWith(false)
   })
 
-  it('cibles tactiles : pills et CTA ont min-h ≥ 44px (classes)', () => {
-    setup({ onCaptureScreenshot: vi.fn() })
+  it('cibles tactiles : pills et bouton joindre ont min-h ≥ 44px (classes)', () => {
+    setup()
     const bug = screen.getByRole('button', { name: 'Bug' })
     expect(bug.className).toMatch(/min-h-\[44px\]/)
-    const attach = screen.getByRole('button', {
-      name: "Joindre une capture d'écran (optionnel)",
-    })
+    const attach = screen.getByRole('button', { name: 'Joindre des images (optionnel)' })
     expect(attach.className).toMatch(/min-h-\[44px\]/)
+  })
+
+  it('bouton retirer image : hit-area ≥ 44px (classes)', async () => {
+    const u = userEvent.setup()
+    setup()
+    await u.upload(getFileInput(), imageFile('a.png'))
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Retirer l’image 1' })).toBeInTheDocument()
+    )
+    const remove = screen.getByRole('button', { name: 'Retirer l’image 1' })
+    expect(remove.className).toMatch(/min-h-\[44px\]/)
+    expect(remove.className).toMatch(/min-w-\[44px\]/)
   })
 
   it('focus visible (glow) sur les interactifs', () => {
@@ -256,7 +331,15 @@ describe('FeedbackSheet — tokens & a11y', () => {
   })
 
   it('pas de violations axe (idle)', async () => {
-    const { baseElement } = setup({ onCaptureScreenshot: vi.fn() })
+    const { baseElement } = setup()
+    expect(await axe(baseElement)).toHaveNoViolations()
+  })
+
+  it('pas de violations axe (avec images jointes)', async () => {
+    const u = userEvent.setup()
+    const { baseElement } = setup()
+    await u.upload(getFileInput(), [imageFile('a.png'), imageFile('b.png')])
+    await waitFor(() => expect(document.body.querySelectorAll('img[alt=""]').length).toBe(2))
     expect(await axe(baseElement)).toHaveNoViolations()
   })
 
