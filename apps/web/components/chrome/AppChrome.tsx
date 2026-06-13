@@ -27,7 +27,6 @@ import {
 import { useSupabase } from '@/components/providers/SupabaseProvider'
 import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
 import { submitFeedbackAction } from '@/lib/feedback/actions'
-import { captureScreenshot } from '@/lib/feedback/capture'
 import { clearPwaDataCaches } from '@/lib/pwa/register-sw'
 
 // icon-192.png : icône PWA générée (fond crème #F4F4F2, artwork centré).
@@ -121,6 +120,7 @@ export function AppChromeTopbar({
 
   // Feedback Widget (LOT D) : état d'ouverture local + sheet monté à côté de la topbar
   // (résout R1 : pas de <AppChrome> racine). L'icône déclencheuse vit dans AppTopbar.
+  // L'utilisateur joint lui-même jusqu'à 3 images dans le sheet (plus de capture auto).
   const [feedbackOpen, setFeedbackOpen] = useState(false)
 
   // Objet de labels i18n : `useMessages()` renvoie l'arbre complet typé (typeof fr via
@@ -129,7 +129,8 @@ export function AppChromeTopbar({
   const feedbackLabels = messages.feedback as FeedbackLabels
 
   // Submit → Server Action. Le FeedbackSheet attend une promesse qui REJETTE en cas d'échec
-  // (→ état error, type+message conservés) et résout sinon (→ état success).
+  // (→ état error, type+message+images conservés) et résout sinon (→ état success).
+  // `data.imageDataUrls` (≤3) est transmis tel quel : la Server Action gère le multi-upload.
   const handleFeedbackSubmit = useCallback(async (data: FeedbackSubmission) => {
     const res = await submitFeedbackAction(data)
     if (!res.ok) throw new Error(res.error)
@@ -191,7 +192,6 @@ export function AppChromeTopbar({
         currentRoute={pathname ?? '/'}
         onSubmit={handleFeedbackSubmit}
         labels={feedbackLabels}
-        onCaptureScreenshot={captureScreenshot}
       />
     </>
   )
