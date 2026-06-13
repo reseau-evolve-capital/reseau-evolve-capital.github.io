@@ -42,11 +42,16 @@ export async function ProfileView({ data }: { data: ProfileData }) {
       </header>
 
       <section className="rounded-lg border border-border bg-card p-6 shadow-card">
-        <div className="flex items-center gap-4">
+        <div className="flex items-start gap-4">
           {/* Avatar cliquable — ouvre le sélecteur de fichier (ProfileAvatarUpload est client). */}
           <ProfileAvatarUpload initialUrl={data.avatarUrl} name={displayName} />
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <p className="truncate font-display text-[18px] font-bold text-text">{displayName}</p>
+          {/* `min-w-0` autorise le retour à la ligne du nom dans l'espace restant ;
+              le nom n'est JAMAIS tronqué (pas de `truncate`) — l'avatar ne doit pas masquer le
+              nom de famille (souvent long et en majuscules). `break-words` casse un mot trop long. */}
+          <div className="flex min-w-0 flex-col gap-1.5 pt-1">
+            <p className="font-display text-[18px] leading-snug font-bold break-words text-text">
+              {displayName}
+            </p>
             {roleLabel && data.role ? (
               <span>
                 <Badge variant={roleVariant(data.role)}>{roleLabel}</Badge>
