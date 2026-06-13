@@ -29,6 +29,7 @@ import { createElement } from 'npm:react@^19'
 
 import { createWelcomeHandler } from './handler.ts'
 import type { BrevoEmailPayload } from './handler.ts'
+import { alertSentry } from '../_shared/sentry.ts'
 
 import { WelcomeEmail } from '../../../packages/data/src/emails/WelcomeEmail.tsx'
 import { renderEmailHtml } from '../../../packages/data/src/emails/index.ts'
@@ -36,7 +37,15 @@ import { renderEmailHtml } from '../../../packages/data/src/emails/index.ts'
 /** POST l'email transactionnel sur l'API Brevo (`api-key` header). */
 async function sendBrevoEmail(payload: BrevoEmailPayload): Promise<void> {
   const apiKey = Deno.env.get('BREVO_API_KEY') ?? ''
-  if (apiKey === '') throw new Error('BREVO_API_KEY manquante.')
+  if (apiKey === '') {
+    const dsn = Deno.env.get('SENTRY_DSN')
+    await alertSentry(dsn, {
+      club_id: 'on-user-first-login',
+      errors: ['BREVO_API_KEY manquante'],
+      sheets: ['on-user-first-login'],
+    }).catch(() => {})
+    throw new Error('BREVO_API_KEY manquante.')
+  }
   const res = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: {
@@ -48,6 +57,12 @@ async function sendBrevoEmail(payload: BrevoEmailPayload): Promise<void> {
   })
   if (!res.ok) {
     const detail = await res.text().catch(() => '')
+    const dsn = Deno.env.get('SENTRY_DSN')
+    await alertSentry(dsn, {
+      club_id: 'on-user-first-login',
+      errors: [`Brevo ${res.status}: ${detail}`],
+      sheets: ['on-user-first-login'],
+    }).catch(() => {})
     throw new Error(`Brevo ${res.status}: ${detail}`)
   }
 }

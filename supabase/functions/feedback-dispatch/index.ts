@@ -43,6 +43,7 @@ import type { SupabaseClient } from 'npm:@supabase/supabase-js@^2'
 
 import { dispatchFeedback } from './handler.ts'
 import type { AiTriage, FeedbackRecord, FeedbackUpdater } from './handler.ts'
+import { alertSentry } from '../_shared/sentry.ts'
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -116,6 +117,12 @@ if (import.meta.main) {
       return json({ ok: true, result })
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
+      const dsn = Deno.env.get('SENTRY_DSN')
+      await alertSentry(dsn, {
+        club_id: record?.club_id ?? 'unknown',
+        errors: [message],
+        sheets: ['feedback-dispatch'],
+      }).catch(() => {})
       return json({ ok: false, error: message }, 500)
     }
   })

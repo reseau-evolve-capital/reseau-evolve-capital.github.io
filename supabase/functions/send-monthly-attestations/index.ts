@@ -31,6 +31,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { formatEUR, formatPct } from '@evolve/utils'
 
 import { BrevoRateLimitError, firstNameOf, runAttestationBatch } from './handler.ts'
+import { alertSentry } from '../_shared/sentry.ts'
 import type {
   AttestationAssembly,
   AttestationBatchDeps,
@@ -329,6 +330,12 @@ if (import.meta.main) {
       return json({ ok: true, ...summary })
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e)
+      const dsn = Deno.env.get('SENTRY_DSN')
+      await alertSentry(dsn, {
+        club_id: 'send-monthly-attestations',
+        errors: [message],
+        sheets: ['send-monthly-attestations'],
+      }).catch(() => {})
       return json({ ok: false, error: message }, 500)
     }
   })
