@@ -7,9 +7,18 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createServerClient } from '@evolve/data'
+import { captureActionError } from '@/lib/monitoring/sentry'
 
 export async function signOutAction(): Promise<void> {
   const supabase = createServerClient(await cookies())
-  await supabase.auth.signOut()
+  try {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      captureActionError(error, { action: 'signOut', extra: { code: error.code } })
+    }
+  } catch (err) {
+    captureActionError(err, { action: 'signOut' })
+  }
+  // Redirection inconditionnelle : même en cas d'erreur signOut, on renvoie vers /login.
   redirect('/login')
 }

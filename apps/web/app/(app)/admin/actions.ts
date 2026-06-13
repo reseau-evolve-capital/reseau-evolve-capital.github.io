@@ -14,6 +14,7 @@ import { resolveAdminContext } from '@/lib/data/admin'
 import { buildUpdateArgs, validateInput, type ClubSettingsInput } from '@/lib/data/clubSettings'
 import { getInvitationMailer } from '@/lib/invitations/mailer'
 import { newInviteToken, hashInviteToken, inviteUrl } from '@/lib/invitations/token'
+import { captureActionError } from '@/lib/monitoring/sentry'
 
 /** Résultat sans payload (lock/unlock/revoke). */
 export type ActionResult = { ok: true } | { ok: false; error: string }
@@ -39,6 +40,20 @@ function mapPgError(code: string | undefined): string {
   if (code === '22023') return 'invalid' // invalid_parameter_value : email/pays/plafond invalide
   if (code === 'P0002') return 'not_member' // B5 : RAISE « email hors club » (migration 031)
   return 'unknown'
+}
+
+/**
+ * Capture une erreur Supabase inattendue (code PG non mappé → 'unknown').
+ * Les erreurs métier connues (duplicate/forbidden/invalid/not_member) ne sont pas des bugs.
+ */
+function captureIfUnknown(
+  error: { code?: string; message?: string } | null | undefined,
+  action: string,
+  userId?: string
+): void {
+  if (!error) return
+  if (mapPgError(error.code) !== 'unknown') return
+  captureActionError(error, { action, userId, extra: { code: error.code, message: error.message } })
 }
 
 /**
@@ -80,7 +95,10 @@ export async function createInvitationAction(rawEmail: string): Promise<Invitati
     p_email: email,
     p_token_hash: hashInviteToken(token),
   })
-  if (error) return { ok: false, error: mapPgError(error.code) }
+  if (error) {
+    captureIfUnknown(error, 'createInvitation', user.id)
+    return { ok: false, error: mapPgError(error.code) }
+  }
 
   const link = inviteUrl(token)
   const delivered = await tryDeliverInvitation(email, link)
@@ -102,7 +120,10 @@ export async function resendInvitationAction(
     p_invitation_id: invitationId,
     p_token_hash: hashInviteToken(token),
   })
-  if (error) return { ok: false, error: mapPgError(error.code) }
+  if (error) {
+    captureIfUnknown(error, 'resendInvitation', user.id)
+    return { ok: false, error: mapPgError(error.code) }
+  }
 
   const link = inviteUrl(token)
   // L'email du destinataire n'est pas renvoyé par la RPC resend ; en V0 le mailer est no-op de
@@ -120,7 +141,10 @@ export async function revokeInvitationAction(invitationId: string): Promise<Acti
   if (!user) return { ok: false, error: 'unauthorized' }
 
   const { error } = await supabase.rpc('admin_revoke_invitation', { p_invitation_id: invitationId })
-  if (error) return { ok: false, error: mapPgError(error.code) }
+  if (error) {
+    captureIfUnknown(error, 'revokeInvitation', user.id)
+    return { ok: false, error: mapPgError(error.code) }
+  }
   return { ok: true }
 }
 
@@ -140,7 +164,10 @@ export async function lockMemberAction(
     p_locked: true,
     p_reason: reason && reason.trim().length > 0 ? reason.trim() : undefined,
   })
-  if (error) return { ok: false, error: mapPgError(error.code) }
+  if (error) {
+    captureIfUnknown(error, 'lockMember', user.id)
+    return { ok: false, error: mapPgError(error.code) }
+  }
   return { ok: true }
 }
 
@@ -157,7 +184,10 @@ export async function unlockMemberAction(membershipId: string): Promise<ActionRe
     p_locked: false,
     p_reason: undefined,
   })
-  if (error) return { ok: false, error: mapPgError(error.code) }
+  if (error) {
+    captureIfUnknown(error, 'unlockMember', user.id)
+    return { ok: false, error: mapPgError(error.code) }
+  }
   return { ok: true }
 }
 
@@ -182,7 +212,10 @@ export async function updateClubSettingsAction(input: ClubSettingsInput): Promis
   }
 
   const { error } = await supabase.rpc('update_club_settings', buildUpdateArgs(ctx.clubId, input))
-  if (error) return { ok: false, error: mapPgError(error.code) }
+  if (error) {
+    captureIfUnknown(error, 'updateClubSettings', user.id)
+    return { ok: false, error: mapPgError(error.code) }
+  }
   return { ok: true }
 }
 
@@ -210,6 +243,9 @@ export async function updateMemberEmailAction(
     p_membership_id: membershipId,
     p_email: email,
   })
-  if (error) return { ok: false, error: mapPgError(error.code) }
+  if (error) {
+    captureIfUnknown(error, 'updateMemberEmail', user.id)
+    return { ok: false, error: mapPgError(error.code) }
+  }
   return { ok: true }
 }
