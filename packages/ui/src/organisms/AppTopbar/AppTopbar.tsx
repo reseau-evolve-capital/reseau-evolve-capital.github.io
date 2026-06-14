@@ -50,7 +50,7 @@ export interface AppTopbarProps {
   /** Nom du club actif. Sur MOBILE, remplace le logotype de marque (le logo reste) —
    *  tronqué en ellipsis pour les noms longs (QA 2026-06-07). Absent → logotype complet. */
   clubName?: string
-  /** URL du logo de marque (l'app injecte `/logo.jpg`). Fallback SVG si absent. */
+  /** URL du logo de marque (l'app injecte `/icons/icon-192.png`). Fallback SVG si absent. */
   logoSrc?: string
   /** Libellés textuels (i18n). Chaque clé absente retombe sur son défaut FR. */
   labels?: AppTopbarLabels

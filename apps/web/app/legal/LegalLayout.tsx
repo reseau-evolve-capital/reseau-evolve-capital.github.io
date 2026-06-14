@@ -12,7 +12,10 @@ import type { ReactNode } from 'react'
 
 import { Logo, Link } from '@evolve/ui'
 
-const LOGO_SRC = '/logo.jpg'
+import { BRAND_LOGO_SRC } from '@/lib/brand'
+
+// Logo de marque servi par l'app (source unique : @/lib/brand → tuile crème).
+const LOGO_SRC = BRAND_LOGO_SRC
 
 /** Une section de contenu légal : un titre (h2) + une liste de paragraphes. */
 export interface LegalSection {

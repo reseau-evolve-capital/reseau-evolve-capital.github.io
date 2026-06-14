@@ -7,7 +7,7 @@ export interface LogoProps {
   /** 'full' affiche le logotype complet (marque + nom), 'mark' affiche uniquement l'icône */
   variant?: LogoVariant
   /**
-   * URL de l'image de marque (ex. `/logo.jpg` servi par l'app). Si fournie, elle remplace
+   * URL de l'image de marque (ex. `/icons/icon-192.png` servi par l'app). Si fournie, elle remplace
    * la marque SVG par défaut. Présentationnel : l'app injecte l'URL (pas d'import d'asset
    * dans @evolve/ui → aucun couplage bundler/test). Fallback SVG si absente (Storybook).
    */

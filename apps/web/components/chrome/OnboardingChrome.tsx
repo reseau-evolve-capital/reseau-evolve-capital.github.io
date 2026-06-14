@@ -20,9 +20,10 @@ import { usePathname } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 import { Logo, ThemeToggle, SegmentedProgress } from '@evolve/ui'
 import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
+import { BRAND_LOGO_SRC } from '@/lib/brand'
 
-/** Logo de marque servi par l'app (apps/web/public/logo.jpg). */
-const LOGO_SRC = '/logo.jpg'
+/** Logo de marque servi par l'app (source unique : @/lib/brand → tuile crème). */
+const LOGO_SRC = BRAND_LOGO_SRC
 /** Lien d'aide → site vitrine public (aligné sur LoginScreen). */
 const HELP_URL = 'https://reseauevolvecapital.com'
 
