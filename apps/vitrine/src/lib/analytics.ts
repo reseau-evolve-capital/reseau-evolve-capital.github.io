@@ -47,4 +47,9 @@ export const analyticsEvents = {
   navigation: {
     ctaClick: (target: string) => track('cta_click', { cta_target: target }),
   },
+  /** 🎯 blog_article_read (key event) — engagement blog. */
+  blog: {
+    articleRead: (slug: string, category?: string) =>
+      track('blog_article_read', { article_slug: slug, article_category: category }),
+  },
 }
