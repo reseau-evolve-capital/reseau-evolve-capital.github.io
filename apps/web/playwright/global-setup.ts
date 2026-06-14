@@ -26,6 +26,15 @@ export default async function globalSetup() {
   const sql = postgres(DB_URL, { max: 1 })
 
   try {
+    // 0. Nettoyer les votes du membre de seed (VOT-001) : poll_responses.user_id référence
+    //    auth.users SANS cascade → si le membre a voté (e2e votes), la suppression auth.users
+    //    ci-dessous échoue (FK). On purge d'abord ses réponses pour rendre le reset idempotent
+    //    ET garantir que chaque run démarre avec un membre « n'a pas encore voté ».
+    await sql`
+      DELETE FROM public.poll_responses
+       WHERE user_id IN (SELECT id FROM public.users WHERE email = ${TEST_EMAIL})
+    `
+
     // 1. Supprimer le compte GoTrue si présent (évite que generate_link réutilise une
     //    session expirée ou un token déjà consommé).
     await sql`DELETE FROM auth.users WHERE email = ${TEST_EMAIL}`
