@@ -9,6 +9,7 @@ import {
 import BlogArticleContent from '@/components/blog/BlogArticleContent'
 import RelatedArticles from '@/components/blog/RelatedArticles'
 import EditorialArticleContent from '@/components/editorial/EditorialArticleContent'
+import { BlogArticleTracker } from '@/components/blog/BlogArticleTracker'
 
 interface ArticlePageProps {
   params: Promise<{
@@ -116,6 +117,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
   return (
     <article className="container mx-auto px-4 py-16">
+      <BlogArticleTracker slug={slug} category={article.category?.name} />
       {hasEditorialBody ? (
         <EditorialArticleContent article={article} locale={locale} />
       ) : (
