@@ -15,12 +15,15 @@
 import type { createServerClient } from '@evolve/data'
 import type { Database } from '@evolve/data'
 
+import { deriveContributionStatus, joinedAtToYM } from './contributionStatus'
+
 /** Client Supabase serveur tel que retourné par `createServerClient` (session + RLS). */
 type ServerClient = ReturnType<typeof createServerClient>
 
 type MemberQuotePartRow = Database['public']['Views']['member_quote_part']['Row']
 type UserRow = Database['public']['Tables']['users']['Row']
 type ClubRow = Database['public']['Tables']['clubs']['Row']
+type ContributionMonthRow = Database['public']['Tables']['contribution_months']['Row']
 
 export type ContributionStatus = Database['public']['Enums']['contribution_status']
 export type MemberRole = Database['public']['Enums']['member_role']
@@ -105,17 +108,34 @@ export async function getDashboardData(
 
   // E3 — capacité d'investissement restante de l'année (même calcul que l'attestation :
   // plafond annuel du club − somme des mois cotisés `paid` de l'année en cours).
+  //
+  // Même requête mensuelle réutilisée pour DÉRIVER le statut de cotisation : la colonne « statut »
+  // de la feuille COTISATIONS bugge parfois (→ `pending`), on retombe alors sur l'échéancier réel
+  // (cf. deriveContributionStatus). On élargit donc le filtre à tous les mois ≤ année courante
+  // (et non plus le seul mois `paid` de l'année), puis on filtre côté JS pour `yearInvested`.
   const cap = club?.annual_investment_cap != null ? Number(club.annual_investment_cap) : null
   let yearInvested = 0
+  let contributionStatus = mqp.contribution_status ?? 'pending'
   if (membership?.id) {
-    const currentYear = new Date().getFullYear()
+    const now = new Date()
+    const currentYear = now.getFullYear()
+    const nowYM = currentYear * 12 + now.getMonth()
     const { data: months } = await supabase
       .from('contribution_months')
-      .select('amount')
+      .select('year, month, amount, status')
       .eq('membership_id', membership.id)
-      .eq('year', currentYear)
-      .eq('status', 'paid')
-    yearInvested = (months ?? []).reduce((sum, m) => sum + Number(m.amount ?? 0), 0)
+      .lte('year', currentYear)
+      .returns<Pick<ContributionMonthRow, 'year' | 'month' | 'amount' | 'status'>[]>()
+    const rows = months ?? []
+    yearInvested = rows
+      .filter((m) => m.year === currentYear && m.status === 'paid')
+      .reduce((sum, m) => sum + Number(m.amount ?? 0), 0)
+    contributionStatus = deriveContributionStatus(
+      contributionStatus,
+      rows.map((m) => ({ year: m.year, month: m.month, status: m.status })),
+      joinedAtToYM(mqp.joined_at),
+      nowYM
+    )
   }
   const remaining = cap === null ? null : Math.max(0, cap - yearInvested)
 
@@ -131,7 +151,7 @@ export async function getDashboardData(
     detentionPct: Number(mqp.detention_pct ?? 0),
     totalContributed: Number(mqp.total_contributed ?? 0),
     contribution: {
-      status: mqp.contribution_status ?? 'pending',
+      status: contributionStatus,
       amountDue: Number(mqp.amount_due ?? 0),
     },
     investment: { cap, yearInvested, remaining },

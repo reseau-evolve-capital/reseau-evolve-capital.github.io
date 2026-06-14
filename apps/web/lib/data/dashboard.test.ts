@@ -12,8 +12,9 @@ type SingleResult = { data: unknown; error: unknown }
 /**
  * Construit un faux client Supabase chaînable (zéro réseau).
  * `.from(table)` renvoie un objet dont `.select().eq()....maybeSingle()`
- * résout vers la fixture associée à la table. Les `.eq()` se chaînent à
- * l'infini ; seul `.maybeSingle()` termine la chaîne.
+ * résout vers la fixture associée à la table. Les `.eq()`/`.lte()`/`.order()`
+ * se chaînent à l'infini ; `.maybeSingle()` ET `.returns()` terminent la chaîne
+ * (le dashboard lit `contribution_months` via `.lte().returns()`, pas `.maybeSingle()`).
  */
 function makeSupabaseMock(fixtures: Record<string, SingleResult>): ServerClient {
   const from = (table: string) => {
@@ -21,7 +22,10 @@ function makeSupabaseMock(fixtures: Record<string, SingleResult>): ServerClient 
     const chain: Record<string, unknown> = {}
     chain.select = () => chain
     chain.eq = () => chain
+    chain.lte = () => chain
+    chain.order = () => chain
     chain.maybeSingle = () => Promise.resolve(result)
+    chain.returns = () => Promise.resolve(result)
     return chain
   }
   return { from } as unknown as ServerClient
@@ -120,5 +124,72 @@ describe('getDashboardData', () => {
     expect(result?.member.fullName).toBe('Membre')
     expect(result?.member.firstname).toBeNull()
     expect(result?.syncedAt).toBeNull()
+  })
+
+  // Fallback de statut (le bug d'origine) : la feuille COTISATIONS renvoie `pending` (cellule
+  // vide / #ERROR!) mais l'échéancier mensuel sait que le membre est en retard ou à jour.
+  const mqpPending = {
+    role: 'member',
+    joined_at: '2018-06-01',
+    detention_pct: '0',
+    total_contributed: '0',
+    net_market_value: '0',
+    contribution_status: 'pending',
+    amount_due: '150',
+  }
+
+  it('feuille `pending` + arriérés dans l’échéancier → dérive `late` (CAS DU BUG)', async () => {
+    const supabase = makeSupabaseMock({
+      member_quote_part: { data: mqpPending, error: null },
+      users: { data: { firstname: 'Test', full_name: 'Membre Test' }, error: null },
+      clubs: { data: { name: 'Club Test', synced_at: '2026-06-05T10:00:00Z' }, error: null },
+      memberships: { data: { id: 'm-1' }, error: null },
+      contribution_months: {
+        data: [
+          { year: 2020, month: 1, amount: '100', status: 'paid' },
+          { year: 2020, month: 2, amount: '0', status: 'late' },
+          { year: 2020, month: 3, amount: '0', status: 'late' },
+        ],
+        error: null,
+      },
+    })
+
+    const result = await getDashboardData(supabase, 'user-1', 'club-1')
+    expect(result?.contribution.status).toBe('late')
+  })
+
+  it('feuille `pending` + tous les mois payés → dérive `ok`', async () => {
+    const supabase = makeSupabaseMock({
+      member_quote_part: { data: mqpPending, error: null },
+      users: { data: { firstname: 'Test', full_name: 'Membre Test' }, error: null },
+      clubs: { data: { name: 'Club Test' }, error: null },
+      memberships: { data: { id: 'm-1' }, error: null },
+      contribution_months: {
+        data: [
+          { year: 2020, month: 1, amount: '100', status: 'paid' },
+          { year: 2020, month: 2, amount: '100', status: 'paid' },
+        ],
+        error: null,
+      },
+    })
+
+    const result = await getDashboardData(supabase, 'user-1', 'club-1')
+    expect(result?.contribution.status).toBe('ok')
+  })
+
+  it('feuille explicite `ok` → conservée, AUCUNE dérivation même avec des arriérés', async () => {
+    const supabase = makeSupabaseMock({
+      member_quote_part: { data: { ...mqpPending, contribution_status: 'ok' }, error: null },
+      users: { data: { firstname: 'Test', full_name: 'Membre Test' }, error: null },
+      clubs: { data: { name: 'Club Test' }, error: null },
+      memberships: { data: { id: 'm-1' }, error: null },
+      contribution_months: {
+        data: [{ year: 2020, month: 2, amount: '0', status: 'late' }],
+        error: null,
+      },
+    })
+
+    const result = await getDashboardData(supabase, 'user-1', 'club-1')
+    expect(result?.contribution.status).toBe('ok')
   })
 })
