@@ -7,7 +7,15 @@
 # - Anti-bruit : on re-notifie à chaque run (30 min) tant que c'est cassé — assumé.
 # - Le job FINIT EN FAILURE quand la santé est KO (visible aussi côté GitHub).
 #
-# Réf : docs/monitoring/MONITORING.md
+# Job `auth-config` (parallèle) : garde anti-dérive de la config auth prod
+# (mailer_otp_length / rate_limit_email_sent) via la Management API Supabase.
+# - Secret requis : secrets.SUPABASE_ACCESS_TOKEN (PAT sbp_…). Si absent → le job
+#   se SKIP proprement (no-op) pour ne pas casser la CI des forks / secret non posé.
+# - Pas de notif Discord ici : un JOB ROUGE EST l'alerte (échec visible sur GitHub).
+#   Rappel : config.toml fixe otp_length=6 mais n'est pas poussé en CI (cf. runbook),
+#   d'où ce contrôle ; verrou côté repo = apps/web/lib/auth/otp.test.ts.
+#
+# Réf : docs/monitoring/MONITORING.md, docs/deploy/SUPABASE_PROD.md
 name: Healthcheck sync
 
 on:
@@ -103,3 +111,25 @@ jobs:
         run: |
           echo "::error::Healthcheck KO — ${{ steps.check.outputs.reason }}"
           exit 1
+
+  auth-config:
+    name: Vérifier config auth prod (anti-dérive OTP)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # Le secret est mappé en env (GitHub n'évalue pas secrets.* dans un `if:` job)
+      # → bash-guard : skip propre si absent, sinon le script échoue (rouge) sur dérive.
+      - name: Vérifier mailer_otp_length=6 / rate_limit_email_sent≥5
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "skip (SUPABASE_ACCESS_TOKEN absent)"
+            exit 0
+          fi
+          node scripts/supabase-prod-auth-check.mjs
