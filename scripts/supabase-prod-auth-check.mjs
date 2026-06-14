@@ -9,7 +9,7 @@
 //   La config auth prod est donc gérée à la main dans le dashboard et peut DÉRIVER.
 //   Incident réel : `mailer_otp_length` était passé à 8 en prod (codes OTP à 8
 //   chiffres) ; corrigé à 6 via la Management API. Ce script échoue (rouge) si la
-//   dérive réapparaît — le verrou côté repo est apps/web/lib/auth/otp.test.ts.
+//   dérive réapparaît — le verrou côté repo est apps/web/lib/auth/otp-length-contract.test.ts.
 //
 // Variables d'env :
 //   SUPABASE_ACCESS_TOKEN   ← PAT `sbp_…` (obligatoire ; sinon exit 2, échec bruyant)
