@@ -80,3 +80,4 @@ db_cluster-*.gz
 # Captures d'écran d'audit/QA ad-hoc (volumineuses). Les références versionnées
 # déjà commitées restent suivies ; ceci évite que les nouvelles polluent le repo.
 docs/audits/shots/
+.superpowers/
