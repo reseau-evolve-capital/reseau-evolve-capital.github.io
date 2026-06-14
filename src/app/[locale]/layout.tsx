@@ -67,6 +67,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     // Enhanced SEO settings
 
     openGraph: {
+      url: `/${locale}/`,
+      siteName: siteConfig.name[locale],
+      locale: locale === 'fr' ? 'fr_FR' : 'en_US',
       title: siteConfig.name[locale],
       description: siteConfig.description[locale],
       type: 'website',
@@ -77,12 +80,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           width: 1200,
           height: 630,
         },
-        // {
-        //   url: siteConfig.author.avatar,
-        //   type: "image/png",
-        //   width: 1200,
-        //   height: 630,
-        // },
       ],
     },
   }
