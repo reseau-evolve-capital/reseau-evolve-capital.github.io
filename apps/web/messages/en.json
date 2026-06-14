@@ -278,8 +278,12 @@
     "capacity": {
       "title": "Remaining investment capacity",
       "subtitle": "You have {amount} left to invest this year. Make the most of it to grow your stake.",
-      "info": "What you have left to invest this year: the club's annual investment cap, minus the payments you've already made this year.",
+      "info": "What you can still invest this year: the club's annual cap minus what you've already paid in this year.",
       "infoAria": "Learn more about the investment capacity"
+    },
+    "quotePart": {
+      "info": "Change in your share's value since the last valuation (yesterday).",
+      "infoAria": "Learn more about the change in your share"
     },
     "detail": {
       "title": "Your stake",
@@ -306,7 +310,9 @@
       },
       "sinceJoin": "since you joined",
       "demoLabel": "Illustrative curve",
-      "periodGroup": "Period"
+      "periodGroup": "Period",
+      "info": "Change over the selected period (last 30 days, or since the start).",
+      "infoAria": "Learn more about how your share has changed over time"
     },
     "v2": {
       "understand": "Understand my share",
@@ -327,6 +333,10 @@
     "summaryRegion": "Summary",
     "lastSync": "Last sync",
     "totalGainLoss": "Total gain / loss",
+    "totalGainLossInfo": "Your gain or loss since you bought these positions, comparing today's price with what you paid for them. Not realised until you sell.",
+    "totalGainLossInfoAria": "Learn more about your total gain or loss",
+    "positionInfo": "Performance since you bought this position (today's price vs. what you paid), separate from the day's change.",
+    "positionInfoAria": "Learn more about this position's performance since you bought it",
     "errorState": {
       "title": "We couldn't load your portfolio. Try again?"
     },
@@ -448,10 +458,25 @@
     "timeline": {
       "legend": {
         "paid": "Paid",
-        "pending": "Pending",
+        "pending": "This month",
         "late": "Overdue",
-        "exempt": "Exempt",
-        "upcoming": "Upcoming"
+        "future": "Upcoming",
+        "notApplicable": "Before you joined"
+      },
+      "cell": {
+        "paid": "{month}: {amount} paid on {date}.",
+        "paidAria": "{month}: contribution of {amount} paid on {date}.",
+        "paidNoDate": "{month}: {amount} paid.",
+        "paidNoDateAria": "{month}: contribution of {amount} paid.",
+        "pending": "{month}: contribution in progress.",
+        "pendingAria": "{month}: this month's contribution is in progress.",
+        "late": "{month}: {amount} due.",
+        "lateNoAmount": "{month}: contribution due.",
+        "lateAria": "{month}: contribution of {amount} overdue.",
+        "future": "{month}: upcoming.",
+        "futureAria": "{month}: contribution not due yet, upcoming.",
+        "notApplicable": "{month}: outside your membership period (before you joined the club).",
+        "notApplicableAria": "{month}: outside your membership period, before you joined the club, so no contribution was due."
       },
       "monthInitials": ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"],
       "legendLabel": "Status legend",
@@ -990,15 +1015,16 @@
     "modal": {
       "dialogTitle": "Install Evolve Capital",
       "stepLabel": "Step {current} of {total}",
-      "step1TitleIphone": "The Share icon, at the bottom of Safari.",
-      "step1TitleIpad": "The Share icon, top right.",
+      "step1TitleIphone": "Open the share menu",
+      "step1TitleIpad": "Open the share menu",
       "step1Body": "Tap the Share icon to open the share menu.",
       "step1CaptionIphone": "BOTTOM OF SAFARI",
       "step1CaptionIpad": "TOP RIGHT",
-      "step2Title": "\"Add to Home Screen\".",
-      "step2Body": "In the menu, scroll down and choose this option. Evolve is added to your home screen.",
-      "step2Caption": "FIFTH ITEM FROM TOP",
+      "step2Title": "Add Evolve to your home screen",
+      "step2Body": "In the menu, choose 'Add to Home Screen' (the ⊞ icon). Scroll down a little if you don't see it straight away.",
+      "step2Caption": "LOOK FOR 'ADD TO HOME SCREEN'",
       "step2HighlightLabel": "Add to Home Screen",
+      "versionNote": "Depending on your iPhone version this screen may look slightly different — always look for 'Add to Home Screen'.",
       "next": "Next step",
       "done": "Done",
       "close": "Close"
