@@ -1063,5 +1063,13 @@
       "title": "Something went wrong while sending. Your input has been kept.",
       "retry": "Try again"
     }
+  },
+  "metadata": {
+    "title": "Your member space — Evolve Capital",
+    "description": "The Evolve Capital Network member space: your share, club portfolio and contributions.",
+    "ogTitle": "Your member space — Evolve Capital",
+    "ogDescription": "Track your share, your club's portfolio and your contributions. No password required.",
+    "twitterDescription": "Your share, your club's portfolio and your contributions, all in one place.",
+    "ogImageAlt": "Evolve Capital app home screen showing a member's share"
   }
 }
