@@ -31,7 +31,7 @@ export interface SidebarProps {
   linkComponent?: React.ElementType
   /** Carte « Club actif » affichée en bas de la sidebar (optionnel). */
   clubActif?: SidebarClub
-  /** URL du logo de marque (l'app injecte `/logo.jpg`). Fallback SVG si absent. */
+  /** URL du logo de marque (l'app injecte `/icons/icon-192.png`). Fallback SVG si absent. */
   logoSrc?: string
   /** Libellés textuels (i18n). Chaque clé absente retombe sur son défaut FR. */
   labels?: SidebarLabels

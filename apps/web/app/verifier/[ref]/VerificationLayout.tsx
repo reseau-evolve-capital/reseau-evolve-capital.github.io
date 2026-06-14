@@ -9,7 +9,10 @@
 import type { ReactNode } from 'react'
 import { Logo } from '@evolve/ui'
 
-const LOGO_SRC = '/logo.jpg'
+import { BRAND_LOGO_SRC } from '@/lib/brand'
+
+// Logo de marque servi par l'app (source unique : @/lib/brand → tuile crème).
+const LOGO_SRC = BRAND_LOGO_SRC
 
 export interface VerificationLayoutProps {
   reference: string

@@ -12,12 +12,13 @@ import { Logo, Button, Input, FormField, ThemeToggle, Icon } from '@evolve/ui'
 import { requestMagicLink } from '@/lib/api/auth'
 import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
 import { BrandDataviz } from '@/components/auth/BrandDataviz'
+import { BRAND_LOGO_SRC } from '@/lib/brand'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 // Lien d'aide → site vitrine public (existant). i18n-ready (copy FR par défaut).
 const HELP_URL = 'https://reseauevolvecapital.com'
-// Logo de marque servi par l'app.
-const LOGO_SRC = '/logo.jpg'
+// Logo de marque servi par l'app (source unique : @/lib/brand → tuile crème).
+const LOGO_SRC = BRAND_LOGO_SRC
 
 // Panneau marque TOUJOURS sombre : on utilise les tokens NEUTRES (`--n-*`, non
 // surchargés par le mode sombre) plutôt que les tokens sémantiques — un scope
