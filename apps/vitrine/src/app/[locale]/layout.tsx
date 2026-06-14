@@ -3,7 +3,6 @@ import '@/app/globals.css'
 
 import { Navigation } from '@/components/navigation'
 import { siteConfig, type Locale } from '@/config/site-config'
-import { Analytics } from '@/components/Analytics'
 import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 import { ConsentBanner } from '@/components/ConsentBanner'
 import { BuildInfo } from '@/components/BuildInfo'
@@ -109,7 +108,6 @@ export default async function LocaleLayout({ children, params }: Props) {
               <Footer locale={locale} />
               <ScrollToTop />
             </div>
-            <Analytics />
             {/* GA4 (flux vitrine) + Consent Mode v2 (default denied). No-op sans ID. */}
             <GoogleAnalytics />
             {/* Bandeau de consentement RGPD — s'affiche tant que le choix n'est pas tranché. */}
