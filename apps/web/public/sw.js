@@ -1,5 +1,8 @@
 // apps/web/public/sw.js
-const VERSION = 'pwa-v1'
+// v2 : purge des caches v1 à l'activation — un `/api/dashboard` périmé (quote-part) avait
+// pu être persisté sous l'ancien header `s-maxage/stale-while-revalidate` (corrigé en
+// `private, no-store` côté route). Le bump force la suppression de `evolve-data-pwa-v1`.
+const VERSION = 'pwa-v2'
 const STATIC = `evolve-static-${VERSION}`
 const DATA = `evolve-data-${VERSION}`
 const PRECACHE = ['/offline.html', '/icons/icon-192.png', '/icons/icon-512.png']
@@ -80,9 +83,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   // GET API data: stale-while-revalidate, MAIS on respecte `Cache-Control: no-store`.
-  // Les routes de données sensibles (portfolio, cotisations, attestation) posent
-  // `private, no-store` : elles ne doivent JAMAIS être persistées sur l'appareil. Seules
-  // les réponses cachables (ex. /api/dashboard, résumé déjà horodaté) entrent dans DATA.
+  // Les routes de données par-membre et sensibles (dashboard/quote-part, portfolio,
+  // cotisations, attestation) posent `private, no-store` : elles ne doivent JAMAIS être
+  // persistées sur l'appareil (sinon une valeur périmée est rejouée après sync). Seules les
+  // réponses non-membre cachables (ex. /api/market-prices) entrent dans DATA.
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       caches

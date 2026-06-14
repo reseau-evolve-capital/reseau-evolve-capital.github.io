@@ -63,7 +63,13 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Données indisponibles.' }, { status: 404 })
   }
 
+  // Données par-membre et sensibles (quote-part, valorisation) : JAMAIS de cache partagé
+  // (CDN) ni de persistance sur l'appareil. `private, no-store` — cohérent avec toutes les
+  // autres routes de données membre (/api/contributions, /api/portfolio, /api/admin/*) et
+  // requis pour que le service worker PWA n'en serve pas une copie périmée (cf. public/sw.js).
+  // Régression : un `s-maxage=…, stale-while-revalidate` laissait le SW iOS rejouer une
+  // ancienne quote-part après sync (« la valeur a drastiquement baissé sur Safari »).
   return NextResponse.json(data, {
-    headers: { 'Cache-Control': 's-maxage=300, stale-while-revalidate=600' },
+    headers: { 'Cache-Control': 'private, no-store' },
   })
 }
