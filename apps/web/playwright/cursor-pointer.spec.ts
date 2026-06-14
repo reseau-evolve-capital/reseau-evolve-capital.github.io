@@ -184,9 +184,11 @@ test.describe('curseur a11y — routes authentifiées', () => {
     '/portfolio',
     '/contributions',
     '/profil',
+    '/votes',
     '/admin',
     '/admin/members',
     '/admin/cotisations',
+    '/admin/votes',
   ]
 
   for (const route of AUTH_ROUTES) {
