@@ -1,5 +1,6 @@
 .PHONY: dev dev-web dev-vitrine build lint typecheck test test-e2e storybook \
         db-start db-stop db-migrate db-reset db-types db-set-sheet db-sync db-set-sheet-prod db-sync-prod \
+        supabase-deploy-prod supabase-check-prod-auth \
         docker-build docker-up docker-down \
         vitrine-export vitrine-deploy strapi-dev strapi-seed strapi-env strapi-build strapi-up strapi-down strapi-logs strapi-restart strapi-admin strapi-init strapi-clean \
         strapi-db-up strapi-db-down strapi-db-shell strapi-db-restore \
@@ -66,6 +67,39 @@ db-set-sheet-prod:
 
 db-sync-prod:
 	set -a; . ./apps/web/.env.prod; set +a; node scripts/sync-sheets.mjs $(CLUB_ID)
+
+# Déploiement PROD après un merge sur main (migrations + edge functions). Garde-fou
+# CONFIRM=yes obligatoire. NE touche PAS la config auth ni les secrets (cf. runbook).
+# Runbook complet : docs/deploy/SUPABASE_PROD.md
+supabase-deploy-prod:
+ifneq ($(CONFIRM),yes)
+	@echo "⚠️  Déploiement Supabase PROD — relance avec CONFIRM=yes pour confirmer :"
+	@echo "      make supabase-deploy-prod CONFIRM=yes"
+	@echo ""
+	@echo "   Ce que ça fait : pousse les MIGRATIONS puis déploie les EDGE FUNCTIONS"
+	@echo "   sur le projet Supabase LIÉ (verify_jwt vient de supabase/config.toml)."
+	@echo "   Prérequis : supabase link --project-ref kiwcjtilwihioswdsjjv (+ mot de passe DB)."
+	@echo "   NE touche PAS la config auth (otp_length, hook send_email) ni les secrets —"
+	@echo "   ces étapes restent manuelles (dashboard / supabase secrets set). Cf. docs/deploy/SUPABASE_PROD.md"
+	@exit 1
+else
+	@echo "▶ db push (migrations) sur le projet lié…"
+	supabase db push
+	@echo "▶ functions deploy --use-api (toutes les fonctions ; verify_jwt vient de config.toml)…"
+	supabase functions deploy --use-api
+	@echo ""
+	@echo "✅ Migrations + Edge Functions déployées."
+	@echo "⚠️  NON automatisé (à faire à la main — cf. docs/deploy/SUPABASE_PROD.md) :"
+	@echo "   • Secrets : supabase secrets set …  (SEND_EMAIL_HOOK_SECRET, BREVO_*, clés feedback IA/Discord/GitHub/Notion)"
+	@echo "   • Config auth (dashboard) : mailer_otp_length=6, rate_limit_email_sent=5"
+	@echo "   • Activation du hook send_email (dashboard — JAMAIS via config push, sinon hook désactivé)"
+	@echo "   → vérifie la config auth : make supabase-check-prod-auth"
+endif
+
+# Garde anti-dérive de la config auth prod (otp_length / rate limit) via Management API.
+supabase-check-prod-auth:
+	@echo "▶ Vérif config auth prod (exporte d'abord SUPABASE_ACCESS_TOKEN=sbp_…)"
+	node scripts/supabase-prod-auth-check.mjs
 
 ## Docker (apps/web uniquement)
 docker-build:
