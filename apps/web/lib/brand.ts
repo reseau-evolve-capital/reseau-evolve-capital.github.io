@@ -10,10 +10,9 @@
  *
  * Incident (juin 2026) : la migration vers le logo clair n'avait touché QUE le chrome
  * authentifié + les assets PWA. Quatre surfaces (login, onboarding, légal, vérif)
- * pointaient encore l'ancien `/logo.jpg` (fond noir). Comme la PWA démarre sur
+ * pointaient encore l'ancien logo à fond noir. Comme la PWA démarre sur
  * `/dashboard` (chrome clair) mais que l'entrée navigateur est `/login`, l'utilisateur
  * voyait « PWA claire / navigateur ancien ». Une constante unique élimine cette dérive ;
- * la garde `apps/web/__tests__/no-legacy-logo.test.ts` interdit toute réintroduction
- * d'un `/logo.jpg`.
+ * la garde `apps/web/lib/brand.test.ts` interdit toute réintroduction de l'ancien chemin.
  */
 export const BRAND_LOGO_SRC = '/icons/icon-192.png'

@@ -11,11 +11,15 @@
 //   1. `BRAND_LOGO_SRC` vaut bien l'icône claire 192px,
 //   2. l'asset cible existe sur le disque,
 //   3. AUCUN fichier source APPLICATIF de `apps/web` ni `packages/ui/src` ne contient le
-//      littéral `/logo.jpg` HORS commentaires (réintroduction interdite). Les fichiers de
-//      test/spec sont exclus : ils mentionnent légitimement le chemin (constante de comparaison).
+//      littéral `/logo.jpg` (réintroduction interdite — y compris en commentaire, pour rester
+//      sans angle mort). Les fichiers de test/spec sont exclus : ils mentionnent légitimement
+//      le chemin (constante de comparaison : ce garde + l'e2e brand-logo.spec.ts).
+//
+// Scan BRUT volontaire (pas de strip de commentaires) : un détecteur de régression doit
+// préférer un faux positif bénin (une mention en commentaire à reformuler) à un faux négatif
+// (une vraie réintroduction qui passe). La preuve « au rendu » est doublée par l'e2e.
 //
 // Portée : scan statique du code source (hors node_modules/.next/dist + fichiers *.test/*.spec).
-// La preuve « au rendu » est doublée par l'e2e `playwright/brand-logo.spec.ts`.
 
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, extname, join } from 'node:path'
@@ -49,15 +53,6 @@ function findRepoRoot(startDir: string): string {
     dir = parent
   }
   throw new Error(`pnpm-workspace.yaml introuvable en remontant depuis ${startDir}`)
-}
-
-/**
- * Retire commentaires de ligne (`// …`) et de bloc (`/* … *\/`) pour ne pas faire échouer
- * sur une mention DOCUMENTAIRE de `/logo.jpg` (ex. la docstring de `@/lib/brand`). Suffisant
- * pour ce garde : on ne cherche qu'un littéral dans du CODE, pas une analyse syntaxique fine.
- */
-function stripComments(source: string): string {
-  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
 }
 
 /** Collecte récursivement les fichiers source à scanner sous `root`. */
@@ -95,13 +90,15 @@ describe('garde anti-régression — logo de marque clair partout', () => {
     expect(existsSync(legacyPath), `${legacyPath} ne doit plus exister`).toBe(false)
   })
 
-  it('aucun fichier source (apps/web, packages/ui/src) ne référence /logo.jpg hors commentaires', () => {
+  it('aucun fichier source applicatif (apps/web, packages/ui/src) ne référence /logo.jpg', () => {
     const roots = [join(repoRoot, 'apps', 'web'), join(repoRoot, 'packages', 'ui', 'src')]
     const offenders: string[] = []
     for (const root of roots) {
       for (const file of collectSourceFiles(root)) {
-        const code = stripComments(readFileSync(file, 'utf8'))
-        if (code.includes(LEGACY_LOGO)) offenders.push(file.slice(repoRoot.length + 1))
+        // Scan BRUT (commentaires inclus) — aucun angle mort possible (cf. en-tête).
+        if (readFileSync(file, 'utf8').includes(LEGACY_LOGO)) {
+          offenders.push(file.slice(repoRoot.length + 1))
+        }
       }
     }
     expect(
