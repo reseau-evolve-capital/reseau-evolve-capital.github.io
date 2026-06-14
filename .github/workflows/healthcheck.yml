@@ -13,7 +13,7 @@
 #   se SKIP proprement (no-op) pour ne pas casser la CI des forks / secret non posé.
 # - Pas de notif Discord ici : un JOB ROUGE EST l'alerte (échec visible sur GitHub).
 #   Rappel : config.toml fixe otp_length=6 mais n'est pas poussé en CI (cf. runbook),
-#   d'où ce contrôle ; verrou côté repo = apps/web/lib/auth/otp.test.ts.
+#   d'où ce contrôle ; verrou côté repo = apps/web/lib/auth/otp-length-contract.test.ts.
 #
 # Réf : docs/monitoring/MONITORING.md, docs/deploy/SUPABASE_PROD.md
 name: Healthcheck sync

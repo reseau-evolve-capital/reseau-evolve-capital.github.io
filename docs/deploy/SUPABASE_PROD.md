@@ -80,7 +80,7 @@ Deux garde-fous :
 - **CI** : job `auth-config` dans `.github/workflows/healthcheck.yml` (toutes les 30 min).
   Skip propre si le secret `SUPABASE_ACCESS_TOKEN` n'est pas posé ; **job rouge = alerte**
   (pas de notif Discord dédiée).
-- **Verrou repo** : `apps/web/lib/auth/otp.test.ts` fige le contrat OTP 6 chiffres côté code.
+- **Verrou repo** : `apps/web/lib/auth/otp-length-contract.test.ts` fige le contrat OTP 6 chiffres côté code.
 
 ## Rotation des clés
 
