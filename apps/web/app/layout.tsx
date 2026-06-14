@@ -20,8 +20,6 @@ export async function generateMetadata(): Promise<Metadata> {
     title: t('title'),
     description: t('description'),
     applicationName: 'Evolve Capital',
-    // App membre privée — pas d'indexation, mais les scrapers OG (LinkedIn, X…) lisent quand même les balises.
-    robots: { index: false, follow: false },
     openGraph: {
       type: 'website',
       siteName: 'Evolve Capital',
