@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn, within, userEvent, expect } from 'storybook/test'
 import { DashboardEvolutionChart, type EvolutionPoint } from './DashboardEvolutionChart'
+import { InfoTip } from '../../atoms/InfoTip'
 
 /** 30 points croissants façon « quote-part » (déterministe, pas de Math.random). */
 function makePoints(count: number, base = 60_000, slope = 95): EvolutionPoint[] {
@@ -146,6 +147,37 @@ export const WithDemoLabel: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     expect(canvas.getByText('Courbe illustrative')).toBeInTheDocument()
+  },
+}
+
+/** Slot `info` rempli — InfoTip d'aide accolé au titre (explique la courbe d'évolution). */
+export const WithInfo: Story = {
+  args: {
+    points: makePoints(30),
+    period: '30d',
+    onPeriodChange: fn(),
+    periods: PERIODS_MOBILE,
+    summaryValue: '+2 854 €',
+    summarySub: '(+4,55 %)',
+    title: 'Évolution · 30 jours',
+    axisStart: '12 mai',
+    axisEnd: 'auj.',
+    info: (
+      <InfoTip
+        content="Évolution de ta quote-part sur la période sélectionnée."
+        aria-label="En savoir plus sur l'évolution de ta quote-part"
+      />
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const info = canvas.getByRole('button', {
+      name: "En savoir plus sur l'évolution de ta quote-part",
+    })
+    await userEvent.click(info)
+    expect(
+      canvas.getByText('Évolution de ta quote-part sur la période sélectionnée.')
+    ).toBeInTheDocument()
   },
 }
 

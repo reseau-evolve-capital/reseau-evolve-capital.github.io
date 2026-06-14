@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react'
 import { expect, fn, userEvent, within } from 'storybook/test'
 import type { PortfolioPosition } from '@evolve/types'
 import { PortfolioTable } from './PortfolioTable'
+import { InfoTip } from '../../atoms/InfoTip'
 
 const mk = (over: Partial<PortfolioPosition>): PortfolioPosition => ({
   id: '1',
@@ -70,6 +71,38 @@ export const Filtered: Story = {
     // Le CTA historique est V1 (non cliquable).
     const link = canvas.getByText(/Historique des transactions/i)
     await expect(link).toHaveAttribute('aria-disabled', 'true')
+  },
+}
+
+/**
+ * Slot `gainLossPctInfo` rempli — UN InfoTip d'aide dans l'en-tête de la colonne +/- %
+ * (explique la perf depuis l'achat pour TOUTES les lignes sans saturer le tableau). Rendu
+ * HORS du bouton de tri : la colonne reste triable.
+ */
+export const WithColumnInfo: Story = {
+  args: {
+    positions,
+    onRowClick: fn(),
+    gainLossPctInfo: (
+      <InfoTip
+        content="Performance de cette ligne depuis l'achat — à ne pas confondre avec la variation du jour."
+        aria-label="En savoir plus sur la performance depuis l'achat"
+      />
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const info = canvas.getByRole('button', {
+      name: "En savoir plus sur la performance depuis l'achat",
+    })
+    await userEvent.click(info)
+    await expect(
+      canvas.getByText(
+        "Performance de cette ligne depuis l'achat — à ne pas confondre avec la variation du jour."
+      )
+    ).toBeInTheDocument()
+    // La colonne reste triable : le bouton de tri +/- % est toujours présent à côté de l'info.
+    await expect(canvas.getByRole('button', { name: /Trier par \+\/- %/i })).toBeInTheDocument()
   },
 }
 

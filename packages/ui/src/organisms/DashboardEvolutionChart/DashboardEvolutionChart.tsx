@@ -36,6 +36,9 @@ export interface DashboardEvolutionChartProps {
   demoLabel?: string
   /** Nom accessible du groupe de périodes (i18n). Défaut FR. */
   periodGroupLabel?: string
+  /** Slot info accolé au titre (ex. un `<InfoTip>` explicatif fourni par l'app).
+   *  Présentationnel — pas de défaut FR. */
+  info?: React.ReactNode
   className?: string
 }
 
@@ -67,6 +70,7 @@ export function DashboardEvolutionChart({
   direction = 'up',
   demoLabel,
   periodGroupLabel = 'Période',
+  info,
   className,
 }: DashboardEvolutionChartProps) {
   const gradientId = React.useId()
@@ -107,17 +111,20 @@ export function DashboardEvolutionChart({
         className
       )}
     >
-      {/* Header : titre + toggle de périodes, sur une seule ligne */}
+      {/* Header : titre (+ slot info optionnel) + toggle de périodes, sur une seule ligne.
+          La troncature vit sur le <span> intérieur : un overflow sur le conteneur clipperait
+          la zone de hit 44px du déclencheur InfoTip. */}
       <div className="flex items-center justify-between gap-3">
         <p
           className={cn(
-            'min-w-0 truncate uppercase',
+            'flex min-w-0 items-center gap-1 uppercase',
             isLarge
               ? 'font-body text-[12px] font-semibold tracking-[0.06em] text-text-sec'
               : 'font-mono text-[10px] tracking-[0.10em] text-text-ter'
           )}
         >
-          {title}
+          <span className="truncate">{title}</span>
+          {info}
         </p>
         <div
           role="group"

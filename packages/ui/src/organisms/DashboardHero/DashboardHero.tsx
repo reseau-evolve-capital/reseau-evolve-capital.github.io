@@ -22,6 +22,9 @@ export interface DashboardHeroProps {
   appearance?: 'card' | 'open'
   /** Méta affichée à côté du TrendBadge (ex. « hier · 10.06 »). Rendue si `variation` présent. */
   variationMeta?: string
+  /** Slot info accolé au TrendBadge de variation (ex. un `<InfoTip>` explicatif fourni par
+   *  l'app). Présentationnel — rendu uniquement si `variation` présent. Pas de défaut FR. */
+  variationInfo?: React.ReactNode
   /** Slot rendu sous la ligne de variation (ex. lien « Comprendre… » fourni par l'app). */
   action?: React.ReactNode
   className?: string
@@ -45,6 +48,7 @@ export function DashboardHero({
   highlight = false,
   appearance = 'card',
   variationMeta,
+  variationInfo,
   action,
   className,
   label = 'Ta quote-part',
@@ -99,6 +103,11 @@ export function DashboardHero({
                 {variationMeta}
               </span>
             ) : null}
+            {/* Slot info (InfoTip injecté par l'app) — explique la variation affichée.
+                Rendu UNIQUEMENT quand le hero n'est pas lui-même un <button> (onClick) :
+                un interactif imbriqué dans un <button> est invalide en HTML/a11y. L'app
+                câble donc l'info sur l'instance desktop (div + action), pas le hero mobile. */}
+            {!onClick ? variationInfo : null}
           </div>
         )}
         {action ? <div className="mt-1">{action}</div> : null}

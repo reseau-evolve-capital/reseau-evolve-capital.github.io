@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react'
 import { fn, within, userEvent, expect } from 'storybook/test'
 import { DashboardHero } from './DashboardHero'
+import { InfoTip } from '../../atoms/InfoTip'
 
 const meta: Meta<typeof DashboardHero> = {
   title: 'Organisms/DashboardHero',
@@ -107,6 +108,48 @@ export const OpenMobile: Story = {
     expect(canvas.getByText('hier · 10.06')).toBeInTheDocument()
     expect(canvas.getByRole('link', { name: 'Comprendre ma quote-part' })).toBeInTheDocument()
     expect(canvas.getByText('Ta quote-part')).toBeInTheDocument()
+  },
+}
+
+/**
+ * Hero V2 « open » desktop avec slot `variationInfo` (InfoTip d'aide accolé au TrendBadge).
+ * Non cliquable (pas d'onClick) → le slot est rendu (un interactif imbriqué dans un <button>
+ * serait invalide ; le composant masque donc l'info quand le hero est lui-même un bouton).
+ */
+export const WithVariationInfo: Story = {
+  decorators: [
+    (Story) => (
+      <div style={{ width: 760, padding: 24, background: 'var(--color-bg-page)' }}>
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    netMarketValue: 133_655,
+    appearance: 'open',
+    variation: { direction: 'up', value: '+4,55 %', subValue: '+2 854 €' },
+    variationMeta: 'hier · 10.06',
+    variationInfo: (
+      <InfoTip
+        content="Variation de ta quote-part depuis la dernière valorisation (hier)."
+        aria-label="En savoir plus sur la variation de ta quote-part"
+      />
+    ),
+    action: (
+      <a href="#" className="text-[13px] font-semibold text-text-sec underline underline-offset-2">
+        Comprendre ma quote-part
+      </a>
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const info = canvas.getByRole('button', {
+      name: 'En savoir plus sur la variation de ta quote-part',
+    })
+    await userEvent.click(info)
+    expect(
+      canvas.getByText('Variation de ta quote-part depuis la dernière valorisation (hier).')
+    ).toBeInTheDocument()
   },
 }
 

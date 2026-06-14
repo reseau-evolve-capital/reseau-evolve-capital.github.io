@@ -93,6 +93,10 @@ export interface PortfolioTableProps {
   totalCount?: number
   /** Chaînes user-facing/a11y (i18n). Tout défaut est FR. */
   labels?: PortfolioTableLabels
+  /** Slot info accolé à l'en-tête de la colonne gain/perte % (ex. un `<InfoTip>` injecté par
+   *  l'app, explique la perf de TOUTES les lignes sans saturer le tableau). Présentationnel —
+   *  pas de défaut FR. La colonne reste triable : l'info est rendue HORS du bouton de tri. */
+  gainLossPctInfo?: React.ReactNode
 }
 
 const col = createColumnHelper<PortfolioPosition>()
@@ -165,6 +169,7 @@ export function PortfolioTable({
   onRowClick,
   totalCount,
   labels,
+  gainLossPctInfo,
 }: PortfolioTableProps) {
   const [sorting, setSorting] = React.useState<SortingState>([{ id: 'currentValue', desc: true }])
 
@@ -210,6 +215,9 @@ export function PortfolioTable({
             <tr key={hg.id} className="border-b border-border">
               {hg.headers.map((h) => {
                 const sortable = h.column.getCanSort()
+                // Slot info accolé à l'en-tête gain/perte % — rendu HORS du bouton de tri
+                // (un InfoTip interactif imbriqué dans le bouton serait invalide en a11y).
+                const headerInfo = h.column.id === 'gainLossPct' ? gainLossPctInfo : null
                 return (
                   <th
                     key={h.id}
@@ -217,28 +225,31 @@ export function PortfolioTable({
                     aria-sort={sortable ? ariaSort(h.column.getIsSorted()) : undefined}
                     className="text-left text-[12px] font-semibold text-text-ter py-2 px-3 first:pl-0"
                   >
-                    {sortable ? (
-                      <button
-                        type="button"
-                        onClick={h.column.getToggleSortingHandler()}
-                        aria-label={sortLabel(
-                          String(h.column.columnDef.header),
-                          h.column.getIsSorted()
-                        )}
-                        className="inline-flex items-center gap-1 focus-visible:shadow-[var(--sh-glow)] focus-visible:outline-none rounded"
-                      >
-                        {flexRender(h.column.columnDef.header, h.getContext())}
-                        <span aria-hidden="true">
-                          {h.column.getIsSorted() === 'asc'
-                            ? '↑'
-                            : h.column.getIsSorted() === 'desc'
-                              ? '↓'
-                              : '↕'}
-                        </span>
-                      </button>
-                    ) : (
-                      flexRender(h.column.columnDef.header, h.getContext())
-                    )}
+                    <span className="inline-flex items-center gap-1">
+                      {sortable ? (
+                        <button
+                          type="button"
+                          onClick={h.column.getToggleSortingHandler()}
+                          aria-label={sortLabel(
+                            String(h.column.columnDef.header),
+                            h.column.getIsSorted()
+                          )}
+                          className="inline-flex items-center gap-1 focus-visible:shadow-[var(--sh-glow)] focus-visible:outline-none rounded"
+                        >
+                          {flexRender(h.column.columnDef.header, h.getContext())}
+                          <span aria-hidden="true">
+                            {h.column.getIsSorted() === 'asc'
+                              ? '↑'
+                              : h.column.getIsSorted() === 'desc'
+                                ? '↓'
+                                : '↕'}
+                          </span>
+                        </button>
+                      ) : (
+                        flexRender(h.column.columnDef.header, h.getContext())
+                      )}
+                      {headerInfo}
+                    </span>
                   </th>
                 )
               })}

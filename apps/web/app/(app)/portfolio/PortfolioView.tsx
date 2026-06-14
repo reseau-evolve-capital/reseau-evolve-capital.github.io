@@ -23,6 +23,7 @@ import {
   PortfolioTable,
   DataRow,
   FilterBar,
+  InfoTip,
   PositionDetailModal,
   SyncBanner,
   TrendBadge,
@@ -186,6 +187,15 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   const subtitle = t('subtitle', { count: openCount })
   const totalDir = trendDirection(totalGainLoss)
 
+  // InfoTips d'aide (retour owner Johanna, juin 2026) : copy via t() (jamais d'i18n dans @evolve/ui).
+  // — gain/perte TOTAL depuis l'achat : sur le TrendBadge du header + le libellé de la carte synthèse.
+  // — performance PAR ligne depuis l'achat : UN seul (i) dans l'en-tête de colonne %/desktop +
+  //   un (i) par carte mobile (perfInfo) — distinct de la variation 1 jour.
+  const totalGainLossInfoTip = (
+    <InfoTip content={t('totalGainLossInfo')} aria-label={t('totalGainLossInfoAria')} />
+  )
+  const positionInfoTip = <InfoTip content={t('positionInfo')} aria-label={t('positionInfoAria')} />
+
   return (
     <div className="flex flex-col gap-6" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
       {refreshing && (
@@ -250,6 +260,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
               value={formatEUR(totalGainLoss)}
               subValue={formatPct(totalGainLossPct)}
             />
+            {totalGainLossInfoTip}
           </div>
         </header>
 
@@ -347,8 +358,9 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
             </section>
           )}
           <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-card-sub px-4 py-3">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter">
               {t('totalGainLoss')}
+              {totalGainLossInfoTip}
             </span>
             <CurrencyAmount amount={totalGainLoss} size="lg" showSign className="block" />
             <TrendBadge
@@ -368,6 +380,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
               positions={visible}
               onRowClick={setSelected}
               totalCount={built.positions.length}
+              gainLossPctInfo={positionInfoTip}
               labels={{
                 columns: {
                   name: t('table.columns.name'),
@@ -396,7 +409,14 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
           {/* Mobile : cards */}
           <div className="flex flex-col gap-3 md:hidden">
             {visible.map((p) => (
-              <DataRow key={p.id} position={p} onClick={() => setSelected(p)} />
+              <DataRow
+                key={p.id}
+                position={p}
+                onClick={() => setSelected(p)}
+                perfInfo={
+                  <InfoTip content={t('positionInfo')} aria-label={t('positionInfoAria')} />
+                }
+              />
             ))}
           </div>
         </div>
