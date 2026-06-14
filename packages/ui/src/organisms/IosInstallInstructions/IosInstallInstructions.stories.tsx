@@ -17,7 +17,9 @@ const COPY: IosInstallInstructionsCopy = {
   step2Title: "« Sur l'écran d'accueil »",
   step2Body:
     "Dans le menu, descends puis choisis cette option. Evolve s'ajoute à ton écran d'accueil.",
-  step2Caption: '5e du haut',
+  step2Caption: "Cherche « Sur l'écran d'accueil »",
+  versionNote:
+    "Selon ta version d'iPhone, l'écran peut être légèrement différent — cherche toujours « Sur l'écran d'accueil ».",
   step2HighlightLabel: "Sur l'écran d'accueil",
   next: 'Étape suivante',
   done: "C'est fait",
@@ -98,6 +100,8 @@ export const FullFlow: Story = {
     await userEvent.click(body.getByRole('button', { name: COPY.next }))
     await waitFor(() => expect(body.getByText(COPY.step2Title)).toBeInTheDocument())
     await expect(body.getByText('Étape 2 sur 2')).toBeInTheDocument()
+    // La note de version iOS n'apparaît qu'à l'étape 2 (wording non-positionnel).
+    await expect(body.getByText(COPY.versionNote)).toBeInTheDocument()
     await expect(args.onStepView).toHaveBeenCalledWith(2)
     // Escape ferme la modale (Radix) → onClose.
     await userEvent.keyboard('{Escape}')

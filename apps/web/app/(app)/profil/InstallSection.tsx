@@ -100,6 +100,7 @@ export function InstallSection() {
     step2Title: t('modal.step2Title'),
     step2Body: t('modal.step2Body'),
     step2Caption: t('modal.step2Caption'),
+    versionNote: t('modal.versionNote'),
     step2HighlightLabel: t('modal.step2HighlightLabel'),
     next: t('modal.next'),
     done: t('modal.done'),

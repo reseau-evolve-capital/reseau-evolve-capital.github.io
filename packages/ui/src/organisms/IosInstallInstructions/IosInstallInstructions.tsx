@@ -31,6 +31,12 @@ export interface IosInstallInstructionsCopy {
   step2Title: string
   step2Body: string
   step2Caption: string
+  /**
+   * Note rassurante affichée à l'étape 2 : la disposition du menu Partager varie selon
+   * la version d'iOS, donc on rappelle de toujours chercher « Sur l'écran d'accueil »
+   * plutôt qu'une position numérique.
+   */
+  versionNote: string
   /** Libellé surligné dans le menu Partager (étape 2), ex. « Sur l'écran d'accueil ». */
   step2HighlightLabel: string
   /** CTA étape 1 → étape 2, ex. « Étape suivante ». */
@@ -154,6 +160,11 @@ export function IosInstallInstructions({
             <p className="mt-2 text-[11px] font-semibold uppercase tracking-wide text-text-ter">
               {caption}
             </p>
+            {/* Note de version iOS — uniquement à l'étape 2, là où la disposition du menu
+                Partager varie d'une version à l'autre (texte secondaire, rassurant). */}
+            {!isStep1 ? (
+              <p className="mt-2 text-[12px] leading-relaxed text-text-ter">{copy.versionNote}</p>
+            ) : null}
           </div>
 
           {/* Pied : CTA primaire (suivant / fait). */}
