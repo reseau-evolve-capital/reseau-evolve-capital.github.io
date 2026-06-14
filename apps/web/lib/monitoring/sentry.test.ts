@@ -26,7 +26,7 @@ describe('sentry monitoring helpers', () => {
       captureRouteError(err, { endpoint: '/api/sync' })
 
       expect(mocks.captureException).toHaveBeenCalledOnce()
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.tags).toEqual({ endpoint: '/api/sync' })
     })
 
@@ -34,14 +34,14 @@ describe('sentry monitoring helpers', () => {
       const err = new Error('unauthorized')
       captureRouteError(err, { endpoint: '/api/dashboard', userId: 'uuid-123' })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.user).toEqual({ id: 'uuid-123' })
     })
 
     it("n'inclut pas user si userId absent", () => {
       captureRouteError(new Error('nope'), { endpoint: '/api/health' })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.user).toBeUndefined()
     })
 
@@ -51,7 +51,7 @@ describe('sentry monitoring helpers', () => {
         extra: { club_id: 'club-42' },
       })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.extra).toEqual({ club_id: 'club-42' })
     })
 
@@ -64,7 +64,7 @@ describe('sentry monitoring helpers', () => {
       const err = new TypeError('type err')
       captureRouteError(err, { endpoint: '/api/portfolio' })
 
-      const [capturedErr] = mocks.captureException.mock.calls[0]
+      const [capturedErr] = mocks.captureException.mock.calls[0]!
       expect(capturedErr).toBe(err)
     })
   })
@@ -79,7 +79,7 @@ describe('sentry monitoring helpers', () => {
       captureActionError(err, { action: 'updateProfile' })
 
       expect(mocks.captureException).toHaveBeenCalledOnce()
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.tags).toEqual({ action: 'updateProfile' })
     })
 
@@ -89,14 +89,14 @@ describe('sentry monitoring helpers', () => {
         userId: 'uuid-456',
       })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.user).toEqual({ id: 'uuid-456' })
     })
 
     it("n'inclut pas user si userId absent", () => {
       captureActionError(new Error('nope'), { action: 'exportCSV' })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.user).toBeUndefined()
     })
 
@@ -106,7 +106,7 @@ describe('sentry monitoring helpers', () => {
         extra: { club_id: 'club-1' },
       })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.extra).toEqual({ club_id: 'club-1' })
     })
   })
@@ -121,7 +121,7 @@ describe('sentry monitoring helpers', () => {
       captureClientError(err, { source: 'usePortfolio' })
 
       expect(mocks.captureException).toHaveBeenCalledOnce()
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.tags).toEqual({ source: 'usePortfolio' })
     })
 
@@ -131,14 +131,14 @@ describe('sentry monitoring helpers', () => {
         queryKey: ['dashboard', 'club-1'],
       })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.extra).toMatchObject({ queryKey: ['dashboard', 'club-1'] })
     })
 
     it("n'inclut pas queryKey dans extra si undefined", () => {
       captureClientError(new Error('no key'), { source: 'useContributions' })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.extra).not.toHaveProperty('queryKey')
     })
 
@@ -154,7 +154,7 @@ describe('sentry monitoring helpers', () => {
         extra: { club_id: 'club-7' },
       })
 
-      const [, opts] = mocks.captureException.mock.calls[0]
+      const [, opts] = mocks.captureException.mock.calls[0]!
       expect(opts.extra).toEqual({ queryKey: ['portfolio'], club_id: 'club-7' })
     })
   })
