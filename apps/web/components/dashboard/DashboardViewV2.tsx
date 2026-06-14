@@ -251,6 +251,11 @@ export function DashboardViewV2({
     '1y': t('evolution.periodNames.1y'),
     max: t('evolution.periodNames.max'),
   }
+  // InfoTip « évolution » : explique que la courbe trace la quote-part sur la période choisie
+  // (retour owner Johanna, juin 2026). Accolé au titre du graphe (mobile + desktop).
+  const evolutionInfoTip = (
+    <InfoTip content={t('evolution.info')} aria-label={t('evolution.infoAria')} />
+  )
   const chartShared = {
     points: chart.points,
     period,
@@ -265,6 +270,7 @@ export function DashboardViewV2({
     direction: chart.direction,
     demoLabel: chart.demoLabel,
     periodGroupLabel: t('evolution.periodGroup'),
+    info: evolutionInfoTip,
   }
 
   // Variation « depuis hier » du hero. LIVE : variations.d1 (fraction → formatPct direct),
@@ -313,6 +319,12 @@ export function DashboardViewV2({
   })
   // Méta « hier · {date} » rendue UNIQUEMENT avec un TrendBadge (d1 live null → ni l'un ni l'autre).
   const heroVariationMeta = heroVariation ? variationMeta : undefined
+  // InfoTip « variation quote-part » : la variation « depuis hier » n'est pas auto-explicative
+  // (retour owner Johanna, juin 2026). Câblé sur le hero DESKTOP uniquement (le composant
+  // l'ignore sur le hero mobile, qui est un <button> → pas d'interactif imbriqué).
+  const quotePartInfoTip = heroVariation ? (
+    <InfoTip content={t('quotePart.info')} aria-label={t('quotePart.infoAria')} />
+  ) : undefined
 
   // Ruban mobile — 3 colonnes constantes : capacité absente → « — » (jamais de trou).
   // Label COURT « Capacité » (v2.capacityShort) : le libellé complet déborde en ellipsis
@@ -383,6 +395,7 @@ export function DashboardViewV2({
             netMarketValue={data.netMarketValue}
             variation={heroVariation}
             variationMeta={heroVariationMeta}
+            variationInfo={quotePartInfoTip}
             label={heroLabelDesktop}
             action={
               <button
@@ -487,6 +500,7 @@ export function DashboardViewV2({
         detentionPct={data.detentionPct}
         clubName={data.club.name}
         syncedAt={data.syncedAt}
+        variationInfo={heroVariation ? t('quotePart.info') : undefined}
       />
     </div>
   )

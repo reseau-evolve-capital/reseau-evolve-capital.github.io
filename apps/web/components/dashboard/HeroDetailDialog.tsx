@@ -24,6 +24,10 @@ export interface HeroDetailDialogProps {
   detentionPct: number
   clubName: string
   syncedAt: string | null
+  /** Explication de la BASE de la variation quote-part (ex. « …depuis la dernière valorisation
+   *  (hier). »). Sur mobile le hero est un <button> qui ouvre ce dialog : on y surface donc
+   *  l'explication que le (i) porte sur desktop (critère #1 du ticket, testé sur iPhone). */
+  variationInfo?: string
 }
 
 export function HeroDetailDialog({
@@ -33,6 +37,7 @@ export function HeroDetailDialog({
   detentionPct,
   clubName,
   syncedAt,
+  variationInfo,
 }: HeroDetailDialogProps) {
   const t = useTranslations('dashboard')
   const tCommon = useTranslations('common')
@@ -58,6 +63,9 @@ export function HeroDetailDialog({
           <div className="mt-4">
             <CurrencyAmount amount={netMarketValue} size="lg" />
           </div>
+          {variationInfo ? (
+            <p className="mt-2 text-[13px] leading-snug text-text-sec">{variationInfo}</p>
+          ) : null}
           {syncedAt && (
             <p className="mt-2 text-[12px] text-text-ter">
               {t('detail.lastSync', { time: formatRelativeTime(syncedAt, undefined, locale) })}
