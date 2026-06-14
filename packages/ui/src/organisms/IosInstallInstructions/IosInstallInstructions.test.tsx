@@ -26,7 +26,9 @@ const copy: IosInstallInstructionsCopy = {
   step1Caption: 'En bas de Safari',
   step2Title: "« Sur l'écran d'accueil »",
   step2Body: 'Dans le menu, descends puis choisis cette option.',
-  step2Caption: '5e du haut',
+  step2Caption: "Cherche « Sur l'écran d'accueil »",
+  versionNote:
+    "Selon ta version d'iPhone, l'écran peut être légèrement différent — cherche toujours « Sur l'écran d'accueil ».",
   step2HighlightLabel: "Sur l'écran d'accueil",
   next: 'Étape suivante',
   done: "C'est fait",
@@ -57,6 +59,18 @@ describe('IosInstallInstructions', () => {
     await waitFor(() => expect(screen.getByText("« Sur l'écran d'accueil »")).toBeInTheDocument())
     expect(screen.getByText('Étape 2 sur 2')).toBeInTheDocument()
     expect(onStepView).toHaveBeenCalledWith(2)
+  })
+
+  it("affiche la note de version iOS à l'étape 2 (absente à l'étape 1)", async () => {
+    const u = userEvent.setup()
+    render(<IosInstallInstructions {...baseProps} />)
+    // Étape 1 : pas de note de version.
+    expect(screen.queryByText(copy.versionNote)).not.toBeInTheDocument()
+    // Passe à l'étape 2 → la note apparaît.
+    await u.click(screen.getByRole('button', { name: 'Étape suivante' }))
+    await waitFor(() => expect(screen.getByText(copy.versionNote)).toBeInTheDocument())
+    // La caption non-positionnelle reste visible.
+    expect(screen.getByText("Cherche « Sur l'écran d'accueil »")).toBeInTheDocument()
   })
 
   it('« C’est fait » à l’étape 2 appelle onClose', async () => {
