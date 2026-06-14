@@ -18,6 +18,12 @@
     "spec-driven-workflow@omniventus-workshop": true,
     "git-pull-request@omniventus-workshop": true,
     "commit-and-push@omniventus-workshop": true,
-    "pr-tech-lead-review@omniventus-workshop": true
+    "pr-tech-lead-review@omniventus-workshop": true,
+    "agent-designer@omniventus-workshop": true,
+    "codebase-onboarding@omniventus-workshop": true,
+    "database-designer@omniventus-workshop": true,
+    "dependency-auditor@omniventus-workshop": true,
+    "orchestrate-goal@omniventus-workshop": true,
+    "tech-debt-tracker@omniventus-workshop": true
   }
 }

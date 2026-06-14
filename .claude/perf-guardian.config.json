@@ -1,0 +1,84 @@
+{
+  "$schema": "./skills/performance-guardian/config.schema.json",
+  "project_name": "Réseau Evolve Capital — Vitrine",
+  "url": "https://reseauevolvecapital.com",
+  "strategies": ["mobile", "desktop"],
+  "categories": ["performance", "accessibility", "best-practices", "seo"],
+  "locale": "fr",
+  "thresholds": {
+    "performance_mobile": 90,
+    "performance_desktop": 95,
+    "lcp_mobile_seconds": 2.5,
+    "cls_mobile": 0.1,
+    "accessibility": 90,
+    "best_practices": 90,
+    "seo": 95,
+    "unused_js_kb": 30,
+    "largest_image_kb": 200
+  },
+  "repo": {
+    "base_branch": "main",
+    "branch_prefix": "fix/perf",
+    "worktree_dir": ".claude/worktrees",
+    "commit_scope": "vitrine",
+    "pr_labels": ["perf", "automated"],
+    "stale_pr_days": 2
+  },
+  "allowed_paths": [
+    "apps/vitrine/public/",
+    "apps/vitrine/src/",
+    "apps/vitrine/next.config.ts",
+    "apps/vitrine/package.json"
+  ],
+  "forbidden_paths": [
+    "apps/web/",
+    "apps/cms/",
+    "supabase/",
+    "packages/",
+    ".github/workflows/deploy-vitrine.yml"
+  ],
+  "build_command": "pnpm --filter @evolve/vitrine build",
+  "fix_priority": [
+    {
+      "id": "hero-image-lcp",
+      "match": ["largest-contentful-paint", "image", "webp", "hero"],
+      "branch_suffix": "images-lcp"
+    },
+    {
+      "id": "unused-javascript",
+      "match": ["unused-javascript", "javascript"],
+      "branch_suffix": "unused-js"
+    },
+    {
+      "id": "redirects",
+      "match": ["redirect", "redirects"],
+      "branch_suffix": "redirects"
+    },
+    {
+      "id": "unused-css",
+      "match": ["unused-css", "css"],
+      "branch_suffix": "unused-css"
+    },
+    {
+      "id": "accessibility",
+      "match": ["accessibility", "aria", "contrast"],
+      "branch_suffix": "a11y"
+    }
+  ],
+  "notifications": {
+    "enabled": true,
+    "channel": "discord",
+    "discord": {
+      "webhook_url_env": "PERF_GUARDIAN_DISCORD_WEBHOOK",
+      "username": "Performance Guardian",
+      "mention_on_action_required": false,
+      "mention_user_id": null
+    },
+    "notion": {
+      "token_env": "NOTION_TOKEN",
+      "parent_type": "page",
+      "parent_id_env": "PERF_GUARDIAN_NOTION_PAGE_ID",
+      "database_id_env": null
+    }
+  }
+}
