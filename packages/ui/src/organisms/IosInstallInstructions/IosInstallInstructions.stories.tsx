@@ -11,9 +11,8 @@ import {
 // Copy d'exemple (spec §5). Présentationnel : aucune string codée en dur dans le composant.
 const COPY: IosInstallInstructionsCopy = {
   step1Title: 'Appuie sur Partager',
-  step1Body:
-    "L'icône Partager, en bas de Safari. Au centre de la barre d'outils. Appuie dessus pour ouvrir le menu de partage.",
-  step1Caption: 'En bas de Safari',
+  step1Body: "Appuie sur l'icône Partager — la flèche vers le haut — dans la barre Safari.",
+  step1Caption: '',
   step2Title: "« Sur l'écran d'accueil »",
   step2Body:
     "Dans le menu, descends puis choisis cette option. Evolve s'ajoute à ton écran d'accueil.",
