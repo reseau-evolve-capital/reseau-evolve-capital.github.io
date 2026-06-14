@@ -29,16 +29,17 @@ export const Paid: Story = {
 export const Late: Story = {
   args: {
     variant: 'late',
-    tooltip: 'Avril 2026 — en retard — 100 € dus',
+    tooltip: 'Avril 2026 : 100 € à régler.',
     'aria-label': 'Avril 2026 en retard',
     size: 'md',
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const cell = canvas.getByRole('button', { name: 'Avril 2026 en retard' })
-    // « Retard » = ROUGE dataviz (data-negative), jamais l'ambre data-warning
-    // ni le rouge brand (#E93E3A réservé au branding).
-    expect(cell.className).toContain('bg-data-negative-50')
+    // « Retard » = ROUGE dataviz data-negative PLEIN (jamais le tint pâle data-negative-50,
+    // jamais l'ambre data-warning, jamais le rouge brand #E93E3A réservé au branding).
+    expect(cell.className).toContain('bg-data-negative')
+    expect(cell.className).not.toContain('bg-data-negative-50')
     expect(cell.className).not.toContain('bg-data-warning')
     // Cible tactile : padding mobile (≥44px) replié sur sm (rendu compact 24px).
     expect(cell.className).toContain('p-2.5')
@@ -48,34 +49,57 @@ export const Late: Story = {
 export const Pending: Story = {
   args: {
     variant: 'pending',
-    tooltip: 'Juin 2026 — en attente',
+    tooltip: 'Juin 2026 : cotisation en cours ce mois-ci.',
     'aria-label': 'Juin 2026 en attente',
     size: 'md',
   },
 }
 
-export const Exempt: Story = {
+export const Future: Story = {
   args: {
-    variant: 'exempt',
-    tooltip: 'Exempté',
-    'aria-label': 'Exempté',
+    variant: 'future',
+    tooltip: 'Juillet 2026 : à venir.',
+    'aria-label': 'Juillet 2026 à venir',
     size: 'md',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const cell = canvas.getByRole('button', { name: 'Juillet 2026 à venir' })
+    // « À venir » = fond n-50 + anneau pointillé n-400 (overlay interne en md), jamais un fill plein.
+    expect(cell.className).toContain('bg-neutral-50')
+    expect(cell.querySelector('.border-dashed')).not.toBeNull()
+  },
+}
+
+export const NotApplicable: Story = {
+  args: {
+    variant: 'not_applicable',
+    tooltip: 'Janvier 2020 : avant ton arrivée dans le club.',
+    'aria-label': 'Janvier 2020 avant ton arrivée',
+    size: 'md',
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const cell = canvas.getByRole('button', { name: 'Janvier 2020 avant ton arrivée' })
+    // « Avant ton arrivée » = fond n-100 atténué + glyphe tiret.
+    expect(cell.className).toContain('bg-neutral-100')
+    expect(cell.textContent).toContain('–')
   },
 }
 
 const MONTHS = [
-  { variant: 'paid', label: 'Jan' },
-  { variant: 'paid', label: 'Fév' },
+  { variant: 'not_applicable', label: 'Jan' },
+  { variant: 'not_applicable', label: 'Fév' },
   { variant: 'paid', label: 'Mar' },
   { variant: 'late', label: 'Avr' },
   { variant: 'pending', label: 'Mai' },
   { variant: 'paid', label: 'Jun' },
-  { variant: 'exempt', label: 'Jul' },
-  { variant: 'paid', label: 'Aoû' },
-  { variant: 'paid', label: 'Sep' },
-  { variant: 'paid', label: 'Oct' },
-  { variant: 'paid', label: 'Nov' },
-  { variant: 'pending', label: 'Déc' },
+  { variant: 'future', label: 'Jul' },
+  { variant: 'future', label: 'Aoû' },
+  { variant: 'future', label: 'Sep' },
+  { variant: 'future', label: 'Oct' },
+  { variant: 'future', label: 'Nov' },
+  { variant: 'future', label: 'Déc' },
 ] as const
 
 export const Calendar12Months: Story = {

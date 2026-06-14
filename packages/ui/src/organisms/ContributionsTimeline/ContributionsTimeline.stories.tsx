@@ -12,7 +12,7 @@ type Story = StoryObj<typeof ContributionsTimeline>
 
 function full(
   year: number,
-  variant: 'paid' | 'late' | 'pending' | 'exempt' = 'paid'
+  variant: 'paid' | 'pending' | 'late' | 'future' | 'not_applicable' = 'paid'
 ): TimelineYear {
   return {
     year,
@@ -76,6 +76,115 @@ export const DeuxAnnees: Story = {
 
 export const HistoriqueLong: Story = {
   args: { years: [full(2026), full(2025), full(2024), full(2023), full(2022)] },
+}
+
+/** Les 5 états de cellule côte à côte sur une même année. */
+export const CinqEtats: Story = {
+  args: {
+    years: [
+      {
+        year: 2026,
+        months: [
+          {
+            month: 1,
+            variant: 'paid',
+            tooltip: 'Janvier 2026 : payé.',
+            ariaLabel: 'Janvier 2026 payé',
+          },
+          {
+            month: 2,
+            variant: 'paid',
+            tooltip: 'Février 2026 : payé.',
+            ariaLabel: 'Février 2026 payé',
+          },
+          {
+            month: 3,
+            variant: 'late',
+            tooltip: 'Mars 2026 : à régler.',
+            ariaLabel: 'Mars 2026 en retard',
+          },
+          {
+            month: 4,
+            variant: 'paid',
+            tooltip: 'Avril 2026 : payé.',
+            ariaLabel: 'Avril 2026 payé',
+          },
+          {
+            month: 5,
+            variant: 'pending',
+            tooltip: 'Mai 2026 : en cours.',
+            ariaLabel: 'Mai 2026 en cours',
+          },
+          {
+            month: 6,
+            variant: 'future',
+            tooltip: 'Juin 2026 : à venir.',
+            ariaLabel: 'Juin 2026 à venir',
+          },
+          {
+            month: 7,
+            variant: 'future',
+            tooltip: 'Juillet 2026 : à venir.',
+            ariaLabel: 'Juillet 2026 à venir',
+          },
+          {
+            month: 8,
+            variant: 'future',
+            tooltip: 'Août 2026 : à venir.',
+            ariaLabel: 'Août 2026 à venir',
+          },
+          {
+            month: 9,
+            variant: 'future',
+            tooltip: 'Septembre 2026 : à venir.',
+            ariaLabel: 'Septembre 2026 à venir',
+          },
+          {
+            month: 10,
+            variant: 'future',
+            tooltip: 'Octobre 2026 : à venir.',
+            ariaLabel: 'Octobre 2026 à venir',
+          },
+          {
+            month: 11,
+            variant: 'future',
+            tooltip: 'Novembre 2026 : à venir.',
+            ariaLabel: 'Novembre 2026 à venir',
+          },
+          {
+            month: 12,
+            variant: 'future',
+            tooltip: 'Décembre 2026 : à venir.',
+            ariaLabel: 'Décembre 2026 à venir',
+          },
+        ],
+      },
+    ],
+  },
+}
+
+/** Membre arrivé en cours de route : les mois avant l'adhésion sont en « not_applicable ». */
+export const ArriveEnCoursDeRoute: Story = {
+  args: {
+    years: [
+      {
+        year: 2025,
+        // Adhésion en juillet 2025 → janvier–juin en not_applicable, juillet–décembre payés.
+        months: Array.from({ length: 12 }, (_, i) => i + 1).map((month) => {
+          const variant = month < 7 ? ('not_applicable' as const) : ('paid' as const)
+          return {
+            month,
+            variant,
+            tooltip:
+              variant === 'not_applicable'
+                ? `Mois ${month}/2025 : avant ton arrivée dans le club.`
+                : `Mois ${month}/2025 : payé.`,
+            ariaLabel: `Mois ${month} 2025 ${variant}`,
+          }
+        }),
+      },
+    ],
+  },
 }
 
 export const Vide: Story = { args: { years: [] } }
