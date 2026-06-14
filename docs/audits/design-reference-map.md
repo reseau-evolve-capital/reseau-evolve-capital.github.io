@@ -265,3 +265,27 @@ Arbitrages lead (worktree `feat-dsh-011-reporting-sync`) :
 - **Dette Storybook (hors prod, non aggravée)** : la story `Dark` pose `data-theme` sur un wrapper alors que le Radix Portal monte sur `<body>` → la story dark est trompeuse (l'app prod est correcte). Fix = `data-theme` sur `document.documentElement` dans le ThemeDecorator.
 - **Env QA** : :3001 squatté par Cursor en IPv4 → dev server + e2e sur **:3011** (`E2E_BASE_URL`/`NEXT_PUBLIC_SITE_URL=http://localhost:3011`).
 - **Story Storybook FeedbackSheet** : crash `useId` (double instance React) — dette hors périmètre app membre, ticket dédié.
+
+## Feedback test #1 (Johanna · iOS) — wording, tooltips, états cotisations (2026-06-14)
+
+> Branche `fix/feedback-johanna-01` (base `origin/main`). Ticket : `TICKET_feedback-test-johanna-01.md`. Design prompt : `REC/Phase2_Handoff/qa/DESIGN_PROMPT_feedback-johanna-01.md`. 4 chantiers (tooltips chiffres, états/légende cotisations, attestation iOS, install PWA). QA : 9/9 critères PASS (2 agents : vérif adversariale + visuel light/dark). Captures `docs/audits/shots/qa-johanna-*`.
+
+- **Cotisations — 5 états** (`packages/ui` CotisationMonth + ContributionsTimeline) : Payé (`bg-brand-yellow` ✓) · En cours (`bg-data-neutral-50` point) · **En retard (`bg-data-negative` PLEIN** — corrige le bug « pastille trop pâle » : la légende montrait `data-negative-50`) · À venir (fond `bg-neutral-50` + **anneau pointillé `border-neutral-500`**) · Avant ton arrivée (`bg-neutral-100` atténué, tiret `–`). **La pastille de légende = remplissage EXACT de la cellule** (vérifié état par état). État `exempt` **supprimé** de la grille mensuelle (variant + légende + stories).
+- **Bug `not_applicable`** : `apps/web/lib/data/contributions.ts` `deriveVariant(m, joinedAtYM, nowYM)` — mois `< joinedAt` (lu de `memberships.joined_at`) → `not_applicable` (jamais rouge) ; mois `> nowYM` → `future`. `exempt` DB → `not_applicable`. Tooltips/aria des cellules i18n via `CellLabels` (défauts FR, `cell.*` câblés depuis `page.tsx`/next-intl).
+- **Tooltips chiffres** : réutilisent l'atome `InfoTip` (`@evolve/ui`) — slots optionnels présentationnels ajoutés à `DashboardHero.variationInfo`, `DashboardEvolutionChart.info`, `PortfolioTable.gainLossPctInfo`, `DataRow.perfInfo`. Posés sur variations/perf uniquement (quote-part, évolution, gain/perte total + par ligne), PAS les chiffres statiques.
+- **Attestation iOS** : `ContributionsView.tsx` — `window.open(url,'_blank','noopener')` **synchrone** (1re action du onClick) au lieu de `fetch→blob→a.click()` post-`await` (bloqué par iOS Safari). Route GET sert déjà le PDF `inline` (cookie auth).
+- **Install PWA** : caption non-positionnelle (`pwa.modal.step2Caption` = « Cherche "Sur l'écran d'accueil" », plus de « 5E EN PARTANT DU HAUT ») + nouvelle `versionNote` rendue à l'étape 2. Cas non-Safari iOS (`ios-other`) inchangé (invite déjà Safari).
+
+### Arbitrages lead (NE PAS flaguer en QA)
+
+- **A-JOH-1 — Pas de `molecules/InfoTooltip`.** Le ticket demandait un nouveau composant ; l'atome existant `atoms/InfoTip` remplit déjà 100 % de la spec (i 16px, zone 44px, tap/hover/focus/Esc, aria, glow, reduced-motion, jest-axe). Réutilisé tel quel → zéro doublon. **Validé owner.**
+- **A-JOH-2 — Tooltips ciblés, pas exhaustifs.** (i) uniquement sur les chiffres porteurs d'une base temporelle (variation/évolution/gain depuis acquisition), pas sur détention %/total cotisé/valeur totale. **Validé owner** (éviter le bruit pour une testeuse non-investisseuse).
+- **A-JOH-3 — Anneau « À venir » en `neutral-500`, pas `neutral-400`.** Le design prompt disait `n-400` « bien visible (AA) » mais `#B3B5B7` sur `#FAFAF9` = 1,97:1 < 3:1 (WCAG 1.4.11). Passé à `neutral-500` (#8A8B8C ≈ 3,3:1) — l'AA prime sur la valeur littérale du token.
+- **A-JOH-4 — Tooltip variation quote-part : (i) desktop + explication dans `HeroDetailDialog` sur mobile.** Le hero mobile est un `<button>` (interactif imbriqué interdit) → le (i) est desktop-only ; sur mobile le tap ouvre `HeroDetailDialog` qui surface l'explication de la base (`quotePart.info`). Critère #1 servi sur les deux plateformes (Johanna = iPhone).
+- **A-JOH-5 — `exempt` supprimé de la GRILLE mensuelle uniquement.** Le statut SYNTHÈSE membre `exempt` (enum DB `contribution_status`, ContributionStatusCard/MembersList/`statusValue`) reste défensivement (jamais déclenché, aucune migration). Conforme au ticket (`not_applicable` = état dérivé sans changement de schéma).
+
+### Dette / actions owner
+
+- **e2e non exécuté en session** (`:3001` squatté + stack Supabase/seed requis) : gate unit/story/typecheck/lint VERT (470 UI + 337 web) + QA visuel Storybook light/dark. Lancer côté owner : `pnpm --filter @evolve/web exec playwright test attestation.spec.ts cursor-pointer.spec.ts --workers=1` (sur `:3011`, cf. env QA). Test client attestation (event popup) ajouté.
+- **Validation iPhone réel** : ouverture du PDF attestation (geste synchrone) + tutoriel PWA adaptatif sur ≥2 versions iOS.
+- **Dette locale mois EN** : `monthLabel()` via `formatMonth` est figé fr-FR → le `{month}` des tooltips cellules reste en français même en locale EN (pré-existant, hors périmètre).
