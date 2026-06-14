@@ -81,3 +81,6 @@ db_cluster-*.gz
 # déjà commitées restent suivies ; ceci évite que les nouvelles polluent le repo.
 docs/audits/shots/
 .superpowers/
+
+# Worktrees git créés par performance-guardian (fixes perf isolés)
+.claude/worktrees/

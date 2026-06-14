@@ -24,6 +24,7 @@
     "database-designer@omniventus-workshop": true,
     "dependency-auditor@omniventus-workshop": true,
     "orchestrate-goal@omniventus-workshop": true,
-    "tech-debt-tracker@omniventus-workshop": true
+    "tech-debt-tracker@omniventus-workshop": true,
+    "performance-guardian@omniventus-workshop": true
   }
 }

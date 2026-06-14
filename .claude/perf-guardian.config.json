@@ -16,6 +16,16 @@
     "unused_js_kb": 30,
     "largest_image_kb": 200
   },
+  "open_graph": {
+    "enabled": true,
+    "audit_urls": ["/fr/", "/en/", "/fr/blog/"],
+    "min_score": 80,
+    "required_tags": ["og:title", "og:description", "og:image", "og:url", "og:type"],
+    "recommended_tags": ["og:locale", "og:site_name", "og:image:width", "og:image:height"],
+    "image_min_width": 1200,
+    "image_min_height": 630,
+    "include_twitter_card": true
+  },
   "repo": {
     "base_branch": "main",
     "branch_prefix": "fix/perf",
@@ -43,6 +53,11 @@
       "id": "hero-image-lcp",
       "match": ["largest-contentful-paint", "image", "webp", "hero"],
       "branch_suffix": "images-lcp"
+    },
+    {
+      "id": "open-graph",
+      "match": ["open-graph", "og:", "twitter:card", "og:image", "og:url"],
+      "branch_suffix": "open-graph"
     },
     {
       "id": "unused-javascript",
