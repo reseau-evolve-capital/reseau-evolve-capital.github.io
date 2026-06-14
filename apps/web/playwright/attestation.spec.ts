@@ -86,6 +86,24 @@ test('un membre télécharge son attestation → PDF (200, content-type, filenam
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Scénario 1bis : le CTA in-app ouvre le PDF dans un nouvel onglet (fix iOS, CHANTIER 3).
+// Le handler doit faire un `window.open` SYNCHRONE (pas de fetch/await avant) → Playwright
+// capte un événement `popup` dont l'URL pointe sur la route attestation.
+// ─────────────────────────────────────────────────────────────────────────────
+test("le CTA in-app ouvre l'attestation dans un nouvel onglet (popup vers la route)", async ({
+  page,
+}) => {
+  await loginAsSeedMember(page)
+  await page.goto('/contributions')
+
+  const cta = page.getByRole('button', { name: /attestation de détention/i })
+  await cta.waitFor({ state: 'visible' })
+
+  const [popup] = await Promise.all([page.waitForEvent('popup'), cta.click()])
+  expect(popup.url()).toContain('/api/attestation/detention')
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Scénario 2 : pas membre du club demandé → refus (403/404)
 // ─────────────────────────────────────────────────────────────────────────────
 test("un membre ne peut pas exporter l'attestation d'un autre club → 403/404", async ({ page }) => {

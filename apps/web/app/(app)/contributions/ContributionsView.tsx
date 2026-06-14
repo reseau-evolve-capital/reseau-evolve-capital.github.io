@@ -63,48 +63,31 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
     },
   })
 
-  // Télécharge le PDF d'attestation : fetch → blob → ancre temporaire (filename depuis l'en-tête).
-  // Succès/erreur surfacés via toast (ToastProvider monté au layout) + message inline persistant.
-  async function downloadAttestation() {
+  // Ouvre le PDF d'attestation dans un nouvel onglet (lecture inline — meilleure UX mobile).
+  //
+  // FIX iOS (CHANTIER 3) : l'ancien flux `fetch → blob → a.click()` plaçait l'ouverture APRÈS
+  // un `await`, ce qui casse sur iOS Safari (le geste utilisateur synchrone est perdu → popup
+  // bloquée, rien ne s'ouvre). On rend donc l'ouverture SYNCHRONE : `window.open(url)` est la
+  // 1re action du onClick, sur l'URL GET de la route (qui sert déjà le PDF `inline` via le cookie
+  // d'auth — pas besoin de fetch côté client). Aucun `await` avant le window.open.
+  function downloadAttestation() {
     if (downloading) return
     setAttestationError(null)
-    setDownloading(true)
-    try {
-      const clubId = data?.clubId
-      const qs = clubId ? `?clubId=${encodeURIComponent(clubId)}` : ''
-      const res = await fetch(`/api/attestation/detention${qs}`, {
-        headers: { Accept: 'application/pdf' },
-      })
-      if (!res.ok) throw new Error('attestation_failed')
-      const blob = await res.blob()
-      // Filename depuis Content-Disposition, fallback déterministe.
-      const disposition = res.headers.get('Content-Disposition') ?? ''
-      const match = /filename="?([^"]+)"?/.exec(disposition)
-      const filename = match?.[1] ?? 'attestation-detention.pdf'
-      const objectUrl = URL.createObjectURL(blob)
-      // Ouvre le PDF dans un nouvel onglet (lecture inline, meilleure UX mobile — QA 2026-06-07)
-      // plutôt que de forcer le téléchargement. `filename` reste dispo si l'utilisateur enregistre.
-      const a = document.createElement('a')
-      a.href = objectUrl
-      a.target = '_blank'
-      a.rel = 'noopener'
-      a.setAttribute('aria-label', filename)
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      // Libération différée : révoquer tout de suite viderait l'onglet PDF fraîchement ouvert.
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000)
-      // Confirmation éphémère (l'ouverture n'est pas toujours visible selon le navigateur).
-      toast.success({ title: t('attestation.success') })
-      // 🎯 attestation_download (key event) — succès uniquement, déclenchement in-app.
-      analyticsEvents.attestation.downloaded({ triggerSource: 'in_app' })
-    } catch {
-      // Toast d'erreur + message inline persistant (role=alert) pour l'accessibilité.
+    const clubId = data?.clubId
+    const qs = clubId ? `?clubId=${encodeURIComponent(clubId)}` : ''
+    const win = window.open(`/api/attestation/detention${qs}`, '_blank', 'noopener')
+    if (!win) {
+      // Popup bloquée (navigateur/extension) → erreur inline persistante (role=alert) + toast.
       setAttestationError(t('attestation.error'))
       toast.error({ title: t('attestation.error') })
-    } finally {
-      setDownloading(false)
+      return
     }
+    // Confirmation éphémère + flag visuel bref (l'ouverture n'est pas toujours visible).
+    setDownloading(true)
+    setTimeout(() => setDownloading(false), 1500)
+    toast.success({ title: t('attestation.success') })
+    // 🎯 attestation_download (key event) — succès uniquement, déclenchement in-app.
+    analyticsEvents.attestation.downloaded({ triggerSource: 'in_app' })
   }
 
   async function refresh() {
@@ -247,7 +230,7 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
           <div className="flex flex-col gap-2 lg:self-stretch">
             <Button
               variant="secondary"
-              onClick={() => void downloadAttestation()}
+              onClick={downloadAttestation}
               disabled={downloading}
               className="min-h-[44px] self-start lg:self-stretch"
             >
@@ -281,8 +264,8 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
                 paid: t('timeline.legend.paid'),
                 pending: t('timeline.legend.pending'),
                 late: t('timeline.legend.late'),
-                exempt: t('timeline.legend.exempt'),
-                upcoming: t('timeline.legend.upcoming'),
+                future: t('timeline.legend.future'),
+                notApplicable: t('timeline.legend.notApplicable'),
               },
               monthInitials: t.raw('timeline.monthInitials') as readonly string[],
               legendLabel: t('timeline.legendLabel'),
