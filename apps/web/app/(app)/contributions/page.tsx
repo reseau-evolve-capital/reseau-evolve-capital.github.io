@@ -25,7 +25,31 @@ export default async function ContributionsPage() {
   // Lookup memberships mémoïsé par requête — PARTAGÉ avec le layout (app) (ticket C).
   const m = await getActiveClubMembership(user.id)
 
-  const initialData = m?.club_id ? await getContributionsData(supabase, user.id, m.club_id) : null
+  // Libellés de cellule i18n (tooltips + aria) résolus côté RSC : la couche data reste pure,
+  // elle ne fait qu'appeler ces fonctions. Défauts FR internes si jamais l'objet manque (tests).
+  // NB : on passe par le namespace `contributions` + chemin `timeline.cell.*` (next-intl ne type
+  // pas un sous-objet à params ICU comme namespace direct).
+  const t = await getTranslations('contributions')
+  const cellLabels = {
+    paid: (v: { month: string; amount: string; date: string }) => t('timeline.cell.paid', v),
+    paidNoDate: (v: { month: string; amount: string }) => t('timeline.cell.paidNoDate', v),
+    pending: (v: { month: string }) => t('timeline.cell.pending', v),
+    late: (v: { month: string; amount: string }) => t('timeline.cell.late', v),
+    lateNoAmount: (v: { month: string }) => t('timeline.cell.lateNoAmount', v),
+    future: (v: { month: string }) => t('timeline.cell.future', v),
+    notApplicable: (v: { month: string }) => t('timeline.cell.notApplicable', v),
+    paidAria: (v: { month: string; amount: string; date: string }) =>
+      t('timeline.cell.paidAria', v),
+    paidNoDateAria: (v: { month: string; amount: string }) => t('timeline.cell.paidNoDateAria', v),
+    pendingAria: (v: { month: string }) => t('timeline.cell.pendingAria', v),
+    lateAria: (v: { month: string; amount: string }) => t('timeline.cell.lateAria', v),
+    futureAria: (v: { month: string }) => t('timeline.cell.futureAria', v),
+    notApplicableAria: (v: { month: string }) => t('timeline.cell.notApplicableAria', v),
+  }
+
+  const initialData = m?.club_id
+    ? await getContributionsData(supabase, user.id, m.club_id, cellLabels)
+    : null
 
   // Largeur/padding gérés par le layout (app) ; le 2 colonnes desktop vit dans la vue.
   return <ContributionsView initialData={initialData} />

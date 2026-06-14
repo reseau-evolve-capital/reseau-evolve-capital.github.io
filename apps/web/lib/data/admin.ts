@@ -348,7 +348,11 @@ export async function getClubContributionsTimeline(
   membershipId?: string | null
 ): Promise<{ years: TimelineYear[]; stats: ContribStats }> {
   // D3 — borne la frise à l'année courante (l'échéancier matrice va jusqu'en 2051 en `due`).
-  const currentYear = new Date().getFullYear()
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  // Indice ordinal du mois courant pour la dérivation des variantes (mois futurs → `future`).
+  // Vue club agrégée → pas d'adhésion individuelle, donc joinedAtYM = null (pas de `not_applicable`).
+  const nowYM = currentYear * 12 + now.getMonth()
   let q = supabase
     .from('contribution_months')
     .select('year, month, amount, status, paid_at')
@@ -378,7 +382,8 @@ export async function getClubContributionsTimeline(
   }))
   return {
     // Timeline = périodes uniques (agrégées au niveau club si « tous les membres »).
-    years: buildTimelineYears(aggregateMonthsByPeriod(months)),
+    // joinedAtYM = null (vue club) ; tooltips en défauts FR (pas d'i18n côté admin pour l'instant).
+    years: buildTimelineYears(aggregateMonthsByPeriod(months), null, nowYM),
     // Stats = tous les versements individuels (total/nombre/moyenne du club).
     stats: computeContribStats(months.map((m) => m.amount)),
   }
