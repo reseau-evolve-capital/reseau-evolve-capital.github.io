@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import type { ReactNode } from 'react'
 import { createHash } from 'crypto'
 import { cookies } from 'next/headers'
@@ -15,6 +16,10 @@ import { getSessionUser, getActiveClubMembership } from '@/lib/data/request'
 
 // Les pages app/* nécessitent l'auth Supabase — pas de prérendu statique
 export const dynamic = 'force-dynamic'
+
+// Pages authentifiées : jamais indexées (contenu privé membre).
+// Les scrapers OG lisent quand même les balises Open Graph malgré noindex.
+export const metadata: Metadata = { robots: { index: false, follow: false } }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   // Chargement de l'utilisateur côté serveur (session via cookies — RLS appliquée).
