@@ -25,7 +25,7 @@ export interface TimelineYear {
 }
 
 /** Clés des entrées de légende, dans l'ordre d'affichage. */
-type LegendKey = 'paid' | 'pending' | 'late' | 'exempt' | 'upcoming'
+type LegendKey = 'paid' | 'pending' | 'late' | 'future' | 'notApplicable'
 
 /** Toutes les chaînes user-facing/a11y de la timeline. Défauts FR byte-exacts. */
 export interface ContributionsTimelineLabels {
@@ -59,9 +59,9 @@ const MONTH_INITIALS = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', '
 const DEFAULT_LEGEND_LABELS: Record<LegendKey, string> = {
   paid: 'Payé',
   pending: 'En cours',
-  late: 'Retard',
-  exempt: 'Exempté',
-  upcoming: 'À venir',
+  late: 'En retard',
+  future: 'À venir',
+  notApplicable: 'Avant ton arrivée',
 }
 
 const DEFAULT_LEGEND_LABEL = 'Légende des statuts'
@@ -70,19 +70,20 @@ const DEFAULT_EMPTY_TITLE = "Aucune cotisation pour l'instant"
 const DEFAULT_EMPTY_DESCRIPTION = 'Ta première cotisation apparaîtra ici.'
 
 /** Pastilles de légende (classes CotisationMonth). Le libellé est résolu à l'usage
- *  via les défauts FR + overrides i18n. L'entrée « upcoming » décrit le rendu des
- *  mois futurs (absents en DB → non rendus). */
+ *  via les défauts FR + overrides i18n. Chaque swatch reproduit EXACTEMENT le remplissage
+ *  de la cellule correspondante (cf. CotisationMonth.variantClasses). */
 const LEGEND_SWATCHES: ReadonlyArray<{ key: LegendKey; swatch: string }> = [
   // paid : jaune Evolve plein (cf. CotisationMonth — surtout pas le vert data-positive).
   { key: 'paid', swatch: 'bg-brand-yellow' },
   // pending : mois courant en attente.
   { key: 'pending', swatch: 'bg-data-neutral-50' },
-  // late : retard (ROUGE dataviz data-negative, jamais le rouge brand #E93E3A).
-  { key: 'late', swatch: 'bg-data-negative-50' },
-  // exempt : dispensé de cotisation.
-  { key: 'exempt', swatch: 'bg-neutral-100 opacity-50' },
-  // À venir : mois futurs, non rendus dans la grille → swatch « vide » bordé.
-  { key: 'upcoming', swatch: 'border border-dashed border-border bg-transparent' },
+  // late : retard — ROUGE dataviz data-negative PLEIN (jamais data-negative-50 pâle ni le rouge
+  // brand #E93E3A). C'était le bug : la légende montrait le tint pâle, pas le remplissage réel.
+  { key: 'late', swatch: 'bg-data-negative' },
+  // future : mois à venir (année courante) — fond n-50 + anneau pointillé n-500 (AA non-texte ≥3:1).
+  { key: 'future', swatch: 'bg-neutral-50 border border-dashed border-neutral-500' },
+  // not_applicable : mois antérieur à l'adhésion — fond n-100 atténué.
+  { key: 'notApplicable', swatch: 'bg-neutral-100 opacity-60' },
 ] as const
 
 /** Déplace le focus entre les cellules via les flèches (roving focus DOM, sans toucher CotisationMonth). */

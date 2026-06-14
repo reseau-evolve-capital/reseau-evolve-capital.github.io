@@ -82,7 +82,7 @@ describe('ContributionsTimeline — rendu', () => {
     const { getByRole, getByText } = render(<ContributionsTimeline years={YEARS} />)
     const legend = getByRole('list', { name: 'Légende des statuts' })
     expect(legend).toBeInTheDocument()
-    ;['Payé', 'En cours', 'Retard', 'Exempté', 'À venir'].forEach((label) => {
+    ;['Payé', 'En cours', 'En retard', 'À venir', 'Avant ton arrivée'].forEach((label) => {
       expect(getByText(label)).toBeInTheDocument()
     })
   })
