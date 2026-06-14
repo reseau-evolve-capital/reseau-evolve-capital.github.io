@@ -8,6 +8,10 @@
 // en CI) → rien ne réconcilie repo ↔ prod. Ce test verrouille au moins la cohérence
 // CÔTÉ REPO : config.toml [auth.email].otp_length == OTP_CODE_LENGTH == 6.
 // Si l'un des deux dérive, CI échoue.
+//
+// ⚠️ Portée : ce test NE voit PAS la valeur du dashboard prod (la vraie cause de l'incident).
+// La protection anti-dérive prod relève du config-as-code (`supabase config push` en CI) ou
+// d'un healthcheck prod — voir le suivi owner. Ici on verrouille uniquement le contrat repo.
 
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -37,22 +41,28 @@ function findConfigToml(startDir: string): string {
 }
 
 /**
- * Extrait otp_length de la SECTION [auth.email] uniquement.
- * Piège : config.toml contient un AUTRE `otp_length = 6` plus bas, sous [auth.mfa.phone]
- * — il ne doit PAS être confondu avec celui de l'email. On isole donc d'abord le corps
- * de la section [auth.email] (jusqu'au prochain en-tête de table `[...]`), puis on y lit
- * la première clé `otp_length` (en ignorant les lignes commentées `#`).
+ * Isole le CORPS de la section [auth.email] (de l'en-tête jusqu'au prochain en-tête de
+ * table `[...]` en début de ligne). Piège : config.toml contient un AUTRE `otp_length = 6`
+ * plus bas, sous [auth.mfa.phone] — il ne doit JAMAIS entrer dans ce corps.
+ *
+ * ⚠️ Hypothèse : `otp_length` est déclaré AVANT toute sous-table `[auth.email.*]`
+ * (ex. [auth.email.smtp], [auth.email.template.*]). C'est l'ordre actuel de config.toml.
+ * Si un jour une sous-table était insérée avant `otp_length`, le corps serait coupé trop
+ * tôt et `readEmailOtpLength` throw « introuvable » — échec BRUYANT (pas silencieux), donc
+ * détectable. Garder `otp_length` directement sous `[auth.email]`.
  */
-function readEmailOtpLength(toml: string): number {
+function readEmailSection(toml: string): string {
   const sectionStart = toml.indexOf('[auth.email]')
   expect(sectionStart, 'section [auth.email] absente de config.toml').toBeGreaterThanOrEqual(0)
 
   const afterHeader = sectionStart + '[auth.email]'.length
-  // Fin de section = prochain en-tête de table en début de ligne (ex. [auth.email.smtp]
-  // ou [auth.sms]). On garde le corps strictement entre les deux.
   const nextHeaderRel = afterHeader + indexOfNextTableHeader(toml.slice(afterHeader))
-  const body = toml.slice(afterHeader, nextHeaderRel)
+  return toml.slice(afterHeader, nextHeaderRel)
+}
 
+/** Extrait otp_length de la SECTION [auth.email] uniquement (cf. readEmailSection). */
+function readEmailOtpLength(toml: string): number {
+  const body = readEmailSection(toml)
   const match = body.match(/^\s*otp_length\s*=\s*(\d+)/m)
   expect(match, 'otp_length introuvable dans la section [auth.email]').not.toBeNull()
   return Number(match![1])
@@ -66,12 +76,22 @@ function indexOfNextTableHeader(s: string): number {
 
 describe('contrat longueur OTP email (config.toml ↔ OTP_CODE_LENGTH)', () => {
   const configPath = findConfigToml(process.cwd())
-  const otpLength = readEmailOtpLength(readFileSync(configPath, 'utf8'))
+  const toml = readFileSync(configPath, 'utf8')
+  const otpLength = readEmailOtpLength(toml)
 
-  it('config.toml [auth.email].otp_length est bien lu depuis le bon scope (≠ [auth.mfa.phone])', () => {
-    // Garde-fou : l'extraction ne doit pas attraper la clé MFA. On vérifie que la valeur
-    // lue est un entier plausible et que la section MFA n'a pas pollué la lecture.
-    expect(Number.isInteger(otpLength)).toBe(true)
+  it('otp_length est lu dans le scope [auth.email], jamais celui de [auth.mfa.phone]', () => {
+    // Preuve structurelle : le corps isolé contient bien la clé otp_length, et n'a PAS
+    // débordé sur la section MFA (qui a aussi un otp_length) ni sur une autre table.
+    const emailBody = readEmailSection(toml)
+    expect(emailBody, 'le corps [auth.email] doit contenir otp_length').toMatch(
+      /^\s*otp_length\s*=/m
+    )
+    expect(emailBody, 'le corps [auth.email] ne doit pas déborder sur [auth.mfa').not.toContain(
+      '[auth.mfa'
+    )
+    expect(emailBody, 'le corps [auth.email] ne doit pas déborder sur [auth.sms').not.toContain(
+      '[auth.sms'
+    )
   })
 
   it('otp_length email vaut 6 (verrou de régression de l’incident OTP 8 chiffres)', () => {
