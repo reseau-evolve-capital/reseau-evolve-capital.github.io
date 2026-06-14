@@ -1063,5 +1063,13 @@
       "title": "Une erreur est survenue à l'envoi. Tes données ont été conservées.",
       "retry": "Réessayer"
     }
+  },
+  "metadata": {
+    "title": "Ton espace membre — Evolve Capital",
+    "description": "L'espace membre du Réseau Evolve Capital : quote-part, portefeuille du club, cotisations.",
+    "ogTitle": "Ton espace membre — Evolve Capital",
+    "ogDescription": "Suis ta quote-part, le portefeuille de ton club et tes cotisations. Sans mot de passe, en français.",
+    "twitterDescription": "Ta quote-part, le portefeuille de ton club et tes cotisations, au même endroit.",
+    "ogImageAlt": "Écran d'accueil de l'app Evolve Capital affichant la quote-part d'un membre"
   }
 }

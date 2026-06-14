@@ -8,8 +8,8 @@ const variantClasses: Record<CotisationVariant, string> = {
   // Jaune Evolve plein : le jaune = accent de marque pour « payé » (cf. réf visuelle).
   // data-positive (vert) est réservé aux gains, sémantiquement faux ici.
   paid: 'bg-brand-yellow hover:opacity-80',
-  // late : ROUGE dataviz (data-negative, JAMAIS le rouge brand #E93E3A) — retard = anomalie.
-  late: 'bg-data-negative-50 hover:opacity-80',
+  // late : ROUGE dataviz plein (data-negative = #C53030 light / #F87171 dark, JAMAIS le rouge brand #E93E3A) — retard = anomalie critique visible.
+  late: 'bg-data-negative hover:opacity-80',
   pending: 'bg-data-neutral-50 hover:opacity-80',
   exempt: 'bg-neutral-100 opacity-50',
 }
