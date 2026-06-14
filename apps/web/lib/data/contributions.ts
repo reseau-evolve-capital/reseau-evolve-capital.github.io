@@ -14,6 +14,8 @@ import type { createServerClient, Database } from '@evolve/data'
 import type { TimelineYear, CotisationVariant } from '@evolve/ui'
 import { formatEUR, formatMonth, formatDate } from '@evolve/utils'
 
+import { deriveContributionStatus, joinedAtToYM } from './contributionStatus'
+
 type ServerClient = ReturnType<typeof createServerClient>
 type ContributionRow = Database['public']['Tables']['contributions']['Row']
 type ContributionMonthRow = Database['public']['Tables']['contribution_months']['Row']
@@ -242,12 +244,7 @@ export async function getContributionsData(
   const currentYear = now.getFullYear()
   // Indices ordinaux pour la dérivation contextuelle des variantes (cf. deriveVariant).
   const nowYM = currentYear * 12 + now.getMonth()
-  const joinedAtYM = membership.joined_at
-    ? (() => {
-        const d = new Date(membership.joined_at)
-        return Number.isNaN(d.getTime()) ? null : d.getFullYear() * 12 + d.getMonth()
-      })()
-    : null
+  const joinedAtYM = joinedAtToYM(membership.joined_at)
 
   // Fix 2 — paralléliser les deux requêtes data (indépendantes, cf. dashboard.ts).
   const [{ data: summary, error }, { data: monthRows, error: monthsError }] = await Promise.all([
@@ -294,7 +291,9 @@ export async function getContributionsData(
 
   return {
     clubId,
-    status: summary.status,
+    // Statut global : la colonne feuille COTISATIONS prime, mais si elle est illisible
+    // (`pending`) on dérive depuis la frise mensuelle déjà chargée (cohérence badge ↔ frise).
+    status: deriveContributionStatus(summary.status, months, joinedAtYM, nowYM),
     userRole: membership.role,
     totalContributed: Number(summary.total_contributed ?? 0),
     // D2 — la colonne `months_count` vient d'une cellule #ERROR! (→ null/0). On dérive le
