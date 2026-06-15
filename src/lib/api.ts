@@ -418,3 +418,37 @@ export function getStrapiOgImage(
     type: 'image/jpeg',
   }
 }
+
+/** Forme d'une image Open Graph (compatible `Metadata.openGraph.images[number]`). */
+export interface BlogOgImage {
+  url: string
+  secureUrl: string
+  width: number
+  height: number
+  type: string
+}
+
+/**
+ * Image Open Graph locale servie quand un article n'a pas de `featuredImage`
+ * (RT-07 option b). 1200×630 PNG, 284 KB (sous le budget WhatsApp ~300 KB).
+ * URL relative → résolue en absolu par `metadataBase` (layout `[locale]`).
+ */
+export const BLOG_OG_FALLBACK: BlogOgImage = {
+  url: '/og-blog-fallback.png',
+  secureUrl: '/og-blog-fallback.png',
+  width: 1200,
+  height: 630,
+  type: 'image/png',
+}
+
+/**
+ * Résout l'og:image d'un article blog (RT-07) : dérivé Strapi quand une
+ * `featuredImage` existe, sinon le fallback local `og-blog-fallback.png`.
+ * Pure et testable sans Strapi — toute la sélection de format passe par
+ * `getStrapiOgImage`, ce helper ne fait qu'ajouter le fallback + `secureUrl`.
+ */
+export function resolveBlogOgImage(media?: StrapiMedia | StrapiMediaRef | null): BlogOgImage {
+  const og = getStrapiOgImage(media)
+  if (!og) return BLOG_OG_FALLBACK
+  return { url: og.url, secureUrl: og.url, width: og.width, height: og.height, type: og.type }
+}

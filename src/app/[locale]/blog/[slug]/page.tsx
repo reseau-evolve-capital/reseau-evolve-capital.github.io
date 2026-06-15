@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import {
   getAllArticles,
   getArticleBySlug,
-  getStrapiOgImage,
+  resolveBlogOgImage,
   getArticleOfLocaleAndDocumentId,
 } from '@/lib/api'
 import BlogArticleContent from '@/components/blog/BlogArticleContent'
@@ -75,11 +75,10 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
   const description = article.SEOMetaDescription || article.excerpt
   // RT-07 : og:image structuré (dérivé Strapi `large` + dimensions + type) au
   // lieu de l'original brut en string nue → WhatsApp accepte la miniature et
-  // Next émet og:image:width/height/type/secure_url.
-  const og = getStrapiOgImage(article.featuredImage)
-  const ogImage = og
-    ? [{ url: og.url, secureUrl: og.url, width: og.width, height: og.height, type: og.type }]
-    : undefined
+  // Next émet og:image:width/height/type/secure_url. Sans featuredImage, on
+  // retombe sur le fallback local `/og-blog-fallback.png` (option b) → un article
+  // émet TOUJOURS une og:image (plus jamais de preview vide au partage).
+  const ogImage = [resolveBlogOgImage(article.featuredImage)]
 
   return {
     title,
@@ -88,13 +87,13 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       title,
       description,
       type: 'article',
-      ...(ogImage ? { images: ogImage } : {}),
+      images: ogImage,
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      ...(ogImage ? { images: ogImage } : {}),
+      images: ogImage,
     },
     alternates,
   }
