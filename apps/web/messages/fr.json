@@ -271,8 +271,8 @@
     },
     "contributionMessage": {
       "ok": "Tu es à jour de tes cotisations.",
-      "pending": "Ta cotisation du mois est en cours de traitement.",
-      "late": "Il te manque des cotisations. Régularise pour rester à jour.",
+      "pending": "Ta cotisation du mois est en attente de validation par ton trésorier.",
+      "late": "Tu as des cotisations en retard. Fais un virement à ton club pour régulariser.",
       "exempt": "Tu es exempté de cotisation pour le moment."
     },
     "capacity": {
