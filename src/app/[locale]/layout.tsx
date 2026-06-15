@@ -76,7 +76,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [
         {
           url: siteConfig.openGraph.image,
-          type: 'image/png',
+          type: 'image/jpeg',
           width: 1200,
           height: 630,
         },
