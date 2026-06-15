@@ -55,4 +55,49 @@ describe('AllocationDonut', () => {
     const { container } = render(<AllocationDonut data={[]} totalValue={0} />)
     expect(container.querySelector('[role="img"]')).toBeNull()
   })
+
+  // RT-11 : le bucket de regroupement prend le token neutre via le flag `isOther`, INDÉPENDAMMENT
+  // de la langue du libellé (le label vient des props, packages/ui = zéro i18n).
+  it('colore le bucket isOther en neutre même avec un libellé EN (« Other »)', () => {
+    const { container } = render(
+      <AllocationDonut
+        data={[
+          { label: 'Technology', value: 18000, percentage: 0.72 },
+          { label: 'Other', value: 7000, percentage: 0.28, isOther: true },
+        ]}
+        totalValue={25000}
+      />
+    )
+    const swatches = container.querySelectorAll<HTMLElement>('ul li span[aria-hidden="true"]')
+    // 1er item (vrai secteur) → 1re couleur de palette (brand-yellow), pas le neutre.
+    expect(swatches[0]!.style.backgroundColor).toContain('--color-brand-yellow')
+    // 2e item (isOther, label EN) → token neutre.
+    expect(swatches[1]!.style.backgroundColor).toContain('--color-data-neutral')
+  })
+
+  it('un item normal (sans isOther) reçoit une couleur de palette', () => {
+    const { container } = render(
+      <AllocationDonut
+        data={[{ label: 'Healthcare', value: 25000, percentage: 1 }]}
+        totalValue={25000}
+      />
+    )
+    const swatch = container.querySelector<HTMLElement>('ul li span[aria-hidden="true"]')!
+    expect(swatch.style.backgroundColor).toContain('--color-brand-yellow')
+    expect(swatch.style.backgroundColor).not.toContain('--color-data-neutral')
+  })
+
+  it('rétro-compat : label « Autres » sans flag → token neutre (fallback historique)', () => {
+    const { container } = render(
+      <AllocationDonut
+        data={[
+          { label: 'Technologie', value: 18000, percentage: 0.72 },
+          { label: 'Autres', value: 7000, percentage: 0.28 },
+        ]}
+        totalValue={25000}
+      />
+    )
+    const swatches = container.querySelectorAll<HTMLElement>('ul li span[aria-hidden="true"]')
+    expect(swatches[1]!.style.backgroundColor).toContain('--color-data-neutral')
+  })
 })

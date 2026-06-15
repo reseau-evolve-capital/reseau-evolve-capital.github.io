@@ -28,8 +28,11 @@ const SECTOR_PALETTE = [
   'var(--color-data-neutral)',
 ]
 
-function colorFor(label: string, index: number): string {
-  if (label === OTHER_SECTOR_LABEL) return 'var(--color-data-neutral)'
+// Le bucket de regroupement « Autres » prend le token neutre, indépendamment de la langue :
+// on lit le flag `isOther` posé côté data (RT-11). Le fallback `label === OTHER_SECTOR_LABEL`
+// reste pour les appelants qui ne posent pas encore le flag (rétro-compat, FR uniquement).
+function colorFor(item: AllocationItem, index: number): string {
+  if (item.isOther === true || item.label === OTHER_SECTOR_LABEL) return 'var(--color-data-neutral)'
   return SECTOR_PALETTE[index % SECTOR_PALETTE.length] as string
 }
 
@@ -74,7 +77,7 @@ export function AllocationDonut({
                 rootTabIndex={-1}
               >
                 {data.map((d, i) => (
-                  <Cell key={d.label} fill={colorFor(d.label, i)} stroke="var(--color-card)" />
+                  <Cell key={d.label} fill={colorFor(d, i)} stroke="var(--color-card)" />
                 ))}
               </Pie>
             </PieChart>
@@ -95,7 +98,7 @@ export function AllocationDonut({
           <li key={d.label} className="flex items-center gap-2 text-[13px] text-text-sec">
             <span
               className="inline-block h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: colorFor(d.label, i) }}
+              style={{ backgroundColor: colorFor(d, i) }}
               aria-hidden="true"
             />
             <span>{d.label}</span>
