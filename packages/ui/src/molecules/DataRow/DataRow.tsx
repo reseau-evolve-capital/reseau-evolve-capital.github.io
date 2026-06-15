@@ -53,6 +53,11 @@ export function DataRow({ position, onClick, isLoading, className, perfInfo }: D
         <span
           className={cn(
             "font-semibold text-[13px] [font-feature-settings:'tnum']",
+            // RT-02 : réserve la colonne droite occupée par l'InfoTip superposé en absolu
+            // (icône 16px @ right-3 + zone de hit 44×44px via after:-inset-3.5 → empiète
+            // jusqu'à ~42px du bord). pr-7 (28px) + p-4 de la carte (16px) repoussent le %
+            // hors de cette zone, même pour un % long négatif (`-12,34 %`).
+            'pr-7',
             loss ? 'text-data-negative' : 'text-data-positive'
           )}
         >
