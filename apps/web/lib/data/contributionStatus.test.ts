@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 
 import {
   deriveContributionStatus,
+  deriveAmountDue,
   joinedAtToYM,
   type MonthForStatus,
   type ContributionStatus,
@@ -97,5 +98,62 @@ describe('deriveContributionStatus — contexte adhésion + mois courant (cohér
   it('mois courant (== nowYM) payé → ok (limite incluse)', () => {
     const months = [month(2026, 6, 'paid')]
     expect(deriveContributionStatus('pending', months, null, NOW)).toBe('ok')
+  })
+})
+
+describe('deriveAmountDue — montant dû (la donnée source prime ; sinon dérivation)', () => {
+  const MIN = 100 // clubs.min_contribution par défaut
+
+  it('sheetAmountDue > 0 → valeur source intacte (priorité à la donnée explicite)', () => {
+    const months = [month(2026, 4, 'late'), month(2026, 5, 'late')] // 2 retards : ignorés ici
+    expect(deriveAmountDue(250, months, null, NOW, MIN)).toBe(250)
+  })
+
+  it('sheetAmountDue > 0 → conservé même si la dérivation donnerait autre chose', () => {
+    // 200,50 € fournis par la feuille : on ne recalcule pas, on garde la valeur source.
+    expect(deriveAmountDue(200.5, [month(2026, 5, 'late')], null, NOW, MIN)).toBe(200.5)
+  })
+
+  it('sheetAmountDue = 0, 0 mois late → 0 (le garde-fou d’affichage prendra le relais)', () => {
+    const months = [month(2026, 5, 'paid')]
+    expect(deriveAmountDue(0, months, null, NOW, MIN)).toBe(0)
+  })
+
+  it('sheetAmountDue = 0, 1 mois late → 1 × minContribution', () => {
+    const months = [month(2026, 5, 'late')]
+    expect(deriveAmountDue(0, months, null, NOW, MIN)).toBe(100)
+  })
+
+  it('sheetAmountDue = 0, 2 mois late → 2 × minContribution', () => {
+    const months = [month(2026, 4, 'late'), month(2026, 5, 'late')]
+    expect(deriveAmountDue(0, months, null, NOW, MIN)).toBe(200)
+  })
+
+  it('sheetAmountDue = 0, 3 mois late → 3 × minContribution', () => {
+    const months = [month(2026, 3, 'late'), month(2026, 4, 'late'), month(2026, 5, 'late')]
+    expect(deriveAmountDue(0, months, null, NOW, MIN)).toBe(300)
+  })
+
+  it('mois `late` ANTÉRIEUR à l’adhésion → non compté', () => {
+    const joinedAt = ym(2026, 3) // adhésion mars 2026
+    const months = [month(2026, 1, 'late'), month(2026, 2, 'late'), month(2026, 4, 'late')]
+    // seul avril (post-adhésion) compte → 1 × 100
+    expect(deriveAmountDue(0, months, joinedAt, NOW, MIN)).toBe(100)
+  })
+
+  it('mois `late` STRICTEMENT FUTUR → non compté', () => {
+    // nowYM = juin 2026 ; un retard d’août 2026 ne doit pas gonfler le montant dû.
+    const months = [month(2026, 5, 'late'), month(2026, 8, 'late')]
+    expect(deriveAmountDue(0, months, null, NOW, MIN)).toBe(100)
+  })
+
+  it('minContribution = 0 (indispo) → 0 même avec des mois late', () => {
+    const months = [month(2026, 4, 'late'), month(2026, 5, 'late')]
+    expect(deriveAmountDue(0, months, null, NOW, 0)).toBe(0)
+  })
+
+  it('sheetAmountDue négatif (donnée pourrie) → traité comme ≤ 0, on dérive', () => {
+    const months = [month(2026, 5, 'late')]
+    expect(deriveAmountDue(-5, months, null, NOW, MIN)).toBe(100)
   })
 })

@@ -78,3 +78,44 @@ export function deriveContributionStatus(
   if (hasPaid) return 'ok'
   return 'pending'
 }
+
+/**
+ * Montant dû d'un membre en retard, avec fallback dérivé de l'échéancier mensuel.
+ *
+ * Problème (RT-05) : le bandeau de retard affichait `lateAlert.title` avec `formatEUR(amountDue)`
+ * sans condition. Quand la colonne « Montant dû » de la matrice est vide/illisible, `amount_due`
+ * vaut 0 → bandeau « Tu as un retard de cotisation de 0,00 € » : trompeur (viole CLAUDE.md, jamais
+ * de « 0,00 € » trompeur à l'écran).
+ *
+ * Règle (décision owner) :
+ *   - `sheetAmountDue > 0` (donnée source explicite) → conservé tel quel (la donnée prime) ;
+ *   - sinon → on DÉRIVE : (nb de mois `late`, post-adhésion ET ≤ mois courant) × `minContribution`.
+ *     On applique EXACTEMENT les mêmes bornes que `deriveContributionStatus` pour rester cohérent
+ *     avec la frise et le badge de statut.
+ *
+ * Le résultat peut être 0 (ex. `minContribution` indisponible/0, ou aucun mois `late` exploitable) :
+ * dans ce cas le bandeau affichera la variante SANS montant (`lateAlert.titleNoAmount`), jamais
+ * « 0,00 € ». Pure (testée sans DB). `joinedAtYM`/`nowYM` sont des indices ordinaux (cf. toYM).
+ */
+export function deriveAmountDue(
+  sheetAmountDue: number,
+  months: MonthForStatus[],
+  joinedAtYM: number | null,
+  nowYM: number,
+  minContribution: number
+): number {
+  // La donnée source explicite prime toujours (on ne recalcule jamais un montant fourni).
+  if (sheetAmountDue > 0) return sheetAmountDue
+
+  // Sinon : compte des mois `late` exploitables (mêmes bornes que la dérivation de statut).
+  let lateMonths = 0
+  for (const m of months) {
+    const ym = toYM(m.year, m.month)
+    if (joinedAtYM != null && ym < joinedAtYM) continue // pré-adhésion : sans objet
+    if (ym > nowYM) continue // futur : pas encore dû
+    if (m.status === 'late') lateMonths += 1
+  }
+
+  // minContribution peut être 0/absent → produit 0 ; le garde-fou d'affichage prend le relais.
+  return lateMonths * minContribution
+}

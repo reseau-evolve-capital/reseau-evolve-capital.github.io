@@ -439,6 +439,7 @@
     },
     "lateAlert": {
       "title": "You have an overdue contribution of {amount}.",
+      "titleNoAmount": "You have an overdue contribution.",
       "body": "Reach out to your club's treasurer to settle your situation."
     },
     "empty": {
