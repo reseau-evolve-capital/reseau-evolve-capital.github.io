@@ -87,6 +87,35 @@ function errMsg(e: unknown): string {
   return e instanceof Error ? e.message : String(e)
 }
 
+/**
+ * Alerte Discord best-effort sur erreur DURE de sync (incident GOOGLEFINANCE 2026-06-14).
+ * POST le contenu sur le webhook `SYNC_ALERT_DISCORD_WEBHOOK_URL`. Comme tout l'alerting
+ * de cette fonction : ne throw JAMAIS et n'interrompt jamais la sync (webhook absent =
+ * no-op silencieux). Le mail trésorier/président reste géré par maybeSendSyncErrorAlert.
+ */
+export async function notifyDiscordSyncError(
+  webhookUrl: string | undefined,
+  clubId: string,
+  errors: string[]
+): Promise<void> {
+  if (!webhookUrl) return
+  try {
+    const content =
+      `🔴 **Sync Evolve Capital — erreur**\nClub \`${clubId}\`\n` +
+      errors
+        .map((e) => `• ${e}`)
+        .join('\n')
+        .slice(0, 1800)
+    await fetch(webhookUrl, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ content }),
+    })
+  } catch {
+    // Alerting best-effort : un webhook KO n'interrompt jamais la sync.
+  }
+}
+
 /** Recharge les memberships du club avec le full_name (jointure users) pour les lookups par nom. */
 async function loadMembershipLookups(
   supabase: SupabaseClient,
@@ -179,6 +208,14 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     const syncedSheets: string[] = []
     const errors: string[] = []
     const warnings: string[] = []
+    // GARDE-FOU VALORISATION (incident GOOGLEFINANCE 2026-06-14) — drapeau partagé entre
+    // l'étape Portefeuille (DÉTECTION du collapse) et l'étape COTISATIONS (PRÉSERVATION de
+    // net_market_value). Quand les cours live (GOOGLEFINANCE) sont transitoirement vides
+    // dans la feuille, la valo des positions tombe à 0, le total portefeuille s'effondre et
+    // les formules « Valeur Boursière nette » des membres (= détention × total) s'effondrent
+    // dans la même proportion. On REFUSE alors d'écrire ces valeurs (on conserve la dernière
+    // valeur saine en base) et on escalade en erreur DURE pour alerter trésorier + président.
+    let valuationUntrusted = false
     // Dirigeants extraits de PARAMETRAGES (capturés à l'étape 1) — consommés APRÈS l'import
     // Base par la réconciliation des rôles. Vide par défaut : si PARAMETRAGES échoue, la
     // réconciliation ne touche aucun rôle (les memberships restent tous 'member').
@@ -474,62 +511,117 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       const validPositions = positions.filter((p) => p.quantity != null)
       const droppedPositions = positions.filter((p) => p.quantity == null)
       const synced_at = new Date().toISOString()
-      const positionsWithMeta = validPositions.map((p) => ({ ...p, is_active: true, synced_at }))
-      if (positionsWithMeta.length > 0) {
-        const { error } = await supabase
-          .from('positions')
-          .upsert(positionsWithMeta, { onConflict: 'club_id,symbol' })
-        if (error) throw new Error(`upsert positions: ${error.message}`)
-      }
-      // RÉCONCILIATION — désactive les positions FANTÔMES : celles présentes en base mais
-      // ABSENTES de la matrice courante. Les lignes vivantes viennent d'être (ré)upsertées
-      // avec ce `synced_at` (constant du run) ; toute position du club encore active avec un
-      // synced_at ANTÉRIEUR n'a pas été revue → on la désactive (is_active=false) plutôt que
-      // de la supprimer (on conserve l'historique). Idempotent : un re-sync ne réactive rien.
-      // La lecture portfolio filtre déjà .eq('is_active', true) → les fantômes disparaissent.
+
+      // ---- GARDE-FOU VALORISATION (incident GOOGLEFINANCE 2026-06-14) ----
+      // Signature du collapse : une position a une quantité MAIS aucune valeur boursière
+      // (cours « Cours en € » vide/#N/A → market_value null/0). En régime normal, toutes
+      // les positions détenues ont une valo > 0. On corrobore par la MAGNITUDE : le nouveau
+      // total « Portefeuille » chute > 50 % vs la dernière valeur SAINE persistée (un vrai
+      // krach en 2h garde des cours, donc ne déclenche PAS unpriced ; seul un cours manquant
+      // le fait). Si suspect → on n'écrase NI positions, NI agrégats, NI net_market_value :
+      // on garde la dernière valeur saine en base, et on escalade en erreur DURE (alerte).
+      const aggregatesMapped = mapAggregateRows(aggregateRows, clubId)
+      const newTotal =
+        aggregatesMapped.find((a) => a.label.trim().toLowerCase() === 'portefeuille')
+          ?.market_value ?? null
+      const unpriced = validPositions.filter(
+        (p) => (p.quantity ?? 0) > 0 && (p.market_value == null || p.market_value === 0)
+      )
+      let lastGoodTotal: number | null = null
       {
-        const { error: deactErr } = await supabase
-          .from('positions')
-          .update({ is_active: false })
-          .eq('club_id', clubId)
-          .eq('is_active', true)
-          .lt('synced_at', synced_at)
-        if (deactErr) throw new Error(`deactivate positions: ${deactErr.message}`)
-      }
-      // AGRÉGATS (C2) — persiste les lignes à symbole vide (« Portefeuille », « Provision »,
-      // « Solde : … ») dans portfolio_aggregates pour que l'app lise le TOTAL et les soldes par
-      // label. Même logique de réconciliation que les positions : upsert par (club_id, label) avec
-      // ce synced_at, puis désactivation des labels au synced_at antérieur (absents de la matrice).
-      // Matching TOUJOURS par label (jamais par index).
-      {
-        const aggregates = mapAggregateRows(aggregateRows, clubId).map((a) => ({
-          ...a,
-          is_active: true,
-          synced_at,
-        }))
-        if (aggregates.length > 0) {
-          const { error: aggErr } = await supabase
-            .from('portfolio_aggregates')
-            .upsert(aggregates, { onConflict: 'club_id,label' })
-          if (aggErr) throw new Error(`upsert portfolio_aggregates: ${aggErr.message}`)
-        }
-        const { error: aggDeactErr } = await supabase
+        const { data: prevAgg } = await supabase
           .from('portfolio_aggregates')
-          .update({ is_active: false })
+          .select('market_value')
           .eq('club_id', clubId)
-          .eq('is_active', true)
-          .lt('synced_at', synced_at)
-        if (aggDeactErr) throw new Error(`deactivate portfolio_aggregates: ${aggDeactErr.message}`)
+          .eq('label', 'Portefeuille')
+          .maybeSingle()
+        const mv = (prevAgg as { market_value?: number | null } | null)?.market_value
+        lastGoodTotal = mv == null ? null : Number(mv)
       }
-      const status: SnapshotStatus = droppedPositions.length > 0 ? 'partial' : 'success'
-      const note =
-        droppedPositions.length > 0
-          ? `${droppedPositions.length} position(s) ignorée(s) : quantité illisible (${droppedPositions
-              .map((p) => p.symbol)
-              .join(', ')})`
-          : null
-      // MOLLE : positions à quantité illisible écartées → warnings[] (la feuille a importé).
-      if (note) warnings.push(`Portefeuille (lignes ignorées): ${note}`)
+      // On exige une BASELINE saine (dernière valeur « Portefeuille » persistée > 0) pour juger :
+      // sans historique (1er sync, club neuf) on ne peut pas détecter un collapse → on laisse
+      // passer. Trip si le total chute > 50 % vs baseline, OU si le total a disparu alors que des
+      // positions n'ont plus de cours (signature GOOGLEFINANCE). `unpriced` enrichit l'alerte.
+      // Le seuil 50 % est volontairement large : un vrai krach garde des cours (donc baisse
+      // < 50 % entre 2 syncs de 2h), tandis qu'un trou de cours fait chuter le total bien plus.
+      const haveBaseline = lastGoodTotal != null && lastGoodTotal > 0
+      const collapseByMagnitude = haveBaseline && newTotal != null && newTotal < 0.5 * lastGoodTotal
+      const totalVanished = haveBaseline && newTotal == null && unpriced.length > 0
+      valuationUntrusted = collapseByMagnitude || totalVanished
+
+      let status: SnapshotStatus
+      let note: string | null
+      if (valuationUntrusted) {
+        // ON N'ÉCRIT RIEN (positions/agrégats) : la dernière valeur saine en base est conservée.
+        const reason =
+          `Valorisation REJETÉE (effondrement détecté, données conservées) : total ` +
+          `${newTotal ?? '—'} € vs ${lastGoodTotal ?? '—'} € au dernier sync sain ; ` +
+          `${unpriced.length} position(s) sans cours [${unpriced.map((p) => p.symbol).join(', ')}]. ` +
+          `Cause probable : GOOGLEFINANCE transitoire. Vérifier les cellules « Cours en € » ` +
+          `de la feuille POSITIONS, puis relancer la sync.`
+        // DURE : escalade dans errors[] → success=false + alerte trésorier/président + Discord.
+        errors.push(`Portefeuille: ${reason}`)
+        status = 'partial'
+        note = reason
+      } else {
+        const positionsWithMeta = validPositions.map((p) => ({ ...p, is_active: true, synced_at }))
+        if (positionsWithMeta.length > 0) {
+          const { error } = await supabase
+            .from('positions')
+            .upsert(positionsWithMeta, { onConflict: 'club_id,symbol' })
+          if (error) throw new Error(`upsert positions: ${error.message}`)
+        }
+        // RÉCONCILIATION — désactive les positions FANTÔMES : celles présentes en base mais
+        // ABSENTES de la matrice courante. Les lignes vivantes viennent d'être (ré)upsertées
+        // avec ce `synced_at` (constant du run) ; toute position du club encore active avec un
+        // synced_at ANTÉRIEUR n'a pas été revue → on la désactive (is_active=false) plutôt que
+        // de la supprimer (on conserve l'historique). Idempotent : un re-sync ne réactive rien.
+        // La lecture portfolio filtre déjà .eq('is_active', true) → les fantômes disparaissent.
+        {
+          const { error: deactErr } = await supabase
+            .from('positions')
+            .update({ is_active: false })
+            .eq('club_id', clubId)
+            .eq('is_active', true)
+            .lt('synced_at', synced_at)
+          if (deactErr) throw new Error(`deactivate positions: ${deactErr.message}`)
+        }
+        // AGRÉGATS (C2) — persiste les lignes à symbole vide (« Portefeuille », « Provision »,
+        // « Solde : … ») dans portfolio_aggregates pour que l'app lise le TOTAL et les soldes par
+        // label. Même logique de réconciliation que les positions : upsert par (club_id, label) avec
+        // ce synced_at, puis désactivation des labels au synced_at antérieur (absents de la matrice).
+        // Matching TOUJOURS par label (jamais par index).
+        {
+          const aggregates = aggregatesMapped.map((a) => ({
+            ...a,
+            is_active: true,
+            synced_at,
+          }))
+          if (aggregates.length > 0) {
+            const { error: aggErr } = await supabase
+              .from('portfolio_aggregates')
+              .upsert(aggregates, { onConflict: 'club_id,label' })
+            if (aggErr) throw new Error(`upsert portfolio_aggregates: ${aggErr.message}`)
+          }
+          const { error: aggDeactErr } = await supabase
+            .from('portfolio_aggregates')
+            .update({ is_active: false })
+            .eq('club_id', clubId)
+            .eq('is_active', true)
+            .lt('synced_at', synced_at)
+          if (aggDeactErr)
+            throw new Error(`deactivate portfolio_aggregates: ${aggDeactErr.message}`)
+        }
+        status = droppedPositions.length > 0 ? 'partial' : 'success'
+        note =
+          droppedPositions.length > 0
+            ? `${droppedPositions.length} position(s) ignorée(s) : quantité illisible (${droppedPositions
+                .map((p) => p.symbol)
+                .join(', ')})`
+            : null
+        // MOLLE : positions à quantité illisible écartées → warnings[] (la feuille a importé).
+        if (note) warnings.push(`Portefeuille (lignes ignorées): ${note}`)
+      }
       // raw_data enrichi : matrice brute + lignes d'agrégat isolées (Provision, Espèces, total…).
       snapshots['Portefeuille'] = await createSnapshot(
         supabase,
@@ -735,10 +827,35 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       )
       const synced_at = new Date().toISOString()
       if (contributions.length > 0) {
-        const { error } = await supabase.from('contributions').upsert(
-          contributions.map((c) => ({ ...c, synced_at })),
-          { onConflict: 'membership_id' }
-        )
+        let rows_ = contributions.map((c) => ({ ...c, synced_at }))
+        // GARDE-FOU VALORISATION — si l'étape Portefeuille a rejeté la valo (cours
+        // GOOGLEFINANCE vides), net_market_value des membres est lui aussi effondré (formule
+        // Sheet = détention × total). On PRÉSERVE alors la valeur en base (dernière saine) et
+        // on laisse passer les autres colonnes (détention, total cotisé, statut, dû) qui ne
+        // dépendent pas des cours. L'erreur DURE a déjà été poussée par l'étape Portefeuille.
+        if (valuationUntrusted) {
+          const ids = contributions.map((c) => c.membership_id)
+          const { data: prev } = await supabase
+            .from('contributions')
+            .select('membership_id, net_market_value')
+            .in('membership_id', ids)
+          const prevMap = new Map(
+            ((prev ?? []) as Array<{ membership_id: string; net_market_value: number | null }>).map(
+              (p) => [p.membership_id, p.net_market_value]
+            )
+          )
+          rows_ = rows_.map((r) =>
+            prevMap.has(r.membership_id)
+              ? { ...r, net_market_value: prevMap.get(r.membership_id) ?? r.net_market_value }
+              : r
+          )
+          warnings.push(
+            'COTISATIONS: net_market_value préservé (valorisation rejetée ce run, voir Portefeuille).'
+          )
+        }
+        const { error } = await supabase
+          .from('contributions')
+          .upsert(rows_, { onConflict: 'membership_id' })
         if (error) throw new Error(`upsert contributions: ${error.message}`)
       }
       const notes: string[] = []
@@ -824,6 +941,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       await maybeSendSyncErrorAlert(supabase, clubId, errors.join(' | '), {
         sendEmail: deps.sendSyncErrorEmail,
       })
+      // Alerte Discord en parallèle du mail (best-effort, webhook optionnel).
+      await notifyDiscordSyncError(Deno.env.get('SYNC_ALERT_DISCORD_WEBHOOK_URL'), clubId, errors)
     }
 
     // success n'encode QUE les erreurs dures ; warnings est un ajout non-breaking.

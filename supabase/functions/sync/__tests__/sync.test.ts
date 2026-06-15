@@ -1480,3 +1480,128 @@ Deno.test('handler : sync réussie → aucune alerte email', async () => {
   assertEquals(body.success, true)
   assertEquals(emailSends.calls.length, 0)
 })
+
+// ===========================================================================
+// GARDE-FOU VALORISATION — incident GOOGLEFINANCE 2026-06-14
+// ===========================================================================
+// Quand les cours live (GOOGLEFINANCE) sont transitoirement vides dans la feuille,
+// la valo des positions tombe à 0, le total « Portefeuille » s'effondre et les
+// « Valeur Boursière nette » des membres (formule Sheet = détention × total)
+// s'effondrent dans la même proportion. Le garde-fou : si le total chute > 50 % vs la
+// dernière valeur saine persistée → on REFUSE d'écrire (positions/agrégats/net_market_value),
+// on conserve la dernière valeur saine, et on escalade en erreur DURE (alerte trésorier).
+Deno.test(
+  'handler : collapse valorisation (cours GOOGLEFINANCE vides) → valo rejetée, valeurs préservées, success=false',
+  async () => {
+    // POSITIONS SAINES (col 6 = Valeur boursière) : 1 position cotée + agrégat « Portefeuille ».
+    const GOOD_POSITIONS = [
+      ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours', 'Valeur'],
+      ['Apple', 'AAPL', 'Action', '10', 'EUR', '120,00', '1 200,00'],
+      ['Portefeuille', '', 'Agrégat', '', '', '', '700 000,00'],
+    ]
+    // POSITIONS EFFONDRÉES : cours vide (GOOGLEFINANCE KO) → valeur vide ; total = résidu cash.
+    const COLLAPSED_POSITIONS = [
+      ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours', 'Valeur'],
+      ['Apple', 'AAPL', 'Action', '10', 'EUR', '', ''],
+      ['Portefeuille', '', 'Agrégat', '', '', '', '159,08'],
+    ]
+    // COTISATIONS effondrées (net_market_value = 2,00€ au lieu de 9 500,00€) — doit être PRÉSERVÉ.
+    const COLLAPSED_COTISATIONS = [
+      [
+        'nom',
+        'Nb de mois cotisés',
+        'Pourcentage de détention',
+        'pénalités dues',
+        'Total Cotisé',
+        'Valeur Boursière nette',
+        'Nb normal de cotisations',
+        'Statut',
+        'Montant dû',
+        'Echéancier',
+        'Gain/Perte',
+        'Suffixe',
+      ],
+      [
+        'AFOUDAH Ruben',
+        '90',
+        '33,30%',
+        '0',
+        '9 000,00€',
+        '2,00€',
+        '95',
+        'Situation régulière',
+        '0',
+        '',
+        '',
+        '0,95',
+      ],
+    ]
+
+    const store = emptyStore(true)
+    seedTreasurer(store)
+
+    // 1) Sync SAINE → établit la baseline : agrégat « Portefeuille » = 700 000, net membre = 9 500.
+    await buildHandler(store, { overrides: { POSITIONS: GOOD_POSITIONS } })(syncRequest(CLUB_ID))
+    const aggBefore = store.portfolio_aggregates.find((a) => a.label === 'Portefeuille')
+    assert(aggBefore !== undefined)
+    assertEquals(Number(aggBefore.market_value), 700000)
+    assert(store.contributions.some((c) => Number(c.net_market_value) === 9500))
+
+    // 2) Sync EFFONDRÉE → le garde-fou doit refuser l'écriture.
+    const emailSends: EmailSends = { calls: [] }
+    const res = await buildHandler(store, {
+      overrides: { POSITIONS: COLLAPSED_POSITIONS, COTISATIONS: COLLAPSED_COTISATIONS },
+      emailSends,
+    })(syncRequest(CLUB_ID))
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as SyncResponseBody
+
+    // Erreur DURE escaladée → success=false + message explicite.
+    assertEquals(body.success, false)
+    assert(body.errors.some((e) => e.includes('Valorisation REJETÉE')))
+    // Snapshot Portefeuille marqué partial (et NON success).
+    assertEquals(body.snapshots['Portefeuille'].status, 'partial')
+
+    // Agrégat « Portefeuille » NON écrasé : la dernière valeur saine (700 000) est conservée.
+    const aggAfter = store.portfolio_aggregates.find((a) => a.label === 'Portefeuille')
+    assert(aggAfter !== undefined)
+    assertEquals(Number(aggAfter.market_value), 700000)
+
+    // net_market_value PRÉSERVÉ : 9 500 conservé, la valeur effondrée (2) JAMAIS écrite.
+    assert(store.contributions.some((c) => Number(c.net_market_value) === 9500))
+    assert(store.contributions.every((c) => Number(c.net_market_value) !== 2))
+
+    // Alerte trésorier partie (le mail couvre trésorier + président + network_admin).
+    assertEquals(emailSends.calls.length, 1)
+    assertEquals(emailSends.calls[0].recipients, ['treso@club.fr'])
+  }
+)
+
+// Garde-fou — un VRAI mouvement (baisse < 50 %) ne déclenche PAS le garde-fou : la valo s'écrit.
+Deno.test(
+  'handler : baisse de marché modérée (< 50 %) → PAS de rejet, valo mise à jour',
+  async () => {
+    const POS_700K = [
+      ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours', 'Valeur'],
+      ['Apple', 'AAPL', 'Action', '10', 'EUR', '120,00', '1 200,00'],
+      ['Portefeuille', '', 'Agrégat', '', '', '', '700 000,00'],
+    ]
+    // -20 % : cours présents (pas de trou GOOGLEFINANCE), total 560 000 > 50 % de 700 000.
+    const POS_560K = [
+      ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours', 'Valeur'],
+      ['Apple', 'AAPL', 'Action', '10', 'EUR', '96,00', '960,00'],
+      ['Portefeuille', '', 'Agrégat', '', '', '', '560 000,00'],
+    ]
+    const store = emptyStore(true)
+    await buildHandler(store, { overrides: { POSITIONS: POS_700K } })(syncRequest(CLUB_ID))
+    const res = await buildHandler(store, { overrides: { POSITIONS: POS_560K } })(
+      syncRequest(CLUB_ID)
+    )
+    const body = (await res.json()) as SyncResponseBody
+    assertEquals(body.success, true)
+    assert(!body.errors.some((e) => e.includes('Valorisation REJETÉE')))
+    const agg = store.portfolio_aggregates.find((a) => a.label === 'Portefeuille')
+    assert(agg !== undefined)
+    assertEquals(Number(agg.market_value), 560000) // la baisse légitime EST écrite
+  }
+)
