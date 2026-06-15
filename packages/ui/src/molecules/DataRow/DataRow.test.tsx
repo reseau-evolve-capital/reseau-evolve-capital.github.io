@@ -74,4 +74,16 @@ describe('DataRow', () => {
     expect(container.innerHTML).not.toMatch(/E93E3A/i)
     expect(container.innerHTML).not.toContain('brand-red')
   })
+
+  // RT-02 : la valeur de perf (%) réserve une colonne droite (`pr-*`) pour que l'InfoTip
+  // superposé en absolu n'empiète jamais dessus (chevauchement (i) ↔ %, retours prod
+  // 2026-06-15). Vérif structurelle (robuste en jsdom) ; le non-chevauchement géométrique
+  // est couvert par la story `PerfInfoNoOverlap` (play sur les bounding boxes).
+  it("réserve l'espace de l'InfoTip à droite du % (padding droit)", () => {
+    const { container } = render(<DataRow position={{ ...pos, gainLossPct: -0.1234 }} />)
+    const pct = screen.getByText(/-12,34[\s ]%/)
+    expect(pct.className).toMatch(/\bpr-\d/)
+    // L'espace réservé doit être présent que la carte soit cliquable ou non.
+    expect(container.querySelector('[class*="pr-"]')).not.toBeNull()
+  })
 })

@@ -86,4 +86,40 @@ export const WithPerfInfo: Story = {
   },
 }
 
+/**
+ * RT-02 — non-chevauchement (i) ↔ % (retours prod 2026-06-15). Le `%` réserve une colonne
+ * droite (`pr-*`) ; l'InfoTip superposé en absolu (top droit) ne doit jamais recouvrir la
+ * valeur de perf. Cas le plus défavorable : `%` long ET négatif (`-12,34 %`). Le play compare
+ * les bounding boxes du `%` et de l'icône (i) : leurs rectangles ne se recouvrent pas.
+ */
+export const PerfInfoNoOverlap: Story = {
+  args: {
+    position: { ...base, name: 'EXEMPLE PERTE', gainLossPct: -0.1234, gainLossEur: -17898 },
+    onClick: fn(),
+    perfInfo: (
+      <InfoTip
+        content="Performance de cette ligne depuis l'achat — à ne pas confondre avec la variation du jour."
+        aria-label="En savoir plus sur la performance depuis l'achat"
+      />
+    ),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const pct = canvas.getByText(/-12,34[\s ]%/)
+    const info = canvas.getByRole('button', {
+      name: "En savoir plus sur la performance depuis l'achat",
+    })
+    const pctRect = pct.getBoundingClientRect()
+    const infoRect = info.getBoundingClientRect()
+    // En environnement de layout réel (navigateur Storybook), les rectangles doivent être
+    // disjoints horizontalement : le bord droit du % est à gauche du bord gauche du (i).
+    // jsdom ne calcule pas le layout (tout à 0) → on garde l'assertion seulement si on a
+    // une géométrie exploitable (sinon le test structurel de DataRow.test.tsx prend le relais).
+    const hasLayout = pctRect.width > 0 && infoRect.width > 0
+    if (hasLayout) {
+      await expect(pctRect.right).toBeLessThanOrEqual(infoRect.left + 1)
+    }
+  },
+}
+
 export const Loading: Story = { args: { position: base, isLoading: true } }
