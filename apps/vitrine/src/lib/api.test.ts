@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getStrapiOgImage } from './api'
+import { getStrapiOgImage, resolveBlogOgImage, BLOG_OG_FALLBACK } from './api'
 import type { StrapiMedia, StrapiMediaRef } from './api'
 
 // RT-07 — couvre le helper og:image (choix du dérivé Strapi + dimensions + type).
@@ -112,5 +112,40 @@ describe('getStrapiOgImage', () => {
       },
     } as unknown as StrapiMedia
     expect(getStrapiOgImage(absolute)?.url).toBe('https://cdn.example.com/large_x.jpg')
+  })
+})
+
+// RT-07 option b — un article SANS featuredImage doit quand même émettre une
+// og:image (fallback local), pour ne plus jamais partager une preview vide.
+describe('resolveBlogOgImage', () => {
+  it('dérive le dérivé Strapi quand une featuredImage existe', () => {
+    const media = {
+      url: '/uploads/original.jpg',
+      width: 5616,
+      height: 2592,
+      formats: {
+        large: fmt('/uploads/large_x.jpg', 1000, 462),
+      },
+    } as unknown as StrapiMedia
+
+    expect(resolveBlogOgImage(media)).toEqual({
+      url: 'http://localhost:1337/uploads/large_x.jpg',
+      secureUrl: 'http://localhost:1337/uploads/large_x.jpg',
+      width: 1000,
+      height: 462,
+      type: 'image/jpeg',
+    })
+  })
+
+  it('retombe sur le fallback local /og-blog-fallback.png quand featuredImage est absente', () => {
+    expect(resolveBlogOgImage(null)).toEqual({
+      url: '/og-blog-fallback.png',
+      secureUrl: '/og-blog-fallback.png',
+      width: 1200,
+      height: 630,
+      type: 'image/png',
+    })
+    expect(resolveBlogOgImage(undefined)).toEqual(BLOG_OG_FALLBACK)
+    expect(resolveBlogOgImage({ url: '' } as StrapiMediaRef)).toEqual(BLOG_OG_FALLBACK)
   })
 })

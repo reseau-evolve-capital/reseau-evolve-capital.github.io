@@ -12,7 +12,7 @@ Site public **Next.js 15 statique** (`next.config.ts` → `output: 'export'`, `t
 
 La vitrine est **SSG** : au `next build`, elle fetch l'API Strapi via `NEXT_PUBLIC_STRAPI_API_URL` (défaut `http://localhost:1337/api`) dans `src/lib/api.ts` → les routes `blog/[slug]`, `blog/page`, `blog/category/[id]` sont générées statiquement.
 
-**⚠ Gotcha** : si Strapi ne tourne pas au moment du build, les `try/catch` renvoient `[]` et **le blog se build vide, sans erreur**. Le deploy se fait donc en local, Strapi démarré. Le workflow CI `deploy-vitrine.yml` est gardé **dormant** tant que Strapi n'est pas hébergé sur un serveur distant.
+**⚠ Gotcha** : si Strapi ne tourne pas au moment du build, les `try/catch` renvoient `[]` et **le blog se build vide, sans erreur**. Le workflow CI `deploy-vitrine.yml` build désormais contre le **Strapi distant** (`strapi.reseauevolvecapital.com`) avec une **garde anti-blog-vide** (échec du job si l'API ne renvoie aucun article) et se déclenche sur push `main` (paths vitrine), `repository_dispatch` (webhook contenu Strapi) et manuel. Le deploy local (Strapi démarré) reste possible en secours.
 
 Pour démarrer Strapi, restaurer la base ou configurer les variables Strapi → voir **[`apps/cms/CLAUDE.md`](../cms/CLAUDE.md)**.
 
@@ -30,7 +30,7 @@ make vitrine-deploy
 
 > Les cibles `vitrine-export` / `vitrine-deploy` / `strapi-*` + le script `"deploy": "gh-pages -d out -t"` (dép `gh-pages`) sont **en place** (Makefile racine + `apps/vitrine/package.json`).
 
-**Source GitHub Pages** : ce flux suppose un Pages réglé sur _"Deploy from branch: `gh-pages`"_. Incompatible avec le déploiement _"GitHub Actions"_ (`deploy-vitrine.yml`, gardé dormant) — choisir l'un OU l'autre, pas les deux.
+**Source GitHub Pages** : ce flux local suppose un Pages réglé sur _"Deploy from branch: `gh-pages`"_. Incompatible avec le déploiement _"GitHub Actions"_ (`deploy-vitrine.yml`, désormais actif) — choisir l'un OU l'autre, pas les deux.
 
 > ⚠ **Images en prod** : le provider d'upload Strapi est **local** → les médias ne sont servis que sur `localhost:1337`, donc **absents du site statique déployé**. Pour des images publiques en prod, recâbler un provider de storage **public** (nouveau bucket Supabase / S3 / Cloudinary) dans `apps/cms/config/plugins.ts` et re-uploader. C'est un follow-up à traiter avant de redéployer un blog avec images.
 
