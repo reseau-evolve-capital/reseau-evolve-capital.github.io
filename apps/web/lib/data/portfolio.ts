@@ -203,11 +203,69 @@ export async function getPortfolioData(
 /** Convertit des points de % en fraction 0..1. Protège contre les NaN. */
 const pctToFraction = (v: number | null): number => (v == null || !Number.isFinite(v) ? 0 : v / 100)
 
-/** Construit le view-model enrichi + total + allocation par secteur (fractions 0..1). PUR. */
+/** Libellé par défaut du regroupement « Autres » de l'allocation par titre (RT-11). Neutre côté
+ *  data ; l'appelant (PortfolioView) passe son propre libellé i18n. */
+export const DEFAULT_OTHER_TITLE_LABEL = 'Autres'
+
+/** Nombre de titres montrés individuellement avant regroupement en « Autres » (RT-11). */
+const TOP_TITLES = 8
+
+/**
+ * Allocation par TITRE (RT-11) : agrège `currentValue` par `name` de position, trie desc, garde
+ * les `topN` premiers et regroupe le reste sous un libellé « Autres » (paramétrable pour i18n).
+ * `percentage` en FRACTION 0..1 sur `totalValue`. PUR. Jamais de NaN (total ≤ 0 → percentage 0).
+ */
+export function buildAllocationByTitle(
+  positions: PortfolioPosition[],
+  totalValue: number,
+  otherLabel: string = DEFAULT_OTHER_TITLE_LABEL,
+  topN: number = TOP_TITLES
+): AllocationItem[] {
+  // Agrège par nom (un même titre peut apparaître sur plusieurs lignes).
+  const byTitle = new Map<string, number>()
+  for (const p of positions) {
+    const key = p.name && p.name.trim() !== '' ? p.name : otherLabel
+    byTitle.set(key, (byTitle.get(key) ?? 0) + p.currentValue)
+  }
+
+  const sorted = [...byTitle.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value)
+
+  // Top N affichés individuellement ; le reste fusionné en « Autres » (ajouté à un éventuel
+  // « Autres » déjà présent issu des titres sans nom).
+  const head = sorted.slice(0, topN)
+  const tail = sorted.slice(topN)
+  const merged: { label: string; value: number }[] = [...head]
+  if (tail.length > 0) {
+    const tailSum = tail.reduce((s, e) => s + e.value, 0)
+    const existing = merged.find((e) => e.label === otherLabel)
+    if (existing) existing.value += tailSum
+    else merged.push({ label: otherLabel, value: tailSum })
+  }
+
+  return merged.map((e) => ({
+    label: e.label,
+    value: e.value,
+    percentage: totalValue > 0 ? e.value / totalValue : 0,
+  }))
+}
+
+/**
+ * Construit le view-model enrichi + total + allocation par secteur ET par titre (fractions 0..1).
+ * PUR. `otherTitleLabel` permet à l'appelant de fournir le libellé « Autres » i18n du regroupement
+ * par titre (RT-11) ; défaut neutre côté data.
+ */
 export function buildPortfolio(
   rows: PositionRow[],
-  prices: Record<string, number | null>
-): { positions: PortfolioPosition[]; totalValue: number; allocation: AllocationItem[] } {
+  prices: Record<string, number | null>,
+  otherTitleLabel: string = DEFAULT_OTHER_TITLE_LABEL
+): {
+  positions: PortfolioPosition[]
+  totalValue: number
+  allocation: AllocationItem[]
+  allocationByTitle: AllocationItem[]
+} {
   const enriched = rows.map((r) => {
     const liveRaw = prices[r.symbol]
     // Un prix doit être strictement positif pour être un cours valide ; 0/null/NaN → fallback snapshot.
@@ -269,7 +327,10 @@ export function buildPortfolio(
     }))
     .sort((a, b) => b.value - a.value)
 
-  return { positions, totalValue, allocation }
+  // Agrégation par TITRE (RT-11) : top N + « Autres » (libellé i18n fourni par l'appelant).
+  const allocationByTitle = buildAllocationByTitle(positions, totalValue, otherTitleLabel)
+
+  return { positions, totalValue, allocation, allocationByTitle }
 }
 
 /** Secteur d'une position pour le filtre (vide/null → « Autres »). */

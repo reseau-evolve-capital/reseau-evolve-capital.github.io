@@ -371,9 +371,15 @@
     },
     "allocation": {
       "title": "Répartition sectorielle",
+      "titleByTitle": "Répartition par titre",
       "totalValue": "Valeur totale",
       "ariaPrefix": "Allocation du portefeuille : ",
-      "legend": "Légende de l'allocation"
+      "ariaPrefixByTitle": "Allocation du portefeuille par titre : ",
+      "legend": "Légende de l'allocation",
+      "modeGroup": "Mode de répartition",
+      "modeSector": "Par secteur",
+      "modeTitle": "Par titre",
+      "otherTitle": "Autres"
     },
     "balances": {
       "title": "Provisions et soldes"
