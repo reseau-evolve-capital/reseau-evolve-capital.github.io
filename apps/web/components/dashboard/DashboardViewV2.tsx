@@ -345,7 +345,12 @@ export function DashboardViewV2({
   ]
 
   return (
-    <div className="flex flex-col gap-4" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
+    <div
+      data-testid="dashboard-pull-root"
+      className="flex flex-col gap-4"
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+    >
       {refreshing && (
         <div className="flex items-center justify-center gap-2 text-[13px] text-text-sec py-1">
           <Spinner size={16} /> {tCommon('refreshing')}
