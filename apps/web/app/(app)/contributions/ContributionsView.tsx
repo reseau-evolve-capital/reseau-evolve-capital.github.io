@@ -28,6 +28,7 @@ import {
 import { formatEUR } from '@evolve/utils'
 
 import { analyticsEvents } from '@/lib/analytics'
+import { openAttestation } from '@/lib/attestation/openAttestation'
 import type { ContributionsData, ContributionStatus } from '@/lib/data/contributions'
 import { useContributions } from '@/lib/hooks/useContributions'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
@@ -70,14 +71,18 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
   // bloquée, rien ne s'ouvre). On rend donc l'ouverture SYNCHRONE : `window.open(url)` est la
   // 1re action du onClick, sur l'URL GET de la route (qui sert déjà le PDF `inline` via le cookie
   // d'auth — pas besoin de fetch côté client). Aucun `await` avant le window.open.
+  //
+  // FIX RT-04 : on délègue l'ouverture au helper pur `openAttestation` qui ne passe PLUS 'noopener'
+  // — avec 'noopener', window.open renvoyait `null` même en cas de SUCCÈS (faux toast d'erreur
+  // persistant à chaque clic). On n'affiche donc l'erreur QUE si le helper renvoie 'blocked'.
   function downloadAttestation() {
     if (downloading) return
     setAttestationError(null)
     const clubId = data?.clubId
     const qs = clubId ? `?clubId=${encodeURIComponent(clubId)}` : ''
-    const win = window.open(`/api/attestation/detention${qs}`, '_blank', 'noopener')
-    if (!win) {
-      // Popup bloquée (navigateur/extension) → erreur inline persistante (role=alert) + toast.
+    const result = openAttestation(window.open.bind(window), `/api/attestation/detention${qs}`)
+    if (result === 'blocked') {
+      // Popup réellement bloquée (navigateur/extension) → erreur inline persistante (role=alert) + toast.
       setAttestationError(t('attestation.error'))
       toast.error({ title: t('attestation.error') })
       return
