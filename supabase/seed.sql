@@ -46,12 +46,24 @@ VALUES
   ('cccccccc-0000-0000-0000-000000000003', 'poll-member-b@example.com',  'Membre B Vote',  'FR', true)
 ON CONFLICT (id) DO NOTHING;
 
--- ── memberships actives (club E2E) ──────────────────────────────────────────
+-- ── Club dédié aux fixtures vote (ISOLÉ du club E2E `aaaa`) ───────────────────
+-- Les votes vivent dans LEUR club pour ne pas polluer le club E2E (admin.spec compte les
+-- membres de `aaaa`, contributions.spec en résout l'adhésion). Le membre de seed est aussi
+-- membre de ce club (pour voir les votes via RLS), mais avec un `joined_at` ANTÉRIEUR à son
+-- adhésion `aaaa` (2024-01-01) → `getActiveClubMembership` (ORDER BY joined_at DESC) renvoie
+-- toujours `aaaa` comme club actif (dashboard/cotisations/portefeuille inchangés).
+INSERT INTO clubs (id, name, slug, sheet_id)
+VALUES ('eeeeeeee-0000-0000-0000-000000000001', 'Club Votes E2E', 'club-votes-e2e', 'sheet-votes-e2e')
+ON CONFLICT (id) DO NOTHING;
+
+-- ── memberships actives (club VOTES) ─────────────────────────────────────────
 INSERT INTO memberships (user_id, club_id, role, status, joined_at)
 VALUES
-  ('cccccccc-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'president', 'active', '2024-01-01'),
-  ('cccccccc-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001', 'member',    'active', '2024-01-01'),
-  ('cccccccc-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000001', 'member',    'active', '2024-01-01')
+  ('cccccccc-0000-0000-0000-000000000001', 'eeeeeeee-0000-0000-0000-000000000001', 'president', 'active', '2024-01-01'),
+  ('cccccccc-0000-0000-0000-000000000002', 'eeeeeeee-0000-0000-0000-000000000001', 'member',    'active', '2024-01-01'),
+  ('cccccccc-0000-0000-0000-000000000003', 'eeeeeeee-0000-0000-0000-000000000001', 'member',    'active', '2024-01-01'),
+  -- membre de seed : voit les votes via RLS, mais club actif reste `aaaa` (joined_at antérieur)
+  ('bbbbbbbb-0000-0000-0000-000000000001', 'eeeeeeee-0000-0000-0000-000000000001', 'member',    'active', '2023-01-01')
 ON CONFLICT (user_id, club_id) DO NOTHING;
 
 -- ── polls ───────────────────────────────────────────────────────────────────
@@ -63,31 +75,31 @@ ON CONFLICT (user_id, club_id) DO NOTHING;
 INSERT INTO public.polls
   (id, club_id, title, description, question_type, options, results_visibility, status, closes_at, created_by)
 VALUES
-  ('dddddddd-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001',
+  ('dddddddd-0000-0000-0000-000000000001', 'eeeeeeee-0000-0000-0000-000000000001',
    'Faut-il investir dans une nouvelle ligne tech ?', 'Vote indicatif du club.',
    'yes_no', NULL, 'live', 'open', now() + interval '7 days',
    'cccccccc-0000-0000-0000-000000000001'),
 
-  ('dddddddd-0000-0000-0000-000000000002', 'aaaaaaaa-0000-0000-0000-000000000001',
+  ('dddddddd-0000-0000-0000-000000000002', 'eeeeeeee-0000-0000-0000-000000000001',
    'Quel secteur privilégier au prochain trimestre ?', NULL,
    'single_choice',
    '[{"id":"tech","label":"Tech"},{"id":"energie","label":"Énergie"},{"id":"sante","label":"Santé"}]'::jsonb,
    'after_close', 'open', now() + interval '7 days',
    'cccccccc-0000-0000-0000-000000000001'),
 
-  ('dddddddd-0000-0000-0000-000000000003', 'aaaaaaaa-0000-0000-0000-000000000001',
+  ('dddddddd-0000-0000-0000-000000000003', 'eeeeeeee-0000-0000-0000-000000000001',
    'Quels formats de réunion vous conviennent ?', NULL,
    'multiple_choice',
    '[{"id":"presentiel","label":"Présentiel"},{"id":"visio","label":"Visio"},{"id":"hybride","label":"Hybride"}]'::jsonb,
    'after_close', 'open', now() + interval '7 days',
    'cccccccc-0000-0000-0000-000000000001'),
 
-  ('dddddddd-0000-0000-0000-000000000004', 'aaaaaaaa-0000-0000-0000-000000000001',
+  ('dddddddd-0000-0000-0000-000000000004', 'eeeeeeee-0000-0000-0000-000000000001',
    'Une suggestion pour améliorer le club ?', 'Réponse anonyme, visible de l''équipe.',
    'short_text', NULL, 'live', 'open', NULL,
    'cccccccc-0000-0000-0000-000000000001'),
 
-  ('dddddddd-0000-0000-0000-000000000005', 'aaaaaaaa-0000-0000-0000-000000000001',
+  ('dddddddd-0000-0000-0000-000000000005', 'eeeeeeee-0000-0000-0000-000000000001',
    'Approuvez-vous le rapport annuel ?', NULL,
    'single_choice',
    '[{"id":"oui","label":"Oui"},{"id":"non","label":"Non"}]'::jsonb,
