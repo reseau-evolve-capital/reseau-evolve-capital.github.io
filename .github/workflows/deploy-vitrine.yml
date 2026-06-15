@@ -95,6 +95,14 @@ jobs:
             echo "reseauevolvecapital.com" > out/CNAME
           fi
 
+      # Garde-fou RT-07 : on lit le HTML réellement généré et on échoue le job si un
+      # article émet une og:image hors budget WhatsApp (>300 KB / dimensions/type KO),
+      # AVANT l'upload de l'artifact → on ne publie jamais une preview cassée.
+      # Pas de working-directory : le défaut OG_DIR=apps/vitrine/out se résout depuis
+      # la racine du repo (= chemin réel de out/).
+      - name: Vérifier les og:image (budget WhatsApp)
+        run: node apps/vitrine/scripts/check-og-images.mjs
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
