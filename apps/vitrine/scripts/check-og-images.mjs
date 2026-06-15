@@ -16,7 +16,7 @@
 // À câbler dans le flux de deploy vitrine (manuel ou `deploy-vitrine.yml`) :
 //   make vitrine-export && node apps/vitrine/scripts/check-og-images.mjs && make vitrine-deploy
 
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
 const OG_DIR = resolve(process.env.OG_DIR ?? 'apps/vitrine/out')
@@ -69,7 +69,26 @@ async function checkOne(file) {
   if (!height) errors.push('og:image:height manquante')
   if (!/^image\//.test(type)) errors.push(`og:image:type "${type}" invalide`)
 
-  if (!SKIP_HEAD) {
+  // Vérif du POIDS. Pour un asset AUTO-HÉBERGÉ (présent dans le build out/, ex.
+  // /brand/opengraph.jpg, /og-blog-fallback.png) on mesure le FICHIER du build — surtout
+  // PAS un HEAD sur l'URL live, qui renverrait l'image ACTUELLEMENT en ligne (pas celle
+  // qu'on s'apprête à déployer) → faux échec poule/œuf. Pour une image EXTERNE (CDN
+  // Strapi, déjà en ligne) on garde le HEAD réseau.
+  let localBytes = null
+  try {
+    const pathname = new URL(ogImage).pathname
+    const st = await stat(join(OG_DIR, decodeURIComponent(pathname))).catch(() => null)
+    if (st?.isFile()) localBytes = st.size
+  } catch {
+    // og:image relative (improbable : metadataBase rend l'URL absolue) → on tentera le HEAD
+  }
+
+  if (localBytes != null) {
+    if (localBytes >= MAX_BYTES)
+      errors.push(
+        `${Math.round(localBytes / 1024)} KB >= ${Math.round(MAX_BYTES / 1024)} KB (asset local du build, rejet WhatsApp)`
+      )
+  } else if (!SKIP_HEAD) {
     try {
       const res = await fetch(ogImage, { method: 'HEAD' })
       if (!res.ok) errors.push(`HEAD ${res.status} sur ${ogImage}`)
@@ -99,5 +118,5 @@ for (const r of checked) {
   if (r.errors.length) console.error(`❌ ${r.file}\n   ${r.errors.join('\n   ')}`)
   else console.log(`✅ ${r.file} — ${r.width}×${r.height} ${r.type}`)
 }
-console.log(`\n${checked.length} article(s) avec og:image · ${failed.length} en échec · ${results.length - checked.length} page(s) sans og:image ignorée(s)`)
+console.log(`\n${checked.length} page(s) blog avec og:image · ${failed.length} en échec · ${results.length - checked.length} page(s) sans og:image ignorée(s)`)
 process.exit(failed.length > 0 ? 1 : 0)
