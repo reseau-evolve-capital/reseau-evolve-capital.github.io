@@ -16,7 +16,7 @@
 // À câbler dans le flux de deploy vitrine (manuel ou `deploy-vitrine.yml`) :
 //   make vitrine-export && node apps/vitrine/scripts/check-og-images.mjs && make vitrine-deploy
 
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
 const OG_DIR = resolve(process.env.OG_DIR ?? 'apps/vitrine/out')
@@ -33,7 +33,19 @@ export function readMeta(html, property) {
   return html.match(a)?.[1] ?? html.match(b)?.[1] ?? null
 }
 
-/** Liste récursivement les `index.html` sous un dossier `blog/`. */
+/**
+ * Vrai uniquement pour une page d'ARTICLE `…/blog/<slug>/index.html`.
+ * Exclut la liste `…/blog/index.html` et les catégories `…/blog/category/<id>/index.html`,
+ * qui partagent l'og PAR DÉFAUT du site (concern de branding distinct, hors RT-07).
+ */
+function isArticlePath(p) {
+  const i = p.lastIndexOf(`${'/blog/'}`)
+  if (i === -1) return false
+  const segs = p.slice(i + '/blog/'.length).split('/')
+  return segs.length === 2 && segs[0] !== 'category' && segs[1] === 'index.html'
+}
+
+/** Liste récursivement les pages d'ARTICLE de blog (cf. isArticlePath). */
 async function findBlogHtml(dir) {
   const out = []
   async function walk(d) {
@@ -46,7 +58,7 @@ async function findBlogHtml(dir) {
     for (const e of entries) {
       const p = join(d, e.name)
       if (e.isDirectory()) await walk(p)
-      else if (e.isFile() && e.name === 'index.html' && p.includes(`${'blog'}`)) out.push(p)
+      else if (e.isFile() && e.name === 'index.html' && isArticlePath(p)) out.push(p)
     }
   }
   await walk(dir)
@@ -56,7 +68,7 @@ async function findBlogHtml(dir) {
 async function checkOne(file) {
   const html = await readFile(file, 'utf8')
   const ogImage = readMeta(html, 'og:image') ?? readMeta(html, 'og:image:url')
-  // Pages blog sans image (liste, catégorie) : pas d'og:image article → on ignore.
+  // Article sans og:image (ne devrait pas arriver : resolveBlogOgImage pose toujours un fallback) → on ignore.
   if (!ogImage) return { file, skipped: true }
 
   const errors = []
@@ -69,7 +81,25 @@ async function checkOne(file) {
   if (!height) errors.push('og:image:height manquante')
   if (!/^image\//.test(type)) errors.push(`og:image:type "${type}" invalide`)
 
-  if (!SKIP_HEAD) {
+  // Vérif du POIDS. Pour un asset AUTO-HÉBERGÉ (présent dans le build out/, ex. le fallback
+  // /og-blog-fallback.png) on mesure le FICHIER du build — surtout PAS un HEAD sur l'URL live,
+  // qui renverrait l'image ACTUELLEMENT en ligne, pas celle qu'on s'apprête à déployer
+  // (faux échec poule/œuf). Pour une image EXTERNE (CDN Strapi, déjà en ligne) on garde le HEAD.
+  let localBytes = null
+  try {
+    const pathname = new URL(ogImage).pathname
+    const st = await stat(join(OG_DIR, decodeURIComponent(pathname))).catch(() => null)
+    if (st?.isFile()) localBytes = st.size
+  } catch {
+    // og:image relative (improbable : metadataBase rend l'URL absolue) → on tentera le HEAD
+  }
+
+  if (localBytes != null) {
+    if (localBytes >= MAX_BYTES)
+      errors.push(
+        `${Math.round(localBytes / 1024)} KB >= ${Math.round(MAX_BYTES / 1024)} KB (asset local du build, rejet WhatsApp)`
+      )
+  } else if (!SKIP_HEAD) {
     try {
       const res = await fetch(ogImage, { method: 'HEAD' })
       if (!res.ok) errors.push(`HEAD ${res.status} sur ${ogImage}`)
