@@ -43,6 +43,8 @@ import {
   availableTypologies,
   totalFromAggregates,
   balanceAggregates,
+  liquidityFromAggregates,
+  isReimbursementAggregate,
   type PortfolioData,
 } from '@/lib/data/portfolio'
 import { analyticsEvents, countBucket, valueBucket } from '@/lib/analytics'
@@ -97,7 +99,11 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
     () => totalFromAggregates(aggregates) ?? built.totalValue,
     [aggregates, built.totalValue]
   )
-  // Soldes (Provision, Soldes courts/longs termes…) : tout agrégat hors « Portefeuille ».
+  // Liquidité du club (RT-08) : agrégat ESPECES (col B de la matrice), positif OU négatif.
+  // null si la ligne est absente → la section « Liquidité » n'est pas rendue.
+  const liquidity = useMemo(() => liquidityFromAggregates(aggregates), [aggregates])
+  // Soldes (Provision, Remboursement valorisé…) : tout agrégat HORS « Portefeuille », « ESPECES »,
+  // soldes courts/longs termes (perturbants → masqués, RT-08) et agrégats sans valeur (RT-10).
   const balances = useMemo(() => balanceAggregates(aggregates), [aggregates])
 
   // Analytics (Phase 2) : portfolio_viewed (key event « aha ») — une fois par montage, dès
@@ -195,6 +201,9 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
     <InfoTip content={t('totalGainLossInfo')} aria-label={t('totalGainLossInfoAria')} />
   )
   const positionInfoTip = <InfoTip content={t('positionInfo')} aria-label={t('positionInfoAria')} />
+
+  // RT-08 : direction du montant de liquidité (négatif = token dataviz, jamais rouge brand).
+  const liquidityNegative = liquidity != null && liquidity < 0
 
   return (
     <div className="flex flex-col gap-6" onTouchStart={onTouchStart} onTouchMove={onTouchMove}>
@@ -331,7 +340,32 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
               legendLabel={t('allocation.legend')}
             />
           </section>
-          {/* C2bis : Provision + soldes (col A = libellé DB en FR, col G = valeur). Fallback « — » si null. */}
+          {/* RT-08 : Liquidité du club (agrégat ESPECES, col B). Montant unique, positif OU négatif.
+              Négatif → token dataviz data-negative-strong (AAA), JAMAIS le rouge brand #E93E3A. */}
+          {liquidity != null && (
+            <section
+              aria-labelledby="liquidity-title"
+              className="flex flex-col gap-1 rounded-[10px] border border-border bg-card-sub px-4 py-3"
+            >
+              <span
+                id="liquidity-title"
+                className="flex items-center gap-1.5 font-display text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter"
+              >
+                {t('liquidity.title')}
+                <InfoTip content={t('liquidity.info')} aria-label={t('liquidity.infoAria')} />
+              </span>
+              <span
+                className={
+                  "text-[18px] font-medium [font-feature-settings:'tnum'] " +
+                  (liquidityNegative ? 'text-data-negative-strong' : 'text-text')
+                }
+              >
+                {formatEUR(liquidity)}
+              </span>
+            </section>
+          )}
+          {/* C2bis : Provision + soldes (col A = libellé DB en FR, col G = valeur). Les agrégats
+              sans valeur et les soldes courts/longs termes sont déjà écartés par balanceAggregates. */}
           {balances.length > 0 && (
             <section
               aria-labelledby="balances-title"
@@ -346,11 +380,18 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
               <dl className="flex flex-col gap-1.5">
                 {balances.map((b) => (
                   <div key={b.label} className="flex items-baseline justify-between gap-3">
-                    <dt className="text-[13px] text-text-sec">{b.label}</dt>
+                    <dt className="flex items-center gap-1.5 text-[13px] text-text-sec">
+                      {b.label}
+                      {/* RT-10 : InfoTip explicatif sur les lignes de remboursement. */}
+                      {isReimbursementAggregate(b.label) && (
+                        <InfoTip
+                          content={t('reimbursement.info')}
+                          aria-label={t('reimbursement.infoAria')}
+                        />
+                      )}
+                    </dt>
                     <dd className="text-[13px] font-medium text-text [font-feature-settings:'tnum']">
-                      {b.market_value != null && Number.isFinite(b.market_value)
-                        ? formatEUR(b.market_value)
-                        : '—'}
+                      {formatEUR(b.market_value as number)}
                     </dd>
                   </div>
                 ))}

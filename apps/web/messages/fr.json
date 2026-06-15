@@ -378,6 +378,15 @@
     "balances": {
       "title": "Provisions et soldes"
     },
+    "liquidity": {
+      "title": "Liquidité",
+      "info": "Trésorerie du club non investie (espèces sur le compte courtier). Peut être négative si le club est temporairement à découvert.",
+      "infoAria": "En savoir plus sur la liquidité du club"
+    },
+    "reimbursement": {
+      "info": "Sommes en cours de remboursement à un ou plusieurs membres sortants.",
+      "infoAria": "En savoir plus sur les remboursements en cours"
+    },
     "table": {
       "columns": {
         "name": "Actif",
