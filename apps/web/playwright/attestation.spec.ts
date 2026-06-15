@@ -55,6 +55,31 @@ async function cleanupPosition(): Promise<void> {
   })
 }
 
+/** Réf de la ligne attestation_sends du membre de seed pour une période (RT-03). null si absente. */
+async function fetchPersistedRef(period: string): Promise<string | null> {
+  return withDb(async (sql) => {
+    const rows = await sql<{ reference: string | null }[]>`
+      SELECT a.reference
+      FROM attestation_sends a
+      JOIN memberships m ON m.id = a.membership_id
+      WHERE m.club_id = ${SEED_CLUB_ID}::uuid AND a.period = ${period}
+      LIMIT 1
+    `
+    return rows[0]?.reference ?? null
+  })
+}
+
+/** Nettoie la ligne on-demand créée par le téléchargement RT-03 (idempotence du run e2e). */
+async function cleanupOndemandRef(period: string): Promise<void> {
+  await withDb(async (sql) => {
+    await sql`
+      DELETE FROM attestation_sends a
+      USING memberships m
+      WHERE a.membership_id = m.id AND m.club_id = ${SEED_CLUB_ID}::uuid AND a.period = ${period}
+    `
+  })
+}
+
 test.beforeAll(async () => {
   await seedPosition()
 })
@@ -101,6 +126,32 @@ test("le CTA in-app ouvre l'attestation dans un nouvel onglet (popup vers la rou
 
   const [popup] = await Promise.all([page.waitForEvent('popup'), cta.click()])
   expect(popup.url()).toContain('/api/attestation/detention')
+})
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Scénario 1ter (RT-03) : télécharger l'attestation persiste la référence du QR dans
+// attestation_sends → /verifier/<ref> retrouve le document (plus de « référence inconnue »).
+// On exerce la chaîne route → RPC record_attestation_ref (SECURITY DEFINER, migr 037).
+// ─────────────────────────────────────────────────────────────────────────────
+test("télécharger l'attestation persiste la référence du QR (vérifiable) — RT-03", async ({
+  page,
+}) => {
+  const RT03_PERIOD = '2026-03'
+  // Pré-condition propre : aucune ligne pour cette période avant le téléchargement.
+  await cleanupOndemandRef(RT03_PERIOD)
+  expect(await fetchPersistedRef(RT03_PERIOD)).toBeNull()
+
+  await loginAsSeedMember(page)
+  const res = await page.request.get(
+    `/api/attestation/detention?clubId=${SEED_CLUB_ID}&period=${RT03_PERIOD}`
+  )
+  expect(res.status()).toBe(200)
+
+  // Après le téléchargement, la référence (REC-202603-XXXX) est persistée → vérifiable.
+  const persisted = await fetchPersistedRef(RT03_PERIOD)
+  expect(persisted).toMatch(/^REC-202603-[0-9A-Z]{4}$/)
+
+  await cleanupOndemandRef(RT03_PERIOD)
 })
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -172,7 +172,10 @@ export async function GET(request: Request): Promise<NextResponse> {
       status: m.status,
     }))
 
-    const verificationBaseUrl = `${url.origin}/verifier`
+    // Base URL du QR : on privilégie l'URL publique canonique (NEXT_PUBLIC_SITE_URL) plutôt que
+    // `url.origin`, qui peut être un host de preview/interne (ex. *.vercel.app, IP Docker) et
+    // finirait IMPRIMÉ dans le QR du PDF → lien mort au scan. Fallback sur l'origin si non défini.
+    const verificationBaseUrl = `${process.env.NEXT_PUBLIC_SITE_URL ?? url.origin}/verifier`
 
     const input: AttestationInput = {
       identity: {
@@ -205,6 +208,25 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     const data = mapAttestation(input)
     const pdf = await renderAttestationPdf(data)
+
+    // RT-03 — rend l'attestation on-demand VÉRIFIABLE : persiste la même référence que celle
+    // encodée dans le QR (data.reference, calculée par mapAttestation à partir du même seed et de
+    // la même `period`) dans attestation_sends, via une RPC SECURITY DEFINER scopée à auth.uid()
+    // (migr 037 ; la route n'utilise PAS le service-role). Idempotent (ON CONFLICT). Non bloquant :
+    // un échec d'écriture ne doit jamais empêcher le téléchargement du PDF — le document prime.
+    const { error: refError } = await supabase.rpc('record_attestation_ref', {
+      p_membership_id: membershipId,
+      p_period: period,
+      p_reference: data.reference,
+    })
+    if (refError) {
+      Sentry.captureException(refError, {
+        tags: { endpoint: '/api/attestation/detention', step: 'record_attestation_ref' },
+        user: { id: userId },
+        extra: { club_id: clubId, period },
+      })
+      console.error('[attestation] record_attestation_ref échoué:', refError.message)
+    }
 
     const filename = `attestation-detention-${slugify(data.clubName)}-${period}.pdf`
     // Uint8Array vue sur le Buffer → BodyInit accepté par NextResponse (typage strict).

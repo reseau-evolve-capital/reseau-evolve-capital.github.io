@@ -430,6 +430,52 @@ describe.skipIf(!HAS_DB)('RLS — isolation cross-club (OPS-003)', () => {
     })
   })
 
+  describe('record_attestation_ref (RT-03 — RPC SECURITY DEFINER scopée auth.uid())', () => {
+    // Réf déterministe (REC-AAAAMM-XXXX) de la période seedée pour le membre A.
+    const PERIOD = '2024-12'
+    const REF_A = 'REC-202412-RLSA'
+    const REF_INTRUS = 'REC-202412-PWND'
+
+    it('A persiste la référence de SA membership (mise à jour de SA ligne)', async () => {
+      const { error } = await asA().rpc('record_attestation_ref', {
+        p_membership_id: MEM_A,
+        p_period: PERIOD,
+        p_reference: REF_A,
+      })
+      expect(error).toBeNull()
+
+      // Contrôle service-role : la référence a bien été écrite sur la ligne (MEM_A, 2024-12).
+      const admin = createServiceRoleClient()
+      const { data } = await admin
+        .from('attestation_sends')
+        .select('reference')
+        .eq('membership_id', MEM_A)
+        .eq('period', PERIOD)
+        .maybeSingle<{ reference: string | null }>()
+      expect(data?.reference).toBe(REF_A)
+    })
+
+    it('A ne peut PAS persister la référence de la membership B (refus + 0 écriture)', async () => {
+      const { error } = await asA().rpc('record_attestation_ref', {
+        p_membership_id: MEM_B,
+        p_period: PERIOD,
+        p_reference: REF_INTRUS,
+      })
+      // La RPC lève une exception (ERRCODE 42501) : membership n'appartenant pas à auth.uid().
+      expect(error).not.toBeNull()
+
+      // Contrôle service-role : la ligne du membre B n'a JAMAIS reçu la référence intruse.
+      const admin = createServiceRoleClient()
+      const { data } = await admin
+        .from('attestation_sends')
+        .select('reference')
+        .eq('membership_id', MEM_B)
+        .eq('period', PERIOD)
+        .maybeSingle<{ reference: string | null }>()
+      expect(data?.reference ?? null).not.toBe(REF_INTRUS)
+    })
+  })
+
   describe('invitations (staff-only)', () => {
     it('un membre simple ne voit AUCUNE invitation (ni A ni B)', async () => {
       const own = await asA().from('invitations').select('id').eq('club_id', CLUB_A)
