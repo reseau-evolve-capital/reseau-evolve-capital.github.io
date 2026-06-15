@@ -4,7 +4,7 @@ import { mapPollResults } from './mappers/pollResults.mapper.ts'
 import type { PollResults, PollResultsDTO } from './types.ts'
 
 /**
- * Client Vote anonyme — fines enveloppes typées autour des 3 RPC SECURITY DEFINER (migration 037).
+ * Client Vote anonyme — fines enveloppes typées autour des 3 RPC SECURITY DEFINER (migration 038).
  * À utiliser depuis `apps/web` (Server Action / RSC) avec un client Supabase authentifié
  * (createServerClient / createBrowserClient). Aucune lecture directe de `poll_responses` :
  * l'anonymat est garanti côté DB (REVOKE SELECT), seules les RPC exposent des agrégats.

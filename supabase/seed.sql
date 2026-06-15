@@ -15,7 +15,7 @@ VALUES ('bbbbbbbb-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-0000000
 ON CONFLICT (user_id, club_id) DO NOTHING;
 
 -- ════════════════════════════════════════════════════════════════════════════
--- Vote anonyme V0 (migration 037) — fixtures de test, idempotentes.
+-- Vote anonyme V0 (migration 038) — fixtures de test, idempotentes.
 --
 -- Objectif : couvrir les tests e2e/RPC :
 --   - un membre qui N'A PAS voté (poll_member_b : peut voter) ;

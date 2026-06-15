@@ -250,7 +250,7 @@
 
 ## FLOW-015 · Vote anonyme (consultation des membres)
 
-**Criticité :** HAUTE · **Spec e2e :** `apps/web/playwright/votes.spec.ts` · **Spec design :** `docs/superpowers/specs/2026-06-13-vote-anonyme-design.md` · **DB :** `supabase/migrations/037_polls.sql` (tables `polls`/`poll_responses`, RLS, RPC `submit_vote`/`get_poll_results`/`has_voted`, cron `close_due_polls`).
+**Criticité :** HAUTE · **Spec e2e :** `apps/web/playwright/votes.spec.ts` · **Spec design :** `docs/superpowers/specs/2026-06-13-vote-anonyme-design.md` · **DB :** `supabase/migrations/038_polls.sql` (tables `polls`/`poll_responses`, RLS, RPC `submit_vote`/`get_poll_results`/`has_voted`, cron `close_due_polls`).
 
 **Garantie d'anonymat (by design, niveau DB) :** `user_id` est stocké dans `poll_responses` uniquement pour la contrainte `UNIQUE (poll_id, user_id)` (1 vote/membre) et `has_voted()`. Il n'est **jamais** exposé : aucune policy SELECT pour `authenticated` (REVOKE effectif), et la RPC `get_poll_results` (SECURITY DEFINER) ne retourne **jamais** `user_id`. Preuve psql : `SELECT * FROM poll_responses` en rôle `authenticated` → `permission denied`.
 
@@ -270,4 +270,4 @@
 9. `/admin/votes/[id]` : résultats agrégés (jamais d'attribution) + clôture manuelle (`status='closed'`). L'admin voit les textes `short_text` sans pouvoir les relier à un membre.
 
 **Régressions à ne pas réintroduire :** R-035 (cursor-pointer sur CTA bannière, options de vote, switches du form). **Anonymat** : aucune route/composant ne doit exposer `user_id` d'une réponse. **Critères visuels :** [VISUAL.md#votes](./VISUAL.md) (`Votes - Maquettes (standalone).html` à la racine, basculer light **et** dark, desktop **et** mobile). **RGAA :** axe 0 violation sur `PollVoteSheet` (radio group / checkbox group, focus, ≥44px), AAA sur les chiffres-clés des résultats. Parité i18n fr/en (namespace `votes`).
-**Note env QA :** :3001 squatté par Cursor (IPv4) → lancer l'app/e2e sur **:3011** via `E2E_BASE_URL=http://localhost:3011 NEXT_PUBLIC_SITE_URL=http://localhost:3011`. Supabase local requis avec seed votes (migration 037 + `supabase/seed.sql`).
+**Note env QA :** :3001 squatté par Cursor (IPv4) → lancer l'app/e2e sur **:3011** via `E2E_BASE_URL=http://localhost:3011 NEXT_PUBLIC_SITE_URL=http://localhost:3011`. Supabase local requis avec seed votes (migration 038 + `supabase/seed.sql`).

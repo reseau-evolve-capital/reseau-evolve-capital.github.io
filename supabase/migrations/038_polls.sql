@@ -1,4 +1,4 @@
--- 037_polls.sql — Vote anonyme V0 (spec docs/superpowers/specs/2026-06-13-vote-anonyme-design.md §6, §7, §10).
+-- 038_polls.sql — Vote anonyme V0 (spec docs/superpowers/specs/2026-06-13-vote-anonyme-design.md §6, §7, §10).
 --
 -- QUOI : deux tables (`polls`, `poll_responses`), leur RLS, trois RPC SECURITY DEFINER
 --   (submit_vote / get_poll_results / has_voted) et un job pg_cron horaire de clôture auto.
