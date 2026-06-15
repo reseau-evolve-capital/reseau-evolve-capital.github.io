@@ -161,6 +161,7 @@ function InstallBannerInner() {
     step2Caption: t('modal.step2Caption'),
     versionNote: t('modal.versionNote'),
     step2HighlightLabel: t('modal.step2HighlightLabel'),
+    firstLoginNote: t('modal.firstLoginNote'),
     next: t('modal.next'),
     done: t('modal.done'),
     close: t('modal.close'),

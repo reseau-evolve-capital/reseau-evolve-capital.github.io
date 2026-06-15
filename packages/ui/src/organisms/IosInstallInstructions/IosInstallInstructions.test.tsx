@@ -30,6 +30,8 @@ const copy: IosInstallInstructionsCopy = {
   versionNote:
     "Selon ta version d'iPhone, l'écran peut être légèrement différent — cherche toujours « Sur l'écran d'accueil ».",
   step2HighlightLabel: "Sur l'écran d'accueil",
+  firstLoginNote:
+    "À la première ouverture, l'app te demandera ton code une fois — ensuite tu restes connecté(e).",
   next: 'Étape suivante',
   done: "C'est fait",
   close: 'Fermer',
@@ -71,6 +73,17 @@ describe('IosInstallInstructions', () => {
     await waitFor(() => expect(screen.getByText(copy.versionNote)).toBeInTheDocument())
     // La caption non-positionnelle reste visible.
     expect(screen.getByText("Cherche « Sur l'écran d'accueil »")).toBeInTheDocument()
+  })
+
+  it('affiche la note « 1er lancement » dès l’étape 1 et la conserve à l’étape 2', async () => {
+    const u = userEvent.setup()
+    render(<IosInstallInstructions {...baseProps} />)
+    // Étape 1 : la réassurance est déjà visible (promesse globale, pas liée à une étape).
+    expect(screen.getByText(copy.firstLoginNote)).toBeInTheDocument()
+    // Passe à l'étape 2 → toujours visible.
+    await u.click(screen.getByRole('button', { name: 'Étape suivante' }))
+    await waitFor(() => expect(screen.getByText("« Sur l'écran d'accueil »")).toBeInTheDocument())
+    expect(screen.getByText(copy.firstLoginNote)).toBeInTheDocument()
   })
 
   it('« C’est fait » à l’étape 2 appelle onClose', async () => {

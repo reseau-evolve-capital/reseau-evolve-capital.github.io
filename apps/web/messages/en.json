@@ -1026,6 +1026,7 @@
       "step2Caption": "LOOK FOR 'ADD TO HOME SCREEN'",
       "step2HighlightLabel": "Add to Home Screen",
       "versionNote": "Depending on your iPhone version this screen may look slightly different — always look for 'Add to Home Screen'.",
+      "firstLoginNote": "On first launch, the app will ask for your code once — then you'll stay signed in.",
       "next": "Next step",
       "done": "Done",
       "close": "Close"
