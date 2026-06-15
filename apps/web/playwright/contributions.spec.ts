@@ -59,11 +59,20 @@ async function withDb<T>(fn: (sql: ReturnType<typeof postgres>) => Promise<T>): 
   }
 }
 
-/** Résout l'unique adhésion du club de seed (id stable malgré le re-key user au login). */
+/**
+ * Résout l'adhésion du MEMBRE DE SEED sur le club E2E — ciblée par email (stable au re-key
+ * user au login). On ne peut PAS faire `LIMIT 1` sans critère : d'autres fixtures (ex. membres
+ * du seed vote) coexistent dans le club E2E → on cible explicitement test@example.com.
+ */
 async function resolveMembershipId(): Promise<string> {
   return withDb(async (sql) => {
     const rows = await sql<{ id: string }[]>`
-      SELECT id FROM memberships WHERE club_id = ${SEED_CLUB_ID}::uuid LIMIT 1
+      SELECT m.id
+        FROM memberships m
+        JOIN users u ON u.id = m.user_id
+       WHERE m.club_id = ${SEED_CLUB_ID}::uuid
+         AND u.email = 'test@example.com'
+       LIMIT 1
     `
     const id = rows[0]?.id
     if (!id) throw new Error('Aucune adhésion de seed sur le club E2E')

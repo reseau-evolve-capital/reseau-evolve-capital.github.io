@@ -92,8 +92,9 @@ async function mockDashboardRoute(
  */
 async function pullToRefresh(page: Page): Promise<boolean> {
   return page.evaluate(() => {
-    // Le conteneur tactile est le <div> racine de DashboardView (premier enfant du <main>).
-    const container = document.querySelector<HTMLElement>('main > div > div')
+    // Conteneur tactile = <div> racine de DashboardView/V2 (data-testid stable : robuste à
+    // l'insertion d'éléments au-dessus comme la bannière vote DashboardPollBanners).
+    const container = document.querySelector<HTMLElement>('[data-testid="dashboard-pull-root"]')
     if (!container || typeof TouchEvent === 'undefined' || typeof Touch === 'undefined')
       return false
     window.scrollTo(0, 0)
