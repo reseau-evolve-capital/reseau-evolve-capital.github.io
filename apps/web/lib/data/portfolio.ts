@@ -248,6 +248,9 @@ export function buildAllocationByTitle(
     label: e.label,
     value: e.value,
     percentage: totalValue > 0 ? e.value / totalValue : 0,
+    // Flag de regroupement « Autres » (langue-agnostique) : titres sans nom OU reste hors top-N.
+    // Permet au donut de forcer le token neutre sans matcher la string FR (RT-11).
+    ...(e.label === otherLabel ? { isOther: true } : {}),
   }))
 }
 
@@ -324,6 +327,9 @@ export function buildPortfolio(
       label,
       value,
       percentage: totalValue > 0 ? value / totalValue : 0,
+      // Le bucket sectoriel « Autres » (secteurs vides/inconnus) porte le flag langue-agnostique
+      // pour forcer le token neutre côté donut (RT-11).
+      ...(label === OTHER_SECTOR_LABEL ? { isOther: true } : {}),
     }))
     .sort((a, b) => b.value - a.value)
 
