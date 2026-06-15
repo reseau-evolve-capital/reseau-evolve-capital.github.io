@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import {
   getAllArticles,
   getArticleBySlug,
-  getStrapiMediaUrl,
+  getStrapiOgImage,
   getArticleOfLocaleAndDocumentId,
 } from '@/lib/api'
 import BlogArticleContent from '@/components/blog/BlogArticleContent'
@@ -73,7 +73,13 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
 
   const title = article.SEOMetaTitle || article.title
   const description = article.SEOMetaDescription || article.excerpt
-  const ogImage = getStrapiMediaUrl(article.featuredImage)
+  // RT-07 : og:image structuré (dérivé Strapi `large` + dimensions + type) au
+  // lieu de l'original brut en string nue → WhatsApp accepte la miniature et
+  // Next émet og:image:width/height/type/secure_url.
+  const og = getStrapiOgImage(article.featuredImage)
+  const ogImage = og
+    ? [{ url: og.url, secureUrl: og.url, width: og.width, height: og.height, type: og.type }]
+    : undefined
 
   return {
     title,
@@ -82,13 +88,13 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
       title,
       description,
       type: 'article',
-      ...(ogImage ? { images: [ogImage] } : {}),
+      ...(ogImage ? { images: ogImage } : {}),
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      ...(ogImage ? { images: [ogImage] } : {}),
+      ...(ogImage ? { images: ogImage } : {}),
     },
     alternates,
   }
