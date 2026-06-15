@@ -368,3 +368,53 @@ export function getStrapiMediaUrl(media?: StrapiMedia | StrapiMediaRef | null): 
   // Otherwise, prepend the base URL
   return `${baseUrl}${url}`
 }
+
+/**
+ * Image Open Graph optimisée pour le partage social (RT-07).
+ *
+ * Les crawlers stricts (WhatsApp ~300 KB) rejettent l'original brut
+ * (5616×2592, ~1,16 MB). Strapi a déjà généré des dérivés JPEG sur le même
+ * CDN https → on choisit `large` (≈1000px, ~70 KB) en priorité, avec
+ * dégradation `medium` → `small` → original. On retourne aussi les
+ * dimensions et le type MIME pour que Next émette `og:image:width/height/type`
+ * (et `secure_url`), absents quand on passait une string nue.
+ *
+ * NB : helper purement additif — ne modifie pas `getStrapiMediaUrl`. Applique
+ * le même préfixe d'URL (médias relatifs → `NEXT_PUBLIC_STRAPI_URL`).
+ */
+export function getStrapiOgImage(
+  media?: StrapiMedia | StrapiMediaRef | null
+): { url: string; width: number; height: number; type: string } | null {
+  if (!media || !media.url) return null
+
+  const baseUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
+  const toAbsolute = (u: string): string => (u.startsWith('http') ? u : `${baseUrl}${u}`)
+
+  // Ordre de préférence : large → medium → small → original.
+  // `formats` peut être absent (StrapiMediaRef) ou partiellement rempli.
+  const formats = media.formats as
+    | Record<string, { url?: string; width?: number; height?: number } | undefined>
+    | undefined
+    | null
+  for (const key of ['large', 'medium', 'small'] as const) {
+    const fmt = formats?.[key]
+    if (fmt?.url && typeof fmt.width === 'number' && typeof fmt.height === 'number') {
+      return {
+        url: toAbsolute(fmt.url),
+        width: fmt.width,
+        height: fmt.height,
+        type: 'image/jpeg', // les dérivés Strapi sont des JPEG
+      }
+    }
+  }
+
+  // Fallback : image originale. Dimensions absentes sur StrapiMediaRef → 0.
+  const width = typeof media.width === 'number' ? media.width : 0
+  const height = typeof media.height === 'number' ? media.height : 0
+  return {
+    url: toAbsolute(media.url),
+    width,
+    height,
+    type: 'image/jpeg',
+  }
+}
