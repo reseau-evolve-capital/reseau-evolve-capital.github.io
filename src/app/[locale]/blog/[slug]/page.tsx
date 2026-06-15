@@ -64,7 +64,11 @@ export async function generateMetadata({ params }: ArticlePageProps): Promise<Me
     : null
 
   const alternates = {
-    canonical: `/blog/${slug}`,
+    // Le canonical DOIT inclure le préfixe de langue : la page est rendue à
+    // `/${locale}/blog/${slug}` (200). Sans le préfixe, `/blog/${slug}` renvoie 404
+    // → les crawlers sociaux (WhatsApp/Facebook) suivent le canonical, tombent sur
+    // le 404 et retombent sur l'og générique du site (RT-07).
+    canonical: `/${locale}/blog/${slug}`,
     languages: {
       fr: `/fr/blog/${locale === 'fr' ? slug : alternateArticle?.slug || ''}`,
       en: `/en/blog/${locale === 'en' ? slug : alternateArticle?.slug || ''}`,
