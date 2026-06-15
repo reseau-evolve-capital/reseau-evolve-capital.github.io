@@ -194,7 +194,12 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
               />
               <div className="flex flex-col gap-1">
                 <Text className="font-semibold text-data-negative-strong">
-                  {t('lateAlert.title', { amount: formatEUR(data.amountDue) })}
+                  {/* RT-05 — n'afficher un montant que s'il est strictement positif. Quand la
+                      matrice ne fournit pas de « Montant dû » exploitable (et que le calcul dérivé
+                      reste 0), on bascule sur la variante SANS montant — JAMAIS « 0,00 € ». */}
+                  {data.amountDue > 0
+                    ? t('lateAlert.title', { amount: formatEUR(data.amountDue) })
+                    : t('lateAlert.titleNoAmount')}
                 </Text>
                 <Text variant="caption" color="text-sec" className="normal-case tracking-normal">
                   {t('lateAlert.body')}

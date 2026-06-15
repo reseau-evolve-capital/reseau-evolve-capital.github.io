@@ -439,6 +439,7 @@
     },
     "lateAlert": {
       "title": "Tu as un retard de cotisation de {amount}.",
+      "titleNoAmount": "Tu as un retard de cotisation.",
       "body": "Rapproche-toi du trésorier de ton club pour régulariser ta situation."
     },
     "empty": {

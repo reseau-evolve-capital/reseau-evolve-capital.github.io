@@ -14,11 +14,12 @@ import type { createServerClient, Database } from '@evolve/data'
 import type { TimelineYear, CotisationVariant } from '@evolve/ui'
 import { formatEUR, formatMonth, formatDate } from '@evolve/utils'
 
-import { deriveContributionStatus, joinedAtToYM } from './contributionStatus'
+import { deriveContributionStatus, deriveAmountDue, joinedAtToYM } from './contributionStatus'
 
 type ServerClient = ReturnType<typeof createServerClient>
 type ContributionRow = Database['public']['Tables']['contributions']['Row']
 type ContributionMonthRow = Database['public']['Tables']['contribution_months']['Row']
+type ClubRow = Database['public']['Tables']['clubs']['Row']
 
 export type ContributionStatus = Database['public']['Enums']['contribution_status']
 export type MonthStatus = Database['public']['Enums']['month_status']
@@ -246,8 +247,14 @@ export async function getContributionsData(
   const nowYM = currentYear * 12 + now.getMonth()
   const joinedAtYM = joinedAtToYM(membership.joined_at)
 
-  // Fix 2 — paralléliser les deux requêtes data (indépendantes, cf. dashboard.ts).
-  const [{ data: summary, error }, { data: monthRows, error: monthsError }] = await Promise.all([
+  // Fix 2 — paralléliser les requêtes data indépendantes (cf. dashboard.ts).
+  // RT-05 — on lit aussi `clubs.min_contribution` : sert de base au calcul du montant dû dérivé
+  // quand la colonne « Montant dû » de la matrice est vide (cf. deriveAmountDue ci-dessous).
+  const [
+    { data: summary, error },
+    { data: monthRows, error: monthsError },
+    { data: club, error: clubError },
+  ] = await Promise.all([
     supabase
       .from('contributions')
       // D1 — net_market_value : valeur boursière nette du membre (déjà en DB, jamais lue).
@@ -276,9 +283,15 @@ export async function getContributionsData(
       .order('year', { ascending: false })
       .order('month', { ascending: false })
       .returns<Pick<ContributionMonthRow, 'year' | 'month' | 'amount' | 'status' | 'paid_at'>[]>(),
+    supabase
+      .from('clubs')
+      .select('min_contribution')
+      .eq('id', clubId)
+      .maybeSingle<Pick<ClubRow, 'min_contribution'>>(),
   ])
   if (error) throw error
   if (monthsError) throw monthsError
+  if (clubError) throw clubError
   if (!summary) return null
 
   const months: MonthInput[] = (monthRows ?? []).map((r) => ({
@@ -288,6 +301,19 @@ export async function getContributionsData(
     status: r.status,
     paidAt: r.paid_at,
   }))
+
+  // RT-05 — montant dû. La colonne source `amount_due` prime si > 0 ; sinon on dérive
+  // (nb de mois `late` post-adhésion ET ≤ mois courant) × min_contribution. Si le club est
+  // introuvable (RLS/club supprimé), min_contribution → 0 : la dérivation rend 0 et le bandeau
+  // basculera sur la variante SANS montant (jamais « 0,00 € »).
+  const minContribution = club != null ? Number(club.min_contribution) : 0
+  const amountDue = deriveAmountDue(
+    Number(summary.amount_due ?? 0),
+    months,
+    joinedAtYM,
+    nowYM,
+    minContribution
+  )
 
   return {
     clubId,
@@ -303,7 +329,7 @@ export async function getContributionsData(
     netMarketValue: summary.net_market_value != null ? Number(summary.net_market_value) : null,
     detentionPct: Number(summary.detention_pct ?? 0),
     penalties: Number(summary.penalties ?? 0),
-    amountDue: Number(summary.amount_due ?? 0),
+    amountDue,
     syncedAt: summary.synced_at ?? null,
     years: buildTimelineYears(months, joinedAtYM, nowYM, cellLabels),
   }
