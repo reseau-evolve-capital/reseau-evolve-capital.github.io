@@ -109,9 +109,12 @@ export function parseBase(rows: string[][]): BaseRowDTO[] {
   }))
 }
 
-/** Portefeuille → PortefeuilleRowDTO[] (colonnes A..W, DATA_MODEL §4.3). */
-export function parsePortefeuille(rows: string[][]): PortefeuilleRowDTO[] {
-  return dataRows(rows).map((row) => ({
+/** Libellé normalisé (trim + minuscule + sans accent) de la ligne « ESPECES » (liquidité). */
+const ESPECES_LABEL = 'especes'
+
+/** Projette une ligne `string[]` en PortefeuilleRowDTO selon le mapping colonnes standard (A..W). */
+function portefeuilleRowFromCols(row: string[]): PortefeuilleRowDTO {
+  return {
     name: cell(row, 0), // A
     symbol: cell(row, 1), // B
     category: cellOrNull(row, 2), // C
@@ -135,7 +138,35 @@ export function parsePortefeuille(rows: string[][]): PortefeuilleRowDTO[] {
     takeProfitValue: toNumOrNull(cell(row, 20)), // U Take profit value
     currencyRef: cellOrNull(row, 21), // V Devise (référence)
     typologie: cellOrNull(row, 22), // W Typologie du titre
-  }))
+  }
+}
+
+/**
+ * Portefeuille → PortefeuilleRowDTO[] (colonnes A..W, DATA_MODEL §4.3).
+ *
+ * CAS SPÉCIAL « ESPECES » (RT-08) : la liquidité du club est une ligne d'agrégat dont la valeur
+ * est décalée en col B (« Symboles ») au lieu de col G : `["ESPECES","159,08€","",...]`. Sans
+ * traitement dédié elle serait classée comme une position mal formée (symbol = "159,08€",
+ * marketValue null) → invisible. On la reconnaît par son LABEL en col A (normalisé : trim +
+ * minuscule + sans accent, donc « ESPECES » == « Espèces »), puis on la projette en agrégat :
+ * symbol forcé vide (→ aggregateRows côté mapper) + valeur LUE DYNAMIQUEMENT en col B (jamais
+ * de montant en dur — le 159,08€ des snapshots est post-effondrement, cf.
+ * docs/audits/sync-incident-2026-06-14/). La valeur peut être positive ou négative.
+ */
+export function parsePortefeuille(rows: string[][]): PortefeuilleRowDTO[] {
+  return dataRows(rows).map((row) => {
+    const label = stripAccents(cell(row, 0).toLowerCase())
+    if (label === ESPECES_LABEL) {
+      // Liquidité : valeur en col B (et non col G). On garde le libellé brut de col A, on force
+      // le symbole vide (→ agrégat), et on projette la valeur de col B dans marketValue.
+      return {
+        ...portefeuilleRowFromCols(row),
+        symbol: '', // agrégat (pas une position) — reconnu par le mapper
+        marketValue: toNumOrNull(cell(row, 1)), // col B : valeur de la liquidité (signée)
+      }
+    }
+    return portefeuilleRowFromCols(row)
+  })
 }
 
 /**
