@@ -1345,7 +1345,7 @@ export const siteConfig = {
     en: "Evolve Capital Network"
   },
   openGraph: {
-    image: '/brand/opengraph.png',
+    image: '/brand/opengraph.jpg',
   },
   description: {
     fr: "Promouvoir l'éducation financière et les clubs d'investissement auprès des jeunes en France.",

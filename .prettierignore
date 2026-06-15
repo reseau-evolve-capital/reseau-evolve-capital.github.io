@@ -1,0 +1,3 @@
+# Fichier de contenu legacy de la vitrine (« jamais refacto ») — exempté du reformatage
+# automatique pour garder des diffs chirurgicaux. Cf. apps/vitrine/CLAUDE.md.
+apps/vitrine/src/config/site-config.ts
