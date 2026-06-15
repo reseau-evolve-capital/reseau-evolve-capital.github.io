@@ -25,6 +25,7 @@ import {
   FilterBar,
   InfoTip,
   PositionDetailModal,
+  SegmentedToggle,
   SyncBanner,
   TrendBadge,
   CurrencyAmount,
@@ -71,6 +72,8 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   const queryClient = useQueryClient()
   const [refreshing, setRefreshing] = useState(false)
   const [selected, setSelected] = useState<PortfolioPosition | null>(null)
+  // RT-11 : mode de répartition du donut — secteur (défaut) ou titre.
+  const [allocMode, setAllocMode] = useState<'sector' | 'title'>('sector')
   const startY = useRef<number | null>(null)
 
   // État de filtre/tri persistant dans l'URL (partageable). parseAsString → string | null.
@@ -84,7 +87,13 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   const symbols = useMemo(() => rows.map((r) => r.symbol), [rows])
   const { data: prices } = useLivePrices(symbols)
 
-  const built = useMemo(() => buildPortfolio(rows, prices ?? {}), [rows, prices])
+  // Libellé « Autres » du regroupement par titre fourni en i18n (RT-11) : la couche data reste
+  // agnostique, l'UI injecte la traduction.
+  const otherTitleLabel = t('allocation.otherTitle')
+  const built = useMemo(
+    () => buildPortfolio(rows, prices ?? {}, otherTitleLabel),
+    [rows, prices, otherTitleLabel]
+  )
   const sectors = useMemo(() => availableSectors(built.positions), [built.positions])
   const typologies = useMemo(() => availableTypologies(built.positions), [built.positions])
   const visible = useMemo(
@@ -326,17 +335,35 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
           className="flex flex-col gap-4 lg:col-start-3 lg:row-start-1 lg:row-span-2"
         >
           <section aria-labelledby="alloc-title" className="flex flex-col gap-3">
-            <h3
-              id="alloc-title"
-              className="font-display text-[13px] font-semibold uppercase tracking-[0.06em] text-text-ter"
-            >
-              {t('allocation.title')}
-            </h3>
+            {/* RT-11 : titre + switch « Par secteur / Par titre » sur une ligne. Le donut swappe
+                sa data selon le mode (secteur par défaut). Libellés et aria via t() (jamais d'i18n
+                dans @evolve/ui). */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3
+                id="alloc-title"
+                className="font-display text-[13px] font-semibold uppercase tracking-[0.06em] text-text-ter"
+              >
+                {allocMode === 'sector' ? t('allocation.title') : t('allocation.titleByTitle')}
+              </h3>
+              <SegmentedToggle
+                ariaLabel={t('allocation.modeGroup')}
+                value={allocMode}
+                onChange={(v) => setAllocMode(v as 'sector' | 'title')}
+                options={[
+                  { value: 'sector', label: t('allocation.modeSector') },
+                  { value: 'title', label: t('allocation.modeTitle') },
+                ]}
+              />
+            </div>
             <AllocationDonut
-              data={built.allocation}
+              data={allocMode === 'sector' ? built.allocation : built.allocationByTitle}
               totalValue={totalValue}
               totalLabel={t('allocation.totalValue')}
-              ariaLabelPrefix={t('allocation.ariaPrefix')}
+              ariaLabelPrefix={
+                allocMode === 'sector'
+                  ? t('allocation.ariaPrefix')
+                  : t('allocation.ariaPrefixByTitle')
+              }
               legendLabel={t('allocation.legend')}
             />
           </section>

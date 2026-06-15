@@ -371,9 +371,15 @@
     },
     "allocation": {
       "title": "Sector allocation",
+      "titleByTitle": "Allocation by holding",
       "totalValue": "Total value",
       "ariaPrefix": "Portfolio allocation: ",
-      "legend": "Allocation legend"
+      "ariaPrefixByTitle": "Portfolio allocation by holding: ",
+      "legend": "Allocation legend",
+      "modeGroup": "Allocation mode",
+      "modeSector": "By sector",
+      "modeTitle": "By holding",
+      "otherTitle": "Other"
     },
     "balances": {
       "title": "Provisions and balances"

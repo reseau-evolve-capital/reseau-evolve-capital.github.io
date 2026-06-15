@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import {
   buildPortfolio,
+  buildAllocationByTitle,
   filterAndSort,
   availableSectors,
   availableTypologies,
@@ -93,6 +94,107 @@ describe('buildPortfolio', () => {
     const tech = allocation.find((a) => a.label === 'Technologie')!
     expect(tech.percentage).toBeCloseTo(0.7)
     expect(allocation.reduce((s, a) => s + a.percentage, 0)).toBeCloseTo(1)
+  })
+
+  it('expose allocationByTitle (RT-11) en plus de allocation par secteur', () => {
+    const rows = [
+      row({ id: '1', symbol: 'A', name: 'META', market_value: 700 }),
+      row({ id: '2', symbol: 'B', name: 'APPLE', market_value: 300 }),
+    ]
+    const { allocationByTitle } = buildPortfolio(rows, { A: null, B: null })
+    expect(allocationByTitle.map((a) => a.label)).toEqual(['META', 'APPLE'])
+    expect(allocationByTitle[0]!.percentage).toBeCloseTo(0.7)
+    expect(allocationByTitle.reduce((s, a) => s + a.percentage, 0)).toBeCloseTo(1)
+  })
+
+  it('allocationByTitle utilise le libellé « Autres » fourni par l’appelant', () => {
+    const rows = Array.from({ length: 10 }, (_, i) =>
+      row({ id: String(i), symbol: `S${i}`, name: `T${i}`, market_value: 100 })
+    )
+    const prices = Object.fromEntries(rows.map((r) => [r.symbol, null]))
+    const { allocationByTitle } = buildPortfolio(rows, prices, 'Others')
+    expect(allocationByTitle.some((a) => a.label === 'Others')).toBe(true)
+    expect(allocationByTitle.some((a) => a.label === 'Autres')).toBe(false)
+  })
+})
+
+describe('buildAllocationByTitle', () => {
+  const pos = (over: Partial<PortfolioPosition>): PortfolioPosition => ({
+    id: '1',
+    name: 'META',
+    symbol: 'META',
+    category: 'Actions',
+    sector: 'Tech',
+    typologie: 'Offensif',
+    quantity: 1,
+    pru: 1,
+    livePrice: 1,
+    marketPrice: 1,
+    currentValue: 100,
+    gainLossEur: 0,
+    gainLossPct: 0,
+    allocationPct: 0,
+    isLive: true,
+    ...over,
+  })
+
+  it('agrège par nom, trie desc, fractions sommant à ~1', () => {
+    const list = [
+      pos({ id: '1', name: 'META', currentValue: 600 }),
+      pos({ id: '2', name: 'APPLE', currentValue: 400 }),
+    ]
+    const out = buildAllocationByTitle(list, 1000)
+    expect(out.map((a) => a.label)).toEqual(['META', 'APPLE'])
+    expect(out[0]!.percentage).toBeCloseTo(0.6)
+    expect(out.reduce((s, a) => s + a.percentage, 0)).toBeCloseTo(1)
+  })
+
+  it('cumule plusieurs lignes du même titre', () => {
+    const list = [
+      pos({ id: '1', name: 'META', currentValue: 300 }),
+      pos({ id: '2', name: 'META', currentValue: 200 }),
+      pos({ id: '3', name: 'APPLE', currentValue: 500 }),
+    ]
+    const out = buildAllocationByTitle(list, 1000)
+    const meta = out.find((a) => a.label === 'META')!
+    expect(meta.value).toBe(500)
+    expect(meta.percentage).toBeCloseTo(0.5)
+  })
+
+  it('regroupe au-delà du top N sous « Autres » (somme du reste)', () => {
+    // 12 titres de valeurs décroissantes ; top 8 affichés, 4 derniers fusionnés.
+    const list = Array.from({ length: 12 }, (_, i) =>
+      pos({ id: String(i), name: `T${i}`, currentValue: 120 - i * 10 })
+    )
+    const total = list.reduce((s, p) => s + p.currentValue, 0)
+    const out = buildAllocationByTitle(list, total, 'Autres', 8)
+    expect(out).toHaveLength(9) // 8 titres + « Autres »
+    const others = out.find((a) => a.label === 'Autres')!
+    // 4 derniers : T8(40)+T9(30)+T10(20)+T11(10) = 100
+    expect(others.value).toBe(100)
+    expect(out.reduce((s, a) => s + a.percentage, 0)).toBeCloseTo(1)
+  })
+
+  it('fusionne le reste avec un « Autres » déjà présent (titres sans nom)', () => {
+    const list = [
+      ...Array.from({ length: 8 }, (_, i) =>
+        pos({ id: String(i), name: `T${i}`, currentValue: 100 })
+      ),
+      pos({ id: 'x', name: '', currentValue: 50 }), // sans nom → « Autres »
+      pos({ id: 'y', name: 'EXTRA', currentValue: 30 }), // hors top 8 → fusionné dans « Autres »
+    ]
+    const total = list.reduce((s, p) => s + p.currentValue, 0)
+    const out = buildAllocationByTitle(list, total, 'Autres', 8)
+    const others = out.filter((a) => a.label === 'Autres')
+    expect(others).toHaveLength(1) // un seul bucket « Autres »
+    expect(others[0]!.value).toBe(80) // 50 (sans nom) + 30 (EXTRA hors top)
+  })
+
+  it('total ≤ 0 → percentage 0, jamais de NaN', () => {
+    const list = [pos({ name: 'META', currentValue: 0 })]
+    const out = buildAllocationByTitle(list, 0)
+    expect(out[0]!.percentage).toBe(0)
+    expect(Number.isNaN(out[0]!.percentage)).toBe(false)
   })
 })
 
