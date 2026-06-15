@@ -378,6 +378,15 @@
     "balances": {
       "title": "Provisions and balances"
     },
+    "liquidity": {
+      "title": "Liquidity",
+      "info": "The club's uninvested cash (held on the broker account). May be negative if the club is temporarily overdrawn.",
+      "infoAria": "Learn more about the club's liquidity"
+    },
+    "reimbursement": {
+      "info": "Amounts currently being reimbursed to one or more departing members.",
+      "infoAria": "Learn more about reimbursements in progress"
+    },
     "table": {
       "columns": {
         "name": "Asset",

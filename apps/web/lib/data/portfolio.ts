@@ -68,6 +68,20 @@ export function normalizeAggregateLabel(label: string): string {
 /** Libellé normalisé de la ligne d'agrégat « Portefeuille » (= total affiché). */
 const PORTEFEUILLE_LABEL = 'portefeuille'
 
+/** Libellé normalisé de la ligne d'agrégat « ESPECES » (= liquidité du club, RT-08). */
+const ESPECES_LABEL = 'especes'
+
+/**
+ * Vrai si l'agrégat est un solde d'opérations « court terme » / « long terme » (RT-08).
+ * Ces lignes (« Solde : opérations courts termes », « … longs termes ») sont des soldes
+ * d'opérations perturbants pour le membre → masquées. Match tolérant (normalisé, sans accent)
+ * sur la présence de « solde » + « terme(s) ».
+ */
+function isOperationsBalance(label: string): boolean {
+  const n = normalizeAggregateLabel(label)
+  return n.includes('solde') && n.includes('terme')
+}
+
 /**
  * Retourne la `market_value` de la ligne d'agrégat « Portefeuille » si présente (match par
  * label normalisé), sinon null. Sert de TOTAL affiché (col G de la matrice). PUR.
@@ -79,10 +93,39 @@ export function totalFromAggregates(aggregates: PortfolioAggregate[]): number | 
 }
 
 /**
- * Soldes affichés sous le donut (C2bis) : tout agrégat SAUF la ligne « Portefeuille » (déjà
- * affichée comme total). Conserve l'ordre source. PUR. */
+ * Vrai si l'agrégat est une ligne « Remboursement (en cours) » (RT-10) : on lui adjoint un
+ * InfoTip explicatif côté UI. Match tolérant (normalisé, sans accent) sur « remboursement ».
+ * PUR. */
+export function isReimbursementAggregate(label: string): boolean {
+  return normalizeAggregateLabel(label).includes('remboursement')
+}
+
+/**
+ * Liquidité du club (RT-08) : `market_value` de l'agrégat « ESPECES » (match par label
+ * normalisé). La valeur peut être POSITIVE ou NÉGATIVE. Retourne null si la ligne est absente
+ * ou sans valeur exploitable (l'UI masque alors la section). PUR.
+ */
+export function liquidityFromAggregates(aggregates: PortfolioAggregate[]): number | null {
+  const row = aggregates.find((a) => normalizeAggregateLabel(a.label) === ESPECES_LABEL)
+  const v = row?.market_value
+  return typeof v === 'number' && Number.isFinite(v) ? v : null
+}
+
+/**
+ * Soldes affichés sous le donut (C2bis). Tout agrégat SAUF (RT-08 / RT-10) :
+ *  - « Portefeuille » (déjà affiché comme total) ;
+ *  - « ESPECES » (affiché dans sa propre section « Liquidité ») ;
+ *  - les soldes d'opérations « courts/longs termes » (soldes perturbants, masqués) ;
+ *  - les agrégats à `market_value` null (ex. « Remboursement en cours » sans montant →
+ *    le « — » trompeur disparaît, RT-10).
+ * Conserve l'ordre source. PUR. */
 export function balanceAggregates(aggregates: PortfolioAggregate[]): PortfolioAggregate[] {
-  return aggregates.filter((a) => normalizeAggregateLabel(a.label) !== PORTEFEUILLE_LABEL)
+  return aggregates.filter((a) => {
+    const n = normalizeAggregateLabel(a.label)
+    if (n === PORTEFEUILLE_LABEL || n === ESPECES_LABEL) return false
+    if (isOperationsBalance(a.label)) return false
+    return typeof a.market_value === 'number' && Number.isFinite(a.market_value)
+  })
 }
 
 /** Résout le rôle du membre courant dans un club (RLS filtre par auth.uid()).

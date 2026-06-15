@@ -6,6 +6,8 @@ import {
   availableTypologies,
   totalFromAggregates,
   balanceAggregates,
+  liquidityFromAggregates,
+  isReimbursementAggregate,
   normalizeAggregateLabel,
   type PositionRow,
   type PortfolioAggregate,
@@ -213,15 +215,44 @@ describe('agrégats (total + soldes)', () => {
     expect(totalFromAggregates([agg({ label: 'Portefeuille', market_value: null })])).toBeNull()
   })
 
-  it('balanceAggregates exclut « Portefeuille » et garde le reste', () => {
+  // RT-08 : balanceAggregates masque désormais « Portefeuille » (total), « ESPECES » (liquidité,
+  // section dédiée), les soldes courts/longs termes (perturbants) ET les agrégats à valeur null
+  // (RT-10, « — » trompeur). Seuls les agrégats valorisés « utiles » (Provision…) restent.
+  it('balanceAggregates ne garde que les agrégats valorisés utiles', () => {
     const list = [
       agg({ label: 'Portefeuille', market_value: 12000 }),
+      agg({ label: 'ESPECES', market_value: 159.08 }),
       agg({ label: 'Provision', market_value: 500 }),
       agg({ label: 'Solde : opérations courts termes', market_value: 300 }),
+      agg({ label: 'Solde : opérations longs termes', market_value: -4840.92 }),
+      agg({ label: 'Remboursement en cours', market_value: null }),
     ]
-    expect(balanceAggregates(list).map((a) => a.label)).toEqual([
-      'Provision',
-      'Solde : opérations courts termes',
-    ])
+    expect(balanceAggregates(list).map((a) => a.label)).toEqual(['Provision'])
+  })
+
+  it('balanceAggregates garde un remboursement VALORISÉ (mais masque le null)', () => {
+    const list = [
+      agg({ label: 'Remboursement en cours', market_value: null }),
+      agg({ label: 'Remboursement en cours', market_value: 1200 }),
+    ]
+    const out = balanceAggregates(list)
+    expect(out).toHaveLength(1)
+    expect(out[0]!.market_value).toBe(1200)
+  })
+
+  it('liquidityFromAggregates lit ESPECES (positif ou négatif), null si absent', () => {
+    expect(liquidityFromAggregates([agg({ label: 'ESPECES', market_value: 159.08 })])).toBe(159.08)
+    // Reconnaissance insensible casse/accents + valeur négative préservée.
+    expect(liquidityFromAggregates([agg({ label: 'Espèces', market_value: -2500.5 })])).toBe(
+      -2500.5
+    )
+    expect(liquidityFromAggregates([agg({ label: 'Provision', market_value: 500 })])).toBeNull()
+    expect(liquidityFromAggregates([agg({ label: 'ESPECES', market_value: null })])).toBeNull()
+  })
+
+  it('isReimbursementAggregate matche « Remboursement » (insensible casse/accents)', () => {
+    expect(isReimbursementAggregate('Remboursement en cours')).toBe(true)
+    expect(isReimbursementAggregate('REMBOURSEMENT')).toBe(true)
+    expect(isReimbursementAggregate('Provision')).toBe(false)
   })
 })
