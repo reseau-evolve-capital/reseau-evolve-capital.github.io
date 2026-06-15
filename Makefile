@@ -126,7 +126,10 @@ vitrine-export:
 
 # Publier out/ sur la branche gh-pages (gh-pages -d out -t)
 # NB: 'run' obligatoire — 'deploy' est une commande pnpm reservee, sinon pnpm l'intercepte.
+# Garde-fou RT-07 : check-og-images crawle out/ et exit 1 si un article a une
+# og:image hors budget WhatsApp (>300 KB / dimensions/type KO) → bloque la publication.
 vitrine-deploy: vitrine-export
+	node apps/vitrine/scripts/check-og-images.mjs
 	pnpm --filter @evolve/vitrine run deploy
 
 # Strapi en dev natif — apps/cms est en YARN. Exige Node 22 LTS (engines <=22.x) :
