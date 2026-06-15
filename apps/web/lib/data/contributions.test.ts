@@ -1,10 +1,13 @@
 import { describe, it, expect } from 'vitest'
+import type { createServerClient } from '@evolve/data'
 import {
   deriveVariant,
   buildMonthTooltip,
   buildMonthAriaLabel,
   buildTimelineYears,
+  getContributionsData,
   type MonthInput,
+  type MonthStatus,
 } from './contributions'
 
 // Helper : indice ordinal (year*12 + month-1) pour piloter nowYM/joinedAtYM dans les tests.
@@ -180,5 +183,169 @@ describe('buildTimelineYears — groupement + tri + variantes contextuelles', ()
   })
   it('liste vide → []', () => {
     expect(buildTimelineYears([], null, FAR_FUTURE)).toEqual([])
+  })
+})
+
+// ── INTÉGRATION : getContributionsData (assemblage requête → DTO) ──────────────────────────────
+//
+// Couvre l'ASSEMBLAGE que les tests purs (deriveAmountDue, deriveContributionStatus) ne couvrent
+// pas : le câblage requête PostgREST chaînée → DTO, et en particulier la dérivation RT-05 du
+// montant dû à partir de `clubs.min_contribution` lu en parallèle.
+//
+// Le projet n'a pas (encore) de harness de mock PostgREST → on construit ici un petit stub
+// chainable, fidèle à la forme RÉELLE des appels du code (cf. contributions.ts) :
+//   - memberships : .select().eq().eq().eq().maybeSingle()      → { data: membership }
+//   - contributions : .select().eq().maybeSingle()              → { data: summary, error }
+//   - contribution_months : .select().eq().lte().order().order().returns()  (builder thenable)
+//   - clubs : .select().eq().maybeSingle()                      → { data: club, error }
+//
+// On n'introduit AUCUN export applicatif : getContributionsData était déjà exporté.
+
+type MembershipStub = {
+  id: string
+  role: 'member' | 'treasurer' | 'president'
+  joined_at: string | null
+}
+type SummaryStub = {
+  status: 'ok' | 'late' | 'pending' | 'exempt'
+  total_contributed: number
+  months_count: number | null
+  net_market_value: number | null
+  detention_pct: number | null
+  penalties: number | null
+  amount_due: number | null
+  synced_at: string | null
+} | null
+type MonthStub = {
+  year: number
+  month: number
+  amount: number
+  status: MonthStatus
+  paid_at: string | null
+}
+type ClubStub = { min_contribution: number } | null
+
+interface ContributionsStubData {
+  membership: MembershipStub | null
+  summary: SummaryStub
+  summaryError?: Error
+  months: MonthStub[]
+  monthsError?: Error
+  club: ClubStub
+  clubError?: Error
+}
+
+/**
+ * Stub chainable minimal mais fidèle du client Supabase pour getContributionsData.
+ * Chaque méthode de chaînage (`select`/`eq`/`lte`/`order`/`returns`) renvoie le MÊME builder ;
+ * le builder est thenable (résout `{ data, error }` pour `contribution_months`) et porte un
+ * `maybeSingle()` (résout `{ data, error }` pour les autres tables). `data` est choisi selon la
+ * table passée à `from()`.
+ */
+function makeContributionsSupabaseStub(d: ContributionsStubData) {
+  const resultFor = (table: string): { data: unknown; error: Error | null } => {
+    switch (table) {
+      case 'memberships':
+        return { data: d.membership, error: null }
+      case 'contributions':
+        return { data: d.summary, error: d.summaryError ?? null }
+      case 'contribution_months':
+        return { data: d.months, error: d.monthsError ?? null }
+      case 'clubs':
+        return { data: d.club, error: d.clubError ?? null }
+      default:
+        return { data: null, error: null }
+    }
+  }
+
+  const from = (table: string) => {
+    const result = resultFor(table)
+    const builder: Record<string, unknown> = {
+      select: () => builder,
+      eq: () => builder,
+      lte: () => builder,
+      order: () => builder,
+      returns: () => builder,
+      maybeSingle: () => Promise.resolve(result),
+      // Builder thenable : `await supabase.from(...).…returns()` résout `{ data, error }`.
+      then: (onFulfilled: (v: typeof result) => unknown) =>
+        Promise.resolve(result).then(onFulfilled),
+    }
+    return builder
+  }
+
+  // reason: stub volontairement partiel du client Supabase — un cast unique est plus lisible
+  // qu'une implémentation complète des centaines de méthodes du SupabaseClient typé.
+  return { from } as unknown as ReturnType<typeof createServerClient>
+}
+
+const membership: MembershipStub = { id: 'm-1', role: 'member', joined_at: '2020-01-01' }
+
+// Synthèse type, surcharge ciblée par test.
+const summaryBase: NonNullable<SummaryStub> = {
+  status: 'pending',
+  total_contributed: 1200,
+  months_count: 12,
+  net_market_value: 5000,
+  detention_pct: 0.1,
+  penalties: 0,
+  amount_due: 0,
+  synced_at: '2026-06-15T08:00:00Z',
+}
+
+// Deux mois `late` du début d'année courante → post-adhésion (2020) ET ≤ mois courant (juin 2026).
+const nowYear = new Date().getFullYear()
+const twoLateMonths: MonthStub[] = [
+  { year: nowYear, month: 1, amount: 0, status: 'late', paid_at: null },
+  { year: nowYear, month: 2, amount: 0, status: 'late', paid_at: null },
+]
+
+describe('getContributionsData — intégration (assemblage requête → DTO, RT-05)', () => {
+  it('amount_due source = 0 + 2 mois late + clubs.min_contribution=100 → amountDue dérivé = 200', async () => {
+    const supabase = makeContributionsSupabaseStub({
+      membership,
+      summary: { ...summaryBase, amount_due: 0 },
+      months: twoLateMonths,
+      club: { min_contribution: 100 },
+    })
+    const data = await getContributionsData(supabase, 'u-1', 'c-1')
+    expect(data).not.toBeNull()
+    // 2 mois late exploitables × 100 € = 200 € (dérivation, source vide).
+    expect(data!.amountDue).toBe(200)
+  })
+
+  it('amount_due source = 150 (>0) → amountDue = 150 (valeur source gardée, pas de dérivation)', async () => {
+    const supabase = makeContributionsSupabaseStub({
+      membership,
+      // Source explicite > 0 : prime même si la frise contient des mois late et min_contribution=100.
+      summary: { ...summaryBase, amount_due: 150 },
+      months: twoLateMonths,
+      club: { min_contribution: 100 },
+    })
+    const data = await getContributionsData(supabase, 'u-1', 'c-1')
+    expect(data!.amountDue).toBe(150)
+  })
+
+  it('clubs introuvable (min_contribution indispo) + source 0 → amountDue = 0 (garde-fou)', async () => {
+    const supabase = makeContributionsSupabaseStub({
+      membership,
+      summary: { ...summaryBase, amount_due: 0 },
+      months: twoLateMonths,
+      // RLS / club supprimé → maybeSingle renvoie null : minContribution tombe à 0.
+      club: null,
+    })
+    const data = await getContributionsData(supabase, 'u-1', 'c-1')
+    // 2 mois late × 0 = 0 → l'affichage basculera sur titleNoAmount (testé ailleurs), jamais « 0,00 € ».
+    expect(data!.amountDue).toBe(0)
+  })
+
+  it('aucune adhésion active → null (court-circuit avant les lectures parallèles)', async () => {
+    const supabase = makeContributionsSupabaseStub({
+      membership: null,
+      summary: summaryBase,
+      months: [],
+      club: { min_contribution: 100 },
+    })
+    expect(await getContributionsData(supabase, 'u-1', 'c-1')).toBeNull()
   })
 })
