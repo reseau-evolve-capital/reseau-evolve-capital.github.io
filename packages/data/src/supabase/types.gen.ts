@@ -287,6 +287,72 @@ export type Database = {
           },
         ]
       }
+      feedback: {
+        Row: {
+          ai_category: string | null
+          ai_severity: string | null
+          ai_summary: string | null
+          ai_title: string | null
+          created_at: string
+          discord_notified: boolean
+          email_sent: boolean
+          github_issue_url: string | null
+          id: string
+          message: string
+          notion_page_id: string | null
+          page_route: string
+          page_url: string
+          screenshot_urls: string[] | null
+          status: string
+          type: string
+          user_agent: string | null
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          ai_category?: string | null
+          ai_severity?: string | null
+          ai_summary?: string | null
+          ai_title?: string | null
+          created_at?: string
+          discord_notified?: boolean
+          email_sent?: boolean
+          github_issue_url?: string | null
+          id?: string
+          message: string
+          notion_page_id?: string | null
+          page_route: string
+          page_url: string
+          screenshot_urls?: string[] | null
+          status?: string
+          type: string
+          user_agent?: string | null
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          ai_category?: string | null
+          ai_severity?: string | null
+          ai_summary?: string | null
+          ai_title?: string | null
+          created_at?: string
+          discord_notified?: boolean
+          email_sent?: boolean
+          github_issue_url?: string | null
+          id?: string
+          message?: string
+          notion_page_id?: string | null
+          page_route?: string
+          page_url?: string
+          screenshot_urls?: string[] | null
+          status?: string
+          type?: string
+          user_agent?: string | null
+          user_email?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -835,7 +901,12 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: Database['public']['Enums']['member_role']
       }
+      health_status: { Args: never; Returns: Json }
       is_club_staff: { Args: { p_club_id: string }; Returns: boolean }
+      record_attestation_ref: {
+        Args: { p_membership_id: string; p_period: string; p_reference: string }
+        Returns: undefined
+      }
       refresh_member_quote_part: { Args: never; Returns: undefined }
       update_club_settings: {
         Args: {
