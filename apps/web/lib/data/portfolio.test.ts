@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import type { createServerClient } from '@evolve/data'
 import {
   buildPortfolio,
   buildAllocationByTitle,
@@ -10,6 +11,7 @@ import {
   liquidityFromAggregates,
   isReimbursementAggregate,
   normalizeAggregateLabel,
+  getPortfolioData,
   type PositionRow,
   type PortfolioAggregate,
 } from './portfolio'
@@ -71,6 +73,20 @@ describe('buildPortfolio', () => {
   it('secteur null → "Autres" dans l\'allocation', () => {
     const { allocation } = buildPortfolio([row({ sector: null })], { 'NASDAQ:META': null })
     expect(allocation[0]!.label).toBe('Autres')
+  })
+
+  // RT-11 : le bucket sectoriel « Autres » porte le flag langue-agnostique isOther ; les vrais
+  // secteurs ne l'ont pas → le donut force le token neutre sans matcher la string.
+  it('marque isOther sur le bucket sectoriel « Autres » (et pas sur les vrais secteurs)', () => {
+    const rows = [
+      row({ id: '1', symbol: 'A', sector: 'Technologie', market_value: 700 }),
+      row({ id: '2', symbol: 'B', sector: null, market_value: 300 }),
+    ]
+    const { allocation } = buildPortfolio(rows, { A: null, B: null })
+    const tech = allocation.find((a) => a.label === 'Technologie')!
+    const autres = allocation.find((a) => a.label === 'Autres')!
+    expect(tech.isOther).toBeUndefined()
+    expect(autres.isOther).toBe(true)
   })
 
   it('edge total=0 : aucun NaN sur allocationPct / allocation.percentage', () => {
@@ -195,6 +211,28 @@ describe('buildAllocationByTitle', () => {
     const out = buildAllocationByTitle(list, 0)
     expect(out[0]!.percentage).toBe(0)
     expect(Number.isNaN(out[0]!.percentage)).toBe(false)
+  })
+
+  // RT-11 : le bucket de regroupement « Autres » porte isOther ; les titres réels non.
+  it('marque isOther sur le bucket « Autres » (reste hors top-N), pas sur les titres réels', () => {
+    const list = Array.from({ length: 12 }, (_, i) =>
+      pos({ id: String(i), name: `T${i}`, currentValue: 120 - i * 10 })
+    )
+    const total = list.reduce((s, p) => s + p.currentValue, 0)
+    const out = buildAllocationByTitle(list, total, 'Autres', 8)
+    const others = out.find((a) => a.label === 'Autres')!
+    expect(others.isOther).toBe(true)
+    // Tous les autres items (vrais titres) n'ont pas le flag.
+    expect(out.filter((a) => a.label !== 'Autres').every((a) => a.isOther === undefined)).toBe(true)
+  })
+
+  it('le flag isOther suit le libellé fourni par l’appelant (i18n)', () => {
+    const list = Array.from({ length: 10 }, (_, i) =>
+      pos({ id: String(i), name: `T${i}`, currentValue: 100 })
+    )
+    const out = buildAllocationByTitle(list, 1000, 'Other', 8)
+    const bucket = out.find((a) => a.label === 'Other')!
+    expect(bucket.isOther).toBe(true)
   })
 })
 
@@ -356,5 +394,159 @@ describe('agrégats (total + soldes)', () => {
     expect(isReimbursementAggregate('Remboursement en cours')).toBe(true)
     expect(isReimbursementAggregate('REMBOURSEMENT')).toBe(true)
     expect(isReimbursementAggregate('Provision')).toBe(false)
+  })
+})
+
+// ── INTÉGRATION : getPortfolioData (assemblage requête → DTO, RT-08) ────────────────────────────
+//
+// Couvre l'ASSEMBLAGE que les tests purs (buildPortfolio, balanceAggregates…) ne couvrent pas :
+// que la fonction de chargement transporte bien les agrégats lus (dont « ESPECES ») jusqu'au DTO,
+// afin que l'extraction « Liquidité » (liquidityFromAggregates) et le filtrage des soldes
+// (balanceAggregates) opèrent sur la donnée RÉELLEMENT assemblée — court/long terme exclus.
+//
+// Le projet n'a pas de harness de mock PostgREST → stub chainable local, fidèle à la forme RÉELLE
+// des appels (cf. portfolio.ts getPortfolioData + getMemberRole) :
+//   - positions : .select().eq().eq().order()            (builder thenable → { data, error })
+//   - memberships : .select().eq().eq().eq().maybeSingle()  → { data: membership }  (getMemberRole)
+//   - portfolio_aggregates : .select().eq().eq()          (builder thenable → { data })
+//
+// Aucun export applicatif ajouté : getPortfolioData était déjà exporté.
+
+type RoleStub = { role: 'member' | 'treasurer' | 'president' }
+
+interface PortfolioStubData {
+  positions: PositionRow[]
+  positionsError?: Error
+  membership: RoleStub | null
+  aggregates: PortfolioAggregate[]
+}
+
+/**
+ * Stub chainable minimal mais fidèle du client Supabase pour getPortfolioData.
+ * Builder unique par `from(table)` : méthodes de chaînage renvoient le builder, qui est à la fois
+ * thenable (positions / portfolio_aggregates terminent sans `.maybeSingle()`) et porte un
+ * `maybeSingle()` (memberships dans getMemberRole). `data` choisi selon la table.
+ */
+function makePortfolioSupabaseStub(d: PortfolioStubData) {
+  const resultFor = (table: string): { data: unknown; error: Error | null } => {
+    switch (table) {
+      case 'positions':
+        return { data: d.positions, error: d.positionsError ?? null }
+      case 'memberships':
+        return { data: d.membership, error: null }
+      case 'portfolio_aggregates':
+        return { data: d.aggregates, error: null }
+      default:
+        return { data: null, error: null }
+    }
+  }
+
+  const from = (table: string) => {
+    const result = resultFor(table)
+    const builder: Record<string, unknown> = {
+      select: () => builder,
+      eq: () => builder,
+      order: () => builder,
+      maybeSingle: () => Promise.resolve(result),
+      then: (onFulfilled: (v: typeof result) => unknown) =>
+        Promise.resolve(result).then(onFulfilled),
+    }
+    return builder
+  }
+
+  // reason: stub volontairement partiel du client Supabase — cast unique plus lisible qu'une
+  // implémentation complète du SupabaseClient typé.
+  return { from } as unknown as ReturnType<typeof createServerClient>
+}
+
+const posRow = (over: Partial<PositionRow>): PositionRow => ({
+  id: '1',
+  name: 'META',
+  symbol: 'NASDAQ:META',
+  category: 'Actions',
+  sector: 'Technologie',
+  typologie: 'Offensif',
+  quantity: 10,
+  pump: 100,
+  market_price_eur: 180,
+  market_value: 1800,
+  book_value: 1000,
+  allocation_pct: 50,
+  gain_loss_eur: 800,
+  gain_loss_pct: 80,
+  ...over,
+})
+
+const aggRow = (over: Partial<PortfolioAggregate>): PortfolioAggregate => ({
+  label: 'Provision',
+  market_value: 500,
+  book_value: null,
+  allocation_pct: null,
+  ...over,
+})
+
+describe('getPortfolioData — intégration (assemblage, RT-08 Liquidité + soldes)', () => {
+  it('transporte les agrégats lus jusqu’au DTO → Liquidité extraite de ESPECES, soldes court/long exclus', async () => {
+    const aggregates: PortfolioAggregate[] = [
+      aggRow({ label: 'Portefeuille', market_value: 12000 }),
+      aggRow({ label: 'ESPECES', market_value: 159.08 }),
+      aggRow({ label: 'Provision', market_value: 500 }),
+      aggRow({ label: 'Solde : opérations courts termes', market_value: 300 }),
+      aggRow({ label: 'Solde : opérations longs termes', market_value: -4840.92 }),
+    ]
+    const supabase = makePortfolioSupabaseStub({
+      positions: [posRow({})],
+      membership: { role: 'member' },
+      aggregates,
+    })
+
+    const data = await getPortfolioData(supabase, 'u-1', 'c-1')
+    expect(data).not.toBeNull()
+    // L'agrégat ESPECES traverse l'assemblage intact.
+    expect(data!.aggregates).toEqual(aggregates)
+
+    // Extraction « Liquidité » sur la donnée assemblée (RT-08).
+    expect(liquidityFromAggregates(data!.aggregates)).toBe(159.08)
+    // Total = ligne « Portefeuille ».
+    expect(totalFromAggregates(data!.aggregates)).toBe(12000)
+    // Soldes affichés : ni Portefeuille, ni ESPECES, ni les soldes court/long terme.
+    expect(balanceAggregates(data!.aggregates).map((a) => a.label)).toEqual(['Provision'])
+    expect(data!.userRole).toBe('member')
+  })
+
+  it('aucune position active → null (état empty), même si des agrégats existent', async () => {
+    const supabase = makePortfolioSupabaseStub({
+      positions: [],
+      membership: { role: 'treasurer' },
+      aggregates: [aggRow({ label: 'ESPECES', market_value: 100 })],
+    })
+    expect(await getPortfolioData(supabase, 'u-1', 'c-1')).toBeNull()
+  })
+
+  it('agrégats absents (lecture nulle) → aggregates = [] (le portefeuille ne casse pas)', async () => {
+    // aggRows null ne doit pas faire planter l'assemblage : fallback [] (cf. portfolio.ts).
+    const supabase = makePortfolioSupabaseStub({
+      positions: [posRow({})],
+      membership: { role: 'member' },
+      // reason: simule un échec de lecture des agrégats (PostgREST renvoie data:null) sans casser
+      // le portefeuille — on passe [] côté stub, le code applique déjà ?? [].
+      aggregates: [],
+    })
+    const data = await getPortfolioData(supabase, 'u-1', 'c-1')
+    expect(data!.aggregates).toEqual([])
+    expect(liquidityFromAggregates(data!.aggregates)).toBeNull()
+  })
+
+  it('synced_at = le plus récent parmi les positions du club', async () => {
+    const supabase = makePortfolioSupabaseStub({
+      positions: [
+        posRow({ id: '1', symbol: 'A', synced_at: '2026-06-10T00:00:00Z' } as Partial<PositionRow>),
+        posRow({ id: '2', symbol: 'B', synced_at: '2026-06-15T08:00:00Z' } as Partial<PositionRow>),
+      ],
+      membership: { role: 'member' },
+      aggregates: [],
+    })
+    const data = await getPortfolioData(supabase, 'u-1', 'c-1')
+    expect(data!.syncedAt).toBe('2026-06-15T08:00:00Z')
   })
 })

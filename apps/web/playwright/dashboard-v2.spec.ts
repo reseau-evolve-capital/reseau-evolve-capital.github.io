@@ -302,8 +302,10 @@ test.describe('Dashboard V2 — cookie v2, desktop', () => {
 
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible()
-    // Le titre du dialog réutilise « Ta quote-part » → recherche scopée au dialog.
-    await expect(dialog.getByText('Ta quote-part')).toBeVisible()
+    // Le titre du dialog (Dialog.Title → <h2>) réutilise « Ta quote-part ». On cible le RÔLE
+    // heading : un <p> variationInfo du dialog (« Variation de ta quote-part depuis… ») contient
+    // la même sous-chaîne → getByText('Ta quote-part') matcherait 2 éléments (strict mode).
+    await expect(dialog.getByRole('heading', { name: 'Ta quote-part' })).toBeVisible()
 
     await page.keyboard.press('Escape')
     await expect(page.getByRole('dialog')).toHaveCount(0)
@@ -338,8 +340,13 @@ test.describe('Dashboard — V1 via cookie & V2 par défaut', () => {
     // Marqueurs V2 présents : bloc Évolution + micro-label demo (table REPORTING purgée).
     await expect(periodGroup(page)).toBeVisible()
     await expect(page.getByText('Courbe illustrative').filter({ visible: true })).toBeVisible()
-    // Marqueur V1 ABSENT : le hero V2 (desktop, viewport par défaut) n'est pas un bouton.
-    await expect(page.getByRole('button', { name: /Ta quote-part/i })).toHaveCount(0)
+    // Marqueur V1 ABSENT : la V1 a un hero-CARD cliquable dont le nom accessible COMMENCE par
+    // « Ta quote-part » (DashboardHero onClick → <button>, hero.aria = « Ta quote-part : … »).
+    // La V2 desktop n'a aucun bouton de ce type : son hero desktop est un <div> non cliquable
+    // (le hero mobile <button> est `lg:hidden` → display:none → hors arbre a11y). On ancre donc
+    // la regex au DÉBUT du nom (`^`) : sinon /Ta quote-part/i matche aussi les 2 InfoTip de la V2
+    // (« En savoir plus sur la variation/l'évolution de ta quote-part ») → faux positif (count 2).
+    await expect(page.getByRole('button', { name: /^Ta quote-part/i })).toHaveCount(0)
   })
 })
 
