@@ -43,9 +43,7 @@ import {
   availableSectors,
   availableTypologies,
   totalFromAggregates,
-  balanceAggregates,
   liquidityFromAggregates,
-  isReimbursementAggregate,
   type PortfolioData,
 } from '@/lib/data/portfolio'
 import { analyticsEvents, countBucket, valueBucket } from '@/lib/analytics'
@@ -111,9 +109,6 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
   // Liquidité du club (RT-08) : agrégat ESPECES (col B de la matrice), positif OU négatif.
   // null si la ligne est absente → la section « Liquidité » n'est pas rendue.
   const liquidity = useMemo(() => liquidityFromAggregates(aggregates), [aggregates])
-  // Soldes (Provision, Remboursement valorisé…) : tout agrégat HORS « Portefeuille », « ESPECES »,
-  // soldes courts/longs termes (perturbants → masqués, RT-08) et agrégats sans valeur (RT-10).
-  const balances = useMemo(() => balanceAggregates(aggregates), [aggregates])
 
   // Analytics (Phase 2) : portfolio_viewed (key event « aha ») — une fois par montage, dès
   // que les données sont prêtes. Valeurs BUCKETISÉES (jamais de montant exact vers GA).
@@ -391,40 +386,10 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
               </span>
             </section>
           )}
-          {/* C2bis : Provision + soldes (col A = libellé DB en FR, col G = valeur). Les agrégats
-              sans valeur et les soldes courts/longs termes sont déjà écartés par balanceAggregates. */}
-          {balances.length > 0 && (
-            <section
-              aria-labelledby="balances-title"
-              className="flex flex-col gap-2 rounded-[10px] border border-border bg-card-sub px-4 py-3"
-            >
-              <h3
-                id="balances-title"
-                className="font-display text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter"
-              >
-                {t('balances.title')}
-              </h3>
-              <dl className="flex flex-col gap-1.5">
-                {balances.map((b) => (
-                  <div key={b.label} className="flex items-baseline justify-between gap-3">
-                    <dt className="flex items-center gap-1.5 text-[13px] text-text-sec">
-                      {b.label}
-                      {/* RT-10 : InfoTip explicatif sur les lignes de remboursement. */}
-                      {isReimbursementAggregate(b.label) && (
-                        <InfoTip
-                          content={t('reimbursement.info')}
-                          aria-label={t('reimbursement.infoAria')}
-                        />
-                      )}
-                    </dt>
-                    <dd className="text-[13px] font-medium text-text [font-feature-settings:'tnum']">
-                      {formatEUR(b.market_value as number)}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          )}
+          {/* Bloc « Provisions et soldes » retiré (retour owner 2026-06-15) : la section
+              « Liquidité » ci-dessus suffit à informer sur la trésorerie du club. Les helpers
+              data (balanceAggregates / isReimbursementAggregate) et leurs tests restent en place
+              dans lib/data/portfolio.ts pour un éventuel rétablissement. */}
           <div className="flex flex-col gap-2 rounded-[10px] border border-border bg-card-sub px-4 py-3">
             <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] text-text-ter">
               {t('totalGainLoss')}
