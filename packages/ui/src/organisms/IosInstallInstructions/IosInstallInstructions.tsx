@@ -39,6 +39,13 @@ export interface IosInstallInstructionsCopy {
   versionNote: string
   /** Libellé surligné dans le menu Partager (étape 2), ex. « Sur l'écran d'accueil ». */
   step2HighlightLabel: string
+  /**
+   * Note rassurante affichée en pied de modale (les deux étapes) : sur iOS Safari la PWA
+   * démarre sans la session cookie de Safari, donc le 1er lancement passe par l'écran de
+   * connexion. On prévient l'utilisateur que c'est attendu et indolore (un code une fois,
+   * puis session persistante) — évite de vivre ce re-login comme une régression.
+   */
+  firstLoginNote: string
   /** CTA étape 1 → étape 2, ex. « Étape suivante ». */
   next: string
   /** CTA étape 2 → fermeture, ex. « C'est fait ». */
@@ -167,8 +174,32 @@ export function IosInstallInstructions({
             ) : null}
           </div>
 
+          {/* Réassurance 1er lancement (les deux étapes) : sur iOS Safari la PWA démarre sans la
+              session Safari → l'app redemande le code une fois. Encart info discret, distinct de la
+              note de version (texte secondaire + icône), pour que ce re-login soit vécu comme attendu. */}
+          <div className="mt-4 px-5">
+            <div className="flex items-start gap-2 rounded-[10px] bg-card-sub px-3 py-2.5 text-text-sec">
+              <svg
+                width={16}
+                height={16}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                className="mt-px shrink-0 text-text-ter"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 16v-4M12 8h.01" />
+              </svg>
+              <p className="text-[12px] leading-relaxed">{copy.firstLoginNote}</p>
+            </div>
+          </div>
+
           {/* Pied : CTA primaire (suivant / fait). */}
-          <div className="px-5 pb-5 pt-5">
+          <div className="px-5 pb-5 pt-4">
             <button
               type="button"
               onClick={handlePrimary}

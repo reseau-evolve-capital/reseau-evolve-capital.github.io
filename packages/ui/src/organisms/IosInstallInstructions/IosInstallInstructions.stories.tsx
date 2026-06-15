@@ -20,6 +20,8 @@ const COPY: IosInstallInstructionsCopy = {
   versionNote:
     "Selon ta version d'iPhone, l'écran peut être légèrement différent — cherche toujours « Sur l'écran d'accueil ».",
   step2HighlightLabel: "Sur l'écran d'accueil",
+  firstLoginNote:
+    "À la première ouverture, l'app te demandera ton code une fois — ensuite tu restes connecté(e).",
   next: 'Étape suivante',
   done: "C'est fait",
   close: 'Fermer',
@@ -49,6 +51,8 @@ export const Step1Iphone: Story = {
     await expect(body.getByRole('dialog')).toBeInTheDocument()
     await expect(body.getByText(COPY.step1Title)).toBeInTheDocument()
     await expect(body.getByText('Étape 1 sur 2')).toBeInTheDocument()
+    // La réassurance « 1er lancement » est visible dès l'étape 1 (promesse globale).
+    await expect(body.getByText(COPY.firstLoginNote)).toBeInTheDocument()
   },
 }
 

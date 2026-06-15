@@ -1026,6 +1026,7 @@
       "step2Caption": "Cherche « Sur l'écran d'accueil »",
       "step2HighlightLabel": "Sur l'écran d'accueil",
       "versionNote": "Selon ta version d'iPhone, l'écran peut être légèrement différent — cherche toujours « Sur l'écran d'accueil ».",
+      "firstLoginNote": "À la première ouverture, l'app te demandera ton code une fois — ensuite tu restes connecté(e).",
       "next": "Étape suivante",
       "done": "C'est fait",
       "close": "Fermer"
