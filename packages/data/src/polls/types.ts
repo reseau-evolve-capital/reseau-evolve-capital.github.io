@@ -1,4 +1,4 @@
-// Types Vote anonyme V0 (migration 037 ; spec docs/superpowers/specs/2026-06-13-vote-anonyme-design.md).
+// Types Vote anonyme V0 (migration 038 ; spec docs/superpowers/specs/2026-06-13-vote-anonyme-design.md).
 //
 // Pattern DTO strict du projet : la RPC `get_poll_results` renvoie un `jsonb` (typé `Json`
 // dans types.gen.ts). On définit ici le DTO BRUT renvoyé par l'agrégateur SQL (champs tels

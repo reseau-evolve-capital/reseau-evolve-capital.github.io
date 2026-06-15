@@ -2,7 +2,7 @@
 
 **Date :** 2026-06-14
 **Branche :** `claude/hopeful-bardeen-2zp7b8` (commits `ac035dc` → `1ee6bfa`)
-**Scope :** Vote anonyme V0 — migration `037_polls.sql` (tables `polls`/`poll_responses`, RLS, RPC `submit_vote`/`get_poll_results`/`has_voted`, cron `close_due_polls`), composants `@evolve/ui` (`PollBanner`, `PollCard`, `PollVoteSheet`, `PollResultsView`, `PollCreateForm`), package `@evolve/data` (DTO/mappers/client), routes `apps/web` (`/votes`, `/votes/[id]`, `/admin/votes/**`), intégration dashboard + topbar, i18n `votes.*`, e2e `votes.spec.ts`. Spec : `docs/superpowers/specs/2026-06-13-vote-anonyme-design.md`. Réf design : `Votes - Maquettes (standalone).html`. FLOW-015.
+**Scope :** Vote anonyme V0 — migration `038_polls.sql` (tables `polls`/`poll_responses`, RLS, RPC `submit_vote`/`get_poll_results`/`has_voted`, cron `close_due_polls`), composants `@evolve/ui` (`PollBanner`, `PollCard`, `PollVoteSheet`, `PollResultsView`, `PollCreateForm`), package `@evolve/data` (DTO/mappers/client), routes `apps/web` (`/votes`, `/votes/[id]`, `/admin/votes/**`), intégration dashboard + topbar, i18n `votes.*`, e2e `votes.spec.ts`. Spec : `docs/superpowers/specs/2026-06-13-vote-anonyme-design.md`. Réf design : `Votes - Maquettes (standalone).html`. FLOW-015.
 **Cycle :** orchestration (DATA + UI + WEB en parallèle) → vérification runtime (membre + admin) → boucle de correction.
 
 ---

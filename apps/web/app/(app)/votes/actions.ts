@@ -1,7 +1,7 @@
 'use server'
 
 // Server Actions du module Vote anonyme — côté membre. Toutes passent par le client serveur
-// (session + cookies) : ce sont les RPC SECURITY DEFINER (migration 037) qui appliquent les
+// (session + cookies) : ce sont les RPC SECURITY DEFINER (migration 038) qui appliquent les
 // gardes DB (vote ouvert, membre actif du club, pas déjà voté via UNIQUE). JAMAIS de
 // service-role ici. On relaie un code d'erreur métier stable que l'UI traduit (i18n).
 //
