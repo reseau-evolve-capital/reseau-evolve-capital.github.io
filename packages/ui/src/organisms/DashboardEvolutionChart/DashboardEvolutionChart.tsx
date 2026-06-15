@@ -1,6 +1,7 @@
 'use client'
 import * as React from 'react'
 import { Area, AreaChart, ResponsiveContainer } from 'recharts'
+import { SegmentedToggle } from '../../molecules/SegmentedToggle'
 import { cn } from '../../lib/cn'
 
 export type EvolutionPeriod = '7d' | '30d' | '90d' | '1y' | 'max'
@@ -126,32 +127,14 @@ export function DashboardEvolutionChart({
           <span className="truncate">{title}</span>
           {info}
         </p>
-        <div
-          role="group"
-          aria-label={periodGroupLabel}
-          className="flex shrink-0 items-center gap-[2px] rounded-full border border-border p-[2px]"
-        >
-          {periods.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              aria-pressed={p.value === period}
-              onClick={() => onPeriodChange(p.value)}
-              className={cn(
-                // Pill ~28px visuel ; le pseudo-élément étend la cible tactile à ≥44px.
-                'relative isolate inline-flex h-7 items-center rounded-full px-2.5',
-                'font-display text-[10px] font-semibold uppercase tracking-[0.08em]',
-                "before:absolute before:left-0 before:right-0 before:top-1/2 before:h-11 before:-translate-y-1/2 before:content-['']",
-                'outline-none focus-visible:shadow-[var(--sh-glow)]',
-                'motion-safe:transition-colors motion-safe:duration-[var(--dur-fast)]',
-                p.value === period ? 'bg-accent text-accent-ink' : 'bg-transparent text-text-sec',
-                p.mobileHidden && 'hidden md:inline-flex'
-              )}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        {/* Toggle de périodes — composant partagé SegmentedToggle (même markup/a11y que la réf).
+            Les `value` typées EvolutionPeriod transitent en `string` puis sont re-typées au retour. */}
+        <SegmentedToggle
+          ariaLabel={periodGroupLabel}
+          value={period}
+          options={periods}
+          onChange={(v) => onPeriodChange(v as EvolutionPeriod)}
+        />
       </div>
 
       {/* Résumé de la période */}
