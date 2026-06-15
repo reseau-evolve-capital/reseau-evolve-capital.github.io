@@ -48,6 +48,7 @@ export * from './molecules/Toast'
 // Molecules auth + onboarding
 export * from './molecules/ProgressHeader'
 export * from './molecules/SegmentedProgress'
+export * from './molecules/SegmentedToggle'
 export * from './molecules/ConsentRow'
 export * from './molecules/SlideCard'
 export * from './molecules/CarouselDots'
