@@ -531,6 +531,100 @@ export type Database = {
           },
         ]
       }
+      poll_responses: {
+        Row: {
+          created_at: string
+          id: string
+          poll_id: string
+          selected_options: string[] | null
+          text_response: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          poll_id: string
+          selected_options?: string[] | null
+          text_response?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          poll_id?: string
+          selected_options?: string[] | null
+          text_response?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'poll_responses_poll_id_fkey'
+            columns: ['poll_id']
+            isOneToOne: false
+            referencedRelation: 'polls'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      polls: {
+        Row: {
+          closed_manually_at: string | null
+          closes_at: string | null
+          club_id: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          network_wide: boolean
+          notify_by_email: boolean
+          options: Json | null
+          question_type: string
+          results_visibility: string
+          status: string
+          title: string
+        }
+        Insert: {
+          closed_manually_at?: string | null
+          closes_at?: string | null
+          club_id: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          network_wide?: boolean
+          notify_by_email?: boolean
+          options?: Json | null
+          question_type: string
+          results_visibility?: string
+          status?: string
+          title: string
+        }
+        Update: {
+          closed_manually_at?: string | null
+          closes_at?: string | null
+          club_id?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          network_wide?: boolean
+          notify_by_email?: boolean
+          options?: Json | null
+          question_type?: string
+          results_visibility?: string
+          status?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'polls_club_id_fkey'
+            columns: ['club_id']
+            isOneToOne: false
+            referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       portfolio_aggregates: {
         Row: {
           allocation_pct: number | null
@@ -894,13 +988,16 @@ export type Database = {
         Args: { p_locked: boolean; p_membership_id: string; p_reason?: string }
         Returns: undefined
       }
+      close_due_polls: { Args: never; Returns: number }
       current_user_access_blocked: { Args: never; Returns: boolean }
       email_is_invited: { Args: { p_email: string }; Returns: boolean }
+      get_poll_results: { Args: { p_poll_id: string }; Returns: Json }
       get_user_club_ids: { Args: never; Returns: string[] }
       get_user_role_in_club: {
         Args: { p_club_id: string }
         Returns: Database['public']['Enums']['member_role']
       }
+      has_voted: { Args: { p_poll_id: string }; Returns: boolean }
       health_status: { Args: never; Returns: Json }
       is_club_staff: { Args: { p_club_id: string }; Returns: boolean }
       record_attestation_ref: {
@@ -908,6 +1005,14 @@ export type Database = {
         Returns: undefined
       }
       refresh_member_quote_part: { Args: never; Returns: undefined }
+      submit_vote: {
+        Args: {
+          p_poll_id: string
+          p_selected_options?: string[]
+          p_text_response?: string
+        }
+        Returns: string
+      }
       update_club_settings: {
         Args: {
           p_annual_investment_cap?: number
