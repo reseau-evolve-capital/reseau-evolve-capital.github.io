@@ -41,6 +41,10 @@ export interface AllocationItem {
   label: string
   value: number
   percentage: number
+  /** true si l'item est le bucket de regroupement « Autres » (secteurs/titres inconnus ou hors
+   *  top-N). Indépendant de la langue → permet à l'UI de forcer le token neutre sans matcher de
+   *  string. Absent/false = vrai secteur/titre. */
+  isOther?: boolean
 }
 
 export type PortfolioSort = 'value' | 'name' | 'performance'
