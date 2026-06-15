@@ -271,8 +271,8 @@
     },
     "contributionMessage": {
       "ok": "You're up to date with your contributions.",
-      "pending": "This month's contribution is being processed.",
-      "late": "You have outstanding contributions. Catch up to stay current.",
+      "pending": "This month's contribution is awaiting validation by your treasurer.",
+      "late": "You have overdue contributions. Make a bank transfer to your club to catch up.",
       "exempt": "You're exempt from contributions for now."
     },
     "capacity": {
