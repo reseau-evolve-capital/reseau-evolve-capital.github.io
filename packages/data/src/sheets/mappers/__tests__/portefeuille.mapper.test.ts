@@ -116,4 +116,27 @@ describe('mapAggregateRows', () => {
     )
     expect(mapAggregateRows(aggregateRows, CLUB)[0]!.label).toBe('Provision')
   })
+
+  // RT-08 : ESPECES (liquidité) arrive du parser en agrégat (symbol vide, valeur projetée de
+  // col B dans marketValue) → doit ressortir comme agrégat « ESPECES » porteur de sa valeur.
+  it('ESPECES (symbol vide + marketValue) → agrégat avec sa valeur (positive)', () => {
+    const { positions, aggregateRows } = mapPortefeuilleRows(
+      [makeRow({ symbol: '', name: 'ESPECES', marketValue: 159.08, allocationPct: null })],
+      CLUB
+    )
+    expect(positions).toHaveLength(0)
+    const out = mapAggregateRows(aggregateRows, CLUB)
+    expect(out).toHaveLength(1)
+    expect(out[0]!.label).toBe('ESPECES')
+    expect(out[0]!.market_value).toBe(159.08)
+  })
+
+  it('ESPECES à valeur négative → agrégat avec valeur négative préservée', () => {
+    const { aggregateRows } = mapPortefeuilleRows(
+      [makeRow({ symbol: '', name: 'ESPECES', marketValue: -2500.5 })],
+      CLUB
+    )
+    const out = mapAggregateRows(aggregateRows, CLUB)
+    expect(out[0]!.market_value).toBe(-2500.5)
+  })
 })

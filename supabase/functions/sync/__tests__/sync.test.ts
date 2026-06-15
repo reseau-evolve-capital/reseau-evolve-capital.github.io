@@ -151,6 +151,42 @@ Deno.test('parsePortefeuille : symbole vide conservé (ligne d agrégat) + numé
   assertEquals(rows[1].symbol, '') // agrégat : symbole vide préservé pour le mapper
 })
 
+// RT-08 — la ligne « ESPECES » (liquidité) a sa valeur DÉCALÉE en col B (« Symboles »), pas en
+// col G. Sans cas dédié elle serait classée comme position mal formée (symbol = "159,08€",
+// marketValue null) → invisible. Layout RÉEL relevé dans le snapshot incident :
+//   ['ESPECES','159,08€','','','','','', …]
+Deno.test('parsePortefeuille : ESPECES → agrégat (symbole vide, valeur lue de col B)', () => {
+  const raw: string[][] = [
+    ['Nom', 'Symbole', 'Catégorie', 'Parts', 'Devise', 'Cours en €', 'Valeur boursière'],
+    ['META PLATFORMS', 'NASDAQ:META', 'Actions', '248', 'USD', '514,61', '127 622,14€'], // vraie position
+    ['ESPECES', '12 345,67€', '', '', '', '', ''], // liquidité : valeur en col B, col G vide
+  ]
+  const rows = parsePortefeuille(raw)
+  assertEquals(rows.length, 2)
+
+  // La vraie position reste une position (symbole réel conservé, valo en col G lue).
+  assertEquals(rows[0].symbol, 'NASDAQ:META')
+  assertAlmostEquals(rows[0].marketValue ?? Number.NaN, 127622.14, 0.001)
+
+  // ESPECES : symbole FORCÉ vide (→ agrégat côté mapper), valeur projetée DEPUIS col B.
+  assertEquals(rows[1].name, 'ESPECES')
+  assertEquals(rows[1].symbol, '')
+  assertAlmostEquals(rows[1].marketValue ?? Number.NaN, 12345.67, 0.001)
+})
+
+// La valeur lue dynamiquement (jamais en dur) : un montant NÉGATIF (découvert) est préservé, et
+// le label est reconnu insensible à la casse/aux accents (« Espèces » == « ESPECES »).
+Deno.test('parsePortefeuille : ESPECES négatif + label accentué/minuscule reconnu', () => {
+  const raw: string[][] = [
+    ['Nom', 'Symbole'],
+    ['Espèces', '-2 500,50€', '', '', '', '', ''],
+  ]
+  const rows = parsePortefeuille(raw)
+  assertEquals(rows.length, 1)
+  assertEquals(rows[0].symbol, '')
+  assertAlmostEquals(rows[0].marketValue ?? Number.NaN, -2500.5, 0.001)
+})
+
 Deno.test('parseHistorique : layout RÉEL (col 0 = n° de ligne, date en col 8)', () => {
   // En-têtes réels relevés dans sheet_snapshots.raw_data de la matrice :
   // 0="" 1=TYPE 2=QUANTITE 3=TITRES 4=TICKER 5=TYPOLOGIE 6=PRIX D'ACHAT 7=COUT D'ACHAT 8=Date 9=JUSTIFICATIFS
