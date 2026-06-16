@@ -13,6 +13,7 @@ import { SupabaseProvider } from '@/components/providers/SupabaseProvider'
 import { hasVoted } from '@evolve/data'
 import { AppChromeSidebar, AppChromeTopbar, AppChromeBottom } from '@/components/chrome/AppChrome'
 import { InstallBannerMount } from '@/components/pwa/InstallBannerMount'
+import { PushOptInMount } from '@/components/push/PushOptInMount'
 import { getSessionUser, getActiveClubMembership } from '@/lib/data/request'
 import { getOpenPolls, hasPollActivity as checkPollActivity } from '@/lib/data/polls'
 
@@ -136,6 +137,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           {/* PWA-001 : bannière d'installation. Montée ici (persiste entre onglets) mais
               ne s'affiche que sur /dashboard. Enrobée d'un ErrorBoundary interne. */}
           <InstallBannerMount />
+          {/* PUSH-001 : pre-prompt d'opt-in Web Push. Même mount-pattern que la bannière PWA
+              (ne s'affiche que sur /dashboard, gating capacité + cooldown + consentement). */}
+          <PushOptInMount />
           {/* Analytics GA4 (Phase 2) : user_id pseudonyme + user properties (consent-gated)
               + login_completed une fois par session. Aucune PII. */}
           <AnalyticsIdentify

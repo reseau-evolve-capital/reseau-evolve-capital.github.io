@@ -1065,6 +1065,68 @@
       "button": "Install the app"
     }
   },
+  "push": {
+    "badge": "Notifications · no App Store",
+    "prePrompt": {
+      "headline": "Never miss a vote",
+      "subline": "Get an alert when a new vote opens or when results are available — even with the app closed.",
+      "trustNote": "Your vote stays anonymous. Notifications never reveal who voted.",
+      "accept": "Turn on notifications",
+      "later": "Not now",
+      "manageInProfile": "Manage in My profile ›"
+    },
+    "iosInstall": {
+      "headline": "Install the app for notifications.",
+      "subline": "On iPhone, notifications require adding Evolve Capital to your home screen. We'll show you how.",
+      "cta": "Show me how"
+    },
+    "toastSuccess": {
+      "title": "Notifications on",
+      "message": "You'll be notified about new votes — even when the app is closed."
+    },
+    "toastBlocked": {
+      "title": "Notifications blocked",
+      "message": "Allow notifications in your browser settings, then try again."
+    },
+    "toastDisabled": {
+      "title": "Notifications off",
+      "message": "You'll no longer receive notifications on this device."
+    },
+    "toastError": {
+      "title": "Something went wrong",
+      "message": "An issue occurred. Please try again in a moment."
+    },
+    "section": {
+      "title": "Notifications",
+      "body": "Vote alerts, sent to this device.",
+      "statusActive": "Active on this device",
+      "statusBlocked": "Permission denied",
+      "statusOff": "Not set up",
+      "masterLabel": "Push notifications",
+      "masterHint": "Turn all notifications on or off on this device.",
+      "typesLabel": "When to be notified",
+      "blockedHint": "Notifications are blocked in your browser. Allow them in your settings to enable this.",
+      "blockedHintPre": "Notifications are blocked by the browser.",
+      "blockedHintLink": "See how to re-enable",
+      "iosTitle": "Notifications aren't available on this device",
+      "iosHint": "On iPhone, install the app to your home screen first to receive notifications.",
+      "iosCta": "Install the app",
+      "types": {
+        "pollOpened": {
+          "label": "New votes",
+          "hint": "When a vote opens in your club."
+        },
+        "pollClosed": {
+          "label": "Results available",
+          "hint": "When a vote closes and results are ready."
+        },
+        "pollReminder": {
+          "label": "Reminders before deadline",
+          "hint": "The day before a vote you haven't answered ends."
+        }
+      }
+    }
+  },
   "cookieConsent": {
     "title": "We use analytics cookies",
     "description": "Google Analytics helps us understand how members use the app, to improve it. Nothing else — no advertising cookies.",
