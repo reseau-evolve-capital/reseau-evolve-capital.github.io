@@ -1,0 +1,7 @@
+{
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2",
+    "@evolve/utils": "../../../packages/utils/src/index.ts",
+    "@evolve/types": "../../../packages/types/src/index.ts"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "npm:react@^19"
+  },
+  "imports": {
+    "@evolve/utils": "../../../packages/utils/src/index.ts",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2",
+    "react": "npm:react@^19",
+    "@evolve/design-system": "../../../packages/design-system/src/tokens/index.ts",
+    "@react-email/components": "npm:@react-email/components@^1",
+    "@react-email/render": "npm:@react-email/render@^1"
+  }
+}
