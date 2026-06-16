@@ -162,4 +162,20 @@ export const analyticsEvents = {
       track('pwa_ios_instructions_viewed', { pwa_case: pwaCase, step }),
     clipboardCopied: () => track('pwa_clipboard_copied', {}),
   },
+  // Web Push (PUSH-001). Aucune PII : seulement la capacité plateforme, la raison de dismiss
+  // et le type d'événement (poll.opened/closed/reminder) — jamais le user_id ni le contenu.
+  push: {
+    /** push_opt_in_prompt_shown — pre-prompt rendu (une fois par affichage). */
+    optInPromptShown: (capability: string) =>
+      track('push_opt_in_prompt_shown', { push_capability: capability }),
+    /** push_opt_in_accepted — subscription persistée après autorisation. */
+    optInAccepted: (capability: string) =>
+      track('push_opt_in_accepted', { push_capability: capability }),
+    /** push_opt_in_dismissed — « Plus tard » / refus / fermeture (avec la raison). */
+    optInDismissed: (params?: { reason?: string }) =>
+      track('push_opt_in_dismissed', { reason: params?.reason }),
+    /** push_notification_click — clic sur une notification système (type d'event seulement). */
+    notificationClick: (params: { type: string }) =>
+      track('push_notification_click', { notification_type: params.type }),
+  },
 } as const

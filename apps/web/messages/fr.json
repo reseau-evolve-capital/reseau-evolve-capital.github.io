@@ -1065,6 +1065,68 @@
       "button": "Installer l'app"
     }
   },
+  "push": {
+    "badge": "Notifications · sans App Store",
+    "prePrompt": {
+      "headline": "Ne manquez plus un vote",
+      "subline": "Recevez une alerte quand un nouveau vote est ouvert ou quand les résultats sont disponibles — même app fermée.",
+      "trustNote": "Votre vote reste anonyme. Les notifications ne révèlent jamais qui a voté.",
+      "accept": "Activer les notifications",
+      "later": "Plus tard",
+      "manageInProfile": "Gérer dans Mon profil ›"
+    },
+    "iosInstall": {
+      "headline": "Installe l'app pour les notifications.",
+      "subline": "Sur iPhone, les notifications nécessitent d'ajouter Evolve Capital à ton écran d'accueil. On te montre comment.",
+      "cta": "Voir comment"
+    },
+    "toastSuccess": {
+      "title": "Notifications activées",
+      "message": "Tu seras prévenu(e) des nouveaux votes — même l'app fermée."
+    },
+    "toastBlocked": {
+      "title": "Notifications bloquées",
+      "message": "Autorise les notifications dans les réglages de ton navigateur, puis réessaie."
+    },
+    "toastDisabled": {
+      "title": "Notifications désactivées",
+      "message": "Tu ne recevras plus de notifications sur cet appareil."
+    },
+    "toastError": {
+      "title": "Action impossible",
+      "message": "Un souci est survenu. Réessaie dans un instant."
+    },
+    "section": {
+      "title": "Notifications",
+      "body": "Alertes de vote, envoyées sur cet appareil.",
+      "statusActive": "Actif sur cet appareil",
+      "statusBlocked": "Autorisation refusée",
+      "statusOff": "Non configuré",
+      "masterLabel": "Notifications push",
+      "masterHint": "Active ou coupe toutes les notifications sur cet appareil.",
+      "typesLabel": "Quand être prévenu(e)",
+      "blockedHint": "Les notifications sont bloquées dans ton navigateur. Autorise-les dans les réglages pour activer ce réglage.",
+      "blockedHintPre": "Les notifications sont bloquées par le navigateur.",
+      "blockedHintLink": "Voir comment réactiver",
+      "iosTitle": "Notifications non disponibles sur cet appareil",
+      "iosHint": "Sur iPhone, installe d'abord l'app sur ton écran d'accueil pour recevoir les notifications.",
+      "iosCta": "Installer l'app",
+      "types": {
+        "pollOpened": {
+          "label": "Nouveaux votes",
+          "hint": "Quand un vote s'ouvre dans ton club."
+        },
+        "pollClosed": {
+          "label": "Résultats disponibles",
+          "hint": "Quand un vote se termine et que les résultats sont prêts."
+        },
+        "pollReminder": {
+          "label": "Rappels avant échéance",
+          "hint": "La veille de la fin d'un vote auquel tu n'as pas répondu."
+        }
+      }
+    }
+  },
   "cookieConsent": {
     "title": "Nous utilisons des cookies d'analyse",
     "description": "Google Analytics nous aide à comprendre comment les membres utilisent l'application, pour l'améliorer. Rien d'autre — aucun cookie publicitaire.",

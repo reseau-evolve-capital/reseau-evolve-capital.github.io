@@ -3,6 +3,7 @@ import { Badge, Heading } from '@evolve/ui'
 import { formatDate } from '@evolve/utils'
 import type { MemberRole, ProfileData } from '@/lib/data/profile'
 import { InstallSection } from './InstallSection'
+import { NotificationsSection } from './NotificationsSection'
 import { ProfileAvatarUpload } from './ProfileAvatarUpload'
 
 const DASH = '—'
@@ -78,6 +79,10 @@ export async function ProfileView({ data }: { data: ProfileData }) {
       {/* PWA-001 : (ré)installer l'app à la demande (entrée permanente, surtout utile après
           3 refus de la bannière). Masquée si déjà installée (standalone) ou sur desktop. */}
       <InstallSection />
+
+      {/* PUSH-001 : réglages des notifications Web Push (master + sous-préférences par type).
+          Masquée si la plateforme ne supporte pas le push (rien d'actionnable). */}
+      <NotificationsSection />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 // apps/web/public/sw.js
-const VERSION = 'pwa-v1'
+const VERSION = 'pwa-v2'
 const STATIC = `evolve-static-${VERSION}`
 const DATA = `evolve-data-${VERSION}`
 const PRECACHE = ['/offline.html', '/icons/icon-192.png', '/icons/icon-512.png']
@@ -26,6 +26,43 @@ self.addEventListener('activate', (e) => {
 })
 self.addEventListener('message', (e) => {
   if (e.data === 'clear-data-cache') caches.delete(DATA).catch(() => {})
+})
+
+// ─── Web Push (PUSH-001, spec §5) ───
+// Handlers ajoutés sans modifier la stratégie offline. Payload JSON anonyme :
+// { title, body, url, tag } — jamais de PII. `tag` stable par poll → une nouvelle push
+// remplace la précédente sur le même vote (anti-spam tray).
+self.addEventListener('push', (event) => {
+  let payload = { title: 'Evolve Capital', body: '', url: '/dashboard', tag: 'evolve' }
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() }
+  } catch {
+    /* garde les défauts si le corps n'est pas du JSON */
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: '/icons/icon-192.png',
+      badge: '/icons/icon-192.png',
+      tag: payload.tag ?? 'evolve',
+      data: { url: payload.url ?? '/dashboard' },
+      // actions: Android seulement — V1 si besoin « Voter »
+    })
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url ?? '/dashboard'
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
+      for (const client of list) {
+        if (client.url.includes(url) && 'focus' in client) return client.focus()
+      }
+      if (clients.openWindow) return clients.openWindow(url)
+    })
+  )
 })
 
 const NO_CACHE = (url) =>
