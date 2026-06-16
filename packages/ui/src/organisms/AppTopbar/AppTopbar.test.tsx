@@ -122,11 +122,86 @@ describe('AppTopbar — entrée admin (canAccessAdmin)', () => {
   })
 })
 
+describe('AppTopbar — entrée votes (onVotes / pollsToVote)', () => {
+  it("n'affiche pas l'entrée « Votes » quand onVotes est absent (non destructif)", async () => {
+    const u = userEvent.setup()
+    render(<AppTopbar user={user} />)
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    await waitFor(() => {
+      expect(screen.getByRole('menuitem', { name: /profil/i })).toBeTruthy()
+    })
+    expect(screen.queryByRole('menuitem', { name: /votes/i })).toBeNull()
+  })
+
+  it('affiche « Votes » dans le menu et appelle onVotes au clic', async () => {
+    const u = userEvent.setup()
+    const onVotes = vi.fn()
+    render(<AppTopbar user={user} onVotes={onVotes} />)
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    const votesItem = await screen.findByRole('menuitem', { name: /votes/i })
+    await u.click(votesItem)
+    expect(onVotes).toHaveBeenCalledTimes(1)
+  })
+
+  it('rend Votes entre Profil et Déconnexion (ordre du menu)', async () => {
+    const u = userEvent.setup()
+    render(<AppTopbar user={user} onVotes={vi.fn()} />)
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    await screen.findByRole('menuitem', { name: /votes/i })
+    const items = screen.getAllByRole('menuitem').map((el) => el.textContent ?? '')
+    const iProfil = items.findIndex((t) => /profil/i.test(t))
+    const iVotes = items.findIndex((t) => /votes/i.test(t))
+    const iLogout = items.findIndex((t) => /déconnexion/i.test(t))
+    expect(iProfil).toBeLessThan(iVotes)
+    expect(iVotes).toBeLessThan(iLogout)
+  })
+
+  it('pollsToVote > 0 : badge chiffré dans l’entrée + pastille « non lu » sur l’avatar + compte dans l’aria-label du trigger', async () => {
+    const u = userEvent.setup()
+    render(<AppTopbar user={user} onVotes={vi.fn()} pollsToVote={4} />)
+    // Pastille sur l'avatar (decorative) + compte exposé dans le nom accessible du trigger.
+    const trigger = screen.getByRole('button', { name: 'Menu utilisateur (4)' })
+    expect(trigger.querySelector('[data-testid="topbar-votes-dot"]')).toBeTruthy()
+    // Badge chiffré dans l'entrée du menu.
+    await u.click(trigger)
+    const votesItem = await screen.findByRole('menuitem', { name: /votes \(4\)/i })
+    expect(votesItem.textContent).toContain('4')
+  })
+
+  it('pollsToVote = 0 : pas de pastille ni de compte (entrée Votes sans badge)', async () => {
+    render(<AppTopbar user={user} onVotes={vi.fn()} pollsToVote={0} />)
+    const trigger = screen.getByRole('button', { name: 'Menu utilisateur' })
+    expect(trigger.querySelector('[data-testid="topbar-votes-dot"]')).toBeNull()
+  })
+
+  it('cape le badge à « 9+ » au-delà de 9', async () => {
+    const u = userEvent.setup()
+    render(<AppTopbar user={user} onVotes={vi.fn()} pollsToVote={12} />)
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur (12)' }))
+    const votesItem = await screen.findByRole('menuitem', { name: /votes \(12\)/i })
+    expect(votesItem.textContent).toContain('9+')
+  })
+})
+
 describe('AppTopbar — accessibilité (jest-axe)', () => {
   it('état fermé : pas de violations axe', async () => {
     const { container } = render(
       <AppTopbar
         user={user}
+        syncLabel="Synchronisé il y a 14 min"
+        dateLabel="Vendredi 24 avril 2026"
+      />
+    )
+    const results = await axe(container)
+    expect(results).toHaveNoViolations()
+  })
+
+  it('avec entrée Votes + pastille non lue : pas de violations axe', async () => {
+    const { container } = render(
+      <AppTopbar
+        user={user}
+        onVotes={vi.fn()}
+        pollsToVote={4}
         syncLabel="Synchronisé il y a 14 min"
         dateLabel="Vendredi 24 avril 2026"
       />

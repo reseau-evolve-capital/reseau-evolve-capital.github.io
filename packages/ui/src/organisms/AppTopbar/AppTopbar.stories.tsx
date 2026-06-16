@@ -56,6 +56,26 @@ export const WithAdmin: Story = {
   },
 }
 
+/** Entrée « Votes » dans le menu avatar (entre Profil et Déconnexion) + pastille « non lu »
+ *  sur l'avatar et badge chiffré quand des votes attendent une réponse (spec §7). */
+export const WithVotes: Story = {
+  args: {
+    onVotes: fn(),
+    pollsToVote: 4,
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    // Le compte des votes en attente est exposé dans le nom accessible du trigger.
+    const trigger = canvas.getByRole('button', { name: /menu utilisateur \(4\)/i })
+    await userEvent.click(trigger)
+    const menu = within(document.body)
+    const votes = await menu.findByRole('menuitem', { name: /votes \(4\)/i })
+    expect(votes).toBeVisible()
+    await userEvent.click(votes)
+    expect(args.onVotes).toHaveBeenCalledTimes(1)
+  },
+}
+
 /** Point d'entrée feedback : l'icône `MessageCircle` est visible à côté de l'avatar
  *  (desktop ET mobile) et déclenche `onFeedback`. */
 export const WithFeedback: Story = {

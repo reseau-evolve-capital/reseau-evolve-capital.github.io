@@ -17,7 +17,6 @@ import {
   AppTopbar,
   BottomNav,
   FeedbackSheet,
-  Icon,
   ThemeToggle,
   type AppHeaderUser,
   type FeedbackLabels,
@@ -117,15 +116,13 @@ export function AppChromeTopbar({
   clubActif?: SidebarClub
   /** Vrai si ≥ 1 vote open|closed visible du club (spec §5 — entrée « Votes » conditionnelle). */
   hasPollActivity?: boolean
-  /** Nombre de votes ouverts non encore votés (badge sur l'entrée Votes). 0 = pas de badge. */
+  /** Nombre de votes ouverts non encore votés (badge entrée Votes + pastille avatar). 0 = rien. */
   pollsToVote?: number
 }) {
-  // NB (arbitrage) : l'entrée « Votes » du dropdown avatar (spec §7) NÉCESSITE un point
-  // d'extension sur AppTopbar (@evolve/ui) — non disponible dans la version livrée, et
-  // packages/ui est hors périmètre de ce ticket. En attendant ce follow-up @evolve/ui
-  // (ajout d'une entrée de menu paramétrable), on rend ici une ENTRÉE « Votes » dédiée et
-  // CONDITIONNELLE (hasPollActivity) dans la topbar, avec badge du nombre de votes à faire,
-  // qui navigue vers /votes. Visuellement intégrée, focus visible, cible ≥ 44px.
+  // Entrée « Votes » (spec §7) : portée par le point d'extension d'AppTopbar (@evolve/ui) —
+  // `onVotes` + `pollsToVote` rendent l'entrée DANS le menu avatar (entre Profil et
+  // Déconnexion) et la pastille « non lu » sur l'avatar. Conditionnelle à `hasPollActivity`
+  // (on ne passe `onVotes` que dans ce cas).
   const t = useTranslations('nav')
   const messages = useMessages()
   const pathname = usePathname()
@@ -169,40 +166,20 @@ export function AppChromeTopbar({
     router.push('/login')
   }
 
-  const pollsBadge = pollsToVote > 0 ? (pollsToVote > 9 ? '9+' : String(pollsToVote)) : null
-
   return (
     <>
-      {/* Entrée « Votes » conditionnelle (spec §5/§7). Rendue à gauche du cluster avatar de la
-          topbar via un conteneur relatif (en attendant le point d'extension @evolve/ui). */}
-      <div className="relative">
-        {hasPollActivity ? (
-          <Link
-            href="/votes"
-            aria-label={pollsBadge ? `${t('topbar.votes')} (${pollsToVote})` : t('topbar.votes')}
-            className="absolute right-16 top-1/2 z-50 inline-flex min-h-[44px] -translate-y-1/2 items-center gap-1.5 rounded-[var(--r-md)] px-2 text-text-sec outline-none transition-colors hover:text-text focus-visible:shadow-[var(--sh-glow)] md:right-20"
-          >
-            <span className="relative inline-flex">
-              <Icon name="Vote" size={20} aria-hidden="true" />
-              {pollsBadge ? (
-                <span
-                  aria-hidden="true"
-                  className="absolute -right-2 -top-1 inline-flex min-w-[16px] items-center justify-center rounded-full bg-brand-yellow px-1 text-[10px] font-bold leading-[16px] text-accent-ink"
-                >
-                  {pollsBadge}
-                </span>
-              ) : null}
-            </span>
-            <span className="hidden text-[13px] font-semibold lg:inline">{t('topbar.votes')}</span>
-          </Link>
-        ) : null}
-      </div>
+      {/* Entrée « Votes » (spec §5/§7) : dans le menu avatar d'AppTopbar, entre Profil et
+          Déconnexion (desktop ET mobile), avec pastille « non lu » sur l'avatar quand un vote
+          attend une réponse. Conditionnelle à `hasPollActivity` (on ne passe `onVotes` que dans
+          ce cas → entrée masquée sinon, non destructif). */}
       <AppTopbar
         user={user}
         linkComponent={Link}
         canAccessAdmin={isStaff}
         onAdmin={() => router.push('/admin')}
         onProfile={() => router.push('/profil')}
+        onVotes={hasPollActivity ? () => router.push('/votes') : undefined}
+        pollsToVote={pollsToVote}
         onLogout={() => {
           void handleLogout()
         }}
@@ -225,6 +202,7 @@ export function AppChromeTopbar({
           admin: t('topbar.admin'),
           profile: t('topbar.profile'),
           logout: t('topbar.logout'),
+          votes: t('topbar.votes'),
         }}
       />
       <FeedbackSheet

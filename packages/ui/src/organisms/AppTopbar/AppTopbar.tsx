@@ -17,6 +17,8 @@ export interface AppTopbarLabels {
   profile?: string
   /** Entrée déconnexion du menu. Défaut : « Déconnexion ». */
   logout?: string
+  /** Entrée votes du menu. Défaut : « Votes ». */
+  votes?: string
 }
 
 export interface AppTopbarProps {
@@ -33,6 +35,17 @@ export interface AppTopbarProps {
   canAccessAdmin?: boolean
   /** Action déclenchée par l'entrée admin (ex: router.push('/admin')). */
   onAdmin?: () => void
+  /**
+   * Action de l'entrée « Votes » du menu utilisateur (ex: router.push('/votes')).
+   * Si absent, l'entrée n'est pas rendue (non destructif, comme `onAdmin`/`onFeedback`).
+   * L'app la fournit dès qu'il y a une activité de vote visible (spec §5/§7).
+   */
+  onVotes?: () => void
+  /**
+   * Nombre de votes ouverts non encore votés. > 0 → badge chiffré dans l'entrée Votes
+   * ET pastille « non lu » sur l'avatar (indicateur de notification). 0 = aucun.
+   */
+  pollsToVote?: number
   /** Action déclenchée par le bouton de feedback. Si absent, l'icône n'est pas rendue (non destructif). */
   onFeedback?: () => void
   /** Libellé du bouton de feedback (aria-label). Défaut : « Retour ». */
@@ -72,6 +85,8 @@ export function AppTopbar({
   onLogout,
   canAccessAdmin = false,
   onAdmin,
+  onVotes,
+  pollsToVote = 0,
   onFeedback,
   feedbackLabel,
   syncLabel,
@@ -88,7 +103,12 @@ export function AppTopbar({
   const adminLabel = labels?.admin ?? 'Espace trésorier'
   const profileLabel = labels?.profile ?? 'Profil'
   const logoutLabel = labels?.logout ?? 'Déconnexion'
+  const votesLabel = labels?.votes ?? 'Votes'
   const feedbackText = feedbackLabel ?? 'Retour'
+
+  // Votes : badge chiffré (capé « 9+ ») + pastille « non lu » sur l'avatar.
+  const hasUnreadVotes = pollsToVote > 0
+  const pollsBadge = hasUnreadVotes ? (pollsToVote > 9 ? '9+' : String(pollsToVote)) : null
 
   return (
     <header
@@ -165,14 +185,24 @@ export function AppTopbar({
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger
-            aria-label={userMenuLabel}
+            aria-label={hasUnreadVotes ? `${userMenuLabel} (${pollsToVote})` : userMenuLabel}
             className={cn(
-              'inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full',
+              'relative inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full',
               'transition-shadow duration-[150ms]',
               'focus:outline-none focus-visible:shadow-[var(--sh-glow)]'
             )}
           >
             <Avatar name={user.fullName} src={user.avatarUrl ?? undefined} size="md" />
+            {/* Pastille « non lu » : signale qu'au moins un vote attend une réponse. Décorative
+                (aria-hidden) — le compte est porté par l'aria-label du trigger et l'entrée Votes
+                du menu. Anneau couleur surface pour détacher la pastille de l'avatar. */}
+            {hasUnreadVotes ? (
+              <span
+                data-testid="topbar-votes-dot"
+                aria-hidden="true"
+                className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-brand-yellow ring-2 ring-card"
+              />
+            ) : null}
           </DropdownMenu.Trigger>
 
           <DropdownMenu.Portal>
@@ -222,6 +252,31 @@ export function AppTopbar({
                 <Icon name="User" size={16} aria-hidden="true" />
                 <span>{profileLabel}</span>
               </DropdownMenu.Item>
+              {/* Votes (spec §7) : entre Profil et Déconnexion. Rendue seulement si `onVotes`
+                  est fourni (l'app le passe dès qu'il y a une activité de vote). Badge chiffré
+                  des votes à faire ; le compte est porté dans l'aria-label de l'entrée. */}
+              {onVotes ? (
+                <DropdownMenu.Item
+                  onSelect={() => onVotes?.()}
+                  aria-label={pollsBadge ? `${votesLabel} (${pollsToVote})` : undefined}
+                  className={cn(
+                    'flex cursor-pointer select-none items-center gap-2 rounded-sm px-3 py-2',
+                    'text-[14px] text-text outline-none',
+                    'data-[highlighted]:bg-neutral-100'
+                  )}
+                >
+                  <Icon name="Vote" size={16} aria-hidden="true" />
+                  <span className="flex-1">{votesLabel}</span>
+                  {pollsBadge ? (
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex min-w-[18px] items-center justify-center rounded-full bg-brand-yellow px-1 text-[11px] font-bold leading-[18px] text-accent-ink"
+                    >
+                      {pollsBadge}
+                    </span>
+                  ) : null}
+                </DropdownMenu.Item>
+              ) : null}
               <DropdownMenu.Item
                 onSelect={() => onLogout?.()}
                 className={cn(
