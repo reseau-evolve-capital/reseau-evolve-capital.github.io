@@ -472,6 +472,32 @@ verify_jwt = false
 # non-JWT) sinon le trigger reçoit 401 et aucun retour n'est distribué.
 verify_jwt = false
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Web Push V0 (PUSH-001 — spec docs/superpowers/specs/2026-06-16-web-push-notifications-design.md)
+# Les 4 fonctions ci-dessous sont appelées par des Server Actions (Bearer service-role)
+# ou des jobs pg_cron (URLs Vault) — JAMAIS par le browser avec un JWT Supabase.
+# verify_jwt DOIT rester false, sinon le gateway rejette l'appel (clé service-role non-JWT
+# → 401) et le push / l'email de vote ne part jamais. Même logique que send-email ci-dessus.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[functions.dispatch-push]
+# Envoi Web Push d'un NotificationEvent. Appelée par dispatchNotification (Server Action,
+# service role) et par les crons poll-push-reminders / poll-closed-push.
+verify_jwt = false
+
+[functions.send-poll-email]
+# Email de vote (opened/closed/reminder) via Brevo. Appelée par les Server Actions / cron
+# avec le Bearer service-role.
+verify_jwt = false
+
+[functions.poll-push-reminders]
+# Cible du cron quotidien (Vault poll_push_reminders_url) — rappel vote J-1.
+verify_jwt = false
+
+[functions.poll-closed-push]
+# Cible du cron horaire (Vault poll_closed_push_url) — push post-clôture.
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
