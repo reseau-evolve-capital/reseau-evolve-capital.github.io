@@ -1,5 +1,6 @@
 import { render } from '@react-email/render'
-import type { ReactElement } from 'react'
+import { createElement, type ReactElement } from 'react'
+import { PollEmail, type PollEmailProps } from './PollEmail.tsx'
 
 /**
  * Emails transactionnels Evolve Capital (React Email).
@@ -23,8 +24,15 @@ export { NewsletterEmail } from './NewsletterEmail.tsx'
 export type { NewsletterEmailProps } from './NewsletterEmail.tsx'
 export { mapArticleToEmail } from './mappers/article-to-email.ts'
 export type { MapArticleOptions } from './mappers/article-to-email.ts'
+export { PollEmail } from './PollEmail.tsx'
+export type { PollEmailProps, PollEmailVariant, PollEmailLocale } from './PollEmail.tsx'
 
 /** Rend un email React Email en chaîne HTML prête à l'envoi. */
 export function renderEmailHtml(element: ReactElement): Promise<string> {
   return render(element)
+}
+
+/** Rend l'email de vote (opened/closed/reminder) en HTML prêt à l'envoi (Brevo). */
+export function renderPollEmailHtml(props: PollEmailProps): Promise<string> {
+  return render(createElement(PollEmail, props))
 }

@@ -24,3 +24,11 @@ export type {
   PollResults,
   PollResultsDTO,
 } from './polls/index.ts'
+// Web Push (migration 039, PUSH-001) — dispatch server-only + templates de copy
+export { dispatchNotification, buildNotificationContent } from './notifications/index.ts'
+export type {
+  NotificationEvent,
+  NotificationEventType,
+  NotificationContent,
+  DispatchResult,
+} from './notifications/index.ts'
