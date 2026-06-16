@@ -531,6 +531,41 @@ export type Database = {
           },
         ]
       }
+      poll_email_sends: {
+        Row: {
+          brevo_message_id: string | null
+          id: string
+          poll_id: string
+          recipient_count: number
+          sent_at: string
+          variant: string
+        }
+        Insert: {
+          brevo_message_id?: string | null
+          id?: string
+          poll_id: string
+          recipient_count?: number
+          sent_at?: string
+          variant: string
+        }
+        Update: {
+          brevo_message_id?: string | null
+          id?: string
+          poll_id?: string
+          recipient_count?: number
+          sent_at?: string
+          variant?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'poll_email_sends_poll_id_fkey'
+            columns: ['poll_id']
+            isOneToOne: false
+            referencedRelation: 'polls'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       poll_responses: {
         Row: {
           created_at: string
@@ -776,6 +811,126 @@ export type Database = {
           },
         ]
       }
+      push_delivery_log: {
+        Row: {
+          club_id: string | null
+          created_at: string
+          event_type: string
+          failed_count: number
+          id: string
+          poll_id: string | null
+          sent_count: number
+          skipped_count: number
+        }
+        Insert: {
+          club_id?: string | null
+          created_at?: string
+          event_type: string
+          failed_count?: number
+          id?: string
+          poll_id?: string | null
+          sent_count?: number
+          skipped_count?: number
+        }
+        Update: {
+          club_id?: string | null
+          created_at?: string
+          event_type?: string
+          failed_count?: number
+          id?: string
+          poll_id?: string | null
+          sent_count?: number
+          skipped_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'push_delivery_log_club_id_fkey'
+            columns: ['club_id']
+            isOneToOne: false
+            referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'push_delivery_log_poll_id_fkey'
+            columns: ['poll_id']
+            isOneToOne: false
+            referencedRelation: 'polls'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      push_preferences: {
+        Row: {
+          enabled: boolean
+          poll_closed: boolean
+          poll_opened: boolean
+          poll_reminder: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          poll_closed?: boolean
+          poll_opened?: boolean
+          poll_reminder?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          poll_closed?: boolean
+          poll_opened?: boolean
+          poll_reminder?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_error_at: string | null
+          last_error_code: string | null
+          last_success_at: string | null
+          p256dh: string
+          platform: string | null
+          updated_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_error_at?: string | null
+          last_error_code?: string | null
+          last_success_at?: string | null
+          p256dh: string
+          platform?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_error_at?: string | null
+          last_error_code?: string | null
+          last_success_at?: string | null
+          p256dh?: string
+          platform?: string | null
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       sheet_snapshots: {
         Row: {
           checksum: string
@@ -988,7 +1143,13 @@ export type Database = {
         Args: { p_locked: boolean; p_membership_id: string; p_reason?: string }
         Returns: undefined
       }
-      close_due_polls: { Args: never; Returns: number }
+      close_due_polls: {
+        Args: never
+        Returns: {
+          club_id: string
+          poll_id: string
+        }[]
+      }
       current_user_access_blocked: { Args: never; Returns: boolean }
       email_is_invited: { Args: { p_email: string }; Returns: boolean }
       get_poll_results: { Args: { p_poll_id: string }; Returns: Json }
