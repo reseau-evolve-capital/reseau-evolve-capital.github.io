@@ -10,7 +10,7 @@
 
 import { cookies } from 'next/headers'
 import { z } from 'zod'
-import { createServerClient } from '@evolve/data'
+import { createServerClient, createServiceRoleClient, dispatchNotification } from '@evolve/data'
 import type { Database } from '@evolve/data'
 import { resolveAdminContext } from '@/lib/data/admin'
 
@@ -64,6 +64,79 @@ function buildOptions(
   return labels.map((label, i) => ({ id: `opt-${i + 1}`, label })) as PollOptionsJson
 }
 
+// ─── Notifications (Web Push + email) ──────────────────────────────────────
+//
+// FIRE-AND-FORGET strict : la publication / clôture d'un vote est DÉJÀ persistée quand on
+// notifie. Un échec push/email (clé service-role absente, Edge down, réseau) ne doit JAMAIS
+// faire échouer l'action — l'in-app (bannières) couvre le gap. Ces helpers créent le client
+// service-role en try/catch et ne throw JAMAIS.
+//
+// CLUB-SCOPE : `clubId` est TOUJOURS celui du vote (`ctx.clubId`). On ne diffuse jamais plus
+// large qu'au club du vote — l'Edge `dispatch-push` résout les destinataires de CE club.
+//
+// Réf : spec §8 (intégration), packages/data dispatch.ts (contrat fire-and-forget).
+
+/** Crée le client service-role (server-only) ou null si l'env manque / erreur. Ne throw jamais. */
+function tryServiceRoleClient(): ReturnType<typeof createServiceRoleClient> | null {
+  try {
+    return createServiceRoleClient()
+  } catch (e) {
+    // SUPABASE_SERVICE_ROLE_KEY absente en local, etc. → on abandonne la notif silencieusement.
+    console.error('[votes] service-role client indisponible — notification ignorée', e)
+    return null
+  }
+}
+
+/**
+ * Notifie l'ouverture d'un vote au CLUB (push + email), fire-and-forget. `clubId` est le club
+ * du vote (jamais plus large). Ne throw jamais : tout échec est avalé (loggé).
+ */
+async function notifyPollOpened(
+  clubId: string,
+  pollId: string,
+  title: string,
+  closesAt: string | null
+): Promise<void> {
+  const admin = tryServiceRoleClient()
+  if (!admin) return
+  try {
+    // Push : `dispatchNotification` est déjà fire-and-forget (ne throw pas), on l'awaite quand
+    // même pour ne pas laisser de promesse pendante après la fin de l'action serveur.
+    await dispatchNotification(admin, {
+      type: 'poll.opened',
+      clubId, // ← club du vote, jamais de broadcast plus large.
+      payload: { pollId, title, closesAt },
+    })
+  } catch (e) {
+    console.error('[votes] échec dispatch push poll.opened', e)
+  }
+  try {
+    await admin.functions.invoke('send-poll-email', {
+      body: { poll_id: pollId, variant: 'opened' },
+    })
+  } catch (e) {
+    console.error('[votes] échec invoke send-poll-email', e)
+  }
+}
+
+/**
+ * Notifie la clôture d'un vote au CLUB (push uniquement en V0), fire-and-forget. `clubId` est
+ * le club du vote. Ne throw jamais.
+ */
+async function notifyPollClosed(clubId: string, pollId: string, title: string): Promise<void> {
+  const admin = tryServiceRoleClient()
+  if (!admin) return
+  try {
+    await dispatchNotification(admin, {
+      type: 'poll.closed',
+      clubId, // ← club du vote, jamais de broadcast plus large.
+      payload: { pollId, title },
+    })
+  } catch (e) {
+    console.error('[votes] échec dispatch push poll.closed', e)
+  }
+}
+
 /**
  * Crée un vote. `action='draft'` → status 'draft' (éditable, invisible des membres) ;
  * `action='publish'` → status 'open' (membres notifiés, réponses acceptées). La validation
@@ -111,6 +184,14 @@ export async function createPollAction(
     .single<{ id: string }>()
 
   if (error) return { ok: false, error: mapPgError(error.code) }
+
+  // Notification CLUB (push + email) seulement si publié ET opt-in email coché. Fire-and-forget :
+  // on attend la résolution (helper qui ne throw jamais) puis on retourne EXACTEMENT comme avant —
+  // un échec de notif ne change pas le résultat ({ ok:true } : le vote est déjà créé).
+  if (status === 'open' && p.notifyByEmail) {
+    await notifyPollOpened(ctx.clubId, data.id, p.title, toClosesAt(p.closesAt))
+  }
+
   return { ok: true, pollId: data.id }
 }
 
@@ -138,5 +219,23 @@ export async function closePollAction(pollId: string): Promise<ActionResult> {
     .eq('status', 'open')
 
   if (error) return { ok: false, error: mapPgError(error.code) }
+
+  // Notification CLUB de clôture (push uniquement en V0). On relit le titre via le client session
+  // (RLS), scopé au club du vote (`ctx.clubId`) — jamais d'autre club. Fire-and-forget : un échec
+  // de lecture ou de push ne change pas le résultat ({ ok:true } : la clôture est déjà persistée).
+  try {
+    const { data: poll } = await supabase
+      .from('polls')
+      .select('title')
+      .eq('id', pollId)
+      .eq('club_id', ctx.clubId)
+      .single<{ title: string }>()
+    if (poll) {
+      await notifyPollClosed(ctx.clubId, pollId, poll.title)
+    }
+  } catch (e) {
+    console.error('[votes] échec notification poll.closed', e)
+  }
+
   return { ok: true }
 }
