@@ -97,11 +97,12 @@ function fakeBuildContent(event: NotificationEvent): NotificationContent {
 
 function makeDeps(
   state: FakeState,
-  opts: { failStatus?: Record<string, number> } = {}
+  opts: { failStatus?: Record<string, number>; allowlistUserIds?: string[] } = {}
 ): { deps: DispatchDeps; rec: Recorder } {
   const rec: Recorder = { sentPayloads: [], deleted: [], logged: [] }
 
   const deps: DispatchDeps = {
+    allowlistUserIds: opts.allowlistUserIds,
     listClubActiveMemberUserIds: (clubId) => Promise.resolve(state.membersByClub[clubId] ?? []),
     listSubscriptions: (userIds) => {
       const set = new Set(userIds)
@@ -376,3 +377,65 @@ Deno.test('logDelivery : journalise un résumé agrégé sans PII', async () => 
   assert(!('user_id' in entry))
   assert(!('email' in entry))
 })
+
+// ════════════════════════════════════════════════════════════════════════════
+// 9 — ALLOWLIST DE TEST (NOTIFY_ALLOWLIST → user_id) — sûreté du mode test.
+// ════════════════════════════════════════════════════════════════════════════
+Deno.test('allowlist VIDE → comportement normal : tous les membres du club reçoivent', async () => {
+  const state: FakeState = {
+    membersByClub: { clubA: ['uA1', 'uA2'] },
+    subs: [sub('uA1', 'epA1'), sub('uA2', 'epA2')],
+    notifyFlag: { p1: true },
+    voted: {},
+  }
+  const { deps, rec } = makeDeps(state, { allowlistUserIds: [] })
+  const summary = await dispatchPush(deps, {
+    type: 'poll.opened',
+    clubId: 'clubA',
+    payload: { pollId: 'p1', title: 'X' },
+  })
+  assertEquals(summary.sent, 2)
+  assertEquals(rec.sentPayloads.map((p) => p.endpoint).sort(), ['epA1', 'epA2'])
+})
+
+Deno.test('allowlist = [uA1] → SEUL uA1 reçoit (les autres membres du club exclus)', async () => {
+  const state: FakeState = {
+    membersByClub: { clubA: ['uA1', 'uA2', 'uA3'] },
+    subs: [sub('uA1', 'epA1'), sub('uA2', 'epA2'), sub('uA3', 'epA3')],
+    notifyFlag: { p1: true },
+    voted: {},
+  }
+  const { deps, rec } = makeDeps(state, { allowlistUserIds: ['uA1'] })
+  const summary = await dispatchPush(deps, {
+    type: 'poll.opened',
+    clubId: 'clubA',
+    payload: { pollId: 'p1', title: 'X' },
+  })
+  assertEquals(summary.sent, 1)
+  assertEquals(
+    rec.sentPayloads.map((p) => p.endpoint),
+    ['epA1']
+  )
+})
+
+Deno.test(
+  'SÛRETÉ : allowlist = user HORS club → personne ne reçoit (intersection, jamais additif)',
+  async () => {
+    const state: FakeState = {
+      membersByClub: { clubA: ['uA1', 'uA2'] },
+      // La sub de l'étranger existe, mais il n'est pas membre du club A.
+      subs: [sub('uA1', 'epA1'), sub('uA2', 'epA2'), sub('uX', 'epX')],
+      notifyFlag: { p1: true },
+      voted: {},
+    }
+    const { deps, rec } = makeDeps(state, { allowlistUserIds: ['uX'] })
+    const summary = await dispatchPush(deps, {
+      type: 'poll.opened',
+      clubId: 'clubA',
+      payload: { pollId: 'p1', title: 'X' },
+    })
+    // uX est dans l'allowlist mais PAS membre du club → intersection vide → 0 envoi, jamais epX.
+    assertEquals(summary.sent, 0)
+    assert(!rec.sentPayloads.some((p) => p.endpoint === 'epX'))
+  }
+)

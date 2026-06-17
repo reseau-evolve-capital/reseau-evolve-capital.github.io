@@ -26,6 +26,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { BrevoRateLimitError, runPollEmail } from './handler.ts'
 import { alertSentry } from '../_shared/sentry.ts'
+import { parseAllowlist } from '../_shared/notify-allowlist.ts'
 import type {
   BrevoPollEmailPayload,
   BrevoSendResult,
@@ -182,6 +183,9 @@ async function buildDeps(supabase: SupabaseClient): Promise<PollEmailDeps> {
     sleep: (ms: number) => new Promise((r) => setTimeout(r, ms)),
 
     appUrl: Deno.env.get('APP_URL') ?? undefined,
+
+    // Allowlist de TEST (NOTIFY_ALLOWLIST = emails). Vide → tous les membres (normal).
+    allowlistEmails: parseAllowlist(Deno.env.get('NOTIFY_ALLOWLIST')),
 
     log: (level, msg, meta) => {
       const line = `[send-poll-email] ${msg}${meta ? ' ' + JSON.stringify(meta) : ''}`
