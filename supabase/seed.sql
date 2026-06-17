@@ -14,6 +14,13 @@ INSERT INTO memberships (user_id, club_id, role, joined_at)
 VALUES ('bbbbbbbb-0000-0000-0000-000000000001', 'aaaaaaaa-0000-0000-0000-000000000001', 'member', '2024-01-01')
 ON CONFLICT (user_id, club_id) DO NOTHING;
 
+-- Réseau (NET-001) : bootstrap du premier administrateur réseau (LOCAL uniquement).
+-- Le user de seed devient membre de l'équipe RÉSEAU → les e2e /reseau se connectent comme
+-- membre réseau (les tests négatifs révoqueront localement). Scope orthogonal au rôle per-club.
+INSERT INTO network_members (user_id, role, title)
+VALUES ('bbbbbbbb-0000-0000-0000-000000000001', 'network_admin', 'president')
+ON CONFLICT (user_id) DO NOTHING;
+
 -- ════════════════════════════════════════════════════════════════════════════
 -- Vote anonyme V0 (migration 038) — fixtures de test, idempotentes.
 --

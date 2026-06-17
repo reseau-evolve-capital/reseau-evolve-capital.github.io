@@ -531,6 +531,38 @@ export type Database = {
           },
         ]
       }
+      network_members: {
+        Row: {
+          created_at: string
+          role: Database['public']['Enums']['network_role']
+          title: Database['public']['Enums']['network_title'] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: Database['public']['Enums']['network_role']
+          title?: Database['public']['Enums']['network_title'] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: Database['public']['Enums']['network_role']
+          title?: Database['public']['Enums']['network_title'] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'network_members_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: true
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       poll_email_sends: {
         Row: {
           brevo_message_id: string | null
@@ -1161,6 +1193,8 @@ export type Database = {
       has_voted: { Args: { p_poll_id: string }; Returns: boolean }
       health_status: { Args: never; Returns: Json }
       is_club_staff: { Args: { p_club_id: string }; Returns: boolean }
+      is_network_admin: { Args: never; Returns: boolean }
+      is_network_member: { Args: never; Returns: boolean }
       record_attestation_ref: {
         Args: { p_membership_id: string; p_period: string; p_reference: string }
         Returns: undefined
@@ -1208,6 +1242,8 @@ export type Database = {
       member_role: 'member' | 'treasurer' | 'president' | 'network_admin'
       member_status: 'active' | 'left'
       month_status: 'paid' | 'due' | 'late' | 'exempt'
+      network_role: 'network_admin' | 'network_board'
+      network_title: 'president' | 'vice_president' | 'treasurer' | 'secretary'
       snapshot_status: 'success' | 'partial' | 'failed'
       transaction_type: 'buy' | 'sell' | 'dividend' | 'coupon' | 'other'
     }
@@ -1345,6 +1381,8 @@ export const Constants = {
       member_role: ['member', 'treasurer', 'president', 'network_admin'],
       member_status: ['active', 'left'],
       month_status: ['paid', 'due', 'late', 'exempt'],
+      network_role: ['network_admin', 'network_board'],
+      network_title: ['president', 'vice_president', 'treasurer', 'secretary'],
       snapshot_status: ['success', 'partial', 'failed'],
       transaction_type: ['buy', 'sell', 'dividend', 'coupon', 'other'],
     },
