@@ -28,6 +28,7 @@
       "dashboard": "Dashboard",
       "portfolio": "Portefeuille",
       "contributions": "Cotisations",
+      "network": "Réseau",
       "navLabel": "Navigation mobile"
     },
     "topbar": {
@@ -1365,6 +1366,13 @@
           "hint": "Texte libre, transmis de façon anonyme."
         }
       }
+    }
+  },
+  "reseau": {
+    "forbidden": {
+      "title": "Accès refusé",
+      "description": "Cet espace est réservé à l'équipe du réseau des clubs.",
+      "action": "Retour au dashboard"
     }
   }
 }

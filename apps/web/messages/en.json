@@ -28,6 +28,7 @@
       "dashboard": "Dashboard",
       "portfolio": "Portfolio",
       "contributions": "Contributions",
+      "network": "Network",
       "navLabel": "Mobile navigation"
     },
     "topbar": {
@@ -1365,6 +1366,13 @@
           "hint": "Free text, shared anonymously."
         }
       }
+    }
+  },
+  "reseau": {
+    "forbidden": {
+      "title": "Access denied",
+      "description": "This area is reserved for the club network team.",
+      "action": "Back to dashboard"
     }
   }
 }

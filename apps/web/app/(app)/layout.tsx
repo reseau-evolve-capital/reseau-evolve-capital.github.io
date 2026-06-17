@@ -14,7 +14,7 @@ import { hasVoted } from '@evolve/data'
 import { AppChromeSidebar, AppChromeTopbar, AppChromeBottom } from '@/components/chrome/AppChrome'
 import { InstallBannerMount } from '@/components/pwa/InstallBannerMount'
 import { PushOptInMount } from '@/components/push/PushOptInMount'
-import { getSessionUser, getActiveClubMembership } from '@/lib/data/request'
+import { getSessionUser, getActiveClubMembership, getNetworkContext } from '@/lib/data/request'
 import { getOpenPolls, hasPollActivity as checkPollActivity } from '@/lib/data/polls'
 
 // Les pages app/* nécessitent l'auth Supabase — pas de prérendu statique
@@ -37,6 +37,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   let profile: { full_name: string | null; avatar_url: string | null } | null = null
   let isStaff = false
+  // Membre de l'équipe RÉSEAU (NET-002) : pilote l'item « Réseau » role-aware (nav).
+  let isNetworkMember = false
   let clubActif: SidebarClub | undefined
   let syncLabel: string | undefined
   // Analytics (Phase 2) : identité pseudonyme. user_id = SHA-256(salt + UUID Supabase) —
@@ -52,22 +54,26 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     const salt = process.env.ANALYTICS_USER_ID_SALT ?? 'evolve-uba'
     userIdHash = createHash('sha256').update(`${salt}:${authUser.id}`).digest('hex').slice(0, 32)
 
-    // 4 lectures indépendantes → parallélisées (fix latence par-navigation, ticket C).
+    // 5 lectures indépendantes → parallélisées (fix latence par-navigation, ticket C).
     // Club actif = dernière adhésion active (helper mémoïsé, PARTAGÉ avec les pages) ;
-    // alimente la carte « CLUB ACTIF » + le statut sync.
-    const [{ count }, { data: profileData }, { data: staffData }, membership] = await Promise.all([
-      supabase
-        .from('memberships')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', authUser.id)
-        .eq('is_active', true),
-      supabase.from('users').select('full_name, avatar_url').eq('id', authUser.id).single(),
-      supabase.rpc('user_is_staff'),
-      getActiveClubMembership(authUser.id),
-    ])
+    // alimente la carte « CLUB ACTIF » + le statut sync. Contexte réseau (NET-002) mémoïsé,
+    // PARTAGÉ avec le layout /reseau : null = non-membre → item « Réseau » en teaser.
+    const [{ count }, { data: profileData }, { data: staffData }, membership, networkCtx] =
+      await Promise.all([
+        supabase
+          .from('memberships')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', authUser.id)
+          .eq('is_active', true),
+        supabase.from('users').select('full_name, avatar_url').eq('id', authUser.id).single(),
+        supabase.rpc('user_is_staff'),
+        getActiveClubMembership(authUser.id),
+        getNetworkContext(authUser.id),
+      ])
     clubCount = count ?? 0
     profile = profileData
     isStaff = staffData ?? false
+    isNetworkMember = networkCtx !== null
 
     const club = membership?.clubs
     if (club) {
@@ -117,7 +123,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             par-dessus tout le chrome. useToast() est dispo dans tout l'espace membre. */}
         <ToastProvider>
           <div className="md:flex md:min-h-screen">
-            <AppChromeSidebar isStaff={isStaff} clubActif={clubActif} />
+            <AppChromeSidebar
+              isStaff={isStaff}
+              isNetworkMember={isNetworkMember}
+              clubActif={clubActif}
+            />
             <div className="flex min-w-0 flex-1 flex-col">
               <AppChromeTopbar
                 user={user}
@@ -133,7 +143,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               </main>
             </div>
           </div>
-          <AppChromeBottom />
+          <AppChromeBottom isNetworkMember={isNetworkMember} />
           {/* PWA-001 : bannière d'installation. Montée ici (persiste entre onglets) mais
               ne s'affiche que sur /dashboard. Enrobée d'un ErrorBoundary interne. */}
           <InstallBannerMount />
