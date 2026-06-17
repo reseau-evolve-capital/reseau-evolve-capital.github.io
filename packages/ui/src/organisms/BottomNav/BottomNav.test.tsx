@@ -25,6 +25,18 @@ describe('BottomNav — rendu', () => {
     expect(active).toHaveAttribute('aria-current', 'page')
     expect(inactive).not.toHaveAttribute('aria-current')
   })
+
+  it('rend un onglet désactivé en <span> non cliquable (aria-disabled)', () => {
+    const withDisabled: NavItem[] = [
+      ...items,
+      { label: 'Réseau', href: '/reseau', icon: 'Waypoints', disabled: true },
+    ]
+    const { getByText } = render(<BottomNav items={withDisabled} activeHref="/dashboard" />)
+    const tab = getByText('Réseau').closest('span[aria-disabled]')
+    // Teaser : pas de lien (non cliquable), aria-disabled posé.
+    expect(tab).toBeTruthy()
+    expect(getByText('Réseau').closest('a')).toBeNull()
+  })
 })
 
 describe('BottomNav — accessibilité (jest-axe)', () => {

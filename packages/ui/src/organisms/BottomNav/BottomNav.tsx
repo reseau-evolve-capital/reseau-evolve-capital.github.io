@@ -48,6 +48,26 @@ export function BottomNav({
     >
       {items.map((item) => {
         const active = item.href === activeHref
+
+        // Entrée désactivée (fonctionnalité à venir / teaser role-aware) : rendue en `<span>`
+        // NON cliquable + `aria-disabled` + `cursor-not-allowed` — alignée sur le pattern Sidebar.
+        // Ne PAS rendre un `<a href="#">` (cliquable + offender cursor:pointer).
+        if (item.disabled) {
+          return (
+            <span
+              key={item.href}
+              aria-disabled="true"
+              className={cn(
+                'flex flex-1 flex-col items-center justify-center gap-1 min-h-[44px]',
+                'text-[12px] font-semibold opacity-60 cursor-not-allowed text-text-ter'
+              )}
+            >
+              <Icon name={item.icon} size={24} aria-hidden="true" />
+              <span>{item.label}</span>
+            </span>
+          )
+        }
+
         return (
           <Link
             key={item.href}

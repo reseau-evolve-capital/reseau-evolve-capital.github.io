@@ -25,6 +25,7 @@ import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
 import { resolveAdminContext, type AdminContext } from '@/lib/data/admin'
+import { resolveNetworkContext, type NetworkContext } from '@/lib/data/network'
 
 export interface SessionUser {
   id: string
@@ -82,4 +83,14 @@ export const getActiveClubMembership = cache(
 export const getAdminContext = cache(async (userId: string): Promise<AdminContext | null> => {
   const supabase = await requestClient()
   return resolveAdminContext(supabase, userId)
+})
+
+/**
+ * Contexte réseau (rôle global + titre) mémoïsé par requête : le layout /reseau ET la nav
+ * du layout (app) (item « Réseau » role-aware) partagent ainsi UNE seule lecture par navigation.
+ * Null si le user n'appartient pas à l'équipe réseau (cf. lib/data/network.ts, migration 040).
+ */
+export const getNetworkContext = cache(async (userId: string): Promise<NetworkContext | null> => {
+  const supabase = await requestClient()
+  return resolveNetworkContext(supabase, userId)
 })

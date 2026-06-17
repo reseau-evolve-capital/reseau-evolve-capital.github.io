@@ -9,6 +9,8 @@
  *   ces routes (hors /onboarding/*) redirigent vers /onboarding/step-1 (guard A1).
  * - /admin uniquement : le user doit passer user_is_staff() (trésorier, président ou
  *   network_admin dans un club actif), sinon redirect /dashboard.
+ * - /reseau uniquement : le user doit passer is_network_member() (équipe RÉSEAU, scope
+ *   au-dessus des clubs — migration 040), sinon redirect /dashboard.
  *
  * Utilise `getUser()` (revalidé côté serveur Supabase Auth) et non `getSession()`
  * pour éviter d'utiliser un token non vérifié pour des décisions d'autorisation.
@@ -26,6 +28,7 @@ const PROTECTED_PREFIXES = [
   '/onboarding',
   '/admin',
   '/profil',
+  '/reseau',
 ]
 
 /**
@@ -112,6 +115,16 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith('/admin') && user) {
     const { data: isStaff } = await supabase.rpc('user_is_staff')
     if (!isStaff) {
+      return redirectWithCookies(new URL('/dashboard', request.url), response())
+    }
+  }
+
+  // /reseau uniquement : le user doit appartenir à l'équipe RÉSEAU (scope au-dessus des clubs).
+  // is_network_member() est SECURITY DEFINER fail-closed (migration 040), appelable uniquement
+  // par les utilisateurs authentifiés. Sinon → redirect /dashboard (pas de fuite d'info).
+  if (pathname.startsWith('/reseau') && user) {
+    const { data: isNetworkMember } = await supabase.rpc('is_network_member')
+    if (!isNetworkMember) {
       return redirectWithCookies(new URL('/dashboard', request.url), response())
     }
   }

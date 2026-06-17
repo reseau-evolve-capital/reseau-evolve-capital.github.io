@@ -40,22 +40,31 @@ const LOGO_SRC = BRAND_LOGO_SRC
  */
 type NavT = ReturnType<typeof useTranslations<'nav'>>
 
-/** Nav latérale desktop — libellés alignés sur la réf, traduits via `nav.sidebar`. */
-function sidebarItems(t: NavT): NavItem[] {
+/** Nav latérale desktop — libellés alignés sur la réf, traduits via `nav.sidebar`.
+ *  L'item « Réseau » est role-aware (NET-002) : lien actif vers /reseau pour un membre
+ *  réseau, sinon teaser désactivé (« Bientôt »). */
+function sidebarItems(t: NavT, isNetworkMember: boolean): NavItem[] {
   return [
     { label: t('sidebar.dashboard'), href: '/dashboard', icon: 'LayoutDashboard' },
     { label: t('sidebar.portfolio'), href: '/portfolio', icon: 'ChartPie' },
     { label: t('sidebar.contributions'), href: '/contributions', icon: 'Calendar' },
-    { label: t('sidebar.network'), href: '#', icon: 'Waypoints', disabled: true },
+    isNetworkMember
+      ? { label: t('sidebar.network'), href: '/reseau', icon: 'Waypoints' }
+      : { label: t('sidebar.network'), href: '#', icon: 'Waypoints', disabled: true },
   ]
 }
 
-/** BottomNav mobile — 3 onglets (décision V0), libellés courts via `nav.bottom`. */
-function bottomItems(t: NavT): NavItem[] {
+/** BottomNav mobile — 4 onglets (NET-002), libellés courts via `nav.bottom`. L'onglet
+ *  « Réseau » est role-aware : lien actif vers /reseau pour un membre réseau, sinon teaser
+ *  désactivé (rendu en `<span>` non cliquable par BottomNav). */
+function bottomItems(t: NavT, isNetworkMember: boolean): NavItem[] {
   return [
     { label: t('bottom.dashboard'), href: '/dashboard', icon: 'LayoutDashboard' },
     { label: t('bottom.portfolio'), href: '/portfolio', icon: 'ChartPie' },
     { label: t('bottom.contributions'), href: '/contributions', icon: 'Calendar' },
+    isNetworkMember
+      ? { label: t('bottom.network'), href: '/reseau', icon: 'Waypoints' }
+      : { label: t('bottom.network'), href: '#', icon: 'Waypoints', disabled: true },
   ]
 }
 
@@ -71,14 +80,17 @@ function resolveActiveHref(pathname: string | null, items: NavItem[]): string {
 
 export function AppChromeSidebar({
   isStaff,
+  isNetworkMember = false,
   clubActif,
 }: {
   isStaff: boolean
+  /** Membre de l'équipe RÉSEAU (NET-002) : active l'item « Réseau » (sinon teaser « Bientôt »). */
+  isNetworkMember?: boolean
   clubActif?: SidebarClub
 }) {
   const t = useTranslations('nav')
   const pathname = usePathname()
-  const base = sidebarItems(t)
+  const base = sidebarItems(t, isNetworkMember)
   const items: NavItem[] = isStaff
     ? [...base, { label: t('sidebar.admin'), href: '/admin', icon: 'ShieldCheck' }]
     : base
@@ -216,10 +228,10 @@ export function AppChromeTopbar({
   )
 }
 
-export function AppChromeBottom() {
+export function AppChromeBottom({ isNetworkMember = false }: { isNetworkMember?: boolean }) {
   const t = useTranslations('nav')
   const pathname = usePathname()
-  const items = bottomItems(t)
+  const items = bottomItems(t, isNetworkMember)
   return (
     <BottomNav
       items={items}
