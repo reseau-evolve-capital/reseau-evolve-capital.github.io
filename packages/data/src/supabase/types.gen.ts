@@ -531,6 +531,44 @@ export type Database = {
           },
         ]
       }
+      network_events: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'network_events_actor_id_fkey'
+            columns: ['actor_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       network_members: {
         Row: {
           created_at: string
@@ -1195,6 +1233,61 @@ export type Database = {
       is_club_staff: { Args: { p_club_id: string }; Returns: boolean }
       is_network_admin: { Args: never; Returns: boolean }
       is_network_member: { Args: never; Returns: boolean }
+      network_create_club: {
+        Args: {
+          p_city?: string
+          p_country?: string
+          p_currency?: string
+          p_min_contribution?: number
+          p_name: string
+          p_slug: string
+        }
+        Returns: string
+      }
+      network_grant_role: {
+        Args: {
+          p_role: Database['public']['Enums']['network_role']
+          p_title?: Database['public']['Enums']['network_title']
+          p_user_id: string
+        }
+        Returns: undefined
+      }
+      network_list_clubs: {
+        Args: never
+        Returns: {
+          active_members_count: number
+          aggregated_valuation: number
+          city: string
+          country: string
+          id: string
+          last_synced_at: string
+          matrix_connected: boolean
+          name: string
+          slug: string
+        }[]
+      }
+      network_log_event: {
+        Args: {
+          p_action: string
+          p_metadata?: Json
+          p_target_id?: string
+          p_target_type?: string
+        }
+        Returns: undefined
+      }
+      network_provision_first_staff: {
+        Args: {
+          p_club_id: string
+          p_role: Database['public']['Enums']['member_role']
+          p_user_id: string
+        }
+        Returns: string
+      }
+      network_revoke_role: { Args: { p_user_id: string }; Returns: undefined }
+      network_set_club_sheet: {
+        Args: { p_club_id: string; p_sheet_id: string }
+        Returns: undefined
+      }
       record_attestation_ref: {
         Args: { p_membership_id: string; p_period: string; p_reference: string }
         Returns: undefined
