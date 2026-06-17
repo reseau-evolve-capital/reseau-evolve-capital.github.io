@@ -99,6 +99,12 @@ export interface PollEmailDeps {
   sleep: (ms: number) => Promise<void>
   /** Base URL de l'app membre (CTA email). Injectée depuis l'env côté impl ; le handler reste pur. */
   appUrl?: string
+  /**
+   * Allowlist de TEST (emails normalisés minuscule, depuis NOTIFY_ALLOWLIST). Si NON VIDE, on
+   * n'envoie qu'aux membres du club dont l'email y figure — INTERSECTION, jamais additif (le
+   * club-scoping reste intact). Vide/undefined → comportement normal (tous les membres actifs).
+   */
+  allowlistEmails?: string[]
   /** Log diagnostic (injectable). */
   log?: (level: 'info' | 'warn' | 'error', msg: string, meta?: Record<string, unknown>) => void
 }
@@ -188,6 +194,17 @@ export async function runPollEmail(
 
   // ── CLUB-SCOPING : membres actifs du club du poll uniquement ──
   let members = await deps.listClubActiveMembers(poll.clubId)
+
+  // ── Allowlist de TEST (NOTIFY_ALLOWLIST) — INTERSECTION, jamais additif ──
+  // Si renseignée, on restreint aux membres du club dont l'email est dans l'allowlist.
+  // Ne peut JAMAIS élargir hors du club (on filtre une liste déjà club-scopée).
+  if (deps.allowlistEmails && deps.allowlistEmails.length > 0) {
+    const allow = new Set(deps.allowlistEmails)
+    const before = members.length
+    members = members.filter((m) => allow.has(m.email.trim().toLowerCase()))
+    if (members.length !== before)
+      log('info', 'Allowlist de test active', { before, after: members.length })
+  }
 
   // Rappel : exclure les membres ayant déjà voté.
   if (variant === 'reminder') {

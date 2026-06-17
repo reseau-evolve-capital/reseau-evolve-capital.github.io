@@ -39,11 +39,12 @@ interface FakeState {
   sentLog: Set<string>
 }
 
-function makeDeps(state: FakeState) {
+function makeDeps(state: FakeState, opts: { allowlistEmails?: string[] } = {}) {
   const brevoPayloads: BrevoPollEmailPayload[] = []
   const recorded: { pollId: string; variant: PollEmailVariant; count: number }[] = []
 
   const deps: PollEmailDeps = {
+    allowlistEmails: opts.allowlistEmails,
     getPoll: (pollId) => Promise.resolve(state.polls[pollId] ?? null),
     getClubName: (clubId) => Promise.resolve(state.clubNames[clubId] ?? ''),
     listClubActiveMembers: (clubId) => Promise.resolve(state.membersByClub[clubId] ?? []),
@@ -221,3 +222,88 @@ Deno.test('poll introuvable : 0 envoi, pas de crash', async () => {
   assertEquals(summary.failed, 0)
   assertEquals(brevoPayloads.length, 0)
 })
+
+// ════════════════════════════════════════════════════════════════════════════
+// 7 — ALLOWLIST DE TEST (NOTIFY_ALLOWLIST) — sûreté du mode test.
+// ════════════════════════════════════════════════════════════════════════════
+function allowlistState(): FakeState {
+  return {
+    polls: { p1: poll('p1', 'clubA') },
+    clubNames: { clubA: 'Cercle Arago' },
+    membersByClub: {
+      clubA: [member('uA1', 'a1@ex.fr'), member('uA2', 'a2@ex.fr'), member('uA3', 'a3@ex.fr')],
+    },
+    voted: {},
+    sentLog: new Set(),
+  }
+}
+
+Deno.test('allowlist VIDE → comportement normal : tous les membres reçoivent', async () => {
+  const { deps, brevoPayloads } = makeDeps(allowlistState(), { allowlistEmails: [] })
+  const summary = await runPollEmail(deps, { pollId: 'p1', variant: 'opened' })
+  assertEquals(summary.sent, 3)
+  assertEquals(brevoPayloads.map((p) => p.to[0].email).sort(), ['a1@ex.fr', 'a2@ex.fr', 'a3@ex.fr'])
+})
+
+Deno.test(
+  'allowlist = [a1] → SEUL a1 reçoit (les autres membres du club sont exclus)',
+  async () => {
+    const { deps, brevoPayloads } = makeDeps(allowlistState(), { allowlistEmails: ['a1@ex.fr'] })
+    const summary = await runPollEmail(deps, { pollId: 'p1', variant: 'opened' })
+    assertEquals(summary.sent, 1)
+    assertEquals(
+      brevoPayloads.map((p) => p.to[0].email),
+      ['a1@ex.fr']
+    )
+  }
+)
+
+Deno.test(
+  'SÛRETÉ : allowlist = email HORS club → personne ne reçoit (intersection, jamais additif)',
+  async () => {
+    const { deps, brevoPayloads } = makeDeps(allowlistState(), {
+      allowlistEmails: ['etranger@autre.fr'],
+    })
+    const summary = await runPollEmail(deps, { pollId: 'p1', variant: 'opened' })
+    // L'email hors-club n'est JAMAIS ajouté : on ne peut pas notifier hors du club.
+    assertEquals(summary.sent, 0)
+    assertEquals(brevoPayloads.length, 0)
+  }
+)
+
+Deno.test('allowlist insensible à la casse (email membre en majuscules)', async () => {
+  const state = allowlistState()
+  state.membersByClub.clubA = [member('uA1', 'Alice@Ex.FR'), member('uA2', 'a2@ex.fr')]
+  // L'allowlist est déjà normalisée minuscule par parseAllowlist côté index.
+  const { deps, brevoPayloads } = makeDeps(state, { allowlistEmails: ['alice@ex.fr'] })
+  const summary = await runPollEmail(deps, { pollId: 'p1', variant: 'opened' })
+  assertEquals(summary.sent, 1)
+  assertEquals(
+    brevoPayloads.map((p) => p.to[0].email),
+    ['Alice@Ex.FR']
+  )
+})
+
+Deno.test(
+  'allowlist + anti-cross-club : un email du club B dans l’allowlist ne reçoit pas (poll du club A)',
+  async () => {
+    const state: FakeState = {
+      polls: { p1: poll('p1', 'clubA') },
+      clubNames: { clubA: 'Cercle Arago', clubB: 'Cercle Borel' },
+      membersByClub: {
+        clubA: [member('uA1', 'a1@ex.fr')],
+        clubB: [member('uB1', 'b1@ex.fr')],
+      },
+      voted: {},
+      sentLog: new Set(),
+    }
+    // b1 est dans l'allowlist MAIS membre du club B → ne doit jamais recevoir le poll du club A.
+    const { deps, brevoPayloads } = makeDeps(state, { allowlistEmails: ['a1@ex.fr', 'b1@ex.fr'] })
+    const summary = await runPollEmail(deps, { pollId: 'p1', variant: 'opened' })
+    assertEquals(summary.sent, 1)
+    assertEquals(
+      brevoPayloads.map((p) => p.to[0].email),
+      ['a1@ex.fr']
+    )
+  }
+)

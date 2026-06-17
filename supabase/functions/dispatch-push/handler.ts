@@ -63,6 +63,12 @@ export interface DispatchSummary {
 export interface DispatchDeps {
   /** user_id des membres ACTIFS de `clubId` (status = 'active'). Source du club-scoping. */
   listClubActiveMemberUserIds: (clubId: string) => Promise<string[]>
+  /**
+   * Allowlist de TEST : user_id résolus depuis NOTIFY_ALLOWLIST (emails) côté index. Si NON VIDE,
+   * on ne cible que les membres du club dont l'id y figure — INTERSECTION, jamais additif (le
+   * club-scoping reste intact). Vide/undefined → comportement normal (tous les membres actifs).
+   */
+  allowlistUserIds?: string[]
   /** Subscriptions des users donnés, jointes à push_preferences (préférences par user). */
   listSubscriptions: (userIds: string[]) => Promise<SubscriptionWithPrefs[]>
   /** `notify_by_email` du poll (gate `poll.opened`). null si poll introuvable. */
@@ -148,6 +154,14 @@ export async function dispatchPush(
 
   // ── 1. Résolution des destinataires — STRICTEMENT le club de l'événement ──
   let userIds = await deps.listClubActiveMemberUserIds(event.clubId)
+
+  // ── Allowlist de TEST (NOTIFY_ALLOWLIST) — INTERSECTION user_id, jamais additif ──
+  // Si renseignée, on restreint aux membres du club dont l'id y figure. Ne peut JAMAIS élargir
+  // hors du club (on filtre une liste déjà club-scopée). Vide → comportement normal.
+  if (deps.allowlistUserIds && deps.allowlistUserIds.length > 0) {
+    const allow = new Set(deps.allowlistUserIds)
+    userIds = userIds.filter((id) => allow.has(id))
+  }
 
   // Gate `poll.opened` : ne rien envoyer si le poll n'a pas demandé la notification.
   if (event.type === 'poll.opened' && event.payload.pollId) {

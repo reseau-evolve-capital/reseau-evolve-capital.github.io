@@ -33,6 +33,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 
 import { dispatchPush } from './handler.ts'
 import { alertSentry } from '../_shared/sentry.ts'
+import { parseAllowlist } from '../_shared/notify-allowlist.ts'
 import type {
   DispatchDeps,
   NotificationContent,
@@ -93,7 +94,20 @@ async function buildDeps(supabase: SupabaseClient): Promise<DispatchDeps> {
     webpush.setVapidDetails(vapidSubject, vapidPublic, vapidPrivate)
   }
 
+  // Allowlist de TEST (NOTIFY_ALLOWLIST = emails). On résout une fois emails → user_id (GoTrue
+  // stocke les emails en minuscule → match exact). Vide → pas de filtre (comportement normal).
+  // INTERSECTION appliquée côté handler : ne peut jamais cibler hors du club.
+  const allowlistEmails = parseAllowlist(Deno.env.get('NOTIFY_ALLOWLIST'))
+  let allowlistUserIds: string[] | undefined
+  if (allowlistEmails.length > 0) {
+    const { data, error } = await supabase.from('users').select('id').in('email', allowlistEmails)
+    if (error) throw new Error(`Lecture users (allowlist) échouée: ${error.message}`)
+    allowlistUserIds = (data ?? []).map((u) => u.id as string)
+  }
+
   return {
+    allowlistUserIds,
+
     listClubActiveMemberUserIds: async (clubId: string): Promise<string[]> => {
       // CLUB-SCOPING à la source : seuls les membres ACTIFS de ce club.
       const { data, error } = await supabase
