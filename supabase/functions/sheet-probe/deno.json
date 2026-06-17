@@ -1,0 +1,6 @@
+{
+  "imports": {
+    "@evolve/utils": "../../../packages/utils/src/index.ts",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@^2"
+  }
+}
