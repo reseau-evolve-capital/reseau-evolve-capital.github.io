@@ -81,7 +81,7 @@ export function AddClubWizard({ serviceAccountEmail }: { serviceAccountEmail: st
         <button
           type="button"
           onClick={() => router.push('/reseau/clubs')}
-          className="inline-flex w-fit items-center gap-1.5 rounded-md text-[13px] font-semibold text-text-sec outline-none transition-colors hover:text-text focus-visible:shadow-[var(--sh-glow)]"
+          className="inline-flex min-h-[44px] w-fit items-center gap-1.5 rounded-md text-[13px] font-semibold text-text-sec outline-none transition-colors hover:text-text focus-visible:shadow-[var(--sh-glow)]"
         >
           <Icon name="ArrowLeft" size={16} aria-hidden="true" />
           {t('back')}
