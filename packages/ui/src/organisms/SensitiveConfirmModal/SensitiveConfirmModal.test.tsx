@@ -91,6 +91,34 @@ describe('SensitiveConfirmModal', () => {
     expect(onConfirm).not.toHaveBeenCalled()
   })
 
+  it('confirmationText : le bouton reste désactivé tant que la resaisie ne correspond pas', async () => {
+    const u = userEvent.setup()
+    const onConfirm = vi.fn()
+    render(
+      <SensitiveConfirmModal
+        {...baseProps}
+        onConfirm={onConfirm}
+        confirmationText="evolve"
+        confirmationLabel="Tape evolve pour confirmer"
+      />
+    )
+    // Case cochée mais resaisie absente → bouton encore désactivé.
+    await u.click(screen.getByRole('checkbox'))
+    const confirm = screen.getByRole('button', { name: 'Confirmer' })
+    expect(confirm).toBeDisabled()
+
+    // Resaisie partielle / erronée → toujours désactivé.
+    const input = screen.getByRole('textbox')
+    await u.type(input, 'evolv')
+    expect(confirm).toBeDisabled()
+
+    // Resaisie exacte → activé ; clic appelle onConfirm.
+    await u.type(input, 'e')
+    expect(confirm).toBeEnabled()
+    await u.click(confirm)
+    expect(onConfirm).toHaveBeenCalledTimes(1)
+  })
+
   it('jamais de rouge brand (#E93E3A)', () => {
     const { baseElement } = render(<SensitiveConfirmModal {...baseProps} />)
     expect(baseElement.innerHTML).not.toMatch(/E93E3A/i)

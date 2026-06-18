@@ -21,6 +21,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Button } from '../../atoms/Button'
 import { Icon } from '../../atoms/Icon'
 import { Checkbox } from '../../atoms/Checkbox'
+import { Input } from '../../atoms/Input'
 import { cn } from '../../lib/cn'
 
 /** Une ligne de résumé du changement à valider (avant → après). */
@@ -39,6 +40,16 @@ export interface SensitiveConfirmModalProps {
   description: string
   /** Libellé de la case d'acquittement (2ᵉ geste de confirmation). */
   acknowledgeLabel: string
+  /**
+   * Texte de confirmation à RESAISIR à l'identique (3ᵉ geste, optionnel) — ex. le slug du club.
+   * Si fourni, le bouton de confirmation reste désactivé tant que la saisie ne correspond PAS
+   * exactement (après trim). Absent → seule la case d'acquittement gouverne l'activation.
+   */
+  confirmationText?: string
+  /** Libellé au-dessus du champ de resaisie (ex. « Tape evolve pour confirmer »). i18n. */
+  confirmationLabel?: string
+  /** Placeholder du champ de resaisie. */
+  confirmationPlaceholder?: string
   /** Résumé optionnel des changements à relire. */
   changes?: SensitiveChange[]
   /** En-tête de la colonne « avant » du résumé (a11y/i18n). Défaut FR. */
@@ -62,6 +73,9 @@ export function SensitiveConfirmModal({
   title,
   description,
   acknowledgeLabel,
+  confirmationText,
+  confirmationLabel,
+  confirmationPlaceholder,
   changes,
   beforeLabel = 'Avant',
   afterLabel = 'Après',
@@ -72,17 +86,26 @@ export function SensitiveConfirmModal({
   closeLabel = 'Fermer',
 }: SensitiveConfirmModalProps) {
   const [acknowledged, setAcknowledged] = React.useState(false)
+  const [typed, setTyped] = React.useState('')
   const descId = React.useId()
   const ackId = React.useId()
   const ackLabelId = React.useId()
+  const typeId = React.useId()
 
-  // Réinitialise l'acquittement à chaque fermeture (jamais de case pré-cochée à la réouverture).
+  // Réinitialise les deux gestes à chaque fermeture (jamais d'état rémanent à la réouverture).
   React.useEffect(() => {
-    if (!open) setAcknowledged(false)
+    if (!open) {
+      setAcknowledged(false)
+      setTyped('')
+    }
   }, [open])
 
+  // 3ᵉ geste (optionnel) : la resaisie doit correspondre exactement (trim) au texte attendu.
+  const typedMatches = confirmationText == null || typed.trim() === confirmationText.trim()
+  const canConfirm = acknowledged && typedMatches
+
   const handleConfirm = () => {
-    if (isPending || !acknowledged) return
+    if (isPending || !canConfirm) return
     onConfirm()
   }
 
@@ -155,6 +178,30 @@ export function SensitiveConfirmModal({
             </span>
           </label>
 
+          {/* 3ᵉ geste optionnel : resaisie exacte (ex. slug du club). Le bouton reste désactivé
+              tant que la saisie ne correspond pas. */}
+          {confirmationText != null && (
+            <div className="mt-4 flex flex-col gap-1.5">
+              {confirmationLabel && (
+                <label htmlFor={typeId} className="text-[13px] font-medium text-text-sec">
+                  {confirmationLabel}
+                </label>
+              )}
+              <Input
+                id={typeId}
+                value={typed}
+                onChange={(e) => setTyped(e.target.value)}
+                placeholder={confirmationPlaceholder}
+                autoComplete="off"
+                autoCapitalize="off"
+                autoCorrect="off"
+                spellCheck={false}
+                className="font-mono"
+                disabled={isPending}
+              />
+            </div>
+          )}
+
           <div className="mt-6 flex items-center justify-end gap-2">
             <Dialog.Close asChild>
               <Button variant="ghost" disabled={isPending}>
@@ -165,7 +212,7 @@ export function SensitiveConfirmModal({
               variant="danger"
               onClick={handleConfirm}
               isLoading={isPending}
-              disabled={isPending || !acknowledged}
+              disabled={isPending || !canConfirm}
             >
               {confirmLabel}
             </Button>
