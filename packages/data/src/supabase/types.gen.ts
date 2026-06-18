@@ -1252,6 +1252,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      network_list_club_members: {
+        Args: { p_club_id: string }
+        Returns: {
+          email: string
+          full_name: string
+          role: Database['public']['Enums']['member_role']
+          status: Database['public']['Enums']['member_status']
+          user_id: string
+        }[]
+      }
       network_list_clubs: {
         Args: never
         Returns: {

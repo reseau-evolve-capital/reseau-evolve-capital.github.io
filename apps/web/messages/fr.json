@@ -1431,6 +1431,94 @@
       "error": {
         "title": "Impossible de charger les clubs du réseau."
       }
+    },
+    "addClub": {
+      "meta": {
+        "title": "Ajouter un club"
+      },
+      "title": "Ajouter un club",
+      "subtitle": "Crée un club, connecte sa matrice Google Sheets puis lance le premier import.",
+      "back": "Retour aux clubs",
+      "stepperLabel": "Étapes de l’assistant d’ajout de club",
+      "steps": {
+        "infos": "Infos",
+        "matrix": "Matrice",
+        "import": "Import"
+      },
+      "infos": {
+        "title": "Infos du club",
+        "description": "Renseigne les informations de base du club. Le slug sert d’identifiant unique.",
+        "name": "Nom du club",
+        "namePlaceholder": "Club Lumière",
+        "slug": "Slug",
+        "slugHint": "Identifiant unique du club (lettres minuscules, chiffres et tirets).",
+        "city": "Ville",
+        "cityPlaceholder": "Lille",
+        "country": "Pays",
+        "currency": "Devise",
+        "minContribution": "Cotisation minimale (€)",
+        "submit": "Continuer",
+        "errors": {
+          "name": "Saisis le nom du club.",
+          "slug": "Slug invalide (lettres minuscules, chiffres et tirets uniquement).",
+          "duplicate": "Ce slug est déjà utilisé par un autre club.",
+          "forbidden": "Accès refusé : rôle administrateur réseau requis.",
+          "invalid": "Informations invalides — vérifie les champs.",
+          "unknown": "La création du club a échoué. Réessaie dans un instant."
+        }
+      },
+      "matrix": {
+        "title": "Connecter la matrice",
+        "description": "Connecte la feuille Google Sheets du club. Un test en lecture seule valide la structure avant l’import.",
+        "fieldLabel": "URL ou ID de la feuille Google Sheets",
+        "fieldHint": "Colle l’URL complète — l’identifiant est extrait automatiquement.",
+        "placeholder": "https://docs.google.com/spreadsheets/d/…/edit",
+        "shareTitle": "Partage d’abord cette feuille en lecture avec :",
+        "shareHint": "Dans Google Sheets : Partager → colle l’adresse → rôle Lecteur → Envoyer.",
+        "copyEmail": "Copier",
+        "copied": "Copié",
+        "testConnection": "Tester la connexion",
+        "testing": "Test en cours…",
+        "successTitle": "Connexion réussie",
+        "successPreview": "Aperçu : {members} membres · {positions} positions · {tabs} onglets détectés.",
+        "dryRunBadge": "Dry-run · lecture seule · aucune écriture",
+        "notSharedTitle": "Feuille non partagée",
+        "notSharedBodyWithEmail": "Partage la feuille en lecture avec {email}, puis relance le test.",
+        "notSharedBody": "Partage la feuille en lecture avec le compte de service, puis relance le test.",
+        "structureTitle": "Structure incomplète",
+        "structureBody": "La feuille est accessible mais des onglets attendus manquent : {tabs}.",
+        "invalidTitle": "Feuille introuvable",
+        "invalidBody": "L’URL ou l’identifiant ne correspond à aucune feuille Google Sheets.",
+        "errorTitle": "Test impossible",
+        "errorBody": "Une erreur est survenue pendant le test. Réessaie dans un instant.",
+        "gateHint": "Le test doit réussir pour continuer.",
+        "submit": "Continuer",
+        "saveError": "La connexion de la matrice a échoué. Réessaie dans un instant."
+      },
+      "import": {
+        "title": "Premier import & responsable",
+        "description": "Lance le premier import depuis la matrice, puis désigne le responsable du club.",
+        "syncTitle": "Import initial",
+        "runSync": "Lancer l’import",
+        "syncing": "Import en cours…",
+        "syncedTemplate": "Import terminé · {members} membres importés",
+        "syncNever": "Aucun import lancé pour l’instant.",
+        "syncError": "L’import a échoué. Vérifie la matrice puis réessaie.",
+        "staffTitle": "Désigner le premier responsable",
+        "staffDescription": "Choisis un membre importé et son rôle. Tu pourras ajuster les rôles plus tard.",
+        "memberLabel": "Membre importé",
+        "memberPlaceholder": "Choisir un membre",
+        "noMembers": "Aucun membre importé pour l’instant — lance d’abord l’import.",
+        "roleLabel": "Rôle",
+        "rolePresident": "Président",
+        "roleTreasurer": "Trésorier",
+        "inviteSoonTitle": "Inviter par e-mail",
+        "inviteSoonBadge": "Bientôt",
+        "inviteSoonHint": "L’invitation d’un responsable par e-mail arrive prochainement.",
+        "provisionError": "La désignation du responsable a échoué. Réessaie dans un instant.",
+        "finish": "Terminer",
+        "back": "Retour"
+      }
     }
   }
 }
