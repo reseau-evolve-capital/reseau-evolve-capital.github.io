@@ -85,6 +85,23 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN
     RAISE NOTICE 'OK : network_list_clubs refusé pour non-membre (42501)';
   END;
+
+  -- NET-007 — network_list_sheet_snapshots : non network_admin → 42501.
+  BEGIN
+    PERFORM * FROM public.network_list_sheet_snapshots('aaaaaaaa-0000-0000-0000-000000000001');
+    RAISE EXCEPTION 'ÉCHEC : network_list_sheet_snapshots exécuté par un non-admin';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'OK : network_list_sheet_snapshots refusé (42501)';
+  END;
+
+  -- NET-007 — network_update_club_settings : non network_admin → 42501.
+  BEGIN
+    PERFORM public.network_update_club_settings(
+      'aaaaaaaa-0000-0000-0000-000000000001', 'Hack Name');
+    RAISE EXCEPTION 'ÉCHEC : network_update_club_settings exécuté par un non-admin';
+  EXCEPTION WHEN insufficient_privilege THEN
+    RAISE NOTICE 'OK : network_update_club_settings refusé (42501)';
+  END;
 END $$;
 
 -- ════════════════════════════════════════════════════════════════════════════
@@ -172,12 +189,50 @@ BEGIN
     RAISE NOTICE 'OK : révocation du dernier network_admin refusée (check_violation)';
   END;
 
-  -- 8) audit : chaque mutation réussie a inséré une ligne network_events.
+  -- NET-007 — 8) network_list_sheet_snapshots : lecture seule, club valide → renvoie sans erreur.
+  --    Le club créé n'a aucun snapshot (jamais synchronisé en test) → 0 ligne, mais l'appel passe
+  --    la garde et ne lève pas. Sur un club introuvable → no_data_found.
+  PERFORM * FROM public.network_list_sheet_snapshots(v_club_id, 10);
+  RAISE NOTICE 'OK : network_list_sheet_snapshots accessible au network_admin (lecture seule)';
+  BEGIN
+    PERFORM * FROM public.network_list_sheet_snapshots(
+      '00000000-0000-0000-0000-0000000000aa', 10);
+    RAISE EXCEPTION 'ÉCHEC : network_list_sheet_snapshots a accepté un club introuvable';
+  EXCEPTION WHEN no_data_found THEN
+    RAISE NOTICE 'OK : network_list_sheet_snapshots refuse un club introuvable (no_data_found)';
+  END;
+
+  -- NET-007 — 9) network_update_club_settings : édite nom/ville/pays/plafond (happy path).
+  PERFORM public.network_update_club_settings(
+    v_club_id, 'Club Test Réseau MAJ', 'Marseille', 'fr', NULL, 250000, NULL);
+  ASSERT EXISTS (
+    SELECT 1 FROM public.network_list_clubs()
+    WHERE id = v_club_id AND name = 'Club Test Réseau MAJ' AND country = 'FR'
+  ), 'network_update_club_settings doit mettre à jour le nom et normaliser le pays en MAJUSCULES';
+
+  -- pays invalide (3 lettres) → invalid_parameter_value.
+  BEGIN
+    PERFORM public.network_update_club_settings(v_club_id, NULL, NULL, 'FRA');
+    RAISE EXCEPTION 'ÉCHEC : network_update_club_settings a accepté un pays invalide';
+  EXCEPTION WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'OK : network_update_club_settings refuse un pays invalide (invalid_parameter_value)';
+  END;
+
+  -- plafond négatif → invalid_parameter_value.
+  BEGIN
+    PERFORM public.network_update_club_settings(v_club_id, NULL, NULL, NULL, NULL, -1);
+    RAISE EXCEPTION 'ÉCHEC : network_update_club_settings a accepté un plafond négatif';
+  EXCEPTION WHEN invalid_parameter_value THEN
+    RAISE NOTICE 'OK : network_update_club_settings refuse un plafond négatif (invalid_parameter_value)';
+  END;
+
+  -- 10) audit : chaque mutation réussie a inséré une ligne network_events.
   --    Mutations réussies ci-dessus : create_club, set_club_sheet, provision_first_staff,
-  --    grant_role, revoke_role = 5 (les échecs n'auditent pas).
+  --    grant_role, revoke_role, update_club_settings = 6 (les échecs n'auditent pas ; la lecture
+  --    snapshots n'audite pas).
   SELECT COUNT(*) INTO v_events_after FROM public.network_events;
-  ASSERT v_events_after - v_events_before = 5,
-    format('network_events doit contenir 5 nouvelles lignes (obtenu : %s)', v_events_after - v_events_before);
+  ASSERT v_events_after - v_events_before = 6,
+    format('network_events doit contenir 6 nouvelles lignes (obtenu : %s)', v_events_after - v_events_before);
   ASSERT EXISTS (
     SELECT 1 FROM public.network_events
     WHERE action = 'network_create_club'
