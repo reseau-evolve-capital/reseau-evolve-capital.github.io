@@ -1276,6 +1276,16 @@ export type Database = {
           slug: string
         }[]
       }
+      network_list_sheet_snapshots: {
+        Args: { p_club_id: string; p_limit?: number }
+        Returns: {
+          first_error: string
+          sheets_count: number
+          status: Database['public']['Enums']['snapshot_status']
+          synced_at: string
+          total_rows: number
+        }[]
+      }
       network_log_event: {
         Args: {
           p_action: string
@@ -1296,6 +1306,18 @@ export type Database = {
       network_revoke_role: { Args: { p_user_id: string }; Returns: undefined }
       network_set_club_sheet: {
         Args: { p_club_id: string; p_sheet_id: string }
+        Returns: undefined
+      }
+      network_update_club_settings: {
+        Args: {
+          p_annual_investment_cap?: number
+          p_broker_account_ref?: string
+          p_city?: string
+          p_club_id: string
+          p_country?: string
+          p_min_contribution?: number
+          p_name?: string
+        }
         Returns: undefined
       }
       record_attestation_ref: {
