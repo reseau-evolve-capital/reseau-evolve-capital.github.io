@@ -1373,6 +1373,64 @@
       "title": "Accès refusé",
       "description": "Cet espace est réservé à l'équipe du réseau des clubs.",
       "action": "Retour au dashboard"
+    },
+    "tabs": {
+      "navLabel": "Navigation du réseau",
+      "overview": "Vue d'ensemble",
+      "clubs": "Clubs",
+      "directory": "Annuaire",
+      "board": "Bureau",
+      "soon": "Bientôt",
+      "drawerTitle": "Espace réseau",
+      "drawerDescription": "Choisis une section de l'espace réseau.",
+      "drawerClose": "Fermer"
+    },
+    "clubs": {
+      "meta": {
+        "title": "Clubs du réseau"
+      },
+      "title": "Tous les clubs",
+      "subtitle": "Vue d'ensemble des clubs du réseau : membres, capital et état de synchronisation.",
+      "addClub": "Ajouter un club",
+      "readOnly": "Lecture seule",
+      "kpi": {
+        "clubs": "Clubs",
+        "members": "Membres du réseau",
+        "capital": "Capital cumulé"
+      },
+      "table": {
+        "tableLabel": "Clubs du réseau",
+        "columns": {
+          "club": "Club",
+          "members": "Membres actifs",
+          "valuation": "Valo agrégée",
+          "lastSync": "Dernière sync",
+          "matrix": "Matrice",
+          "actions": "Actions"
+        },
+        "sync": {
+          "ok": "À jour",
+          "stale": "En retard",
+          "never": "Jamais",
+          "neverSynced": "Jamais synchronisé"
+        },
+        "matrix": {
+          "connected": "Connectée",
+          "disconnected": "Non connectée"
+        },
+        "valuationNone": "Valorisation indisponible",
+        "actions": {
+          "view": "Voir le club {name}",
+          "sync": "Synchroniser le club {name}"
+        },
+        "empty": {
+          "title": "Aucun club",
+          "description": "Ajoute un premier club pour démarrer le réseau."
+        }
+      },
+      "error": {
+        "title": "Impossible de charger les clubs du réseau."
+      }
     }
   }
 }

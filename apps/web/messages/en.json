@@ -1373,6 +1373,64 @@
       "title": "Access denied",
       "description": "This area is reserved for the club network team.",
       "action": "Back to dashboard"
+    },
+    "tabs": {
+      "navLabel": "Network navigation",
+      "overview": "Overview",
+      "clubs": "Clubs",
+      "directory": "Directory",
+      "board": "Board",
+      "soon": "Soon",
+      "drawerTitle": "Network area",
+      "drawerDescription": "Choose a section of the network area.",
+      "drawerClose": "Close"
+    },
+    "clubs": {
+      "meta": {
+        "title": "Network clubs"
+      },
+      "title": "All clubs",
+      "subtitle": "Overview of the network's clubs: members, capital and sync status.",
+      "addClub": "Add a club",
+      "readOnly": "Read only",
+      "kpi": {
+        "clubs": "Clubs",
+        "members": "Network members",
+        "capital": "Cumulative capital"
+      },
+      "table": {
+        "tableLabel": "Network clubs",
+        "columns": {
+          "club": "Club",
+          "members": "Active members",
+          "valuation": "Aggregated value",
+          "lastSync": "Last sync",
+          "matrix": "Matrix",
+          "actions": "Actions"
+        },
+        "sync": {
+          "ok": "Up to date",
+          "stale": "Behind",
+          "never": "Never",
+          "neverSynced": "Never synced"
+        },
+        "matrix": {
+          "connected": "Connected",
+          "disconnected": "Not connected"
+        },
+        "valuationNone": "Valuation unavailable",
+        "actions": {
+          "view": "View club {name}",
+          "sync": "Sync club {name}"
+        },
+        "empty": {
+          "title": "No club",
+          "description": "Add a first club to launch the network."
+        }
+      },
+      "error": {
+        "title": "Unable to load the network clubs."
+      }
     }
   }
 }
