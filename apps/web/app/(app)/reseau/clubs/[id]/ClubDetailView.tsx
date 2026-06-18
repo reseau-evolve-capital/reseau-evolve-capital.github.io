@@ -101,7 +101,7 @@ export function ClubDetailView({
         <button
           type="button"
           onClick={() => router.push('/reseau/clubs')}
-          className="inline-flex w-fit items-center gap-1.5 rounded-md text-[13px] font-semibold text-text-sec outline-none transition-colors hover:text-text focus-visible:shadow-[var(--sh-glow)]"
+          className="inline-flex min-h-[44px] w-fit items-center gap-1.5 rounded-md text-[13px] font-semibold text-text-sec outline-none transition-colors hover:text-text focus-visible:shadow-[var(--sh-glow)]"
         >
           <Icon name="ArrowLeft" size={16} aria-hidden="true" />
           {t('back')}
@@ -356,7 +356,7 @@ function MatrixSection({
             <button
               type="button"
               onClick={() => void copySheetId()}
-              className="inline-flex min-h-[36px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[12.5px] font-semibold text-text-sec outline-none hover:text-text focus-visible:shadow-[var(--sh-glow)]"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-border px-2.5 py-1 text-[12.5px] font-semibold text-text-sec outline-none hover:text-text focus-visible:shadow-[var(--sh-glow)]"
             >
               <Icon name={copied ? 'Check' : 'Copy'} size={16} aria-hidden="true" />
               {copied ? t('matrix.copied') : t('matrix.copy')}
