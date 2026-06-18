@@ -55,5 +55,8 @@ export * from './molecules/CarouselDots'
 // Molecules votes (vote anonyme)
 export * from './molecules/PollBanner'
 export * from './molecules/PollCard'
+// Molecules réseau (assistant d'ajout de club)
+export * from './molecules/Stepper'
+export * from './molecules/SheetConnectionTest'
 // Organisms
 export * from './organisms'
