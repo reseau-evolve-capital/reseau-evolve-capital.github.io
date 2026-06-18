@@ -28,6 +28,46 @@ export type NetworkActionResult = { ok: true } | { ok: false; error: string }
 /** Résultat de création de club : renvoie l'id du club créé. */
 export type CreateClubResult = { ok: true; clubId: string } | { ok: false; error: string }
 
+/**
+ * Issue du dry-run `sheet-probe` (NET-004), normalisée pour l'UI (NET-006). `status` pilote les
+ * 3 états visuels de SheetConnectionTest (success / not_shared / structure / invalid / error).
+ */
+export type ProbeStatus = 'success' | 'not_shared' | 'structure' | 'invalid' | 'error'
+export type ProbeResult =
+  | { status: 'success'; preview: { members: number; positions: number; tabsFound: number } }
+  | { status: 'structure'; missingTabs: string[] }
+  | { status: 'not_shared' }
+  | { status: 'invalid' }
+  | { status: 'error'; detail?: string }
+
+/** Résultat de la sync initiale (étape 3) : compte importé + warnings molles. */
+export type InitialSyncResult =
+  | { ok: true; members: number; warnings: string[] }
+  | { ok: false; error: string; warnings?: string[] }
+
+/** Membre importé d'un club (étape 3 — désigner le premier responsable). */
+export interface ClubMemberOption {
+  userId: string
+  fullName: string
+  email: string
+}
+export type ClubMembersResult =
+  | { ok: true; members: ClubMemberOption[] }
+  | { ok: false; error: string }
+
+// ── Seam de mock e2e ────────────────────────────────────────────────────────
+// Les vraies invocations Edge (sheet-probe → Google, sync → Google + écriture DB) sont
+// IMPOSSIBLES à jouer en e2e local sans matrice Google réelle. Derrière le SEUL flag
+// `E2E_NETWORK_MOCKS=1` (jamais posé en prod), `probeSheet` / `triggerInitialSync` renvoient des
+// réponses canoniques DÉTERMINISTES dérivées du sheet_id saisi :
+//   - sheet_id contenant 'notshared'  → ProbeResult not_shared
+//   - sheet_id contenant 'missingtab' → ProbeResult structure (missingTabs:[POSITIONS])
+//   - sinon                           → success { members:18, positions:24, tabsFound:6 }
+// Garde-fou : le mock n'est JAMAIS sur le chemin de prod (lu uniquement quand le flag vaut '1').
+function e2eMocksEnabled(): boolean {
+  return process.env['E2E_NETWORK_MOCKS'] === '1'
+}
+
 async function serverClient() {
   return createServerClient(await cookies())
 }
@@ -67,6 +107,24 @@ async function requireNetworkMember(
   if (!user) return { ok: false, error: 'unauthorized' }
   const ctx = await resolveNetworkContext(supabase, user.id)
   if (!ctx) return { ok: false, error: 'forbidden' }
+  return { ok: true, userId: user.id }
+}
+
+/**
+ * Variante stricte de {@link requireNetworkMember} : exige le rôle `network_admin`.
+ * À utiliser pour les actions dont l'autorité fine n'est PAS portée par une RPC/Edge
+ * gardée (ex. `triggerInitialSync` : l'Edge `sync` tourne en service-role sans garde
+ * caller → le pré-check admin doit vivre ici, comme les writes réservés network_admin).
+ */
+async function requireNetworkAdmin(
+  supabase: Awaited<ReturnType<typeof serverClient>>
+): Promise<{ ok: true; userId: string } | { ok: false; error: string }> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'unauthorized' }
+  const ctx = await resolveNetworkContext(supabase, user.id)
+  if (!ctx || ctx.role !== 'network_admin') return { ok: false, error: 'forbidden' }
   return { ok: true, userId: user.id }
 }
 
@@ -232,4 +290,205 @@ export async function revokeNetworkRoleAction(userId: string): Promise<NetworkAc
   }
   revalidatePath('/reseau')
   return { ok: true }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NET-006 — Assistant « Ajouter un club » : dry-run matrice, sync initiale, listing membres.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Forme brute de la réponse `sheet-probe` (NET-004). On lit défensivement (Edge non typée). */
+interface SheetProbeBody {
+  ok?: boolean
+  foundTabs?: unknown
+  missingTabs?: unknown
+  preview?: { members?: unknown; positions?: unknown }
+  error?: unknown
+}
+
+/** Lit le corps JSON d'une réponse d'erreur d'Edge (functions.invoke met la Response dans context). */
+async function readErrorBody(error: unknown): Promise<SheetProbeBody | null> {
+  const ctx = (error as { context?: unknown })?.context
+  if (ctx instanceof Response) {
+    try {
+      return (await ctx.clone().json()) as SheetProbeBody
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+function num(v: unknown): number {
+  return typeof v === 'number' && Number.isFinite(v) ? v : 0
+}
+function strArray(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
+}
+
+/** Mappe un corps `sheet-probe` (succès 200 ou erreur) vers un `ProbeResult` normalisé. */
+function mapProbeBody(body: SheetProbeBody | null, httpError: boolean): ProbeResult {
+  if (!body) return { status: 'error' }
+  const errCode = typeof body.error === 'string' ? body.error : null
+  if (errCode === 'not_shared') return { status: 'not_shared' }
+  if (errCode === 'invalid_id') return { status: 'invalid' }
+  if (errCode === 'forbidden') return { status: 'error', detail: 'forbidden' }
+  if (errCode) return { status: 'error', detail: errCode }
+  // 200 : ok=true → succès ; ok=false → structure (onglets bloquants manquants).
+  if (body.ok === true) {
+    return {
+      status: 'success',
+      preview: {
+        members: num(body.preview?.members),
+        positions: num(body.preview?.positions),
+        tabsFound: strArray(body.foundTabs).length,
+      },
+    }
+  }
+  const missing = strArray(body.missingTabs)
+  if (missing.length > 0) return { status: 'structure', missingTabs: missing }
+  return { status: 'error', detail: httpError ? 'http' : undefined }
+}
+
+/**
+ * Dry-run de validation d'une matrice Google Sheets (NET-006, étape 2). Invoque l'Edge
+ * `sheet-probe` AVEC LE CLIENT DE SESSION : le JWT du caller est forwardé automatiquement, et la
+ * garde `network_admin` est portée CÔTÉ EDGE (is_network_admin sur un client porté par ce JWT).
+ * Lecture seule — aucune écriture DB ni Sheets. Le pré-check `requireNetworkMember` évite un
+ * aller-retour Edge pour un non-membre réseau (défense en profondeur, jamais l'autorité finale).
+ *
+ * `sheet_id` accepte une URL Google Sheets OU un ID brut (l'Edge ré-extrait défensivement).
+ */
+export async function probeSheet(sheetId: string): Promise<ProbeResult> {
+  const trimmed = sheetId.trim()
+  if (trimmed === '') return { status: 'invalid' }
+
+  // Seam e2e : réponses déterministes selon le sheet_id, jamais sur le chemin de prod.
+  if (e2eMocksEnabled()) {
+    if (trimmed.includes('notshared')) return { status: 'not_shared' }
+    if (trimmed.includes('missingtab')) return { status: 'structure', missingTabs: ['POSITIONS'] }
+    return { status: 'success', preview: { members: 18, positions: 24, tabsFound: 6 } }
+  }
+
+  const supabase = await serverClient()
+  const auth = await requireNetworkMember(supabase)
+  if (!auth.ok) return { status: 'error', detail: auth.error }
+
+  const { data, error } = await supabase.functions.invoke<SheetProbeBody>('sheet-probe', {
+    body: { sheet_id: trimmed },
+  })
+  if (error) {
+    // Erreur HTTP (403 not_shared / 400-404 invalid_id / 403 forbidden) : le corps est dans context.
+    const body = await readErrorBody(error)
+    if (!body) {
+      captureActionError(error, { action: 'probeSheet', userId: auth.userId })
+      return { status: 'error', detail: error.message }
+    }
+    return mapProbeBody(body, true)
+  }
+  return mapProbeBody(data ?? null, false)
+}
+
+/**
+ * Déclenche la sync initiale d'un club fraîchement branché (NET-006, étape 3). Invoque l'Edge
+ * `sync` (qui utilise le SERVICE_ROLE en interne pour écrire, bypass RLS) avec le client de
+ * session ; la garde d'autorité réseau est portée ICI (`requireNetworkMember`) — on NE passe PAS
+ * par /api/sync car son contrôle `get_user_role_in_club` (trésorier per-club) bloquerait un
+ * network_admin qui n'a pas encore de membership dans ce club neuf.
+ *
+ * `sync` répond TOUJOURS 200 : on lit `success` + `errors[]` + `warnings[]` dans le corps. On
+ * relit ensuite le nombre de membres importés (memberships actifs du club) pour le SyncBanner.
+ */
+export async function triggerInitialSync(clubId: string): Promise<InitialSyncResult> {
+  if (!z.string().uuid().safeParse(clubId).success) return { ok: false, error: 'invalid' }
+
+  // Seam e2e : sync mockée déterministe (18 membres importés), jamais sur le chemin de prod.
+  if (e2eMocksEnabled()) {
+    return { ok: true, members: 18, warnings: [] }
+  }
+
+  const supabase = await serverClient()
+  // network_admin REQUIS : l'Edge `sync` tourne en service-role sans garde caller, donc
+  // c'est le seul rempart. On n'autorise pas un network_board à déclencher une sync arbitraire.
+  const auth = await requireNetworkAdmin(supabase)
+  if (!auth.ok) return { ok: false, error: auth.error }
+
+  const { data, error } = await supabase.functions.invoke<{
+    success?: boolean
+    errors?: unknown
+    warnings?: unknown
+  }>('sync', { body: { club_id: clubId } })
+  if (error) {
+    captureActionError(error, { action: 'triggerInitialSync', userId: auth.userId })
+    return { ok: false, error: 'sync_failed' }
+  }
+  const errors = strArray(data?.errors)
+  const warnings = strArray(data?.warnings)
+  if (data?.success !== true || errors.length > 0) {
+    return { ok: false, error: 'sync_failed', warnings }
+  }
+
+  // Nombre de membres importés via le RPC gardé (network_admin lit les membres d'un club arbitraire).
+  const { data: members, error: listError } = await supabase.rpc('network_list_club_members', {
+    p_club_id: clubId,
+  })
+  const count = listError ? 0 : (members ?? []).length
+  revalidatePath('/reseau')
+  return { ok: true, members: count, warnings }
+}
+
+/**
+ * Liste les membres importés d'un club (NET-006, étape 3 — select du premier responsable). Passe
+ * par le RPC SECURITY DEFINER `network_list_club_members` gardé `is_network_admin` (migration 044) :
+ * un network_admin qui vient de créer un club n'en est PAS membre, la RLS per-club ne lui exposerait
+ * donc aucun membre. JAMAIS de service-role : la garde est dans le RPC + le pré-check réseau.
+ */
+export async function listClubMembers(clubId: string): Promise<ClubMembersResult> {
+  if (!z.string().uuid().safeParse(clubId).success) return { ok: false, error: 'invalid' }
+
+  const supabase = await serverClient()
+  const auth = await requireNetworkMember(supabase)
+  if (!auth.ok) return auth
+
+  const { data, error } = await supabase.rpc('network_list_club_members', { p_club_id: clubId })
+  if (error) {
+    captureIfUnknown(error, 'listClubMembers', auth.userId)
+    return { ok: false, error: mapPgError(error.code) }
+  }
+  type MemberRow = Database['public']['Functions']['network_list_club_members']['Returns'][number]
+  const members: ClubMemberOption[] = ((data ?? []) as MemberRow[]).map((m) => ({
+    userId: m.user_id,
+    fullName: m.full_name,
+    email: m.email,
+  }))
+  return { ok: true, members }
+}
+
+/**
+ * Dérive l'email du Service Account Google à partager en lecture (encart de l'étape 2). L'email
+ * du SA n'est PAS un secret (il est destiné à être partagé avec le propriétaire de la feuille) :
+ *   1. `GOOGLE_SA_EMAIL` — variable d'affichage dédiée (recommandée côté app).
+ *   2. sinon, on décode `client_email` depuis `GOOGLE_SA_KEY_BASE64` (même source que l'Edge).
+ * `null` si rien n'est configuré → l'UI affiche « — » et désactive le bouton « Copier ».
+ */
+function deriveServiceAccountEmail(): string | null {
+  const direct = process.env['GOOGLE_SA_EMAIL']
+  if (direct && direct.trim() !== '') return direct.trim()
+  const raw = process.env['GOOGLE_SA_KEY_BASE64']
+  if (!raw) return null
+  try {
+    const parsed = JSON.parse(Buffer.from(raw, 'base64').toString('utf8')) as {
+      client_email?: unknown
+    }
+    return typeof parsed.client_email === 'string' ? parsed.client_email : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Renvoie l'email du Service Account Google à partager en lecture (affiché dans l'encart de
+ * l'étape 2). Server-only ; `null` si non configuré → l'UI affiche un fallback « — ».
+ */
+export async function getServiceAccountEmail(): Promise<string | null> {
+  return deriveServiceAccountEmail()
 }

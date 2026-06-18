@@ -1431,6 +1431,94 @@
       "error": {
         "title": "Unable to load the network clubs."
       }
+    },
+    "addClub": {
+      "meta": {
+        "title": "Add a club"
+      },
+      "title": "Add a club",
+      "subtitle": "Create a club, connect its Google Sheets matrix, then run the first import.",
+      "back": "Back to clubs",
+      "stepperLabel": "Add-a-club wizard steps",
+      "steps": {
+        "infos": "Info",
+        "matrix": "Matrix",
+        "import": "Import"
+      },
+      "infos": {
+        "title": "Club info",
+        "description": "Fill in the club’s basic information. The slug is used as a unique identifier.",
+        "name": "Club name",
+        "namePlaceholder": "Lumière Club",
+        "slug": "Slug",
+        "slugHint": "Unique club identifier (lowercase letters, digits and hyphens).",
+        "city": "City",
+        "cityPlaceholder": "Lille",
+        "country": "Country",
+        "currency": "Currency",
+        "minContribution": "Minimum contribution (€)",
+        "submit": "Continue",
+        "errors": {
+          "name": "Enter the club name.",
+          "slug": "Invalid slug (lowercase letters, digits and hyphens only).",
+          "duplicate": "This slug is already used by another club.",
+          "forbidden": "Access denied: network administrator role required.",
+          "invalid": "Invalid information — please check the fields.",
+          "unknown": "Club creation failed. Please try again shortly."
+        }
+      },
+      "matrix": {
+        "title": "Connect the matrix",
+        "description": "Connect the club’s Google Sheets matrix. A read-only test validates the structure before import.",
+        "fieldLabel": "Google Sheets URL or ID",
+        "fieldHint": "Paste the full URL — the identifier is extracted automatically.",
+        "placeholder": "https://docs.google.com/spreadsheets/d/…/edit",
+        "shareTitle": "First, share this sheet (view access) with:",
+        "shareHint": "In Google Sheets: Share → paste the address → Viewer role → Send.",
+        "copyEmail": "Copy",
+        "copied": "Copied",
+        "testConnection": "Test connection",
+        "testing": "Testing…",
+        "successTitle": "Connection successful",
+        "successPreview": "Preview: {members} members · {positions} positions · {tabs} tabs detected.",
+        "dryRunBadge": "Dry-run · read-only · no writes",
+        "notSharedTitle": "Sheet not shared",
+        "notSharedBodyWithEmail": "Share the sheet (view access) with {email}, then run the test again.",
+        "notSharedBody": "Share the sheet (view access) with the service account, then run the test again.",
+        "structureTitle": "Incomplete structure",
+        "structureBody": "The sheet is reachable but expected tabs are missing: {tabs}.",
+        "invalidTitle": "Sheet not found",
+        "invalidBody": "The URL or identifier does not match any Google Sheets file.",
+        "errorTitle": "Test failed",
+        "errorBody": "Something went wrong during the test. Please try again shortly.",
+        "gateHint": "The test must succeed to continue.",
+        "submit": "Continue",
+        "saveError": "Connecting the matrix failed. Please try again shortly."
+      },
+      "import": {
+        "title": "First import & lead",
+        "description": "Run the first import from the matrix, then designate the club lead.",
+        "syncTitle": "Initial import",
+        "runSync": "Run import",
+        "syncing": "Importing…",
+        "syncedTemplate": "Import complete · {members} members imported",
+        "syncNever": "No import has been run yet.",
+        "syncError": "Import failed. Check the matrix and try again.",
+        "staffTitle": "Designate the first lead",
+        "staffDescription": "Pick an imported member and their role. You can adjust roles later.",
+        "memberLabel": "Imported member",
+        "memberPlaceholder": "Choose a member",
+        "noMembers": "No member imported yet — run the import first.",
+        "roleLabel": "Role",
+        "rolePresident": "President",
+        "roleTreasurer": "Treasurer",
+        "inviteSoonTitle": "Invite by email",
+        "inviteSoonBadge": "Soon",
+        "inviteSoonHint": "Inviting a lead by email is coming soon.",
+        "provisionError": "Designating the lead failed. Please try again shortly.",
+        "finish": "Finish",
+        "back": "Back"
+      }
     }
   }
 }
