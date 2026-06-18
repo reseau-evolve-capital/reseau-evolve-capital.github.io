@@ -271,3 +271,50 @@
 
 **Régressions à ne pas réintroduire :** R-035 (cursor-pointer sur CTA bannière, options de vote, switches du form). **Anonymat** : aucune route/composant ne doit exposer `user_id` d'une réponse. **Critères visuels :** [VISUAL.md#votes](./VISUAL.md) (`Votes - Maquettes (standalone).html` à la racine, basculer light **et** dark, desktop **et** mobile). **RGAA :** axe 0 violation sur `PollVoteSheet` (radio group / checkbox group, focus, ≥44px), AAA sur les chiffres-clés des résultats. Parité i18n fr/en (namespace `votes`).
 **Note env QA :** :3001 squatté par Cursor (IPv4) → lancer l'app/e2e sur **:3011** via `E2E_BASE_URL=http://localhost:3011 NEXT_PUBLIC_SITE_URL=http://localhost:3011`. Supabase local requis avec seed votes (migration 038 + `supabase/seed.sql`).
+
+---
+
+## FLOW-016 · Accès réseau (E-NET / NET-A)
+
+**Criticité :** HAUTE · **Spec e2e :** `apps/web/playwright/reseau-access.spec.ts`
+
+**Étapes :**
+
+1. Un **membre réseau** (`network_admin` ou `network_board`, table `network_members`) atteint `/reseau` → **redirigé vers `/reseau/clubs`** (espace réseau intégré au shell).
+2. Un **membre simple** (non-réseau) qui ouvre `/reseau/*` → **redirigé vers `/dashboard`** (garde middleware `is_network_member()`).
+3. **Défense en profondeur** : si la garde middleware est contournée, le layout RSC `/reseau` rend `<Forbidden/>` (jamais de fuite de données réseau).
+4. L'onglet/entrée « Réseau » n'apparaît dans la nav que pour les membres réseau (role-aware).
+
+**Critères visuels :** [VISUAL.md#reseau](./VISUAL.md). **RGAA :** `<Forbidden/>` accessible, nav réseau role-aware au clavier.
+
+---
+
+## FLOW-017 · Ajouter un club (NET-006)
+
+**Criticité :** HAUTE · **Spec e2e :** `apps/web/playwright/reseau-add-club.spec.ts` (**nécessite `E2E_NETWORK_MOCKS=1`**)
+
+**Étapes :** `/reseau/clubs/nouveau` — assistant 3 étapes (stepper) :
+
+1. **Infos** : nom + **slug auto-dérivé** du nom (éditable) + ville + pays + devise + cotisation. Soumettre → RPC `network_create_club` (crée le club, le slug est unique).
+2. **Connecter la matrice** : champ URL **ou** ID de Google Sheet + **encart « partager la feuille avec ce compte de service »** (email du SA, copiable). Bouton **« Tester la connexion »** → Edge Function `sheet-probe` en **dry-run** (lecture seule, ne sync rien). 3 états de retour : **succès** (feuille lisible + onglet `POSITIONS` présent), **not_shared** (SA n'a pas accès), **structure** (feuille accessible mais onglet/structure attendue absente). **« Continuer » reste bloqué tant que le test n'est pas en succès.** Au succès → RPC `network_set_club_sheet` (persiste `clubs.sheet_id`).
+3. **Import + responsable** : déclenche la sync (import initial des membres/positions depuis la matrice) puis **désigner un responsable** parmi les membres importés → RPC `network_provision_first_staff` (promeut un user_id en staff du club).
+
+**Gotchas QA :** le dry-run (`sheet-probe`) et la sync Google sont **mockés en e2e** (flag `E2E_NETWORK_MOCKS=1` — **jamais activé en prod**). Sourcer `.env.local` ; lancer le dev server **avec le flag** (sinon l'assistant tape la vraie API Google et l'e2e échoue).
+
+**Critères visuels :** [VISUAL.md#reseau](./VISUAL.md) (stepper 3 étapes, 3 états du test matrice avec onglet **POSITIONS**). **RGAA :** stepper annoncé, champs labellisés, bouton « Tester » et « Continuer » avec états disabled explicites, cibles ≥44px (boutons retour/copier).
+
+---
+
+## FLOW-018 · Fiche club (NET-007)
+
+**Criticité :** MOYENNE · (couvrir en QA visuelle + via `reseau-access.spec.ts` pour la garde)
+
+**Étapes :** `/reseau/clubs/[id]` — fiche de gestion d'un club :
+
+1. **Changer la matrice** : ouvre une `SensitiveConfirmModal` (**double-confirm**, bouton en `data-negative`) → RPC `network_set_club_sheet`. Action sensible (re-pointe la source de vérité du club).
+2. **Relancer la sync** : déclenche un import manuel depuis la matrice du club.
+3. **Historique** : liste des snapshots de sync via RPC `network_list_sheet_snapshots`.
+4. **Paramètres** : éditer les réglages du club (nom, ville, devise, cotisation…) → RPC `network_update_club_settings`.
+5. **Rôles** : affichage des rôles/staff du club.
+
+**Critères visuels :** [VISUAL.md#reseau](./VISUAL.md) (modale `data-negative`, historique des snapshots). **RGAA :** modale double-confirm accessible (focus-trap + Escape), action destructive nommée.

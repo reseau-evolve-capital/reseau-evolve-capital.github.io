@@ -5,7 +5,7 @@
 > Source de vérité fonctionnelle : `REC/Phase2_Handoff/docs/screens/*`, `design.md`, tickets `BACKLOG_E-*`.
 > Réutilisable par les futurs audits ET les sessions d'implémentation. **Mettre à jour, ne pas régénérer.**
 >
-> Dernière mise à jour : 2026-06-13 (Feedback Widget V0 : FeedbackSheet, AppTopbar, Server Action + Supabase). Captures de réf sous `docs/audits/shots/ref-*` et `docs/audits/shots/qa-feedback-*`.
+> Dernière mise à jour : 2026-06-18 (E-NET / NET-A « Lancer un club » : espace `/reseau`, assistant ajout club, fiche club — arbitrages vs backlog loggés en bas).
 
 ## Fondations / tokens (réf : `ref-foundations-fullpage.jpeg`)
 
@@ -338,3 +338,25 @@ Vérif runtime (login réel membre seed + Playwright MCP). Le gate unitaire éta
 - **Diff visuel ≤2 % vs maquette** (light/dark, mobile), **scorecard agents `qa-*` ≥97 %**, **`votes.spec.ts` e2e** (le helper de login `loginAsSeedMember` a une course onboarding/re-key à fiabiliser ; magic-link président KO car son `auth.users` seedé est malformé pour GoTrue + FK `polls.created_by`) : non réalisés.
 - **`cursor-pointer` étendu aux routes vote** : les routes vote ne sont pas dans la liste figée de `cursor-pointer.spec.ts` ; tous les snapshots runtime montrent néanmoins `cursor=pointer` sur les interactifs vote.
 - **Note nav** : `/votes` n'est pas dans le matcher onboarding du middleware (passe alors que `/dashboard` redirige) — à vérifier (les routes vote doivent rester protégées par l'auth).
+
+---
+
+## E-NET / NET-A — « Lancer un club » (2026-06-18)
+
+Lot livré sur la branche `feat/net-a-lancer-un-club` : espace `/reseau` (FLOW-016→018), assistant d'ajout de club (NET-006), fiche club (NET-007). Réf visuelle : `REC/standalone-exports/Reseau - Administration (standalone).html` (:8770, light/dark). QA : conformité visuelle **98 %**, scorecard global **≥97 % PASS** (réf `docs/qa/QA_REPORT` NET-A). Critères visuels : `docs/qa/VISUAL.md#reseau`.
+
+### Arbitrages vs backlog (écarts tranchés — NE PAS flaguer en QA)
+
+- **Migrations renumérotées vs backlog.** Le backlog disait 038/039 ; ces numéros sont **déjà pris** (`038` = polls/vote anonyme, le push prod ayant consommé la plage). NET-A repart donc en **040 → 045** :
+  - **040** — `network_members` (table des membres réseau : rôle `network_admin`/`network_board` + titre).
+  - **041** — FK `ON UPDATE CASCADE` (fix de re-key dans `handle_new_user` — la cascade re-keye proprement les références au login).
+  - **042** — RPC d'écriture réseau + table d'audit `network_events`.
+  - **043** — `network_list_clubs`.
+  - **044** — `network_list_club_members`.
+  - **045** — `network_list_sheet_snapshots` + `network_update_club_settings`.
+- **NET-008 partiellement tiré dans NET-A.** Seul `network_list_clubs` (+ `network_list_club_members` / `network_list_sheet_snapshots`) est livré ici ; **overview / directory / board restent NET-B** (cockpit « Vue d'ensemble », annuaire, espace board).
+- **Onglet matrice réel = `POSITIONS`** (PAS « Portefeuille »). « Portefeuille » est l'**étiquette de snapshot** ; la sync lit `readSheet(sheetId, 'POSITIONS')`. Le copy de l'assistant et le dry-run `sheet-probe` valident donc la présence de l'onglet **`POSITIONS`** — l'état « succès » du test matrice s'appuie là-dessus.
+- **Garde `/reseau` = défense en profondeur.** Middleware `is_network_member()` **+** layout RSC qui rend `<Forbidden/>` (deux niveaux indépendants). `triggerInitialSync` durci à **`network_admin`** côté app, car l'**Edge Function `sync` n'a pas de garde caller** (la défense doit être posée en amont).
+- **`network_provision_first_staff` = voie `user_id`** (promotion d'un membre déjà importé depuis la matrice). L'**invitation par email est différée** (pas d'invitation à un email non encore membre dans ce lot). La **rétrogradation d'un staff est différée** également.
+- **Validation UUID assouplie en `isUuidLike` (format-only).** Les actions réseau valident le format de l'identifiant sans exiger un v4 strict, car la **fixture de seed n'est pas un UUID v4**. L'autorité de validation reste la **RPC** (la garde DB tranche, le format-only n'est qu'un filtre d'entrée précoce).
+- **a11y** : cibles tactiles des boutons **retour / copier** portées à **≥44px** (fix qui fait passer le scorecard de **96,5 % → ≥97 %**).
