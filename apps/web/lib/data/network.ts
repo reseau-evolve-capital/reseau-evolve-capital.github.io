@@ -14,6 +14,7 @@
 
 import type { NetworkClubRow } from '@evolve/ui'
 import type { createServerClient, Database } from '@evolve/data'
+import { getClubSettings, type ClubSettings } from '@/lib/data/clubSettings'
 
 type ServerClient = ReturnType<typeof createServerClient>
 type NetworkMemberRow = Database['public']['Tables']['network_members']['Row']
@@ -98,7 +99,14 @@ export async function getNetworkClubs(supabase: ServerClient): Promise<NetworkCl
   if (error) throw error
 
   const rows = (data ?? []) as NetworkListClubsRow[]
-  const clubs: NetworkClubRow[] = rows.map((c) => ({
+  const clubs: NetworkClubRow[] = rows.map(mapClubRow)
+
+  return { clubs, kpis: deriveNetworkKpis(clubs) }
+}
+
+/** Mappe une ligne brute `network_list_clubs()` → forme présentationnelle `NetworkClubRow`. */
+function mapClubRow(c: NetworkListClubsRow): NetworkClubRow {
+  return {
     id: c.id,
     name: c.name,
     slug: c.slug,
@@ -107,7 +115,70 @@ export async function getNetworkClubs(supabase: ServerClient): Promise<NetworkCl
     aggregatedValuation: c.aggregated_valuation == null ? null : Number(c.aggregated_valuation),
     lastSyncedAt: (c.last_synced_at as string | null) ?? null,
     matrixConnected: Boolean(c.matrix_connected),
-  }))
+  }
+}
 
-  return { clubs, kpis: deriveNetworkKpis(clubs) }
+// ─────────────────────────────────────────────────────────────────────────────
+// NET-007 — Fiche club (écran /reseau/clubs/[id]).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Un membre staff du club (président / trésorier) pour la section « Rôles du club ». */
+export interface NetworkClubStaffMember {
+  userId: string
+  fullName: string
+  email: string
+  role: Database['public']['Enums']['member_role']
+}
+
+/** Données complètes de la fiche club (en-tête KPI + matrice + paramètres + rôles). */
+export interface NetworkClubDetail {
+  /** Ligne KPI recap (membres actifs, valo, dernière sync, matrice branchée). */
+  club: NetworkClubRow
+  /** Le `sheet_id` actuel de la matrice (null = non branchée). Affiché tronqué + copier. */
+  sheetId: string | null
+  /** Paramètres éditables (nom, ville, pays, courtier, plafond, cotisation min). */
+  settings: ClubSettings
+  /** Staff actuel (président/trésorier), pour la section « Rôles du club ». */
+  staff: NetworkClubStaffMember[]
+}
+
+/**
+ * Charge la fiche club côté RÉSEAU (NET-007). Compose trois sources gardées `is_network_admin`
+ * (ou réseau) côté RPC / RLS :
+ *   - `network_list_clubs()` filtré par id → la ligne KPI recap (membres actifs, valo, sync) ;
+ *   - lecture `clubs` (RLS authenticated lecture seule) → `sheet_id` + paramètres éditables ;
+ *   - `network_list_club_members` (migration 044) → staff du club (filtré président/trésorier).
+ * `null` si le club n'existe pas / n'est pas listé (→ notFound côté page). JAMAIS de service-role.
+ */
+export async function getNetworkClubDetail(
+  supabase: ServerClient,
+  clubId: string
+): Promise<NetworkClubDetail | null> {
+  const { data: clubsData, error: clubsError } = await supabase.rpc('network_list_clubs')
+  if (clubsError) throw clubsError
+  const row = ((clubsData ?? []) as NetworkListClubsRow[]).find((c) => c.id === clubId)
+  if (!row) return null
+
+  // Lecture du sheet_id (RLS authenticated lecture seule sur clubs) + paramètres éditables.
+  const [{ data: sheetRow }, settings, { data: membersData, error: membersError }] =
+    await Promise.all([
+      supabase.from('clubs').select('sheet_id').eq('id', clubId).maybeSingle<{
+        sheet_id: string | null
+      }>(),
+      getClubSettings(supabase, clubId),
+      supabase.rpc('network_list_club_members', { p_club_id: clubId }),
+    ])
+  if (membersError) throw membersError
+
+  type MemberRow = Database['public']['Functions']['network_list_club_members']['Returns'][number]
+  const staff: NetworkClubStaffMember[] = ((membersData ?? []) as MemberRow[])
+    .filter((m) => m.role === 'president' || m.role === 'treasurer')
+    .map((m) => ({ userId: m.user_id, fullName: m.full_name, email: m.email, role: m.role }))
+
+  return {
+    club: mapClubRow(row),
+    sheetId: sheetRow?.sheet_id ?? null,
+    settings,
+    staff,
+  }
 }

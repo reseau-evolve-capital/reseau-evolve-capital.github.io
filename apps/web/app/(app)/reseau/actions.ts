@@ -17,6 +17,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { createServerClient, type Database } from '@evolve/data'
 import { resolveNetworkContext } from '@/lib/data/network'
+import { buildUpdateArgs, validateInput, type ClubSettingsInput } from '@/lib/data/clubSettings'
 import { captureActionError } from '@/lib/monitoring/sentry'
 
 type NetworkRole = Database['public']['Enums']['network_role']
@@ -129,6 +130,14 @@ async function requireNetworkAdmin(
 }
 
 // ── Schémas d'entrée ──────────────────────────────────────────────────────────
+// Forme UUID 8-4-4-4-12 (toute version). On NE force PAS la version v4 de `z.string().uuid()` :
+// l'identité réelle d'un club est portée par la DB (la RPC vérifie l'existence + l'autorité), et
+// on veut accepter tout UUID syntaxiquement valide (fixtures incluses). Garde de format seulement.
+const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/
+function isUuidLike(value: string): boolean {
+  return UUID_RE.test(value)
+}
+
 const slugSchema = z
   .string()
   .trim()
@@ -193,7 +202,7 @@ export async function setClubSheetAction(
   clubId: string,
   sheetId: string
 ): Promise<NetworkActionResult> {
-  if (!z.string().uuid().safeParse(clubId).success) return { ok: false, error: 'invalid' }
+  if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
   const auth = await requireNetworkMember(supabase)
@@ -221,8 +230,8 @@ export async function provisionFirstStaffAction(
   userId: string,
   role: StaffRole
 ): Promise<NetworkActionResult> {
-  if (!z.string().uuid().safeParse(clubId).success) return { ok: false, error: 'invalid' }
-  if (!z.string().uuid().safeParse(userId).success) return { ok: false, error: 'invalid' }
+  if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
+  if (!isUuidLike(userId)) return { ok: false, error: 'invalid' }
   if (role !== 'president' && role !== 'treasurer') return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
@@ -251,7 +260,7 @@ export async function grantNetworkRoleAction(
   role: NetworkRole,
   title: NetworkTitle | null = null
 ): Promise<NetworkActionResult> {
-  if (!z.string().uuid().safeParse(userId).success) return { ok: false, error: 'invalid' }
+  if (!isUuidLike(userId)) return { ok: false, error: 'invalid' }
   if (role !== 'network_admin' && role !== 'network_board') return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
@@ -277,7 +286,7 @@ export async function grantNetworkRoleAction(
  * remonte en erreur `invalid` (check_violation) plutôt que de verrouiller le réseau.
  */
 export async function revokeNetworkRoleAction(userId: string): Promise<NetworkActionResult> {
-  if (!z.string().uuid().safeParse(userId).success) return { ok: false, error: 'invalid' }
+  if (!isUuidLike(userId)) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
   const auth = await requireNetworkMember(supabase)
@@ -286,6 +295,99 @@ export async function revokeNetworkRoleAction(userId: string): Promise<NetworkAc
   const { error } = await supabase.rpc('network_revoke_role', { p_user_id: userId })
   if (error) {
     captureIfUnknown(error, 'revokeNetworkRole', auth.userId)
+    return { ok: false, error: mapPgError(error.code) }
+  }
+  revalidatePath('/reseau')
+  return { ok: true }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NET-007 — Fiche club : historique des syncs + édition des paramètres (réseau).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Une passe de synchronisation, normalisée pour l'historique de la fiche club. */
+export interface SheetSnapshotEntry {
+  /** Horodatage ISO de la sync. */
+  syncedAt: string
+  /** Total des lignes importées (somme des feuilles de la passe). */
+  totalRows: number
+  /** Pire statut de la passe (failed > partial > success). */
+  status: 'success' | 'partial' | 'failed'
+  /** Nombre de feuilles importées dans la passe. */
+  sheetsCount: number
+  /** 1er message d'erreur non vide de la passe (détail affichable), si présent. */
+  firstError: string | null
+}
+export type SheetSnapshotsResult =
+  | { ok: true; snapshots: SheetSnapshotEntry[] }
+  | { ok: false; error: string }
+
+/**
+ * Historique des synchronisations d'un club (fiche club, NET-007). Passe par le RPC SECURITY
+ * DEFINER `network_list_sheet_snapshots` gardé `is_network_admin` (migration 045) : la RLS per-club
+ * de `sheet_snapshots` (migration 011) n'exposerait rien à un network_admin non-membre. LECTURE
+ * SEULE. JAMAIS de service-role : garde dans le RPC + pré-check réseau.
+ */
+export async function listSheetSnapshots(
+  clubId: string,
+  limit = 10
+): Promise<SheetSnapshotsResult> {
+  if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
+
+  const supabase = await serverClient()
+  const auth = await requireNetworkMember(supabase)
+  if (!auth.ok) return auth
+
+  const { data, error } = await supabase.rpc('network_list_sheet_snapshots', {
+    p_club_id: clubId,
+    p_limit: limit,
+  })
+  if (error) {
+    captureIfUnknown(error, 'listSheetSnapshots', auth.userId)
+    return { ok: false, error: mapPgError(error.code) }
+  }
+  type Row = Database['public']['Functions']['network_list_sheet_snapshots']['Returns'][number]
+  const snapshots: SheetSnapshotEntry[] = ((data ?? []) as Row[]).map((s) => ({
+    syncedAt: s.synced_at,
+    totalRows: Number(s.total_rows ?? 0),
+    status: s.status,
+    sheetsCount: Number(s.sheets_count ?? 0),
+    // `first_error` est typé non-null par types.gen.ts mais le RPC peut renvoyer NULL.
+    firstError: (s.first_error as string | null) ?? null,
+  }))
+  return { ok: true, snapshots }
+}
+
+/**
+ * Édite les paramètres d'un club (fiche club, NET-007). Passe par le RPC SECURITY DEFINER
+ * `network_update_club_settings` gardé `is_network_admin` (migration 045) — et NON
+ * `update_club_settings` (gardé is_club_staff, inaccessible à un network_admin non-membre).
+ * Validation pure réutilisée de `lib/data/clubSettings` (mêmes règles que la voie staff).
+ * JAMAIS de service-role : garde dans le RPC + pré-check réseau.
+ */
+export async function updateNetworkClubSettings(
+  clubId: string,
+  input: ClubSettingsInput
+): Promise<NetworkActionResult> {
+  if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
+  if (validateInput(input).length > 0) return { ok: false, error: 'invalid' }
+
+  const supabase = await serverClient()
+  const auth = await requireNetworkMember(supabase)
+  if (!auth.ok) return auth
+
+  const args = buildUpdateArgs(clubId, input)
+  const { error } = await supabase.rpc('network_update_club_settings', {
+    p_club_id: args.p_club_id,
+    p_name: args.p_name,
+    p_city: args.p_city ?? undefined,
+    p_country: args.p_country ?? undefined,
+    p_broker_account_ref: args.p_broker_account_ref ?? undefined,
+    p_annual_investment_cap: args.p_annual_investment_cap ?? undefined,
+    p_min_contribution: args.p_min_contribution ?? undefined,
+  })
+  if (error) {
+    captureIfUnknown(error, 'updateNetworkClubSettings', auth.userId)
     return { ok: false, error: mapPgError(error.code) }
   }
   revalidatePath('/reseau')
@@ -399,7 +501,7 @@ export async function probeSheet(sheetId: string): Promise<ProbeResult> {
  * relit ensuite le nombre de membres importés (memberships actifs du club) pour le SyncBanner.
  */
 export async function triggerInitialSync(clubId: string): Promise<InitialSyncResult> {
-  if (!z.string().uuid().safeParse(clubId).success) return { ok: false, error: 'invalid' }
+  if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
 
   // Seam e2e : sync mockée déterministe (18 membres importés), jamais sur le chemin de prod.
   if (e2eMocksEnabled()) {
@@ -443,7 +545,7 @@ export async function triggerInitialSync(clubId: string): Promise<InitialSyncRes
  * donc aucun membre. JAMAIS de service-role : la garde est dans le RPC + le pré-check réseau.
  */
 export async function listClubMembers(clubId: string): Promise<ClubMembersResult> {
-  if (!z.string().uuid().safeParse(clubId).success) return { ok: false, error: 'invalid' }
+  if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
   const auth = await requireNetworkMember(supabase)

@@ -1519,6 +1519,140 @@
         "finish": "Finish",
         "back": "Back"
       }
+    },
+    "clubDetail": {
+      "meta": {
+        "title": "Club details"
+      },
+      "back": "Back to clubs",
+      "readOnly": "Read only",
+      "status": {
+        "active": "Active"
+      },
+      "kpi": {
+        "members": "Active members",
+        "valuation": "Aggregated value",
+        "lastSync": "Last sync"
+      },
+      "matrix": {
+        "title": "Matrix & synchronisation",
+        "relaunchSync": "Re-run sync",
+        "changeMatrix": "Change matrix",
+        "changeHint": "Test the new sheet read-only, then confirm. Synchronisation will restart from this source.",
+        "sheetId": "Sheet ID",
+        "copy": "Copy",
+        "copied": "Copied",
+        "connected": "Connected",
+        "disconnected": "Not connected",
+        "syncedTemplate": "Synced {time}",
+        "neverSynced": "Never synced",
+        "syncDoneTitle": "Synchronisation complete",
+        "syncDone": "{members} members imported.",
+        "syncErrorTitle": "Synchronisation failed",
+        "syncError": "Synchronisation failed. Check the matrix and try again.",
+        "changeDoneTitle": "Matrix updated",
+        "changeDone": "The new sheet is connected. Re-run the sync to import its data.",
+        "changeErrorTitle": "Change failed",
+        "changeError": "The matrix change failed. Try again in a moment.",
+        "probe": {
+          "fieldLabel": "URL or ID of the new Google Sheet",
+          "fieldHint": "Paste the full URL — the ID is extracted automatically.",
+          "placeholder": "https://docs.google.com/spreadsheets/d/…/edit",
+          "shareTitle": "First share this sheet with read access to:",
+          "shareHint": "In Google Sheets: Share → paste the address → Viewer role → Send.",
+          "copyEmail": "Copy",
+          "copied": "Copied",
+          "testConnection": "Test connection",
+          "testing": "Testing…",
+          "successTitle": "Connection successful",
+          "successPreview": "Preview: {members} members · {positions} positions · {tabs} tabs detected.",
+          "dryRunBadge": "Dry-run · read only · no writes",
+          "notSharedTitle": "Sheet not shared",
+          "notSharedBodyWithEmail": "Share the sheet with read access to {email}, then re-run the test.",
+          "notSharedBody": "Share the sheet with read access to the service account, then re-run the test.",
+          "structureTitle": "Incomplete structure",
+          "structureBody": "The sheet is accessible but expected tabs are missing: {tabs}.",
+          "invalidTitle": "Sheet not found",
+          "invalidBody": "The URL or ID does not match any Google Sheet.",
+          "errorTitle": "Test failed",
+          "errorBody": "An error occurred during the test. Try again in a moment.",
+          "gateHint": "The test must succeed to confirm."
+        },
+        "confirm": {
+          "title": "Change {name}'s matrix?",
+          "description": "Synchronisation will restart from the new sheet. The club's data will be reconciled against this source at the next sync. Sensitive action, logged.",
+          "acknowledge": "I have verified the new sheet is shared and correctly structured.",
+          "typeToConfirm": "Type {slug} to confirm",
+          "before": "Current",
+          "after": "New"
+        },
+        "history": {
+          "title": "Synchronisation history",
+          "tableLabel": "Club synchronisation history",
+          "empty": "No synchronisation yet.",
+          "columns": {
+            "date": "Date",
+            "rows": "Rows imported",
+            "status": "Status",
+            "detail": "Detail"
+          },
+          "rowsValue": "{count} rows",
+          "status": {
+            "success": "OK",
+            "partial": "Warning",
+            "failed": "Failed"
+          }
+        }
+      },
+      "settings": {
+        "title": "Settings",
+        "sensitiveBadge": "Sensitive",
+        "fields": {
+          "name": "Club name",
+          "city": "City",
+          "country": "Country",
+          "location": "City / Country",
+          "annualInvestmentCap": "Investment cap",
+          "brokerAccountRef": "Broker account reference"
+        },
+        "hints": {
+          "country": "2-letter ISO code (e.g. FR).",
+          "annualInvestmentCap": "Club's annual investment cap (€). Sensitive field.",
+          "brokerAccountRef": "Club's reference at the broker. Sensitive field."
+        },
+        "errors": {
+          "name_required": "Enter the club name.",
+          "country_invalid": "Invalid country code (2 letters expected).",
+          "cap_invalid": "Invalid cap (positive number expected).",
+          "min_contribution_invalid": "Invalid minimum contribution."
+        },
+        "toast": {
+          "successTitle": "Settings saved",
+          "successMessage": "The club settings have been updated.",
+          "forbiddenTitle": "Access denied",
+          "forbiddenMessage": "Network admin role required.",
+          "errorTitle": "Save failed",
+          "errorMessage": "An error occurred. Try again in a moment."
+        }
+      },
+      "roles": {
+        "title": "Club roles",
+        "empty": "No staff assigned to this club.",
+        "role": {
+          "president": "President",
+          "treasurer": "Treasurer"
+        },
+        "changeRoleLabel": "Change {name}'s role",
+        "toast": {
+          "successTitle": "Role updated",
+          "successMessage": "The role has been updated.",
+          "errorTitle": "Update failed",
+          "errorMessage": "An error occurred. Try again in a moment."
+        }
+      },
+      "error": {
+        "title": "Unable to load the club details."
+      }
     }
   }
 }
