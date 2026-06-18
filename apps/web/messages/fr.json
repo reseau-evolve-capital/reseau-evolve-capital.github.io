@@ -1519,6 +1519,140 @@
         "finish": "Terminer",
         "back": "Retour"
       }
+    },
+    "clubDetail": {
+      "meta": {
+        "title": "Fiche club"
+      },
+      "back": "Retour aux clubs",
+      "readOnly": "Lecture seule",
+      "status": {
+        "active": "Actif"
+      },
+      "kpi": {
+        "members": "Membres actifs",
+        "valuation": "Valo agrégée",
+        "lastSync": "Dernière sync"
+      },
+      "matrix": {
+        "title": "Matrice & synchronisation",
+        "relaunchSync": "Relancer la sync",
+        "changeMatrix": "Changer la matrice",
+        "changeHint": "Teste la nouvelle feuille en lecture seule, puis confirme. La synchronisation repartira de cette source.",
+        "sheetId": "ID de la feuille",
+        "copy": "Copier",
+        "copied": "Copié",
+        "connected": "Connectée",
+        "disconnected": "Non connectée",
+        "syncedTemplate": "Synchronisé {time}",
+        "neverSynced": "Jamais synchronisé",
+        "syncDoneTitle": "Synchronisation terminée",
+        "syncDone": "{members} membres importés.",
+        "syncErrorTitle": "Synchronisation impossible",
+        "syncError": "La synchronisation a échoué. Vérifie la matrice puis réessaie.",
+        "changeDoneTitle": "Matrice mise à jour",
+        "changeDone": "La nouvelle feuille est branchée. Relance la sync pour importer ses données.",
+        "changeErrorTitle": "Changement impossible",
+        "changeError": "Le changement de matrice a échoué. Réessaie dans un instant.",
+        "probe": {
+          "fieldLabel": "URL ou ID de la nouvelle feuille Google Sheets",
+          "fieldHint": "Colle l’URL complète — l’identifiant est extrait automatiquement.",
+          "placeholder": "https://docs.google.com/spreadsheets/d/…/edit",
+          "shareTitle": "Partage d’abord cette feuille en lecture avec :",
+          "shareHint": "Dans Google Sheets : Partager → colle l’adresse → rôle Lecteur → Envoyer.",
+          "copyEmail": "Copier",
+          "copied": "Copié",
+          "testConnection": "Tester la connexion",
+          "testing": "Test en cours…",
+          "successTitle": "Connexion réussie",
+          "successPreview": "Aperçu : {members} membres · {positions} positions · {tabs} onglets détectés.",
+          "dryRunBadge": "Dry-run · lecture seule · aucune écriture",
+          "notSharedTitle": "Feuille non partagée",
+          "notSharedBodyWithEmail": "Partage la feuille en lecture avec {email}, puis relance le test.",
+          "notSharedBody": "Partage la feuille en lecture avec le compte de service, puis relance le test.",
+          "structureTitle": "Structure incomplète",
+          "structureBody": "La feuille est accessible mais des onglets attendus manquent : {tabs}.",
+          "invalidTitle": "Feuille introuvable",
+          "invalidBody": "L’URL ou l’identifiant ne correspond à aucune feuille Google Sheets.",
+          "errorTitle": "Test impossible",
+          "errorBody": "Une erreur est survenue pendant le test. Réessaie dans un instant.",
+          "gateHint": "Le test doit réussir pour confirmer."
+        },
+        "confirm": {
+          "title": "Changer la matrice de {name} ?",
+          "description": "La synchronisation repartira de la nouvelle feuille. Les données du club seront rapprochées de cette source à la prochaine sync. Action sensible, journalisée.",
+          "acknowledge": "J’ai vérifié que la nouvelle feuille est partagée et structurée correctement.",
+          "typeToConfirm": "Tape {slug} pour confirmer",
+          "before": "Actuelle",
+          "after": "Nouvelle"
+        },
+        "history": {
+          "title": "Historique des synchronisations",
+          "tableLabel": "Historique des synchronisations du club",
+          "empty": "Aucune synchronisation pour l’instant.",
+          "columns": {
+            "date": "Date",
+            "rows": "Lignes importées",
+            "status": "Statut",
+            "detail": "Détail"
+          },
+          "rowsValue": "{count} lignes",
+          "status": {
+            "success": "OK",
+            "partial": "Avertissement",
+            "failed": "Échec"
+          }
+        }
+      },
+      "settings": {
+        "title": "Paramètres",
+        "sensitiveBadge": "Sensible",
+        "fields": {
+          "name": "Nom du club",
+          "city": "Ville",
+          "country": "Pays",
+          "location": "Ville / Pays",
+          "annualInvestmentCap": "Plafond d’investissement",
+          "brokerAccountRef": "Identifiant chez le courtier"
+        },
+        "hints": {
+          "country": "Code ISO à 2 lettres (ex. FR).",
+          "annualInvestmentCap": "Plafond annuel d’investissement du club (€). Champ sensible.",
+          "brokerAccountRef": "Identifiant du club chez le courtier. Champ sensible."
+        },
+        "errors": {
+          "name_required": "Saisis le nom du club.",
+          "country_invalid": "Code pays invalide (2 lettres attendues).",
+          "cap_invalid": "Plafond invalide (nombre positif attendu).",
+          "min_contribution_invalid": "Cotisation minimale invalide."
+        },
+        "toast": {
+          "successTitle": "Paramètres enregistrés",
+          "successMessage": "Les paramètres du club ont été mis à jour.",
+          "forbiddenTitle": "Accès refusé",
+          "forbiddenMessage": "Rôle administrateur réseau requis.",
+          "errorTitle": "Enregistrement impossible",
+          "errorMessage": "Une erreur est survenue. Réessaie dans un instant."
+        }
+      },
+      "roles": {
+        "title": "Rôles du club",
+        "empty": "Aucun responsable désigné pour ce club.",
+        "role": {
+          "president": "Président",
+          "treasurer": "Trésorier"
+        },
+        "changeRoleLabel": "Changer le rôle de {name}",
+        "toast": {
+          "successTitle": "Rôle mis à jour",
+          "successMessage": "Le rôle a été mis à jour.",
+          "errorTitle": "Mise à jour impossible",
+          "errorMessage": "Une erreur est survenue. Réessaie dans un instant."
+        }
+      },
+      "error": {
+        "title": "Impossible de charger la fiche du club."
+      }
     }
   }
 }
