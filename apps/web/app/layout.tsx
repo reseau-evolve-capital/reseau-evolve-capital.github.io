@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getTranslations } from 'next-intl/server'
-import { Analytics } from '@/components/Analytics'
 import { GoogleAnalytics } from '@/components/analytics/GoogleAnalytics'
 import { ConsentMount } from '@/components/consent/ConsentMount'
 import { PwaServiceWorkerRegistrar } from '@/components/pwa/PwaServiceWorkerRegistrar'
@@ -109,9 +108,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </NextIntlClientProvider>
         {/* PWA-001 : enregistre le service worker (prod/https) + capture beforeinstallprompt. */}
         <PwaServiceWorkerRegistrar />
-        {/* Cloudflare Web Analytics (OPS-002) — beacon client, pageviews + SPA.
-            Rend null si le token est absent (dev/CI). Cf. docs/analytics.md. */}
-        <Analytics />
       </body>
     </html>
   )

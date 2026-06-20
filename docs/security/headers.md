@@ -1,8 +1,8 @@
 # Headers de sécurité HTTP + Content Security Policy (OPS-004)
 
 > Statut : livré sur `main` pour `apps/web`. Dernier ticket du sprint E-OPS —
-> il agrège les surfaces réseau introduites par les autres tickets (Sentry, Cloudflare,
-> Supabase) dans une CSP unique.
+> il agrège les surfaces réseau introduites par les autres tickets (Sentry,
+> Supabase) dans une CSP unique. (Cloudflare Web Analytics retiré — OPS-006, full GA4.)
 
 Tous les headers sont posés par Next.js via `async headers()` dans
 [`apps/web/next.config.ts`](../../apps/web/next.config.ts), appliqués à **toutes les
@@ -33,41 +33,39 @@ CSP de **production** (stricte) :
 
 ```
 default-src 'self';
-script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com;
+script-src 'self' 'unsafe-inline';
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com data:;
 img-src 'self' data: https:;
-connect-src 'self' <SUPABASE_ORIGIN> wss://<SUPABASE_HOST> https://cloudflareinsights.com https://*.ingest.sentry.io;
+connect-src 'self' <SUPABASE_ORIGIN> wss://<SUPABASE_HOST> https://*.sentry.io;
 object-src 'none';
 frame-ancestors 'none';
 base-uri 'self';
 form-action 'self'
 ```
 
-| Directive         | Sources autorisées                                                                                  | Pourquoi                                                                                                                                                                                                                  |
-| ----------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `default-src`     | `'self'`                                                                                            | Politique par défaut : tout ce qui n'a pas de directive dédiée doit être same-origin.                                                                                                                                     |
-| `script-src`      | `'self'`, `'unsafe-inline'`, `https://static.cloudflareinsights.com`                                | App + script anti-flash inline (cf. compromis ci-dessous) + `beacon.min.js` de Cloudflare Web Analytics (OPS-002). **Sentry est bundlé** dans nos chunks `'self'` → pas de source externe à ajouter (vérifié au runtime). |
-| `style-src`       | `'self'`, `'unsafe-inline'`, `https://fonts.googleapis.com`                                         | App + styles inline (Next/React injectent du CSS inline) + la feuille CSS Google Fonts chargée par `<link>` dans le `<head>` du layout.                                                                                   |
-| `font-src`        | `'self'`, `https://fonts.gstatic.com`, `data:`                                                      | Polices auto-hébergées + fichiers de police Google Fonts (`gstatic`) + polices encodées `data:` éventuelles.                                                                                                              |
-| `img-src`         | `'self'`, `data:`, `https:`                                                                         | Images locales + SVG/PNG inline en `data:` + avatars/illustrations HTTPS distants. `https:` large assumé (pas de PII dans une URL d'image).                                                                               |
-| `connect-src`     | `'self'` + Supabase (https + wss) + `https://cloudflareinsights.com` + `https://*.ingest.sentry.io` | Toutes les origines `fetch`/`XHR`/WebSocket. Voir la liste détaillée ci-dessous.                                                                                                                                          |
-| `object-src`      | `'none'`                                                                                            | Aucun `<object>`/`<embed>`/`<applet>` — vecteur d'attaque classique, jamais utilisé.                                                                                                                                      |
-| `frame-ancestors` | `'none'`                                                                                            | L'app ne peut JAMAIS être chargée dans une iframe (anti-clickjacking robuste, remplace `X-Frame-Options`).                                                                                                                |
-| `base-uri`        | `'self'`                                                                                            | Empêche un `<base>` injecté de détourner les URLs relatives.                                                                                                                                                              |
-| `form-action`     | `'self'`                                                                                            | Les `<form>` ne peuvent soumettre que vers l'origine (anti-exfiltration).                                                                                                                                                 |
+| Directive         | Sources autorisées                                          | Pourquoi                                                                                                                                                          |
+| ----------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `default-src`     | `'self'`                                                    | Politique par défaut : tout ce qui n'a pas de directive dédiée doit être same-origin.                                                                             |
+| `script-src`      | `'self'`, `'unsafe-inline'`                                 | App + script anti-flash inline (cf. compromis ci-dessous). **Sentry est bundlé** dans nos chunks `'self'` → pas de source externe à ajouter (vérifié au runtime). |
+| `style-src`       | `'self'`, `'unsafe-inline'`, `https://fonts.googleapis.com` | App + styles inline (Next/React injectent du CSS inline) + la feuille CSS Google Fonts chargée par `<link>` dans le `<head>` du layout.                           |
+| `font-src`        | `'self'`, `https://fonts.gstatic.com`, `data:`              | Polices auto-hébergées + fichiers de police Google Fonts (`gstatic`) + polices encodées `data:` éventuelles.                                                      |
+| `img-src`         | `'self'`, `data:`, `https:`                                 | Images locales + SVG/PNG inline en `data:` + avatars/illustrations HTTPS distants. `https:` large assumé (pas de PII dans une URL d'image).                       |
+| `connect-src`     | `'self'` + Supabase (https + wss) + `https://*.sentry.io`   | Toutes les origines `fetch`/`XHR`/WebSocket. Voir la liste détaillée ci-dessous.                                                                                  |
+| `object-src`      | `'none'`                                                    | Aucun `<object>`/`<embed>`/`<applet>` — vecteur d'attaque classique, jamais utilisé.                                                                              |
+| `frame-ancestors` | `'none'`                                                    | L'app ne peut JAMAIS être chargée dans une iframe (anti-clickjacking robuste, remplace `X-Frame-Options`).                                                        |
+| `base-uri`        | `'self'`                                                    | Empêche un `<base>` injecté de détourner les URLs relatives.                                                                                                      |
+| `form-action`     | `'self'`                                                    | Les `<form>` ne peuvent soumettre que vers l'origine (anti-exfiltration).                                                                                         |
 
 ### Domaines autorisés dans `connect-src` et pourquoi
 
-| Origine                                             | Directive     | Surface                                                   | Source de vérité                                        |
-| --------------------------------------------------- | ------------- | --------------------------------------------------------- | ------------------------------------------------------- |
-| `<SUPABASE_ORIGIN>` (ex. `https://xxx.supabase.co`) | `connect-src` | REST / Auth / Storage Supabase (client browser)           | dérivé de `NEXT_PUBLIC_SUPABASE_URL`                    |
-| `wss://<SUPABASE_HOST>`                             | `connect-src` | Supabase Realtime (websockets)                            | dérivé de `NEXT_PUBLIC_SUPABASE_URL` (schéma https→wss) |
-| `https://cloudflareinsights.com`                    | `connect-src` | Beacon Cloudflare qui POST les métriques (`/cdn-cgi/rum`) | OPS-002, `docs/analytics.md`                            |
-| `https://static.cloudflareinsights.com`             | `script-src`  | `beacon.min.js`                                           | OPS-002                                                 |
-| `https://*.ingest.sentry.io`                        | `connect-src` | Envoi des events Sentry via le DSN                        | OPS-001, `docs/monitoring/sentry.md`                    |
-| `https://fonts.googleapis.com`                      | `style-src`   | Feuille CSS Google Fonts                                  | `apps/web/app/layout.tsx`                               |
-| `https://fonts.gstatic.com`                         | `font-src`    | Fichiers de police Google Fonts                           | `apps/web/app/layout.tsx`                               |
+| Origine                                             | Directive     | Surface                                         | Source de vérité                                        |
+| --------------------------------------------------- | ------------- | ----------------------------------------------- | ------------------------------------------------------- |
+| `<SUPABASE_ORIGIN>` (ex. `https://xxx.supabase.co`) | `connect-src` | REST / Auth / Storage Supabase (client browser) | dérivé de `NEXT_PUBLIC_SUPABASE_URL`                    |
+| `wss://<SUPABASE_HOST>`                             | `connect-src` | Supabase Realtime (websockets)                  | dérivé de `NEXT_PUBLIC_SUPABASE_URL` (schéma https→wss) |
+| `https://*.sentry.io`                               | `connect-src` | Envoi des events Sentry via le DSN              | OPS-001, `docs/monitoring/sentry.md`                    |
+| `https://fonts.googleapis.com`                      | `style-src`   | Feuille CSS Google Fonts                        | `apps/web/app/layout.tsx`                               |
+| `https://fonts.gstatic.com`                         | `font-src`    | Fichiers de police Google Fonts                 | `apps/web/app/layout.tsx`                               |
 
 **Volontairement ABSENTS du `connect-src` client** : les price providers (Google Apps
 Script, Alpha Vantage). Ils sont appelés **server-side** uniquement (`/api/market-prices`),
@@ -133,6 +131,5 @@ curl -sI http://localhost:3001/login | grep -i "content-security-policy\|strict-
 ```
 
 En runtime, la console ne doit afficher **aucune** violation CSP. Les erreurs réseau
-(`ERR_CONNECTION_REFUSED` Supabase si la stack locale est down, CORS du beacon Cloudflare en
-dev parce que l'origine est `localhost`) ne sont **pas** des violations CSP — la requête part
-bien, elle est refusée plus loin dans la pile.
+(`ERR_CONNECTION_REFUSED` Supabase si la stack locale est down) ne sont **pas** des
+violations CSP — la requête part bien, elle est refusée plus loin dans la pile.
