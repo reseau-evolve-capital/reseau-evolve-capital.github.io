@@ -73,6 +73,9 @@ export interface ClubMemberOption {
   userId: string
   fullName: string
   email: string
+  /** Rôle per-club du membre (member/president/treasurer/…). Permet de détecter le bureau
+   *  déjà reconnu par la sync depuis PARAMETRAGES (étape 3 : confirmation vs sélection manuelle). */
+  role: Database['public']['Enums']['member_role']
 }
 export type ClubMembersResult =
   | { ok: true; members: ClubMemberOption[] }
@@ -196,7 +199,7 @@ export async function createClubAction(rawInput: CreateClubInput): Promise<Creat
   if (!parsed.success) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
-  const auth = await requireNetworkMember(supabase)
+  const auth = await requireNetworkAdmin(supabase)
   if (!auth.ok) return auth
 
   const { name, slug, city, country, currency, minContribution } = parsed.data
@@ -227,7 +230,7 @@ export async function setClubSheetAction(
   if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
-  const auth = await requireNetworkMember(supabase)
+  const auth = await requireNetworkAdmin(supabase)
   if (!auth.ok) return auth
 
   const { error } = await supabase.rpc('network_set_club_sheet', {
@@ -257,7 +260,7 @@ export async function provisionFirstStaffAction(
   if (role !== 'president' && role !== 'treasurer') return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
-  const auth = await requireNetworkMember(supabase)
+  const auth = await requireNetworkAdmin(supabase)
   if (!auth.ok) return auth
 
   const { error } = await supabase.rpc('network_provision_first_staff', {
@@ -286,7 +289,7 @@ export async function grantNetworkRoleAction(
   if (role !== 'network_admin' && role !== 'network_board') return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
-  const auth = await requireNetworkMember(supabase)
+  const auth = await requireNetworkAdmin(supabase)
   if (!auth.ok) return auth
 
   const { error } = await supabase.rpc('network_grant_role', {
@@ -311,7 +314,7 @@ export async function revokeNetworkRoleAction(userId: string): Promise<NetworkAc
   if (!isUuidLike(userId)) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
-  const auth = await requireNetworkMember(supabase)
+  const auth = await requireNetworkAdmin(supabase)
   if (!auth.ok) return auth
 
   const { error } = await supabase.rpc('network_revoke_role', { p_user_id: userId })
@@ -395,7 +398,7 @@ export async function updateNetworkClubSettings(
   if (validateInput(input).length > 0) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
-  const auth = await requireNetworkMember(supabase)
+  const auth = await requireNetworkAdmin(supabase)
   if (!auth.ok) return auth
 
   const args = buildUpdateArgs(clubId, input)
@@ -585,6 +588,7 @@ export async function listClubMembers(clubId: string): Promise<ClubMembersResult
     userId: m.user_id,
     fullName: m.full_name,
     email: m.email,
+    role: m.role,
   }))
   return { ok: true, members }
 }
