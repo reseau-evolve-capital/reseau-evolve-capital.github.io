@@ -30,15 +30,37 @@ export type NetworkActionResult = { ok: true } | { ok: false; error: string }
 export type CreateClubResult = { ok: true; clubId: string } | { ok: false; error: string }
 
 /**
- * Issue du dry-run `sheet-probe` (NET-004), normalisée pour l'UI (NET-006). `status` pilote les
- * 3 états visuels de SheetConnectionTest (success / not_shared / structure / invalid / error).
+ * Issue du dry-run `sheet-probe` (NET-004), normalisée pour l'UI (NET-006).
+ *
+ * Statuts :
+ *   success      — feuille accessible + structure OK → preview membres/positions/onglets
+ *   not_shared   — feuille non partagée avec le Service Account Google
+ *   structure    — feuille accessible MAIS onglets obligatoires manquants → missingTabs[]
+ *   invalid      — ID/URL Sheets syntaxiquement invalide ou feuille introuvable (404)
+ *   sa_key_invalid — clé Service Account absente ou illisible côté infra (500 Edge) → contacter un admin
+ *   error        — toute autre erreur technique (réseau, timeout, Edge inaccessible) → detail optionnel
+ *
+ * Forme exacte du ProbeResult pour l'UI (AddClubWizard + SheetConnectionTest) :
+ *   { status: 'success', preview: { members: number, positions: number, tabsFound: number } }
+ *   { status: 'structure', missingTabs: string[] }
+ *   { status: 'not_shared' }
+ *   { status: 'invalid' }
+ *   { status: 'sa_key_invalid' }                — afficher : "Clé Service Account invalide — contacter un admin"
+ *   { status: 'error', detail?: string }         — detail : 'forbidden' | 'http' | message brut | undefined
  */
-export type ProbeStatus = 'success' | 'not_shared' | 'structure' | 'invalid' | 'error'
+export type ProbeStatus =
+  | 'success'
+  | 'not_shared'
+  | 'structure'
+  | 'invalid'
+  | 'sa_key_invalid'
+  | 'error'
 export type ProbeResult =
   | { status: 'success'; preview: { members: number; positions: number; tabsFound: number } }
   | { status: 'structure'; missingTabs: string[] }
   | { status: 'not_shared' }
   | { status: 'invalid' }
+  | { status: 'sa_key_invalid' }
   | { status: 'error'; detail?: string }
 
 /** Résultat de la sync initiale (étape 3) : compte importé + warnings molles. */
@@ -433,6 +455,8 @@ function mapProbeBody(body: SheetProbeBody | null, httpError: boolean): ProbeRes
   const errCode = typeof body.error === 'string' ? body.error : null
   if (errCode === 'not_shared') return { status: 'not_shared' }
   if (errCode === 'invalid_id') return { status: 'invalid' }
+  // Clé Service Account absente / illisible côté infra (500) → statut dédié pour l'UI.
+  if (errCode === 'sa_key_invalid') return { status: 'sa_key_invalid' }
   if (errCode === 'forbidden') return { status: 'error', detail: 'forbidden' }
   if (errCode) return { status: 'error', detail: errCode }
   // 200 : ok=true → succès ; ok=false → structure (onglets bloquants manquants).
@@ -593,4 +617,33 @@ function deriveServiceAccountEmail(): string | null {
  */
 export async function getServiceAccountEmail(): Promise<string | null> {
   return deriveServiceAccountEmail()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NET-008 — Suppression d'un club orphelin depuis l'espace réseau.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Supprime un club orphelin (network_admin uniquement). La RPC `network_delete_club`
+ * (migration 047) porte la garde `is_network_admin()` fail-closed, vérifie l'existence
+ * du club, supprime en cascade (toutes les FK ont ON DELETE CASCADE), et journalise
+ * l'événement dans network_events.
+ *
+ * JAMAIS de service-role : la garde est dans la RPC + le pré-check réseau.
+ */
+export async function deleteClubAction(clubId: string): Promise<NetworkActionResult> {
+  if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
+
+  const supabase = await serverClient()
+  // network_admin REQUIS — suppression irréversible.
+  const auth = await requireNetworkAdmin(supabase)
+  if (!auth.ok) return auth
+
+  const { error } = await supabase.rpc('network_delete_club', { p_club_id: clubId })
+  if (error) {
+    captureIfUnknown(error, 'deleteClub', auth.userId)
+    return { ok: false, error: mapPgError(error.code) }
+  }
+  revalidatePath('/reseau')
+  return { ok: true }
 }

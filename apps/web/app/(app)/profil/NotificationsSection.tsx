@@ -179,7 +179,10 @@ export function NotificationsSection() {
   // d'installation pointant vers la section PWA du profil.
   if (capability === 'needs_pwa_install' || capability === 'needs_safari') {
     return (
-      <section className="rounded-lg border border-border bg-card p-6 shadow-card">
+      <section
+        id="notifications"
+        className="rounded-lg border border-border bg-card p-6 shadow-card"
+      >
         <SectionHeader
           title={t('section.title')}
           body={t('section.body')}
@@ -247,7 +250,7 @@ export function NotificationsSection() {
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card p-6 shadow-card">
+    <section id="notifications" className="rounded-lg border border-border bg-card p-6 shadow-card">
       <SectionHeader title={t('section.title')} body={t('section.body')} badge={statusBadge} />
 
       {/* Master */}

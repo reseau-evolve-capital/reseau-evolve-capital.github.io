@@ -14,7 +14,11 @@
 
 import type { NetworkClubRow } from '@evolve/ui'
 import type { createServerClient, Database } from '@evolve/data'
-import { getClubSettings, type ClubSettings } from '@/lib/data/clubSettings'
+import {
+  getClubSettings,
+  ClubSettingsNotReadableError,
+  type ClubSettings,
+} from '@/lib/data/clubSettings'
 
 type ServerClient = ReturnType<typeof createServerClient>
 type NetworkMemberRow = Database['public']['Tables']['network_members']['Row']
@@ -114,6 +118,7 @@ function mapClubRow(c: NetworkListClubsRow): NetworkClubRow {
     // `aggregated_valuation` peut être null (club jamais synchronisé) → on préserve null.
     aggregatedValuation: c.aggregated_valuation == null ? null : Number(c.aggregated_valuation),
     lastSyncedAt: (c.last_synced_at as string | null) ?? null,
+    createdAt: (c.created_at as string | null) ?? null,
     matrixConnected: Boolean(c.matrix_connected),
   }
 }
@@ -149,6 +154,12 @@ export interface NetworkClubDetail {
  *   - lecture `clubs` (RLS authenticated lecture seule) → `sheet_id` + paramètres éditables ;
  *   - `network_list_club_members` (migration 044) → staff du club (filtré président/trésorier).
  * `null` si le club n'existe pas / n'est pas listé (→ notFound côté page). JAMAIS de service-role.
+ *
+ * Robustesse (club sans membre / sans RLS applicable sur clubs) :
+ * Si `getClubSettings` lève `ClubSettingsNotReadableError` (club fraîchement créé sans membres,
+ * ou policy non encore appliquée), on construit un fallback minimal à partir de la ligne déjà
+ * lue via `network_list_clubs()` (SECURITY DEFINER, fonctionnel même sans membership).
+ * La fiche s'affiche alors avec matrice "non connectée" et historique vide, sans crash.
  */
 export async function getNetworkClubDetail(
   supabase: ServerClient,
@@ -160,24 +171,58 @@ export async function getNetworkClubDetail(
   if (!row) return null
 
   // Lecture du sheet_id (RLS authenticated lecture seule sur clubs) + paramètres éditables.
-  const [{ data: sheetRow }, settings, { data: membersData, error: membersError }] =
-    await Promise.all([
-      supabase.from('clubs').select('sheet_id').eq('id', clubId).maybeSingle<{
-        sheet_id: string | null
-      }>(),
-      getClubSettings(supabase, clubId),
-      supabase.rpc('network_list_club_members', { p_club_id: clubId }),
-    ])
-  if (membersError) throw membersError
+  // getClubSettings peut lever ClubSettingsNotReadableError → on la capture pour construire
+  // un fallback minimal (le club est dans la liste réseau donc son nom est déjà connu).
+  const [sheetResult, settingsResult, membersResult] = await Promise.allSettled([
+    supabase
+      .from('clubs')
+      .select('sheet_id')
+      .eq('id', clubId)
+      .maybeSingle<{ sheet_id: string | null }>(),
+    getClubSettings(supabase, clubId),
+    supabase.rpc('network_list_club_members', { p_club_id: clubId }),
+  ])
+
+  // Erreur réseau sur la liste des membres → crash (pas de fallback pertinent).
+  const membersSettled = membersResult
+  if (membersSettled.status === 'rejected') throw membersSettled.reason
+  const { value: membersValue } = membersSettled
+  if (membersValue.error) throw membersValue.error
+
+  // Fallback settings si RLS refuse (club sans membres).
+  let settings: ClubSettings
+  if (settingsResult.status === 'fulfilled') {
+    settings = settingsResult.value
+  } else if (settingsResult.reason instanceof ClubSettingsNotReadableError) {
+    // Club fraîchement créé ou sans membres : on construit un ClubSettings minimal
+    // depuis la ligne network_list_clubs (nom connu, champs sensibles absents → null).
+    settings = {
+      clubId,
+      name: row.name,
+      city: null,
+      country: null,
+      brokerAccountRef: null,
+      annualInvestmentCap: null,
+      minContribution: 100,
+      brokerName: null,
+    }
+  } else {
+    // Erreur réseau réelle → on laisse remonter.
+    throw settingsResult.reason
+  }
+
+  // sheet_id : si la RLS refuse aussi cette lecture (même cause), on retombe sur null.
+  const sheetId =
+    sheetResult.status === 'fulfilled' ? (sheetResult.value.data?.sheet_id ?? null) : null
 
   type MemberRow = Database['public']['Functions']['network_list_club_members']['Returns'][number]
-  const staff: NetworkClubStaffMember[] = ((membersData ?? []) as MemberRow[])
+  const staff: NetworkClubStaffMember[] = ((membersValue.data ?? []) as MemberRow[])
     .filter((m) => m.role === 'president' || m.role === 'treasurer')
     .map((m) => ({ userId: m.user_id, fullName: m.full_name, email: m.email, role: m.role }))
 
   return {
     club: mapClubRow(row),
-    sheetId: sheetRow?.sheet_id ?? null,
+    sheetId,
     settings,
     staff,
   }

@@ -26,6 +26,9 @@ export const DEMO_LABELS: SheetConnectionTestLabels = {
     `La feuille est accessible mais des onglets attendus manquent : ${tabs.join(', ')}.`,
   invalidTitle: 'Feuille introuvable',
   invalidBody: "L'URL ou l'identifiant ne correspond à aucune feuille Google Sheets.",
+  saKeyInvalidTitle: 'Clé Service Account invalide',
+  saKeyInvalidBody:
+    "Le compte de service Google n'est pas configuré correctement (clé invalide). Contacte un administrateur.",
   errorTitle: 'Test impossible',
   errorBody: 'Une erreur est survenue pendant le test. Réessaie dans un instant.',
 }

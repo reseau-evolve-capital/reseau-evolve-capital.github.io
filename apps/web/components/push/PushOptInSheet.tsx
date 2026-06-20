@@ -175,7 +175,7 @@ export function PushOptInSheet({ open, onAccept, onDismiss }: PushOptInSheetProp
               {t('prePrompt.later')}
             </Dialog.Close>
             <Link
-              href="/profil"
+              href="/profil#notifications"
               onClick={onDismiss}
               className={cn(
                 'inline-flex h-11 items-center rounded-md px-1',

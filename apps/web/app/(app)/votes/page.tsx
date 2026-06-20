@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient, hasVoted } from '@evolve/data'
 import { getMemberPolls, type PollSummary } from '@/lib/data/polls'
-import { getSessionUser } from '@/lib/data/request'
+import { getSessionUser, getActiveClubMembership } from '@/lib/data/request'
 import { PollsView, type MemberPollItem } from './PollsView'
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -18,7 +18,11 @@ export default async function VotesPage() {
   const user = await getSessionUser()
   if (!user) return null
 
-  const polls = await getMemberPolls(supabase)
+  // Club actif (mémoïsé par requête, partagé avec le layout) — scoping des votes.
+  const membership = await getActiveClubMembership(user.id)
+  if (!membership) return <PollsView items={[]} />
+
+  const polls = await getMemberPolls(supabase, membership.club_id)
 
   // « A déjà voté ? » pour chaque vote OUVERT (pilote le badge ✓ et le CTA). On parallélise
   // les checks has_voted (RPC STABLE). Les votes clôturés ne nécessitent pas ce check.

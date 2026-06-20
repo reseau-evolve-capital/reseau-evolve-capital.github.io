@@ -36,6 +36,11 @@ export interface SidebarProps {
   /** Libellés textuels (i18n). Chaque clé absente retombe sur son défaut FR. */
   labels?: SidebarLabels
   className?: string
+  /**
+   * Slot optionnel rendu SOUS la carte « Club actif » (ex : ClubSwitcher pour les
+   * membres multi-clubs). Non-cassant : ignoré si absent.
+   */
+  footer?: React.ReactNode
 }
 
 /**
@@ -54,6 +59,7 @@ export function Sidebar({
   logoSrc,
   labels,
   className,
+  footer,
 }: SidebarProps) {
   const sectionLabel = labels?.section ?? 'Espace membre'
   const navLabel = labels?.navLabel ?? 'Navigation principale'
@@ -144,6 +150,7 @@ export function Sidebar({
           {clubActif.meta ? <p className="text-text-sec text-[12px]">{clubActif.meta}</p> : null}
         </div>
       ) : null}
+      {footer ? <div className={cn(!clubActif ? 'mt-auto' : undefined)}>{footer}</div> : null}
     </aside>
   )
 }
