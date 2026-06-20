@@ -360,3 +360,46 @@ Lot livré sur la branche `feat/net-a-lancer-un-club` : espace `/reseau` (FLOW-0
 - **`network_provision_first_staff` = voie `user_id`** (promotion d'un membre déjà importé depuis la matrice). L'**invitation par email est différée** (pas d'invitation à un email non encore membre dans ce lot). La **rétrogradation d'un staff est différée** également.
 - **Validation UUID assouplie en `isUuidLike` (format-only).** Les actions réseau valident le format de l'identifiant sans exiger un v4 strict, car la **fixture de seed n'est pas un UUID v4**. L'autorité de validation reste la **RPC** (la garde DB tranche, le format-only n'est qu'un filtre d'entrée précoce).
 - **a11y** : cibles tactiles des boutons **retour / copier** portées à **≥44px** (fix qui fait passer le scorecard de **96,5 % → ≥97 %**).
+
+---
+
+## Vague NET-B+ — nouveaux écrans (planifié 2026-06-21, à livrer)
+
+> Lot consolidé dans `REC/backlog/BACKLOG_E-NET.md` (Sprint NET-B+). **Maquettes de référence** (`REC/standalone-exports/`, :8770, light/dark, desktop 1440 + mobile 375) — **cible QA ≥ 97 %** vérifiée par `qa-visual`. Sous-prompts : `docs/product/PROMPT-DESIGN-feedback-console.md`, `…/PROMPT-DESIGN-gestion-roles-clubs.md`.
+
+### `/reseau/retours` — Console feedbacks réseau _(NET-019)_
+
+- **Réf** : `Reseau - Retours (standalone).html` (écrans 01, 01-B, 03).
+- **Desktop** : shell app (sidebar « Réseau » actif), sous-nav réseau + onglet « Retours » ; en-tête (période/export) → panneau « Synthèse IA » (**« Bientôt »** en NET-B+, digest LLM = NET-017) → 4 KPI → donut catégorie + barres volume/club → filtres (type/sévérité/statut/**club**/recherche) → tableau type `MembersList` → slide-over détail.
+- **Mobile** : filtres repliés, retours en cartes, sous-nav en drawer, bottom-nav 4 onglets.
+- **Direction graphique** : sévérité jamais en `brand-red` → `data-negative` ; Synthèse IA sobre ; RGPD (prénom, jamais de montant).
+
+### `/admin/retours` — Console feedbacks bureau de club _(ADM-009)_
+
+- **Réf** : `Reseau - Retours (standalone).html` (écran 02). Même composant que NET-019, **scopé club** (pas de filtre/colonne Club), onglet « Retours » dans `AdminTabs`, dataviz « Volume par semaine ».
+
+### Détail d'un retour (slide-over / `Dialog`) _(partagé NET-019 / ADM-009)_
+
+- **Réf** : `Reseau - Retours (standalone).html` (écran 03). En-tête (titre IA + type + sévérité + statut modifiable), métadonnées (auteur/club/date/page/UA), message verbatim, galerie captures, bloc « Analyse IA » (par item), liens GitHub/Notion.
+
+### `/reseau/clubs/[id]` — Section « Statut du club » _(NET-018)_
+
+- **Réf** : `Reseau - Roles & Statuts (standalone).html` (écrans 01, 02). S'insère **en bas de la fiche club existante** (NET-007). États actif (bouton « Désactiver » `data-negative` → `SensitiveConfirmModal` + raison) / désactivé (bandeau + « Réactiver », sync/matrice désactivées). Liste clubs : badge « Désactivé », ligne atténuée mais cliquable, KPI capital hors clubs désactivés.
+
+### `/admin/membres` — Éditeur de rôle club _(ADM-008)_
+
+- **Réf** : `Reseau - Roles & Statuts (standalone).html` (écran 03). Colonne « Rôle » + note d'origine (« Défini via la matrice (PARAMETRAGES) ») + `Dialog` modifier (encart `data-warning` anti-écrasement sync) ; garde anti-escalade (`Select` restreint).
+
+### `/reseau/bureau` — Gestion des rôles réseau _(NET-020)_
+
+- **Réf** : `Reseau - Roles & Statuts (standalone).html` (écran 04). Table (Membre · Rôle réseau · Titre · Actions) + « Ajouter au bureau » (`Dialog` grant) + revoke (`SensitiveConfirmModal`, garde-fou « dernier admin » `data-warning`). RPC `network_grant_role`/`network_revoke_role` déjà livrées.
+
+### Menu avatar — ClubSwitcher mobile _(NAV-001)_
+
+- **Réf** : `Reseau - Roles & Statuts (standalone).html` (écran 05). Entrée « Changer de club » (si ≥ 2 clubs) → sélecteur (bottom-sheet mobile / `Dialog` desktop), club actif surligné (`data-positive`). Cas mono-club : pas d'entrée.
+
+### Décisions / écarts actés (NE PAS flaguer en QA)
+
+- **Panneau « Synthèse IA » des consoles feedbacks = « Bientôt »** dans cette vague (pattern `ComingSoonCard`). Le **digest LLM agrégé** est livré en **NET-C / NET-017** (analytics + IA poussée), volontairement hors NET-B+.
+- **PWA-002 (skeleton)** et **OPS-006 (retrait Cloudflare)**, **OPS-007 (audit-log)** : pas de maquette dédiée (réutilisent l'existant / purement technique).
+- **Numérotation des migrations** : à attribuer en Phase 0 selon la plage libre réelle (la plage backlog peut être périmée, cf. NET-A 040-049 ; vérifier `supabase/migrations/` avant d'écrire).
