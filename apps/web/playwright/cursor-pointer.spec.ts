@@ -198,6 +198,36 @@ test.describe('curseur a11y — routes authentifiées', () => {
     })
   }
 
+  // NAV-001 — Overlays Radix du menu avatar : le DropdownMenu (entrées Profil/Votes/Changer
+  // de club/Déconnexion) PUIS le ClubSelectorSheet (Dialog) sont portalisés dans <body> et
+  // donc invisibles au scan tant qu'ils sont fermés. On les OUVRE explicitement (seed déjà
+  // multi-club : Club E2E + Club Votes E2E → l'entrée « Changer de club » existe), de sorte que
+  // les boutons du sélecteur soient couverts par la règle R-035 (cursor:pointer / RGAA 3.3).
+  test('menu avatar + sélecteur de club (overlays Radix) → cliquables en cursor:pointer', async ({
+    page,
+  }) => {
+    await loginAsSeedMember(page) // charge /dashboard
+    await page.waitForLoadState('networkidle')
+
+    // 1) Ouvrir le DropdownMenu (menu avatar) et scanner ses entrées.
+    await page.getByRole('button', { name: /Menu utilisateur/ }).click()
+    const changeClub = page.getByTestId('topbar-change-club')
+    await expect(changeClub).toBeVisible()
+    {
+      const offenders = await findCursorOffenders(page, '/dashboard (menu avatar ouvert)')
+      expect(offenders, offenders.length ? formatOffenders(offenders) : '').toEqual([])
+    }
+
+    // 2) Ouvrir le ClubSelectorSheet (Dialog) et scanner ses boutons de club + fermer.
+    await changeClub.click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    {
+      const offenders = await findCursorOffenders(page, '/dashboard (sélecteur de club ouvert)')
+      expect(offenders, offenders.length ? formatOffenders(offenders) : '').toEqual([])
+    }
+  })
+
   // Scan du flow onboarding : on réinitialise onboarding=false PUIS on login SANS le compléter
   // (loginAsSeedMember complète l'onboarding en interne → inutilisable ici). Le verify d'un user
   // non-onboardé atterrit sur /onboarding/step-1 ; le guard A1 l'y maintient.

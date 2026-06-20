@@ -76,6 +76,56 @@ export const WithVotes: Story = {
   },
 }
 
+/** NAV-001 — Membre multi-club : entrée « Changer de club » dans le menu avatar (avant
+ *  « Déconnexion »), avec rappel du club actif. Ouvre le sélecteur (Dialog/bottom-sheet)
+ *  où le club actif est surligné. */
+export const MultiClub: Story = {
+  args: {
+    clubs: [
+      { id: 'club-a', name: 'Club Évolve Paris', city: 'Paris' },
+      { id: 'club-b', name: 'Club Évolve Lyon', city: 'Lyon' },
+    ],
+    activeClubId: 'club-a',
+    onClubChange: fn(),
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    const menu = within(document.body)
+    // Ouvre le menu avatar.
+    await userEvent.click(canvas.getByRole('button', { name: /menu utilisateur/i }))
+    // L'entrée « Changer de club » est présente et rappelle le club actif.
+    const entry = await menu.findByTestId('topbar-change-club')
+    expect(entry).toBeVisible()
+    expect(entry.textContent).toMatch(/changer de club/i)
+    expect(entry.textContent).toMatch(/club évolve paris/i)
+    // L'ouvre → le sélecteur affiche les deux clubs.
+    await userEvent.click(entry)
+    const dialog = await menu.findByRole('dialog')
+    expect(within(dialog).getByText('Club Évolve Paris')).toBeVisible()
+    const lyon = within(dialog).getByText('Club Évolve Lyon')
+    expect(lyon).toBeVisible()
+    // Choisir un autre club déclenche onClubChange avec son id.
+    await userEvent.click(lyon)
+    expect(args.onClubChange).toHaveBeenCalledWith('club-b')
+  },
+}
+
+/** NAV-001 — Membre mono-club : AUCUNE entrée « Changer de club » (non destructif). */
+export const SingleClub: Story = {
+  args: {
+    clubs: [{ id: 'club-a', name: 'Club Évolve Paris', city: 'Paris' }],
+    activeClubId: 'club-a',
+    onClubChange: fn(),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    const menu = within(document.body)
+    await userEvent.click(canvas.getByRole('button', { name: /menu utilisateur/i }))
+    expect(await menu.findByText('Profil')).toBeVisible()
+    expect(menu.queryByTestId('topbar-change-club')).toBeNull()
+  },
+}
+
 /** Point d'entrée feedback : l'icône `MessageCircle` est visible à côté de l'avatar
  *  (desktop ET mobile) et déclenche `onFeedback`. */
 export const WithFeedback: Story = {

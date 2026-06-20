@@ -99,3 +99,97 @@ test.describe('ClubSwitcher — le rôle suit le club actif', () => {
     await expect(page.getByText('Accès refusé')).toBeVisible()
   })
 })
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NAV-001 — Flux UI mobile « Changer de club » depuis le menu avatar
+// ─────────────────────────────────────────────────────────────────────────────
+//
+// Couvre la mécanique de bout en bout côté UI (≠ bloc ci-dessus qui pose le cookie
+// directement) : viewport mobile 375, ouverture du menu avatar (DropdownMenu Radix),
+// présence de l'entrée « Changer de club » (data-testid `topbar-change-club`) en contexte
+// multi-club, ouverture du sélecteur (Dialog/bottom-sheet), sélection d'un autre club,
+// puis vérification que le club actif a bien basculé (la surface admin suit le rôle du club).
+//
+// Cas mono-club : on désactive temporairement la 2ᵉ adhésion (is_active=false) → l'entrée
+// disparaît (AppChrome ne rend « Changer de club » que si ≥ 2 adhésions actives). afterEach
+// restaure is_active=true pour ne pas polluer les autres specs.
+
+/** (Dé)active une adhésion du seed dans un club (par EMAIL → robuste au re-key user). */
+async function setSeedMembershipActive(clubId: string, active: boolean): Promise<void> {
+  const sql = postgres(DB_URL, { max: 1 })
+  try {
+    await sql`
+      UPDATE public.memberships m
+         SET is_active = ${active}
+        FROM public.users u
+       WHERE u.id = m.user_id AND u.email = ${SEED_EMAIL} AND m.club_id = ${clubId}::uuid
+    `
+  } finally {
+    await sql.end()
+  }
+}
+
+test.describe('NAV-001 — « Changer de club » (flux UI mobile, menu avatar)', () => {
+  test.use({ viewport: { width: 375, height: 812 } })
+
+  // État déterministe : président d'un club, simple membre de l'autre, les DEUX actifs.
+  test.beforeAll(async () => {
+    await setSeedRole(PRESIDENT_CLUB, 'president')
+    await setSeedRole(MEMBER_CLUB, 'member')
+    await setSeedMembershipActive(PRESIDENT_CLUB, true)
+    await setSeedMembershipActive(MEMBER_CLUB, true)
+  })
+  test.afterAll(async () => {
+    await setSeedRole(PRESIDENT_CLUB, 'member')
+    await setSeedRole(MEMBER_CLUB, 'member')
+    // Filet : garantir les deux adhésions actives pour les specs suivantes.
+    await setSeedMembershipActive(PRESIDENT_CLUB, true)
+    await setSeedMembershipActive(MEMBER_CLUB, true)
+  })
+
+  test('multi-club : ouvre le menu avatar → « Changer de club » → sélectionne → le rôle suit le club', async ({
+    page,
+  }) => {
+    await loginAsSeedMember(page)
+    // Partir d'un club actif connu (président) pour que le switch vers l'autre soit observable.
+    await switchActiveClub(page, PRESIDENT_CLUB)
+    await expect(page.locator('a[href="/admin"]').first()).toBeVisible()
+
+    // Ouvrir le menu avatar (DropdownMenu Radix). aria-label « Menu utilisateur » (cf. @evolve/ui).
+    await page.getByRole('button', { name: /Menu utilisateur/ }).click()
+
+    // L'entrée « Changer de club » est présente en contexte multi-club.
+    const changeClub = page.getByTestId('topbar-change-club')
+    await expect(changeClub).toBeVisible()
+    await changeClub.click()
+
+    // Le sélecteur (Dialog/bottom-sheet) s'ouvre et liste les clubs.
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+
+    // Sélectionner l'AUTRE club (celui où l'user est simple membre) déclenche le switch
+    // (Server Action setActiveClub → cookie → window.location.reload()).
+    await dialog.getByText('Club Votes E2E').click()
+    await page.waitForURL(/\/dashboard/, { timeout: 20_000 })
+
+    // Le rôle suit le nouveau club actif : plus d'entrée admin, /admin refusé.
+    await expect(page.locator('a[href="/admin"]')).toHaveCount(0)
+    await page.goto('/admin')
+    await expect(page.getByText('Accès refusé')).toBeVisible()
+  })
+
+  test('mono-club : aucune entrée « Changer de club » dans le menu avatar', async ({ page }) => {
+    // Réduire le seed à UNE seule adhésion active le temps du test.
+    await setSeedMembershipActive(MEMBER_CLUB, false)
+    try {
+      await loginAsSeedMember(page)
+      await switchActiveClub(page, PRESIDENT_CLUB)
+
+      await page.getByRole('button', { name: /Menu utilisateur/ }).click()
+      // L'entrée n'est PAS rendue (AppChrome exige ≥ 2 adhésions actives).
+      await expect(page.getByTestId('topbar-change-club')).toHaveCount(0)
+    } finally {
+      await setSeedMembershipActive(MEMBER_CLUB, true)
+    }
+  })
+})

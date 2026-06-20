@@ -37,7 +37,12 @@
       "profile": "Profile",
       "logout": "Log out",
       "feedback": "Feedback",
-      "votes": "Votes"
+      "votes": "Votes",
+      "changeClub": "Switch club",
+      "clubSelectorTitle": "Switch club",
+      "clubSelectorSubtitle": "Choose the club to display.",
+      "clubSelectorClose": "Close",
+      "activeClub": "Active club"
     },
     "themeToggle": {
       "toggle": "Toggle theme",

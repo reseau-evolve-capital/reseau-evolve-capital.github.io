@@ -153,6 +153,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                 syncLabel={syncLabel}
                 dateLabel={dateLabel}
                 clubActif={clubActif}
+                allClubs={allClubMemberships}
+                activeClubId={activeClubId}
                 hasPollActivity={pollActivity}
                 pollsToVote={pollsToVote}
               />
