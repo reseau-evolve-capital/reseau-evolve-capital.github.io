@@ -541,6 +541,11 @@ function ImportStep({ clubId, onFinish }: { clubId: string; onFinish: () => void
   const t = useTranslations('reseau.addClub.import')
   const [importedCount, setImportedCount] = React.useState<number | null>(null)
   const [members, setMembers] = React.useState<ClubMemberOption[]>([])
+  // Bureau déjà reconnu par la sync depuis l'onglet PARAMETRAGES (président/trésorier promus
+  // par la réconciliation des rôles). Si non vide → on confirme au lieu de demander une saisie.
+  const [detectedStaff, setDetectedStaff] = React.useState<ClubMemberOption[]>([])
+  // L'admin peut forcer la désignation manuelle même quand un bureau a été détecté.
+  const [manualOverride, setManualOverride] = React.useState(false)
   const [syncError, setSyncError] = React.useState<string | null>(null)
   const [selectedUser, setSelectedUser] = React.useState<string>('')
   const [role, setRole] = React.useState<StaffRole>('president')
@@ -560,16 +565,25 @@ function ImportStep({ clubId, onFinish }: { clubId: string; onFinish: () => void
       const list = await listClubMembers(clubId)
       if (list.ok) {
         setMembers(list.members)
+        // La sync a déjà promu le bureau si PARAMETRAGES était bien rempli (noms reconnus).
+        setDetectedStaff(
+          list.members.filter((m) => m.role === 'president' || m.role === 'treasurer')
+        )
         if (list.members[0]) setSelectedUser(list.members[0].userId)
       }
     })
   }
 
+  const synced = importedCount != null
+  // Bureau reconnu ET l'admin n'a pas demandé à le redéfinir → on confirme (aucune saisie requise).
+  const useDetected = synced && detectedStaff.length > 0 && !manualOverride
+
   function finish() {
     setProvisionError(null)
     startFinish(async () => {
-      // Provisionner le responsable est requis pour ne pas laisser un club orphelin (sans staff).
-      if (selectedUser !== '') {
+      // Si le bureau est déjà reconnu par la sync, rien à provisionner (club non orphelin).
+      // Sinon (feuille non remplie / noms non reconnus / désignation manuelle) → on provisionne.
+      if (!useDetected && selectedUser !== '') {
         const res = await provisionFirstStaffAction(clubId, selectedUser, role)
         if (!res.ok) {
           setProvisionError(t('provisionError'))
@@ -580,8 +594,7 @@ function ImportStep({ clubId, onFinish }: { clubId: string; onFinish: () => void
     })
   }
 
-  const synced = importedCount != null
-  const canFinish = synced && selectedUser !== '' && !finishing
+  const canFinish = synced && !finishing && (useDetected || selectedUser !== '')
 
   return (
     <div className="flex flex-col gap-6">
@@ -632,59 +645,105 @@ function ImportStep({ clubId, onFinish }: { clubId: string; onFinish: () => void
         )}
       </section>
 
-      {/* Bloc désigner le premier responsable. */}
+      {/* Bloc responsable : bureau reconnu depuis PARAMETRAGES (confirmation) OU désignation
+          manuelle (feuille non remplie / noms non reconnus / l'admin choisit de redéfinir). */}
       <section className="flex flex-col gap-4 rounded-md border border-border bg-card p-5">
-        <div className="flex flex-col gap-1">
-          <h3 className="font-display text-[15px] font-bold text-text">{t('staffTitle')}</h3>
-          <Text className="text-[13px] text-text-sec">{t('staffDescription')}</Text>
-        </div>
+        {useDetected ? (
+          <>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <Icon
+                  name="CircleCheck"
+                  size={20}
+                  className="text-data-positive"
+                  aria-hidden="true"
+                />
+                <h3 className="font-display text-[15px] font-bold text-text">
+                  {t('detectedTitle')}
+                </h3>
+              </div>
+              <Text className="text-[13px] text-text-sec">{t('detectedHint')}</Text>
+            </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1.4fr_1fr]">
-          <FormField label={t('memberLabel')}>
-            {(p) =>
-              members.length === 0 ? (
-                <Text className="text-[13px] text-text-ter">{t('noMembers')}</Text>
-              ) : (
-                <SelectRoot value={selectedUser} onValueChange={setSelectedUser}>
-                  <SelectTrigger id={p.id} aria-label={t('memberLabel')}>
-                    <SelectValue placeholder={t('memberPlaceholder')} />
-                  </SelectTrigger>
-                  <SelectPortal>
-                    <SelectContent>
-                      {members.map((m) => (
-                        <SelectItem key={m.userId} value={m.userId}>
-                          {m.fullName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </SelectPortal>
-                </SelectRoot>
-              )
-            }
-          </FormField>
+            <ul className="flex flex-col gap-2">
+              {detectedStaff.map((m) => (
+                <li
+                  key={m.userId}
+                  className="flex items-center justify-between rounded-md bg-card-sub px-4 py-2.5"
+                >
+                  <span className="font-semibold text-text">{m.fullName}</span>
+                  <Badge variant="success">
+                    {m.role === 'president' ? t('rolePresident') : t('roleTreasurer')}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
 
-          <FormField label={t('roleLabel')}>
-            {() => (
-              <SegmentedToggle
-                value={role}
-                onChange={(v) => setRole(v as StaffRole)}
-                ariaLabel={t('roleLabel')}
-                options={[
-                  { value: 'president', label: t('rolePresident') },
-                  { value: 'treasurer', label: t('roleTreasurer') },
-                ]}
-              />
-            )}
-          </FormField>
-        </div>
+            <button
+              type="button"
+              onClick={() => setManualOverride(true)}
+              className="w-fit min-h-[44px] text-[13px] font-semibold text-text-sec underline underline-offset-2 hover:text-text"
+            >
+              {t('overrideManual')}
+            </button>
+          </>
+        ) : (
+          <>
+            <div className="flex flex-col gap-1">
+              <h3 className="font-display text-[15px] font-bold text-text">{t('staffTitle')}</h3>
+              <Text className="text-[13px] text-text-sec">{t('staffDescription')}</Text>
+            </div>
 
-        {/* Voie email-invite : DIFFÉRÉE (NET-003 ne l'a pas implémentée) → « Bientôt », désactivée. */}
-        <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-border px-4 py-3 opacity-70">
-          <Icon name="Mail" size={16} className="text-text-ter" aria-hidden="true" />
-          <span className="text-[13px] font-semibold text-text-sec">{t('inviteSoonTitle')}</span>
-          <Badge variant="neutral">{t('inviteSoonBadge')}</Badge>
-          <span className="basis-full text-[12.5px] text-text-ter">{t('inviteSoonHint')}</span>
-        </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1.4fr_1fr]">
+              <FormField label={t('memberLabel')}>
+                {(p) =>
+                  members.length === 0 ? (
+                    <Text className="text-[13px] text-text-ter">{t('noMembers')}</Text>
+                  ) : (
+                    <SelectRoot value={selectedUser} onValueChange={setSelectedUser}>
+                      <SelectTrigger id={p.id} aria-label={t('memberLabel')}>
+                        <SelectValue placeholder={t('memberPlaceholder')} />
+                      </SelectTrigger>
+                      <SelectPortal>
+                        <SelectContent>
+                          {members.map((m) => (
+                            <SelectItem key={m.userId} value={m.userId}>
+                              {m.fullName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </SelectPortal>
+                    </SelectRoot>
+                  )
+                }
+              </FormField>
+
+              <FormField label={t('roleLabel')}>
+                {() => (
+                  <SegmentedToggle
+                    value={role}
+                    onChange={(v) => setRole(v as StaffRole)}
+                    ariaLabel={t('roleLabel')}
+                    options={[
+                      { value: 'president', label: t('rolePresident') },
+                      { value: 'treasurer', label: t('roleTreasurer') },
+                    ]}
+                  />
+                )}
+              </FormField>
+            </div>
+
+            {/* Voie email-invite : DIFFÉRÉE (NET-003 ne l'a pas implémentée) → « Bientôt », désactivée. */}
+            <div className="flex flex-wrap items-center gap-2 rounded-md border border-dashed border-border px-4 py-3 opacity-70">
+              <Icon name="Mail" size={16} className="text-text-ter" aria-hidden="true" />
+              <span className="text-[13px] font-semibold text-text-sec">
+                {t('inviteSoonTitle')}
+              </span>
+              <Badge variant="neutral">{t('inviteSoonBadge')}</Badge>
+              <span className="basis-full text-[12.5px] text-text-ter">{t('inviteSoonHint')}</span>
+            </div>
+          </>
+        )}
 
         {provisionError && (
           <p role="alert" aria-live="polite" className="text-[13px] text-data-negative">
