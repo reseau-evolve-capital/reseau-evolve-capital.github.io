@@ -12,7 +12,7 @@
 
 import type { createServerClient, Database } from '@evolve/data'
 import type { TimelineYear, CotisationVariant } from '@evolve/ui'
-import { formatEUR, formatMonth, formatDate } from '@evolve/utils'
+import { formatCurrency, formatMonth, formatDate } from '@evolve/utils'
 
 import { deriveContributionStatus, deriveAmountDue, joinedAtToYM } from './contributionStatus'
 
@@ -134,17 +134,19 @@ const DEFAULT_CELL_LABELS: CellLabels = {
 export function buildMonthTooltip(
   m: MonthInput,
   variant: CotisationVariant,
-  labels: CellLabels = DEFAULT_CELL_LABELS
+  labels: CellLabels = DEFAULT_CELL_LABELS,
+  currency = 'EUR'
 ): string {
   const month = monthLabel(m.year, m.month)
+  const fmt = (v: number) => formatCurrency(v, currency)
   switch (variant) {
     case 'paid':
       return m.paidAt
-        ? labels.paid({ month, amount: formatEUR(m.amount), date: formatDate(m.paidAt) })
-        : labels.paidNoDate({ month, amount: formatEUR(m.amount) })
+        ? labels.paid({ month, amount: fmt(m.amount), date: formatDate(m.paidAt) })
+        : labels.paidNoDate({ month, amount: fmt(m.amount) })
     case 'late':
       return m.amount > 0
-        ? labels.late({ month, amount: formatEUR(m.amount) })
+        ? labels.late({ month, amount: fmt(m.amount) })
         : labels.lateNoAmount({ month })
     case 'future':
       return labels.future({ month })
@@ -160,16 +162,18 @@ export function buildMonthTooltip(
 export function buildMonthAriaLabel(
   m: MonthInput,
   variant: CotisationVariant,
-  labels: CellLabels = DEFAULT_CELL_LABELS
+  labels: CellLabels = DEFAULT_CELL_LABELS,
+  currency = 'EUR'
 ): string {
   const month = monthLabel(m.year, m.month)
+  const fmt = (v: number) => formatCurrency(v, currency)
   switch (variant) {
     case 'paid':
       return m.paidAt
-        ? labels.paidAria({ month, amount: formatEUR(m.amount), date: formatDate(m.paidAt) })
-        : labels.paidNoDateAria({ month, amount: formatEUR(m.amount) })
+        ? labels.paidAria({ month, amount: fmt(m.amount), date: formatDate(m.paidAt) })
+        : labels.paidNoDateAria({ month, amount: fmt(m.amount) })
     case 'late':
-      return labels.lateAria({ month, amount: formatEUR(m.amount) })
+      return labels.lateAria({ month, amount: fmt(m.amount) })
     case 'future':
       return labels.futureAria({ month })
     case 'not_applicable':
@@ -186,7 +190,8 @@ export function buildTimelineYears(
   months: MonthInput[],
   joinedAtYM: number | null,
   nowYM: number,
-  labels: CellLabels = DEFAULT_CELL_LABELS
+  labels: CellLabels = DEFAULT_CELL_LABELS,
+  currency = 'EUR'
 ): TimelineYear[] {
   const byYear = new Map<number, MonthInput[]>()
   for (const m of months) {
@@ -206,8 +211,8 @@ export function buildTimelineYears(
           return {
             month: m.month,
             variant,
-            tooltip: buildMonthTooltip(m, variant, labels),
-            ariaLabel: buildMonthAriaLabel(m, variant, labels),
+            tooltip: buildMonthTooltip(m, variant, labels, currency),
+            ariaLabel: buildMonthAriaLabel(m, variant, labels, currency),
           }
         }),
     }))
@@ -285,9 +290,9 @@ export async function getContributionsData(
       .returns<Pick<ContributionMonthRow, 'year' | 'month' | 'amount' | 'status' | 'paid_at'>[]>(),
     supabase
       .from('clubs')
-      .select('min_contribution')
+      .select('min_contribution, currency')
       .eq('id', clubId)
-      .maybeSingle<Pick<ClubRow, 'min_contribution'>>(),
+      .maybeSingle<Pick<ClubRow, 'min_contribution' | 'currency'>>(),
   ])
   if (error) throw error
   if (monthsError) throw monthsError
@@ -307,6 +312,7 @@ export async function getContributionsData(
   // introuvable (RLS/club supprimé), min_contribution → 0 : la dérivation rend 0 et le bandeau
   // basculera sur la variante SANS montant (jamais « 0,00 € »).
   const minContribution = club != null ? Number(club.min_contribution) : 0
+  const clubCurrency = club?.currency ?? 'EUR'
   const amountDue = deriveAmountDue(
     Number(summary.amount_due ?? 0),
     months,
@@ -331,6 +337,6 @@ export async function getContributionsData(
     penalties: Number(summary.penalties ?? 0),
     amountDue,
     syncedAt: summary.synced_at ?? null,
-    years: buildTimelineYears(months, joinedAtYM, nowYM, cellLabels),
+    years: buildTimelineYears(months, joinedAtYM, nowYM, cellLabels, clubCurrency),
   }
 }

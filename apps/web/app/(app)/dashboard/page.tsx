@@ -83,13 +83,20 @@ export default async function DashboardPage() {
 
   // Le layout (app) fournit padding + centrage + max-w-[1280px] : pas de wrapper ici
   // (sinon double largeur/padding + niveau DOM en trop qui décale le conteneur tactile).
+  const currency = m?.clubs?.currency ?? 'EUR'
+
   return (
     <div className="flex flex-col gap-4">
       {pollBanners.length > 0 ? <DashboardPollBanners polls={pollBanners} /> : null}
       {variant === 'v2' ? (
-        <DashboardViewV2 initialData={initialData} anchorISO={anchorISO} chartData={chartData} />
+        <DashboardViewV2
+          initialData={initialData}
+          anchorISO={anchorISO}
+          chartData={chartData}
+          currency={currency}
+        />
       ) : (
-        <DashboardView initialData={initialData} />
+        <DashboardView initialData={initialData} currency={currency} />
       )}
     </div>
   )

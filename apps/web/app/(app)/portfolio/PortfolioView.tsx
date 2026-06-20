@@ -35,7 +35,7 @@ import {
   useToast,
 } from '@evolve/ui'
 import type { PortfolioPosition, PortfolioSort, PortfolioDir } from '@evolve/types'
-import { formatEUR, formatPct, formatRelativeTime } from '@evolve/utils'
+import { formatCurrency, formatPct, formatRelativeTime } from '@evolve/utils'
 
 import {
   buildPortfolio,
@@ -60,7 +60,14 @@ function trendDirection(value: number): 'up' | 'down' | 'flat' {
   return value > 0 ? 'up' : 'down'
 }
 
-export function PortfolioView({ initialData }: { initialData: PortfolioData | null }) {
+export function PortfolioView({
+  initialData,
+  currency = 'EUR',
+}: {
+  initialData: PortfolioData | null
+  /** Code ISO 4217 de la devise du club actif (ex. 'EUR', 'XOF'). Défaut 'EUR'. */
+  currency?: string
+}) {
   // Tous les hooks AVANT tout early return (règle des hooks React).
   const t = useTranslations('portfolio')
   const tCommon = useTranslations('common')
@@ -270,7 +277,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
             />
             <TrendBadge
               direction={totalDir}
-              value={formatEUR(totalGainLoss)}
+              value={formatCurrency(totalGainLoss, currency)}
               subValue={formatPct(totalGainLossPct)}
             />
             {totalGainLossInfoTip}
@@ -382,7 +389,7 @@ export function PortfolioView({ initialData }: { initialData: PortfolioData | nu
                   (liquidityNegative ? 'text-data-negative-strong' : 'text-text')
                 }
               >
-                {formatEUR(liquidity)}
+                {formatCurrency(liquidity, currency)}
               </span>
             </section>
           )}

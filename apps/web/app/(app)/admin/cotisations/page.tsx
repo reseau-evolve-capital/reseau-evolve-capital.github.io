@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
 import { getClubContributionsTimeline, getClubMembers } from '@/lib/data/admin'
-import { getSessionUser, getAdminContext } from '@/lib/data/request'
+import { getSessionUser, getAdminContext, getActiveClubMembership } from '@/lib/data/request'
 import { AdminCotisationsView } from './AdminCotisationsView'
 import { Forbidden } from '../Forbidden'
 
@@ -23,14 +23,17 @@ export default async function AdminCotisationsPage() {
   const ctx = await getAdminContext(user.id)
   if (!ctx) return <Forbidden />
 
-  const [timeline, members] = await Promise.all([
+  const [timeline, members, membership] = await Promise.all([
     getClubContributionsTimeline(supabase, ctx.clubId, null),
     getClubMembers(supabase, ctx.clubId),
+    getActiveClubMembership(user.id),
   ])
+  const currency = membership?.clubs?.currency ?? 'EUR'
 
   return (
     <AdminCotisationsView
       initialData={{ clubId: ctx.clubId, years: timeline.years, stats: timeline.stats }}
+      currency={currency}
       members={members.map((m) => ({
         id: m.id,
         fullName: m.fullName,

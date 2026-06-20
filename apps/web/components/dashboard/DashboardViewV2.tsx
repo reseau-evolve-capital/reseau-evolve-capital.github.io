@@ -39,7 +39,7 @@ import {
   type EvolutionPeriod,
   type TrendBadgeProps,
 } from '@evolve/ui'
-import { formatEUR, formatPct, formatRelativeTime } from '@evolve/utils'
+import { formatCurrency, formatPct, formatRelativeTime } from '@evolve/utils'
 
 import { analyticsEvents, valueBucket } from '@/lib/analytics'
 import { type DashboardData } from '@/lib/data/dashboard'
@@ -60,15 +60,15 @@ import { HeroDetailDialog } from './HeroDetailDialog'
 const STALE_MS = 2 * 60 * 60 * 1000 // 2h
 const DAY_MS = 86_400_000
 
-/** Post-traite la sortie de formatEUR (source unique du formatage monnaie — CLAUDE.md) :
- *  montant arrondi à l'euro, sans « ,00 » (rendu compact V2 : ruban, deltas, teaser). */
-function eurNoCents(value: number): string {
-  return formatEUR(Math.round(value)).replace(/,00(?=\s*€)/u, '')
+/** Post-traite la sortie de formatCurrency (source unique du formatage monnaie — CLAUDE.md) :
+ *  montant arrondi à l'unité, sans « ,00 » (rendu compact V2 : ruban, deltas, teaser). */
+function currNoCents(value: number, currency: string): string {
+  return formatCurrency(Math.round(value), currency).replace(/,00(?=\s*[€$£]|\s+\p{L})/u, '')
 }
 
-/** Signe « + » explicite devant un montant positif (formatEUR ne signe pas). */
-function signedEurNoCents(value: number): string {
-  return `${value >= 0 ? '+' : ''}${eurNoCents(value)}`
+/** Signe « + » explicite devant un montant positif (formatCurrency ne signe pas). */
+function signedCurrNoCents(value: number, currency: string): string {
+  return `${value >= 0 ? '+' : ''}${currNoCents(value, currency)}`
 }
 
 /** Label d'axe du graphe : « 19 mars » (localisé) — ou l'année seule pour MAX. */
@@ -85,12 +85,15 @@ export function DashboardViewV2({
   initialData,
   anchorISO,
   chartData = null,
+  currency = 'EUR',
 }: {
   initialData: DashboardData | null
   /** Date d'ancrage de la série demo (dernier point) — calculée côté RSC (syncedAt ?? now). */
   anchorISO: string
   /** Série historique live (DSH-011, RSC) — null = mode demo (fallback illustratif). */
   chartData?: DashboardChartData | null
+  /** Code ISO 4217 de la devise du club actif (ex. 'EUR', 'XOF'). Défaut 'EUR'. */
+  currency?: string
 }) {
   const t = useTranslations('dashboard')
   const tCommon = useTranslations('common')
@@ -219,7 +222,7 @@ export function DashboardViewV2({
     chartData && livePoints && liveSlice
       ? {
           points: livePoints,
-          summaryValue: liveSummary ? signedEurNoCents(liveSummary.deltaEur) : '—',
+          summaryValue: liveSummary ? signedCurrNoCents(liveSummary.deltaEur, currency) : '—',
           summarySub: liveSummary ? `(${formatPct(liveSummary.deltaPct)})` : '',
           direction: (liveSummary && liveSummary.deltaEur < 0 ? 'down' : 'up') as 'up' | 'down',
           firstDate: liveSlice[0]?.date ?? null,
@@ -228,7 +231,7 @@ export function DashboardViewV2({
         }
       : {
           points: demoPoints,
-          summaryValue: signedEurNoCents(series?.deltaEur ?? 0),
+          summaryValue: signedCurrNoCents(series?.deltaEur ?? 0, currency),
           summarySub: `(${formatPct((series?.deltaPct ?? 0) / 100)})`,
           direction: ((series?.deltaEur ?? 0) >= 0 ? 'up' : 'down') as 'up' | 'down',
           firstDate: demoPoints[0]?.date ?? null,
@@ -284,14 +287,14 @@ export function DashboardViewV2({
       heroVariation = {
         direction: d1.amount > 0 ? 'up' : d1.amount < 0 ? 'down' : 'flat',
         value: formatPct(d1.percent),
-        subValue: signedEurNoCents(d1.amount),
+        subValue: signedCurrNoCents(d1.amount, currency),
       }
     }
   } else if (variation1d) {
     heroVariation = {
       direction: 'up',
       value: formatPct(variation1d.percent / 100),
-      subValue: signedEurNoCents(variation1d.amount),
+      subValue: signedCurrNoCents(variation1d.amount, currency),
     }
   }
   // Label hero DESKTOP avec date (réf : « TA QUOTE-PART · AU 11 JUIN 2026 ») — date longue
@@ -336,10 +339,11 @@ export function DashboardViewV2({
   )
   const ribbonItems = [
     { label: t('kpi.detention'), value: formatPct(data.detentionPct, { showSign: false }) },
-    { label: t('kpi.totalContributed'), value: eurNoCents(data.totalContributed) },
+    { label: t('kpi.totalContributed'), value: currNoCents(data.totalContributed, currency) },
     {
       label: t('v2.capacityShort'),
-      value: data.investment.remaining != null ? eurNoCents(data.investment.remaining) : '—',
+      value:
+        data.investment.remaining != null ? currNoCents(data.investment.remaining, currency) : '—',
       info: capacityInfoTip,
     },
   ]
@@ -434,7 +438,9 @@ export function DashboardViewV2({
             statusLabel={t(`statusValue.${data.contribution.status}`)}
             message={t(`contributionMessage.${data.contribution.status}`)}
             amountDueLabel={
-              data.contribution.amountDue > 0 ? formatEUR(data.contribution.amountDue) : null
+              data.contribution.amountDue > 0
+                ? formatCurrency(data.contribution.amountDue, currency)
+                : null
             }
           />
 
@@ -456,7 +462,7 @@ export function DashboardViewV2({
               <div className="flex items-baseline justify-between gap-3 border-t border-border py-2">
                 <dt className="text-[13px] text-text-sec">{t('kpi.totalContributed')}</dt>
                 <dd className="font-display text-[17px] font-bold tabular-nums text-text">
-                  {formatEUR(data.totalContributed)}
+                  {formatCurrency(data.totalContributed, currency)}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-3 border-t border-border py-2">
@@ -465,7 +471,9 @@ export function DashboardViewV2({
                   {capacityInfoTip}
                 </dt>
                 <dd className="font-display text-[17px] font-bold tabular-nums text-text">
-                  {data.investment.remaining != null ? formatEUR(data.investment.remaining) : '—'}
+                  {data.investment.remaining != null
+                    ? formatCurrency(data.investment.remaining, currency)
+                    : '—'}
                 </dd>
               </div>
             </dl>
@@ -484,7 +492,7 @@ export function DashboardViewV2({
             <p className="text-[13px] text-text-sec">{data.club.name}</p>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-display text-[22px] font-bold tabular-nums text-text">
-                {eurNoCents(DEMO_CLUB_PORTFOLIO.totalValuation)}
+                {currNoCents(DEMO_CLUB_PORTFOLIO.totalValuation, currency)}
               </span>
               <TrendBadge
                 direction="up"

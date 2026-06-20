@@ -51,6 +51,8 @@ export default async function ContributionsPage() {
     ? await getContributionsData(supabase, user.id, m.club_id, cellLabels)
     : null
 
+  const currency = m?.clubs?.currency ?? 'EUR'
+
   // Largeur/padding gérés par le layout (app) ; le 2 colonnes desktop vit dans la vue.
-  return <ContributionsView initialData={initialData} />
+  return <ContributionsView initialData={initialData} currency={currency} />
 }

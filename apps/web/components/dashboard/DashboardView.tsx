@@ -25,7 +25,7 @@ import {
   SyncBanner,
   useToast,
 } from '@evolve/ui'
-import { formatRelativeTime, formatEUR } from '@evolve/utils'
+import { formatRelativeTime, formatCurrency } from '@evolve/utils'
 
 import { analyticsEvents, valueBucket } from '@/lib/analytics'
 import { type DashboardData } from '@/lib/data/dashboard'
@@ -36,7 +36,14 @@ import { HeroDetailDialog } from './HeroDetailDialog'
 
 const STALE_MS = 2 * 60 * 60 * 1000 // 2h
 
-export function DashboardView({ initialData }: { initialData: DashboardData | null }) {
+export function DashboardView({
+  initialData,
+  currency = 'EUR',
+}: {
+  initialData: DashboardData | null
+  /** Code ISO 4217 de la devise du club actif (ex. 'EUR', 'XOF'). Défaut 'EUR'. */
+  currency?: string
+}) {
   const t = useTranslations('dashboard')
   const tCommon = useTranslations('common')
   const locale = useLocale()
@@ -193,7 +200,9 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
           statusLabel={t(`statusValue.${data.contribution.status}`)}
           message={t(`contributionMessage.${data.contribution.status}`)}
           amountDueLabel={
-            data.contribution.amountDue > 0 ? formatEUR(data.contribution.amountDue) : null
+            data.contribution.amountDue > 0
+              ? formatCurrency(data.contribution.amountDue, currency)
+              : null
           }
         />
       </div>
@@ -214,7 +223,9 @@ export function DashboardView({ initialData }: { initialData: DashboardData | nu
           </div>
           <CurrencyAmount amount={data.investment.remaining} size="lg" />
           <p className="text-[13px] leading-snug text-text-sec">
-            {t('capacity.subtitle', { amount: formatEUR(data.investment.remaining) })}
+            {t('capacity.subtitle', {
+              amount: formatCurrency(data.investment.remaining, currency),
+            })}
           </p>
         </div>
       )}
