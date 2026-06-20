@@ -13,15 +13,64 @@ function isValid(n: number): boolean {
   return typeof n === 'number' && isFinite(n) && !isNaN(n)
 }
 
-/** 65574.87 → "65 574,87 €" (FR) · "€65,574.87" (en-US). La devise reste EUR. */
-export function formatEUR(value: number, locale: string = DEFAULT_LOCALE): string {
-  if (!isValid(value)) return FALLBACK
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: 'EUR',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value)
+/**
+ * Formateur monétaire générique multi-devises.
+ * `currency` : code ISO 4217 (ex. 'EUR', 'XOF', 'USD', 'CHF').
+ * Cas limites : null / undefined / NaN / Infinity → "—".
+ * Devise invalide : ne crash pas — fallback affiche le nombre + le code devise.
+ */
+export function formatCurrency(
+  value: number | null | undefined,
+  currency: string,
+  locale: string = DEFAULT_LOCALE
+): string {
+  if (value == null || !isValid(value)) return FALLBACK
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)
+  } catch {
+    // Devise inconnue d'Intl : affichage dégradé "1 234,56 XYZ"
+    return (
+      new Intl.NumberFormat(locale, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value) +
+      ' ' +
+      currency
+    )
+  }
+}
+
+/**
+ * Renvoie le symbole d'une devise ISO 4217 (ex. 'EUR'→'€', 'USD'→'$', 'XOF'→'FCFA').
+ * Utilise formatToParts pour extraire la partie 'currency'.
+ * Fallback sur le code devise si introuvable ou si la devise est inconnue d'Intl.
+ */
+export function currencySymbol(currency: string, locale: string = DEFAULT_LOCALE): string {
+  try {
+    const parts = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(0)
+    const part = parts.find((p) => p.type === 'currency')
+    return part?.value ?? currency
+  } catch {
+    return currency
+  }
+}
+
+/** 65574.87 → "65 574,87 €" (FR) · "€65,574.87" (en-US). Alias de formatCurrency('EUR'). */
+export function formatEUR(
+  value: number | null | undefined,
+  locale: string = DEFAULT_LOCALE
+): string {
+  return formatCurrency(value, 'EUR', locale)
 }
 
 /** 0.0123 → "+1,23 %" (FR) · "+1.23%" (en-US). Signe par défaut. */

@@ -16,7 +16,7 @@ import { useMemo, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslations } from 'next-intl'
-import { formatEUR } from '@evolve/utils'
+import { formatCurrency } from '@evolve/utils'
 import {
   Heading,
   Text,
@@ -56,7 +56,14 @@ function capChanged(current: number | null, next: string): boolean {
   return (current ?? null) !== nextVal
 }
 
-export function SettingsView({ initialSettings }: { initialSettings: ClubSettings }) {
+export function SettingsView({
+  initialSettings,
+  currency = 'EUR',
+}: {
+  initialSettings: ClubSettings
+  /** Code ISO 4217 de la devise du club actif (ex. 'EUR', 'XOF'). Défaut 'EUR'. */
+  currency?: string
+}) {
   const t = useTranslations('admin.settings')
   const tc = useTranslations('common')
   const toast = useToast()
@@ -107,8 +114,8 @@ export function SettingsView({ initialSettings }: { initialSettings: ClubSetting
         before:
           initialSettings.annualInvestmentCap === null
             ? dash
-            : formatEUR(initialSettings.annualInvestmentCap),
-        after: parsed !== null && !Number.isNaN(parsed) ? formatEUR(parsed) : dash,
+            : formatCurrency(initialSettings.annualInvestmentCap, currency),
+        after: parsed !== null && !Number.isNaN(parsed) ? formatCurrency(parsed, currency) : dash,
       })
     }
     return list
@@ -118,6 +125,7 @@ export function SettingsView({ initialSettings }: { initialSettings: ClubSetting
     form.brokerAccountRef,
     form.annualInvestmentCap,
     t,
+    currency,
   ])
 
   /** Exécute la mutation (après validation + éventuelle double-confirmation). */

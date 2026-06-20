@@ -3,7 +3,7 @@ import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
 import { getClubSettings } from '@/lib/data/clubSettings'
-import { getSessionUser, getAdminContext } from '@/lib/data/request'
+import { getSessionUser, getAdminContext, getActiveClubMembership } from '@/lib/data/request'
 import { SettingsView } from './SettingsView'
 import { Forbidden } from '../Forbidden'
 
@@ -24,6 +24,10 @@ export default async function AdminSettingsPage() {
   const ctx = await getAdminContext(user.id)
   if (!ctx) return <Forbidden />
 
-  const settings = await getClubSettings(supabase, ctx.clubId)
-  return <SettingsView initialSettings={settings} />
+  const [settings, membership] = await Promise.all([
+    getClubSettings(supabase, ctx.clubId),
+    getActiveClubMembership(user.id),
+  ])
+  const currency = membership?.clubs?.currency ?? 'EUR'
+  return <SettingsView initialSettings={settings} currency={currency} />
 }

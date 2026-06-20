@@ -25,7 +25,7 @@ import {
   Spinner,
   useToast,
 } from '@evolve/ui'
-import { formatEUR } from '@evolve/utils'
+import { formatCurrency } from '@evolve/utils'
 
 import { analyticsEvents } from '@/lib/analytics'
 import { openAttestation } from '@/lib/attestation/openAttestation'
@@ -41,7 +41,14 @@ const STATUS_PILL: Record<ContributionStatus, PillStatus> = {
   exempt: 'cotisation-exempt',
 }
 
-export function ContributionsView({ initialData }: { initialData: ContributionsData | null }) {
+export function ContributionsView({
+  initialData,
+  currency = 'EUR',
+}: {
+  initialData: ContributionsData | null
+  /** Code ISO 4217 de la devise du club actif (ex. 'EUR', 'XOF'). Défaut 'EUR'. */
+  currency?: string
+}) {
   const t = useTranslations('contributions')
   const tc = useTranslations('common')
   const toast = useToast()
@@ -198,7 +205,7 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
                       matrice ne fournit pas de « Montant dû » exploitable (et que le calcul dérivé
                       reste 0), on bascule sur la variante SANS montant — JAMAIS « 0,00 € ». */}
                   {data.amountDue > 0
-                    ? t('lateAlert.title', { amount: formatEUR(data.amountDue) })
+                    ? t('lateAlert.title', { amount: formatCurrency(data.amountDue, currency) })
                     : t('lateAlert.titleNoAmount')}
                 </Text>
                 <Text variant="caption" color="text-sec" className="normal-case tracking-normal">
@@ -215,7 +222,7 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
               {t('kpi.netMarketValue')}
             </p>
             <p className="mt-2 font-display font-[800] text-[26px] sm:text-[32px] leading-none tracking-[-0.02em] text-text [font-feature-settings:'tnum','lnum']">
-              {data.netMarketValue != null ? formatEUR(data.netMarketValue) : '—'}
+              {data.netMarketValue != null ? formatCurrency(data.netMarketValue, currency) : '—'}
             </p>
           </div>
 
@@ -230,7 +237,7 @@ export function ContributionsView({ initialData }: { initialData: ContributionsD
             <Text className="font-semibold">{t('penalties.title')}</Text>
             <Text color="text-sec" className="mt-1 block">
               {data.penalties > 0
-                ? t('penalties.active', { amount: formatEUR(data.penalties) })
+                ? t('penalties.active', { amount: formatCurrency(data.penalties, currency) })
                 : t('penalties.none')}
             </Text>
           </div>

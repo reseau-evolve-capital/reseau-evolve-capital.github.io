@@ -22,7 +22,7 @@ import {
   SelectContent,
   SelectItem,
 } from '@evolve/ui'
-import { formatEUR } from '@evolve/utils'
+import { formatCurrency } from '@evolve/utils'
 import {
   useAdminContributions,
   type AdminContribPayload,
@@ -34,9 +34,12 @@ const ALL = 'all'
 export function AdminCotisationsView({
   initialData,
   members,
+  currency = 'EUR',
 }: {
   initialData: AdminContribPayload
   members: AdminContribOption[]
+  /** Code ISO 4217 de la devise du club actif (ex. 'EUR', 'XOF'). Défaut 'EUR'. */
+  currency?: string
 }) {
   const t = useTranslations('admin')
   const [member, setMember] = useQueryState('membre')
@@ -96,7 +99,9 @@ export function AdminCotisationsView({
             {t('cotisations.kpi.netMarketValue')}
           </p>
           <p className="mt-2 font-display font-[800] text-[26px] sm:text-[32px] leading-none tracking-[-0.02em] text-text [font-feature-settings:'tnum','lnum']">
-            {selectedMember.netMarketValue != null ? formatEUR(selectedMember.netMarketValue) : '—'}
+            {selectedMember.netMarketValue != null
+              ? formatCurrency(selectedMember.netMarketValue, currency)
+              : '—'}
           </p>
         </div>
       )}
