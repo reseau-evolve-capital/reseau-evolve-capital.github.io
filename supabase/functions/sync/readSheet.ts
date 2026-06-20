@@ -32,6 +32,29 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes
 }
 
+/**
+ * Normalise une chaîne base64 (ou base64url) avant de la passer à `atob()`.
+ *
+ * `GOOGLE_SA_KEY_BASE64` peut être généré sans padding `=` (ex. `base64 -w0` tronqué,
+ * copier-coller depuis certains outils), ce qui fait lever « Invalid character » dans
+ * `atob()` en Deno dès que la longueur n'est pas un multiple de 4.
+ *
+ * Opérations :
+ *   1. retire les espaces et sauts de ligne ;
+ *   2. convertit base64url (`-`/`_`) en base64 standard (`+`/`/`) par sécurité ;
+ *   3. ré-ajoute le padding `=` manquant pour une longueur multiple de 4.
+ *
+ * N'est PAS utilisée sur les données PEM internes (déjà nettoyées par `importPrivateKey`).
+ */
+function normalizeBase64(s: string): string {
+  let b64 = s.replace(/[\s\r\n]/g, '')
+  b64 = b64.replace(/-/g, '+').replace(/_/g, '/')
+  const rem = b64.length % 4
+  if (rem === 2) b64 += '=='
+  else if (rem === 3) b64 += '='
+  return b64
+}
+
 /** Lit et décode la clé de service depuis GOOGLE_SA_KEY_BASE64. Throw si absente/malformée. */
 function loadServiceAccount(): ServiceAccountKey {
   const raw = Deno.env.get('GOOGLE_SA_KEY_BASE64')
@@ -40,9 +63,10 @@ function loadServiceAccount(): ServiceAccountKey {
   }
   let parsed: unknown
   try {
-    parsed = JSON.parse(atob(raw))
+    parsed = JSON.parse(atob(normalizeBase64(raw)))
   } catch (cause) {
-    throw new Error(`GOOGLE_SA_KEY_BASE64 illisible (base64/JSON invalide): ${String(cause)}`)
+    // Ne pas logger `raw` (contient la clé privée).
+    throw new Error(`GOOGLE_SA_KEY_BASE64 illisible (base64/JSON invalide) : ${String(cause)}`)
   }
   if (
     typeof parsed !== 'object' ||

@@ -40,17 +40,58 @@ function base64ToBytes(b64: string): Uint8Array {
   return bytes
 }
 
-/** Lit et décode la clé de service depuis GOOGLE_SA_KEY_BASE64. Throw si absente/malformée. */
+/**
+ * Normalise une chaîne base64 (ou base64url) avant de la passer à `atob()`.
+ *
+ * Problème : `GOOGLE_SA_KEY_BASE64` peut être généré sans padding `=` (ex. via
+ * `base64 -w0` ou certains outils CLI), ce qui fait lever « Invalid character »
+ * dans `atob()` en Deno dès que la longueur n'est pas un multiple de 4.
+ *
+ * Cette fonction :
+ *   1. retire les espaces et sauts de ligne (copier-coller, var Vercel multi-ligne) ;
+ *   2. convertit les caractères base64url (`-` → `+`, `_` → `/`) en base64 standard ;
+ *   3. ré-ajoute le padding `=` manquant pour obtenir une longueur multiple de 4.
+ *
+ * Elle N'EST PAS utilisée sur les clés PEM internes (déjà nettoyées par
+ * `importPrivateKey`) pour éviter tout effet de bord sur des données bien formées.
+ *
+ * Exportée pour les tests unitaires.
+ */
+export function normalizeBase64(s: string): string {
+  // 1. Retire espaces / sauts de ligne.
+  let b64 = s.replace(/[\s\r\n]/g, '')
+  // 2. base64url → base64 standard.
+  b64 = b64.replace(/-/g, '+').replace(/_/g, '/')
+  // 3. Ré-ajoute le padding `=` (longueur modulo 4).
+  const rem = b64.length % 4
+  if (rem === 2) b64 += '=='
+  else if (rem === 3) b64 += '='
+  // rem === 1 est invalide quelle que soit la norme (on laisse atob() le signaler).
+  return b64
+}
+
+/**
+ * Lit et décode la clé de service depuis GOOGLE_SA_KEY_BASE64.
+ * Throw `SaKeyError` (jamais Error générique) si absente, décodage base64 impossible,
+ * JSON malformé ou champs obligatoires manquants — le message est actionnable mais
+ * ne contient JAMAIS la valeur brute de la variable (clé privée).
+ */
 function loadServiceAccount(): ServiceAccountKey {
   const raw = Deno.env.get('GOOGLE_SA_KEY_BASE64')
   if (!raw) {
-    throw new Error("GOOGLE_SA_KEY_BASE64 manquante dans l'environnement de la fonction.")
+    throw new SaKeyError(
+      "Variable GOOGLE_SA_KEY_BASE64 absente de l'environnement. Vérifie les secrets Supabase."
+    )
   }
   let parsed: unknown
   try {
-    parsed = JSON.parse(atob(raw))
+    parsed = JSON.parse(atob(normalizeBase64(raw)))
   } catch (cause) {
-    throw new Error(`GOOGLE_SA_KEY_BASE64 illisible (base64/JSON invalide): ${String(cause)}`)
+    // Ne PAS inclure `raw` dans le message — il contient la clé privée.
+    throw new SaKeyError(
+      `GOOGLE_SA_KEY_BASE64 illisible (base64/JSON invalide) : ${String(cause)}. ` +
+        'Vérifie que la variable est bien le JSON du Service Account encodé en base64 standard.'
+    )
   }
   if (
     typeof parsed !== 'object' ||
@@ -58,7 +99,10 @@ function loadServiceAccount(): ServiceAccountKey {
     typeof (parsed as Record<string, unknown>).client_email !== 'string' ||
     typeof (parsed as Record<string, unknown>).private_key !== 'string'
   ) {
-    throw new Error('GOOGLE_SA_KEY_BASE64 : champs client_email / private_key manquants.')
+    throw new SaKeyError(
+      'GOOGLE_SA_KEY_BASE64 décodé mais les champs client_email / private_key sont manquants. ' +
+        "Vérifie que c'est bien le JSON complet d'un Service Account Google."
+    )
   }
   const obj = parsed as Record<string, unknown>
   return { client_email: obj.client_email as string, private_key: obj.private_key as string }
@@ -126,6 +170,18 @@ async function fetchAccessToken(jwt: string): Promise<string> {
     throw new Error('Réponse OAuth2 sans access_token.')
   }
   return token
+}
+
+/**
+ * Erreur typée indiquant que la clé de service Google (GOOGLE_SA_KEY_BASE64) est absente
+ * ou ne peut pas être décodée / parsée. Le handler la traduit en `sa_key_invalid` (500)
+ * avec un message actionnable sans jamais exposer la valeur de la clé.
+ */
+export class SaKeyError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'SaKeyError'
+  }
 }
 
 /**
