@@ -45,6 +45,7 @@ export type SheetConnectionStatus =
   | 'not_shared' // feuille non partagée avec le Service Account (data-negative)
   | 'structure' // feuille accessible mais onglet(s) bloquant(s) absent(s) (data-warning)
   | 'invalid' // ID / URL invalide ou feuille introuvable (data-negative)
+  | 'sa_key_invalid' // clé Service Account absente ou illisible côté infra (data-negative) — contacter un admin
   | 'error' // erreur technique inattendue (data-negative)
 
 export interface SheetConnectionTestLabels {
@@ -70,6 +71,10 @@ export interface SheetConnectionTestLabels {
   structureBody: (missingTabs: string[]) => string
   invalidTitle: string
   invalidBody: string
+  /** Titre du bloc erreur clé SA invalide (statut sa_key_invalid). Par défaut : "Clé Service Account invalide". */
+  saKeyInvalidTitle?: string
+  /** Corps du bloc erreur clé SA invalide. Par défaut : "Contacte un administrateur." */
+  saKeyInvalidBody?: string
   errorTitle: string
   errorBody: string
 }
@@ -233,6 +238,14 @@ export function SheetConnectionTest({
           tone="negative"
           title={labels.invalidTitle}
           body={labels.invalidBody}
+          live="alert"
+        />
+      )}
+      {status === 'sa_key_invalid' && (
+        <ResultBox
+          tone="negative"
+          title={labels.saKeyInvalidTitle ?? 'Clé Service Account invalide'}
+          body={labels.saKeyInvalidBody ?? 'Contacte un administrateur.'}
           live="alert"
         />
       )}

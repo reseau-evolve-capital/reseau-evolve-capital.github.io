@@ -22,7 +22,7 @@
 //       CLAUDE.md (a11y AA, zéro hex, formatage @evolve/utils, jamais de NaN/undefined).
 
 import * as React from 'react'
-import { formatEUR, formatRelativeTime } from '@evolve/utils'
+import { formatEUR, formatRelativeTime, formatDate } from '@evolve/utils'
 
 import { Badge } from '../../atoms/Badge'
 import { Icon } from '../../atoms/Icon'
@@ -43,6 +43,8 @@ export interface NetworkClubRow {
   aggregatedValuation: number | null
   /** Date ISO du dernier sync réussi, ou `null` si jamais synchronisé. */
   lastSyncedAt: string | null
+  /** Date ISO d'ajout du club (clubs.created_at). Optionnel : « — » si absent. */
+  createdAt?: string | null
   /** Matrice Sheets branchée (clubs.sheet_id non vide). */
   matrixConnected: boolean
 }
@@ -50,6 +52,7 @@ export interface NetworkClubRow {
 /** En-têtes de colonnes (défauts FR). */
 export interface NetworkClubsTableColumnLabels {
   club: string
+  createdAt: string
   members: string
   valuation: string
   lastSync: string
@@ -59,6 +62,7 @@ export interface NetworkClubsTableColumnLabels {
 
 const DEFAULT_COLUMN_LABELS: NetworkClubsTableColumnLabels = {
   club: 'Club',
+  createdAt: "Date d'ajout",
   members: 'Membres actifs',
   valuation: 'Valo agrégée',
   lastSync: 'Dernière sync',
@@ -221,7 +225,7 @@ export function NetworkClubsTable({
     )
   }
 
-  const colCount = actionsEnabled ? 6 : 5
+  const colCount = actionsEnabled ? 7 : 6
 
   return (
     <div className="w-full overflow-x-auto">
@@ -230,6 +234,9 @@ export function NetworkClubsTable({
           <tr className="border-b border-border">
             <th scope="col" className={TH_CLASS}>
               {columnLabels.club}
+            </th>
+            <th scope="col" className={TH_CLASS}>
+              {columnLabels.createdAt}
             </th>
             <th scope="col" className={cn(TH_CLASS, 'text-right')}>
               {columnLabels.members}
@@ -283,6 +290,15 @@ export function NetworkClubsTable({
                           <span className="font-mono text-[12px] text-text-ter">{club.slug}</span>
                         </div>
                       </div>
+                    </td>
+
+                    {/* Date d'ajout du club (créé le). « — » muet si absente. */}
+                    <td className={cn(TD_CLASS, 'text-text-sec whitespace-nowrap')}>
+                      {club.createdAt ? (
+                        formatDate(club.createdAt, locale)
+                      ) : (
+                        <span aria-hidden="true">—</span>
+                      )}
                     </td>
 
                     {/* Membres actifs. */}

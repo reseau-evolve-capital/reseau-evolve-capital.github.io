@@ -18,7 +18,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { slugify } from '@evolve/utils'
+import { slugify, currencySymbol } from '@evolve/utils'
 import {
   Stepper,
   SheetConnectionTest,
@@ -54,9 +54,105 @@ import {
 
 type StaffRole = 'president' | 'treasurer'
 
-// Listes courtes ISO (V0). Le pays/devise par défaut = FR / EUR (cf. RPC network_create_club).
-const COUNTRIES = ['FR', 'BE', 'CH', 'CI', 'SN', 'CA'] as const
-const CURRENCIES = ['EUR', 'CHF', 'USD', 'XOF', 'CAD'] as const
+// Pays ISO 3166-1 alpha-2, groupés par région pour faciliter le choix.
+// Le code est la valeur stockée (colonne `country` dans `clubs`) ; `name` est l'étiquette affichée.
+const COUNTRIES: { code: string; name: string }[] = [
+  // Europe
+  { code: 'FR', name: 'France' },
+  { code: 'BE', name: 'Belgique' },
+  { code: 'CH', name: 'Suisse' },
+  { code: 'LU', name: 'Luxembourg' },
+  { code: 'MC', name: 'Monaco' },
+  { code: 'DE', name: 'Allemagne' },
+  { code: 'ES', name: 'Espagne' },
+  { code: 'IT', name: 'Italie' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'NL', name: 'Pays-Bas' },
+  { code: 'GB', name: 'Royaume-Uni' },
+  { code: 'IE', name: 'Irlande' },
+  { code: 'AT', name: 'Autriche' },
+  { code: 'SE', name: 'Suède' },
+  { code: 'NO', name: 'Norvège' },
+  { code: 'DK', name: 'Danemark' },
+  { code: 'FI', name: 'Finlande' },
+  { code: 'PL', name: 'Pologne' },
+  { code: 'RO', name: 'Roumanie' },
+  // Afrique de l'Ouest (zone BCEAO)
+  { code: 'SN', name: 'Sénégal' },
+  { code: 'CI', name: "Côte d'Ivoire" },
+  { code: 'BJ', name: 'Bénin' },
+  { code: 'TG', name: 'Togo' },
+  { code: 'ML', name: 'Mali' },
+  { code: 'BF', name: 'Burkina Faso' },
+  { code: 'GN', name: 'Guinée' },
+  { code: 'NE', name: 'Niger' },
+  { code: 'GW', name: 'Guinée-Bissau' },
+  // Afrique Centrale (zone BEAC)
+  { code: 'CM', name: 'Cameroun' },
+  { code: 'CG', name: 'Congo' },
+  { code: 'GA', name: 'Gabon' },
+  { code: 'CF', name: 'Centrafrique' },
+  { code: 'TD', name: 'Tchad' },
+  { code: 'GQ', name: 'Guinée Équatoriale' },
+  { code: 'CD', name: 'RD Congo' },
+  // Afrique de l'Est & Australe
+  { code: 'RW', name: 'Rwanda' },
+  { code: 'KE', name: 'Kenya' },
+  { code: 'TZ', name: 'Tanzanie' },
+  { code: 'UG', name: 'Ouganda' },
+  { code: 'ET', name: 'Éthiopie' },
+  { code: 'MG', name: 'Madagascar' },
+  { code: 'MU', name: 'Maurice' },
+  { code: 'ZA', name: 'Afrique du Sud' },
+  { code: 'ZW', name: 'Zimbabwe' },
+  { code: 'ZM', name: 'Zambie' },
+  { code: 'MZ', name: 'Mozambique' },
+  { code: 'AO', name: 'Angola' },
+  // Afrique du Nord
+  { code: 'MA', name: 'Maroc' },
+  { code: 'TN', name: 'Tunisie' },
+  { code: 'DZ', name: 'Algérie' },
+  { code: 'EG', name: 'Égypte' },
+  { code: 'LY', name: 'Libye' },
+  // Amériques
+  { code: 'US', name: 'États-Unis' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'MX', name: 'Mexique' },
+  { code: 'BR', name: 'Brésil' },
+  { code: 'AR', name: 'Argentine' },
+  { code: 'CL', name: 'Chili' },
+  { code: 'CO', name: 'Colombie' },
+  // Asie / Pacifique
+  { code: 'JP', name: 'Japon' },
+  { code: 'CN', name: 'Chine' },
+  { code: 'IN', name: 'Inde' },
+  { code: 'SG', name: 'Singapour' },
+  { code: 'HK', name: 'Hong Kong' },
+  { code: 'AU', name: 'Australie' },
+]
+
+// Devises ISO 4217 avec étiquette lisible.
+const CURRENCIES: { code: string; name: string }[] = [
+  { code: 'EUR', name: 'Euro (€)' },
+  { code: 'CHF', name: 'Franc suisse (CHF)' },
+  { code: 'USD', name: 'Dollar US ($)' },
+  { code: 'XOF', name: 'Franc CFA BCEAO (XOF)' },
+  { code: 'XAF', name: 'Franc CFA BEAC (XAF)' },
+  { code: 'CAD', name: 'Dollar canadien (CA$)' },
+  { code: 'GBP', name: 'Livre sterling (£)' },
+  { code: 'MAD', name: 'Dirham marocain (MAD)' },
+  { code: 'TND', name: 'Dinar tunisien (TND)' },
+  { code: 'DZD', name: 'Dinar algérien (DZD)' },
+  { code: 'EGP', name: 'Livre égyptienne (EGP)' },
+  { code: 'ZAR', name: 'Rand sud-africain (ZAR)' },
+  { code: 'NGN', name: 'Naira nigérian (NGN)' },
+  { code: 'GHS', name: 'Cedi ghanéen (GHS)' },
+  { code: 'KES', name: 'Shilling kenyan (KES)' },
+  { code: 'BRL', name: 'Réal brésilien (BRL)' },
+  { code: 'JPY', name: 'Yen japonais (JPY)' },
+  { code: 'SGD', name: 'Dollar de Singapour (SGD)' },
+  { code: 'AUD', name: 'Dollar australien (A$)' },
+]
 
 export function AddClubWizard({ serviceAccountEmail }: { serviceAccountEmail: string | null }) {
   const t = useTranslations('reseau.addClub')
@@ -229,8 +325,8 @@ function InfosStep({ onCreated }: { onCreated: (clubId: string) => void }) {
               <SelectPortal>
                 <SelectContent>
                   {COUNTRIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.code} — {c.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -248,8 +344,8 @@ function InfosStep({ onCreated }: { onCreated: (clubId: string) => void }) {
               <SelectPortal>
                 <SelectContent>
                   {CURRENCIES.map((c) => (
-                    <SelectItem key={c} value={c}>
-                      {c}
+                    <SelectItem key={c.code} value={c.code}>
+                      {c.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -258,7 +354,7 @@ function InfosStep({ onCreated }: { onCreated: (clubId: string) => void }) {
           )}
         </FormField>
 
-        <FormField label={t('minContribution')}>
+        <FormField label={t('minContribution', { currency: currencySymbol(currency) })}>
           {(p) => (
             <Input
               {...p}
@@ -307,6 +403,11 @@ function MatrixStep({
   const [pending, startTransition] = React.useTransition()
 
   function applyProbe(res: ProbeResult) {
+    // Aide au debug en dev : le `detail` de l'Edge (http/forbidden/message brut) n'est pas affiché
+    // à l'utilisateur, mais il est précieux côté console quand le test tombe en 'error'.
+    if (res.status === 'error' && process.env.NODE_ENV !== 'production') {
+      console.error('[sheet-probe] échec technique — detail:', res.detail)
+    }
     setStatus(res.status)
     if (res.status === 'success') setPreview(res.preview)
     else setPreview(undefined)
@@ -342,7 +443,8 @@ function MatrixStep({
     startTransition(async () => {
       const res = await setClubSheetAction(clubId, sheetId)
       if (!res.ok) {
-        setSaveError(t('saveError'))
+        // 'duplicate' = matrice déjà reliée à un autre club (garde DB, migration 048).
+        setSaveError(res.error === 'duplicate' ? t('duplicateMatrix') : t('saveError'))
         return
       }
       onConnected()
@@ -402,6 +504,8 @@ function MatrixStep({
           structureBody: (tabs) => t('structureBody', { tabs: tabs.join(', ') }),
           invalidTitle: t('invalidTitle'),
           invalidBody: t('invalidBody'),
+          saKeyInvalidTitle: t('saKeyInvalidTitle'),
+          saKeyInvalidBody: t('saKeyInvalidBody'),
           errorTitle: t('errorTitle'),
           errorBody: t('errorBody'),
         }}

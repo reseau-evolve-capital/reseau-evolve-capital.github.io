@@ -1402,6 +1402,7 @@
         "tableLabel": "Network clubs",
         "columns": {
           "club": "Club",
+          "createdAt": "Added on",
           "members": "Active members",
           "valuation": "Aggregated value",
           "lastSync": "Last sync",
@@ -1456,7 +1457,7 @@
         "cityPlaceholder": "Lille",
         "country": "Country",
         "currency": "Currency",
-        "minContribution": "Minimum contribution (€)",
+        "minContribution": "Minimum contribution ({currency})",
         "submit": "Continue",
         "errors": {
           "name": "Enter the club name.",
@@ -1489,11 +1490,14 @@
         "structureBody": "The sheet is reachable but expected tabs are missing: {tabs}.",
         "invalidTitle": "Sheet not found",
         "invalidBody": "The URL or identifier does not match any Google Sheets file.",
+        "saKeyInvalidTitle": "Service account not configured",
+        "saKeyInvalidBody": "The Google service account key is missing or unreadable on the server. Contact an administrator (GOOGLE_SA_KEY_BASE64 / GOOGLE_SA_EMAIL).",
         "errorTitle": "Test failed",
-        "errorBody": "Something went wrong during the test. Please try again shortly.",
+        "errorBody": "The test service is unreachable (the Edge Function may not be running). Make sure the sheet is shared and try again; if the problem persists, contact an administrator.",
         "gateHint": "The test must succeed to continue.",
         "submit": "Continue",
-        "saveError": "Connecting the matrix failed. Please try again shortly."
+        "saveError": "Connecting the matrix failed. Please try again shortly.",
+        "duplicateMatrix": "This matrix is already linked to another club. A matrix can only be used by one club."
       },
       "import": {
         "title": "First import & lead",
@@ -1651,7 +1655,22 @@
         }
       },
       "error": {
-        "title": "Unable to load the club details."
+        "title": "Unable to load the club details.",
+        "forbidden": "Access denied — network administrator or board member role required.",
+        "notFound": "This club could not be found or no longer belongs to the network.",
+        "generic": "An unexpected error occurred. Please try again in a moment."
+      },
+      "delete": {
+        "sectionTitle": "Danger zone",
+        "button": "Delete this club",
+        "confirmTitle": "Delete club {name}?",
+        "confirmDesc": "This action is IRREVERSIBLE. All members, positions, contributions and sync history for this club will be permanently deleted.",
+        "acknowledge": "I understand this deletion is permanent.",
+        "typeToConfirm": "Type {slug} to confirm",
+        "toastSuccessTitle": "Club deleted",
+        "toastSuccessMessage": "The club has been removed from the network.",
+        "toastErrorTitle": "Deletion failed",
+        "toastErrorMessage": "Deleting the club failed. Please try again in a moment."
       }
     }
   }

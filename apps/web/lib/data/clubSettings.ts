@@ -131,30 +131,58 @@ export function brokerRefChanged(current: string | null, next: string): boolean 
 
 // ─── Lecture DB (session + RLS) ──────────────────────────────────────────────
 
-/** Lit les paramètres du club courant. RLS « authenticated » lecture seule sur clubs. */
+/**
+ * Erreur métier typée renvoyée par `getClubSettings` quand la RLS refuse l'accès
+ * (club sans membre, club fraîchement créé, policy non encore appliquée pour ce rôle).
+ * Distincte d'une `PostgrestError` réseau : elle permet à l'appelant de construire un
+ * fallback minimal sans propager un crash à l'error boundary. Levée exclusivement quand
+ * `maybeSingle()` renvoie `null` (0 ligne visible).
+ */
+export class ClubSettingsNotReadableError extends Error {
+  readonly clubId: string
+  constructor(clubId: string) {
+    super(`club_settings_not_readable:${clubId}`)
+    this.name = 'ClubSettingsNotReadableError'
+    this.clubId = clubId
+  }
+}
+
+/**
+ * Lit les paramètres du club courant. RLS « authenticated » lecture seule sur clubs.
+ *
+ * Utilise `.maybeSingle()` : si la RLS renvoie 0 ligne (club sans membre, club fraîchement
+ * créé, ou policy non encore appliquée), lève une `ClubSettingsNotReadableError` typée au
+ * lieu de propager `PGRST116` (no rows) — ce qui permet aux appelants de construire un
+ * fallback minimal (ex. `getNetworkClubDetail` dérive le nom depuis `network_list_clubs`).
+ */
 export async function getClubSettings(
   supabase: ServerClient,
   clubId: string
 ): Promise<ClubSettings> {
+  type Row = Pick<
+    ClubRow,
+    | 'id'
+    | 'name'
+    | 'city'
+    | 'country'
+    | 'broker_account_ref'
+    | 'annual_investment_cap'
+    | 'min_contribution'
+  > & { settings: ClubRow['settings'] }
+
   const { data, error } = await supabase
     .from('clubs')
     .select(
       'id, name, city, country, broker_account_ref, annual_investment_cap, min_contribution, settings'
     )
     .eq('id', clubId)
-    .single<
-      Pick<
-        ClubRow,
-        | 'id'
-        | 'name'
-        | 'city'
-        | 'country'
-        | 'broker_account_ref'
-        | 'annual_investment_cap'
-        | 'min_contribution'
-      > & { settings: ClubRow['settings'] }
-    >()
+    .maybeSingle<Row>()
+
+  // Erreur réseau / Postgres réelle (pas PGRST116 puisqu'on utilise maybeSingle).
   if (error) throw error
+
+  // Aucune ligne visible : RLS refuse l'accès → erreur métier typée (non-PGRST116).
+  if (data === null) throw new ClubSettingsNotReadableError(clubId)
 
   const settings = (data.settings ?? {}) as Record<string, unknown>
   const brokerName = typeof settings['broker_name'] === 'string' ? settings['broker_name'] : null

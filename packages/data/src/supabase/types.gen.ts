@@ -1244,6 +1244,7 @@ export type Database = {
         }
         Returns: string
       }
+      network_delete_club: { Args: { p_club_id: string }; Returns: undefined }
       network_grant_role: {
         Args: {
           p_role: Database['public']['Enums']['network_role']
@@ -1269,6 +1270,7 @@ export type Database = {
           aggregated_valuation: number
           city: string
           country: string
+          created_at: string
           id: string
           last_synced_at: string
           matrix_connected: boolean

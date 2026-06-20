@@ -1402,6 +1402,7 @@
         "tableLabel": "Clubs du réseau",
         "columns": {
           "club": "Club",
+          "createdAt": "Date d'ajout",
           "members": "Membres actifs",
           "valuation": "Valo agrégée",
           "lastSync": "Dernière sync",
@@ -1456,7 +1457,7 @@
         "cityPlaceholder": "Lille",
         "country": "Pays",
         "currency": "Devise",
-        "minContribution": "Cotisation minimale (€)",
+        "minContribution": "Cotisation minimale ({currency})",
         "submit": "Continuer",
         "errors": {
           "name": "Saisis le nom du club.",
@@ -1489,11 +1490,14 @@
         "structureBody": "La feuille est accessible mais des onglets attendus manquent : {tabs}.",
         "invalidTitle": "Feuille introuvable",
         "invalidBody": "L’URL ou l’identifiant ne correspond à aucune feuille Google Sheets.",
+        "saKeyInvalidTitle": "Compte de service non configuré",
+        "saKeyInvalidBody": "La clé du compte de service Google est absente ou illisible côté serveur. Contacte un administrateur (variable GOOGLE_SA_KEY_BASE64 / GOOGLE_SA_EMAIL).",
         "errorTitle": "Test impossible",
-        "errorBody": "Une erreur est survenue pendant le test. Réessaie dans un instant.",
+        "errorBody": "Le service de test est injoignable (l’Edge Function n’a peut-être pas démarré). Vérifie que la feuille est partagée puis réessaie ; si le problème persiste, contacte un administrateur.",
         "gateHint": "Le test doit réussir pour continuer.",
         "submit": "Continuer",
-        "saveError": "La connexion de la matrice a échoué. Réessaie dans un instant."
+        "saveError": "La connexion de la matrice a échoué. Réessaie dans un instant.",
+        "duplicateMatrix": "Cette matrice est déjà reliée à un autre club. Une matrice ne peut servir qu’à un seul club."
       },
       "import": {
         "title": "Premier import & responsable",
@@ -1651,7 +1655,22 @@
         }
       },
       "error": {
-        "title": "Impossible de charger la fiche du club."
+        "title": "Impossible de charger la fiche du club.",
+        "forbidden": "Accès refusé — rôle administrateur ou membre du bureau réseau requis.",
+        "notFound": "Ce club est introuvable ou n'appartient plus au réseau.",
+        "generic": "Une erreur inattendue est survenue. Réessaie dans un instant."
+      },
+      "delete": {
+        "sectionTitle": "Zone de danger",
+        "button": "Supprimer ce club",
+        "confirmTitle": "Supprimer le club {name} ?",
+        "confirmDesc": "Cette action est IRRÉVERSIBLE. Tous les membres, positions, cotisations et historiques de synchronisation de ce club seront définitivement supprimés.",
+        "acknowledge": "Je comprends que cette suppression est définitive.",
+        "typeToConfirm": "Tape {slug} pour confirmer",
+        "toastSuccessTitle": "Club supprimé",
+        "toastSuccessMessage": "Le club a été supprimé du réseau.",
+        "toastErrorTitle": "Suppression impossible",
+        "toastErrorMessage": "La suppression du club a échoué. Réessaie dans un instant."
       }
     }
   }

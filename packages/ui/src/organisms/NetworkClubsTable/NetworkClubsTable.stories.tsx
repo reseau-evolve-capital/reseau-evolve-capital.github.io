@@ -13,6 +13,7 @@ const CLUBS: NetworkClubRow[] = [
     activeMembersCount: 18,
     aggregatedValuation: 642_188.42,
     lastSyncedAt: '2026-06-18T10:30:00Z', // il y a ~1 h → ok (vert)
+    createdAt: '2024-03-12T08:00:00Z',
     matrixConnected: true,
   },
   {
@@ -22,6 +23,7 @@ const CLUBS: NetworkClubRow[] = [
     activeMembersCount: 11,
     aggregatedValuation: 128_400,
     lastSyncedAt: '2026-06-16T09:00:00Z', // il y a > 24 h → stale (ambre)
+    createdAt: '2025-01-20T08:00:00Z',
     matrixConnected: true,
   },
   {
@@ -32,6 +34,7 @@ const CLUBS: NetworkClubRow[] = [
     activeMembersCount: 0,
     aggregatedValuation: null,
     lastSyncedAt: null,
+    createdAt: '2026-06-10T08:00:00Z',
     matrixConnected: false,
   },
 ]

@@ -47,6 +47,7 @@ import {
 } from '@/lib/data/clubSettings'
 import type { NetworkClubDetail } from '@/lib/data/network'
 import {
+  deleteClubAction,
   listSheetSnapshots,
   probeSheet,
   provisionFirstStaffAction,
@@ -173,7 +174,80 @@ export function ClubDetailView({
         isAdmin={isAdmin}
         onChanged={() => router.refresh()}
       />
+
+      {/* Zone de danger : suppression du club (network_admin uniquement). Permet de nettoyer un club
+          orphelin (créé puis abandonné à l'étape matrice) ou de retirer définitivement un club. */}
+      {isAdmin && <DangerZoneSection clubId={club.id} clubSlug={club.slug} clubName={club.name} />}
     </div>
+  )
+}
+
+// ── Zone de danger : suppression du club ──────────────────────────────────────
+function DangerZoneSection({
+  clubId,
+  clubSlug,
+  clubName,
+}: {
+  clubId: string
+  clubSlug: string
+  clubName: string
+}) {
+  const t = useTranslations('reseau.clubDetail.delete')
+  const tc = useTranslations('common')
+  const router = useRouter()
+  const toast = useToast()
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const [pending, startTransition] = React.useTransition()
+
+  function confirmDelete() {
+    startTransition(async () => {
+      const res = await deleteClubAction(clubId)
+      if (!res.ok) {
+        toast.error({ title: t('toastErrorTitle'), message: t('toastErrorMessage') })
+        return
+      }
+      setConfirmOpen(false)
+      toast.success({ title: t('toastSuccessTitle'), message: t('toastSuccessMessage') })
+      router.push('/reseau/clubs')
+      router.refresh()
+    })
+  }
+
+  return (
+    <section className="flex flex-col gap-4 rounded-[12px] border border-data-negative-50 bg-card p-5">
+      <Heading level="h2" className="text-[16px] text-data-negative">
+        {t('sectionTitle')}
+      </Heading>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Text className="max-w-prose text-[13px] text-text-sec">{t('confirmDesc')}</Text>
+        <button
+          type="button"
+          onClick={() => setConfirmOpen(true)}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-[10px] border border-data-negative px-4 py-2 text-[14px] font-semibold text-data-negative transition-colors duration-[150ms] hover:bg-data-negative-50 focus:outline-none focus-visible:shadow-[var(--sh-glow)]"
+        >
+          <Icon name="Trash2" size={16} aria-hidden="true" />
+          {t('button')}
+        </button>
+      </div>
+
+      <SensitiveConfirmModal
+        open={confirmOpen}
+        onOpenChange={(o) => {
+          if (!o) setConfirmOpen(false)
+        }}
+        title={t('confirmTitle', { name: clubName })}
+        description={t('confirmDesc')}
+        acknowledgeLabel={t('acknowledge')}
+        confirmationText={clubSlug}
+        confirmationLabel={t('typeToConfirm', { slug: clubSlug })}
+        confirmationPlaceholder={clubSlug}
+        cancelLabel={tc('cancel')}
+        confirmLabel={t('button')}
+        closeLabel={tc('close')}
+        isPending={pending}
+        onConfirm={confirmDelete}
+      />
+    </section>
   )
 }
 

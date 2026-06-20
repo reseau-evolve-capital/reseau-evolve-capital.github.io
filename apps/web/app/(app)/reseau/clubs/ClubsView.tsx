@@ -84,6 +84,7 @@ export function ClubsView({
           locale,
           columns: {
             club: t('table.columns.club'),
+            createdAt: t('table.columns.createdAt'),
             members: t('table.columns.members'),
             valuation: t('table.columns.valuation'),
             lastSync: t('table.columns.lastSync'),

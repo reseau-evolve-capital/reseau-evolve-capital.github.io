@@ -120,11 +120,18 @@ export function ReseauTabs() {
               type="button"
               className="inline-flex min-h-[44px] w-full items-center justify-between rounded-[10px] border border-border bg-card px-4 py-2 text-[14px] font-semibold text-text focus:outline-none focus-visible:shadow-[var(--sh-glow)]"
             >
-              <span className="inline-flex items-center gap-2">
-                {activeTab && <Icon name={activeTab.icon} size={16} aria-hidden="true" />}
-                {activeLabel}
+              <span className="inline-flex min-w-0 items-center gap-2">
+                {activeTab && (
+                  <Icon name={activeTab.icon} size={16} aria-hidden="true" className="shrink-0" />
+                )}
+                <span className="truncate">{activeLabel}</span>
               </span>
-              <Icon name="ChevronDown" size={16} aria-hidden="true" className="text-text-ter" />
+              <Icon
+                name="ChevronDown"
+                size={16}
+                aria-hidden="true"
+                className="shrink-0 text-text-ter"
+              />
             </button>
           </Dialog.Trigger>
           <Dialog.Portal>
@@ -146,11 +153,16 @@ export function ReseauTabs() {
                           aria-disabled="true"
                           className="flex min-h-[44px] items-center justify-between gap-3 rounded-[10px] px-3 py-2 text-[15px] text-text-ter"
                         >
-                          <span className="inline-flex items-center gap-3">
-                            <Icon name={tab.icon} size={20} aria-hidden="true" />
-                            {t(tab.key)}
+                          <span className="inline-flex min-w-0 items-center gap-3">
+                            <Icon
+                              name={tab.icon}
+                              size={20}
+                              aria-hidden="true"
+                              className="shrink-0"
+                            />
+                            <span className="truncate">{t(tab.key)}</span>
                           </span>
-                          <span className="rounded-full bg-card-sub px-2 py-0.5 text-[11px] font-semibold text-text-ter">
+                          <span className="shrink-0 rounded-full bg-card-sub px-2 py-0.5 text-[11px] font-semibold text-text-ter">
                             {t('soon')}
                           </span>
                         </span>
@@ -164,12 +176,12 @@ export function ReseauTabs() {
                         href={tab.href}
                         aria-current={active ? 'page' : undefined}
                         onClick={() => setDrawerOpen(false)}
-                        className={`flex min-h-[44px] items-center gap-3 rounded-[10px] px-3 py-2 text-[15px] font-medium focus:outline-none focus-visible:shadow-[var(--sh-glow)] ${
+                        className={`flex min-h-[44px] min-w-0 items-center gap-3 rounded-[10px] px-3 py-2 text-[15px] font-medium focus:outline-none focus-visible:shadow-[var(--sh-glow)] ${
                           active ? 'bg-brand-yellow/15 text-text' : 'text-text-sec hover:text-text'
                         }`}
                       >
-                        <Icon name={tab.icon} size={20} aria-hidden="true" />
-                        {t(tab.key)}
+                        <Icon name={tab.icon} size={20} aria-hidden="true" className="shrink-0" />
+                        <span className="truncate">{t(tab.key)}</span>
                       </Link>
                     </li>
                   )

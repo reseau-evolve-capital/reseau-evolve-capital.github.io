@@ -51,7 +51,36 @@ export const SelectContent = React.forwardRef<
     )}
     {...props}
   >
-    <RadixSelect.Viewport className="p-1">{children}</RadixSelect.Viewport>
+    <RadixSelect.ScrollUpButton className="flex items-center justify-center py-1 text-text-ter">
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path
+          d="M18 15l-6-6-6 6"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </RadixSelect.ScrollUpButton>
+    <RadixSelect.Viewport
+      className={cn(
+        'p-1',
+        'max-h-[min(var(--radix-select-content-available-height),320px)] overflow-y-auto'
+      )}
+    >
+      {children}
+    </RadixSelect.Viewport>
+    <RadixSelect.ScrollDownButton className="flex items-center justify-center py-1 text-text-ter">
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <path
+          d="M6 9l6 6 6-6"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </RadixSelect.ScrollDownButton>
   </RadixSelect.Content>
 ))
 SelectContent.displayName = 'SelectContent'
