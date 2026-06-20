@@ -17,7 +17,7 @@ import { assert, assertEquals } from 'jsr:@std/assert@^1'
 
 import { createSheetProbeHandler, extractSheetId, REQUIRED_TABS } from './index.ts'
 import type { SheetProbeDeps } from './index.ts'
-import { SheetMetaError } from './listSheetTabs.ts'
+import { normalizeBase64, SaKeyError, SheetMetaError } from './listSheetTabs.ts'
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -200,6 +200,36 @@ Deno.test(
   }
 )
 
+// ── 4 bis. Casse des onglets : Google Sheets résout les noms sans tenir compte de la casse
+//          (readSheet('Base') lit un onglet « BASE »). Le dry-run doit matcher comme la sync :
+//          une vraie matrice « BASE » / « DETAILS COTISATIONS » (majuscules) est CONFORME. ──────
+
+Deno.test(
+  'handler : onglets en MAJUSCULES (BASE, DETAILS COTISATIONS) → conforme (ok=true, insensible à la casse)',
+  async () => {
+    // Réplique d'une vraie matrice prod : noms d'onglets tout en majuscules.
+    const upperTabs = [
+      'PARAMETRAGES',
+      'BASE',
+      'POSITIONS',
+      'HISTORIQUE',
+      'COTISATIONS',
+      'DETAILS COTISATIONS',
+      'REPORTING',
+    ]
+    const reads: string[] = []
+    const handler = createSheetProbeHandler(makeDeps({ tabs: upperTabs, reads }))
+    const res = await handler(probeRequest({ sheet_id: SHEET_ID }))
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as ProbeBody
+    assertEquals(body.ok, true)
+    assertEquals(body.missingTabs, [])
+    // Preview comptée malgré la casse différente (readSheet appelé avec le nom canonique).
+    assertEquals(body.preview?.members, 2)
+    assertEquals(body.preview?.positions, 2)
+  }
+)
+
 // ── 5. invalid_id : feuille introuvable (Google 404) ────────────────────────────
 
 Deno.test('handler : feuille introuvable (404) → invalid_id', async () => {
@@ -247,4 +277,74 @@ Deno.test('handler : OPTIONS préflight → 200 + en-têtes CORS', async () => {
   assertEquals(res.headers.get('Access-Control-Allow-Origin'), '*')
   assert((res.headers.get('Access-Control-Allow-Headers') ?? '').includes('authorization'))
   await res.text()
+})
+
+// ── 8. normalizeBase64 — robustesse padding base64 ──────────────────────────────
+//
+// Ces cas couvrent le vrai problème de terrain : GOOGLE_SA_KEY_BASE64 positionné sans
+// le padding `=` obligatoire (ex. `echo -n '...' | base64` sur macOS coupe à 76 chars
+// mais `openssl base64 -e -A` ou `python3 -c "import base64; ..."` n'ajoute pas de `=`
+// systématiquement). Deno lève « Invalid character » sur `atob()` dans ces cas.
+
+Deno.test('normalizeBase64 : déjà padded → inchangé (hors espaces)', () => {
+  // "hello" → "aGVsbG8=" (longueur 8, multiple de 4).
+  assertEquals(normalizeBase64('aGVsbG8='), 'aGVsbG8=')
+})
+
+Deno.test('normalizeBase64 : padding manquant de 1 (rem=3) → ajoute "="', () => {
+  // btoa("hello") = "aGVsbG8=" (8 chars, bien padded).
+  // Sans le padding : "aGVsbG8" (7 chars) → rem = 7 % 4 = 3 → doit ajouter "=".
+  assertEquals(normalizeBase64('aGVsbG8'), 'aGVsbG8=')
+})
+
+Deno.test('normalizeBase64 : padding manquant de 2 (rem=2) → ajoute "=="', () => {
+  // btoa("hell") = "aGVsbA==" (8 chars). Sans padding = "aGVsbA" (6 chars) → rem = 6 % 4 = 2 → ajoute "==".
+  assertEquals(normalizeBase64('aGVsbA'), 'aGVsbA==')
+})
+
+Deno.test('normalizeBase64 : base64url → base64 standard (+ / conservés)', () => {
+  // Un payload quelconque avec `-` et `_` (base64url).
+  const b64url = 'SGVs-b-8_dG8=' // artificiellement patché
+  const result = normalizeBase64(b64url)
+  assert(!result.includes('-'), 'tiret non converti')
+  assert(!result.includes('_'), 'underscore non converti')
+})
+
+Deno.test('normalizeBase64 : espaces et sauts de ligne retirés', () => {
+  // Simule une variable copiée-collée depuis un fichier avec sauts de ligne.
+  assertEquals(normalizeBase64('aGVs\nbG8=\n'), 'aGVsbG8=')
+  assertEquals(normalizeBase64('aGVs bG8='), 'aGVsbG8=')
+})
+
+Deno.test('normalizeBase64 : round-trip atob sans throw (padding manquant réel)', () => {
+  // Génère un payload JSON minimal, encode en base64 SANS padding, vérifie qu'après
+  // normalisation atob() ne lève pas.
+  const payload = JSON.stringify({ client_email: 'sa@x.iam', private_key: 'k' })
+  // btoa() ajoute le padding ; on le retire pour simuler le cas terrain.
+  const withPadding = btoa(payload)
+  const withoutPadding = withPadding.replace(/=+$/, '')
+  // atob(withoutPadding) lèverait si la longueur n'est pas un multiple de 4 — normalizeBase64 corrige.
+  let decoded: string
+  try {
+    decoded = atob(normalizeBase64(withoutPadding))
+  } catch (e) {
+    throw new Error(`normalizeBase64 n'a pas corrigé le padding : ${String(e)}`)
+  }
+  assertEquals(decoded, payload)
+})
+
+// ── 9. SaKeyError — erreur granulaire sa_key_invalid ────────────────────────────
+
+Deno.test('handler : SaKeyError (clé SA illisible) → 500 sa_key_invalid', async () => {
+  // On stubble listSheetTabs pour qu'il throw SaKeyError — simule GOOGLE_SA_KEY_BASE64 absente
+  // ou invalide (le vrai loadServiceAccount lèverait la même erreur en production).
+  const handler = createSheetProbeHandler(
+    makeDeps({ tabsThrow: new SaKeyError("GOOGLE_SA_KEY_BASE64 absente de l'environnement.") })
+  )
+  const res = await handler(probeRequest({ sheet_id: SHEET_ID }))
+  assertEquals(res.status, 500)
+  const body = (await res.json()) as ProbeBody
+  assertEquals(body.error, 'sa_key_invalid')
+  // Le message doit être présent et actionnable (sans jamais contenir la valeur de la clé).
+  assert(typeof body.message === 'string' && body.message.length > 0)
 })

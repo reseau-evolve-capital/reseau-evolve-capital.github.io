@@ -33,6 +33,7 @@ import { createClient } from 'npm:@supabase/supabase-js@^2'
 import {
   listSheetTabs as listSheetTabsImpl,
   serviceAccountEmail,
+  SaKeyError,
   SheetMetaError,
 } from './listSheetTabs.ts'
 import { readSheet as readSheetImpl } from '../sync/readSheet.ts'
@@ -176,11 +177,19 @@ export function createSheetProbeHandler(deps: SheetProbeDeps): (req: Request) =>
     }
 
     // 3. Liste des onglets (lecture seule métadonnées). Traduit les erreurs Google en
-    //    réponses actionnables : 403 → not_shared, 404 → invalid_id.
+    //    réponses actionnables :
+    //      SaKeyError   → sa_key_invalid (500) — clé SA absente ou illisible côté infra.
+    //      403 Google   → not_shared — feuille non partagée avec le SA.
+    //      404 Google   → invalid_id — feuille introuvable.
     let foundTabs: string[]
     try {
       foundTabs = await deps.listSheetTabs(sheetId)
     } catch (e) {
+      if (e instanceof SaKeyError) {
+        // Clé SA manquante ou base64 invalide : problème de configuration infra, pas de l'utilisateur.
+        // On renvoie le message (déjà sans la valeur brute de la clé — cf. loadServiceAccount).
+        return json({ error: 'sa_key_invalid', message: errMsg(e) }, 500)
+      }
       if (e instanceof SheetMetaError) {
         if (e.httpStatus === 403) {
           const sa = deps.serviceAccountEmail()
@@ -198,16 +207,21 @@ export function createSheetProbeHandler(deps: SheetProbeDeps): (req: Request) =>
           return json({ error: 'invalid_id', message: 'Feuille Google Sheets introuvable.' }, 404)
         }
       }
-      // Autre erreur (OAuth, SA manquante, réponse inattendue) → 500.
+      // Autre erreur (OAuth, réponse inattendue de Google) → 500 générique.
       return json({ error: 'probe_failed', message: errMsg(e) }, 500)
     }
 
-    // 4. Comparaison aux onglets attendus.
-    const foundSet = new Set(foundTabs)
-    const missingTabs = REQUIRED_TABS.filter((t) => !foundSet.has(t))
+    // 4. Comparaison aux onglets attendus — INSENSIBLE À LA CASSE.
+    //    Google Sheets résout les noms d'onglets sans tenir compte de la casse : `readSheet`
+    //    (sync) lit l'onglet « BASE » avec le nom 'Base'. Le dry-run DOIT matcher pareil, sinon
+    //    une matrice dont les onglets sont en majuscules (« BASE », « DETAILS COTISATIONS ») est
+    //    faussement déclarée incomplète → l'ajout de club est bloqué à tort.
+    const foundSet = new Set(foundTabs.map((t) => t.toLowerCase()))
+    const hasTab = (name: string): boolean => foundSet.has(name.toLowerCase())
+    const missingTabs = REQUIRED_TABS.filter((t) => !hasTab(t))
     const warnings: string[] = []
     for (const opt of OPTIONAL_TABS) {
-      if (!foundSet.has(opt)) {
+      if (!hasTab(opt)) {
         warnings.push(
           `Onglet optionnel « ${opt} » absent : le graphe d'évolution du dashboard ne sera pas alimenté (non bloquant).`
         )
@@ -223,7 +237,7 @@ export function createSheetProbeHandler(deps: SheetProbeDeps): (req: Request) =>
     let members = 0
     let positions = 0
 
-    if (foundSet.has('Base')) {
+    if (hasTab('Base')) {
       try {
         const raw = await deps.readSheet(sheetId, 'Base', 'A1:J50')
         members = parseBase(raw).filter((r) => r.fullName.trim() !== '').length
@@ -231,7 +245,7 @@ export function createSheetProbeHandler(deps: SheetProbeDeps): (req: Request) =>
         warnings.push(`Preview « Base » indisponible : ${errMsg(e)}`)
       }
     }
-    if (foundSet.has('POSITIONS')) {
+    if (hasTab('POSITIONS')) {
       try {
         const raw = await deps.readSheet(sheetId, 'POSITIONS', 'A1:W50')
         positions = parsePortefeuille(raw).filter((r) => r.symbol.trim() !== '').length
