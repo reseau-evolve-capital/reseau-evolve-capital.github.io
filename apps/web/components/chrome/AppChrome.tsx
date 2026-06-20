@@ -30,6 +30,8 @@ import { submitFeedbackAction } from '@/lib/feedback/actions'
 import { clearPwaDataCaches } from '@/lib/pwa/register-sw'
 import { BRAND_LOGO_SRC } from '@/lib/brand'
 import { ClubSwitcher, type ClubSwitcherClub } from '@/components/chrome/ClubSwitcher'
+import { SKIP_PUSH_PROMPT_ONCE_KEY } from '@/lib/push/skip-prompt'
+import { setActiveClub } from '@/app/(app)/actions'
 
 // Logo de marque servi par l'app (source unique : @/lib/brand → tuile crème
 // icon-192.png, fond #F4F4F2, artwork centré) pour la topbar et la sidebar web.
@@ -137,6 +139,8 @@ export function AppChromeTopbar({
   syncLabel,
   dateLabel,
   clubActif,
+  allClubs,
+  activeClubId,
   hasPollActivity = false,
   pollsToVote = 0,
 }: {
@@ -145,6 +149,10 @@ export function AppChromeTopbar({
   syncLabel?: string
   dateLabel?: string
   clubActif?: SidebarClub
+  /** Liste de toutes les adhésions actives (NAV-001) : entrée « Changer de club » si ≥ 2. */
+  allClubs?: ClubSwitcherClub[]
+  /** club_id du club actif (option surlignée dans le sélecteur du menu avatar). */
+  activeClubId?: string
   /** Vrai si ≥ 1 vote open|closed visible du club (spec §5 — entrée « Votes » conditionnelle). */
   hasPollActivity?: boolean
   /** Nombre de votes ouverts non encore votés (badge entrée Votes + pastille avatar). 0 = rien. */
@@ -197,6 +205,23 @@ export function AppChromeTopbar({
     router.push('/login')
   }
 
+  // NAV-001 : changement de club actif depuis le menu avatar (mobile ET desktop). Réutilise
+  // la MÊME mécanique que le ClubSwitcher de la sidebar (Server Action `setActiveClub` →
+  // cookie de préférence, puis reload COMPLET). Le reload recharge le club actif partout
+  // (RSC + état client) en une fois — un simple router.refresh laissait des caches par écran.
+  // Drapeau one-shot avant reload : ne pas rouvrir le pre-prompt push à cause de ce reload.
+  const handleClubChange = useCallback((clubId: string) => {
+    void setActiveClub(clubId).then((result) => {
+      if (!result.ok) return
+      try {
+        sessionStorage.setItem(SKIP_PUSH_PROMPT_ONCE_KEY, '1')
+      } catch {
+        /* sessionStorage indispo (mode privé strict) : sans gravité, le cooldown 7j gère. */
+      }
+      window.location.reload()
+    })
+  }, [])
+
   return (
     <>
       {/* Entrée « Votes » (spec §5/§7) : dans le menu avatar d'AppTopbar, entre Profil et
@@ -218,6 +243,9 @@ export function AppChromeTopbar({
         feedbackLabel={t('topbar.feedback')}
         syncLabel={syncLabel}
         dateLabel={dateLabel}
+        clubs={allClubs?.map((c) => ({ id: c.club_id, name: c.name, city: c.city }))}
+        activeClubId={activeClubId}
+        onClubChange={handleClubChange}
         localeSwitcher={<LocaleSwitcherClient />}
         themeToggle={
           <ThemeToggle
@@ -234,6 +262,11 @@ export function AppChromeTopbar({
           profile: t('topbar.profile'),
           logout: t('topbar.logout'),
           votes: t('topbar.votes'),
+          changeClub: t('topbar.changeClub'),
+          clubSelectorTitle: t('topbar.clubSelectorTitle'),
+          clubSelectorSubtitle: t('topbar.clubSelectorSubtitle'),
+          clubSelectorClose: t('topbar.clubSelectorClose'),
+          activeClub: t('topbar.activeClub'),
         }}
       />
       <FeedbackSheet

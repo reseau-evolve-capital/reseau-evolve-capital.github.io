@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { axe, toHaveNoViolations } from 'jest-axe'
 import { AppTopbar } from './AppTopbar'
@@ -183,6 +183,76 @@ describe('AppTopbar — entrée votes (onVotes / pollsToVote)', () => {
   })
 })
 
+describe('AppTopbar — changer de club (NAV-001)', () => {
+  const twoClubs = [
+    { id: 'club-a', name: 'Club A', city: 'Paris' },
+    { id: 'club-b', name: 'Club B', city: 'Lyon' },
+  ]
+
+  it("affiche l'entrée « Changer de club » quand ≥ 2 clubs + onClubChange", async () => {
+    const u = userEvent.setup()
+    render(<AppTopbar user={user} clubs={twoClubs} activeClubId="club-a" onClubChange={vi.fn()} />)
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    const entry = await screen.findByTestId('topbar-change-club')
+    expect(entry.textContent).toMatch(/changer de club/i)
+    // Rappel du club actif sous le libellé.
+    expect(entry.textContent).toMatch(/club a/i)
+  })
+
+  it("n'affiche PAS l'entrée pour un membre mono-club (non destructif)", async () => {
+    const u = userEvent.setup()
+    render(
+      <AppTopbar
+        user={user}
+        clubs={[{ id: 'club-a', name: 'Club A', city: null }]}
+        activeClubId="club-a"
+        onClubChange={vi.fn()}
+      />
+    )
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    await screen.findByRole('menuitem', { name: /profil/i })
+    expect(screen.queryByTestId('topbar-change-club')).toBeNull()
+  })
+
+  it("n'affiche PAS l'entrée si onClubChange est absent (même avec ≥ 2 clubs)", async () => {
+    const u = userEvent.setup()
+    render(<AppTopbar user={user} clubs={twoClubs} activeClubId="club-a" />)
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    await screen.findByRole('menuitem', { name: /profil/i })
+    expect(screen.queryByTestId('topbar-change-club')).toBeNull()
+  })
+
+  it('ouvre le sélecteur, surligne le club actif et remonte le club choisi', async () => {
+    const u = userEvent.setup()
+    const onClubChange = vi.fn()
+    render(
+      <AppTopbar user={user} clubs={twoClubs} activeClubId="club-a" onClubChange={onClubChange} />
+    )
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    await u.click(await screen.findByTestId('topbar-change-club'))
+    const dialog = await screen.findByRole('dialog')
+    // Club actif marqué aria-current (surlignage data-positive).
+    const active = within(dialog).getByText('Club A').closest('button')
+    expect(active).toHaveAttribute('aria-current', 'true')
+    // Choisir l'autre club remonte son id.
+    await u.click(within(dialog).getByText('Club B'))
+    expect(onClubChange).toHaveBeenCalledWith('club-b')
+  })
+
+  it('ne rappelle PAS onClubChange si on re-choisit le club déjà actif', async () => {
+    const u = userEvent.setup()
+    const onClubChange = vi.fn()
+    render(
+      <AppTopbar user={user} clubs={twoClubs} activeClubId="club-a" onClubChange={onClubChange} />
+    )
+    await u.click(screen.getByRole('button', { name: 'Menu utilisateur' }))
+    await u.click(await screen.findByTestId('topbar-change-club'))
+    const dialog = await screen.findByRole('dialog')
+    await u.click(within(dialog).getByText('Club A'))
+    expect(onClubChange).not.toHaveBeenCalled()
+  })
+})
+
 describe('AppTopbar — accessibilité (jest-axe)', () => {
   it('état fermé : pas de violations axe', async () => {
     const { container } = render(
@@ -202,6 +272,24 @@ describe('AppTopbar — accessibilité (jest-axe)', () => {
         user={user}
         onVotes={vi.fn()}
         pollsToVote={4}
+        syncLabel="Synchronisé il y a 14 min"
+        dateLabel="Vendredi 24 avril 2026"
+      />
+    )
+    const results = await axe(container)
+    expect(results).toHaveNoViolations()
+  })
+
+  it('multi-club (entrée changer de club) : pas de violations axe', async () => {
+    const { container } = render(
+      <AppTopbar
+        user={user}
+        clubs={[
+          { id: 'club-a', name: 'Club A', city: 'Paris' },
+          { id: 'club-b', name: 'Club B', city: 'Lyon' },
+        ]}
+        activeClubId="club-a"
+        onClubChange={vi.fn()}
         syncLabel="Synchronisé il y a 14 min"
         dateLabel="Vendredi 24 avril 2026"
       />

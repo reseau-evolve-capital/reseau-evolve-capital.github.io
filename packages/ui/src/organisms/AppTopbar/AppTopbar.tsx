@@ -1,11 +1,22 @@
 'use client'
 import * as React from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import * as Dialog from '@radix-ui/react-dialog'
 import { Avatar } from '../../atoms/Avatar'
 import { Icon } from '../../atoms/Icon'
 import { Logo } from '../../atoms/Logo'
 import { cn } from '../../lib/cn'
 import type { AppHeaderUser } from '../AppHeader'
+
+/** Club éligible au sélecteur de club actif (NAV-001). Présentationnel : pas de dépendance data. */
+export interface AppTopbarClub {
+  /** Identifiant du club (clé remontée par `onClubChange`). */
+  id: string
+  /** Nom affiché du club. */
+  name: string
+  /** Ville/sous-titre optionnel affiché à côté du nom. */
+  city?: string | null
+}
 
 /** Libellés textuels externalisables (i18n). Défauts FR si non fournis. */
 export interface AppTopbarLabels {
@@ -19,6 +30,16 @@ export interface AppTopbarLabels {
   logout?: string
   /** Entrée votes du menu. Défaut : « Votes ». */
   votes?: string
+  /** Entrée « Changer de club » du menu (NAV-001). Défaut : « Changer de club ». */
+  changeClub?: string
+  /** Titre du sélecteur de club (Dialog/bottom-sheet). Défaut : « Changer de club ». */
+  clubSelectorTitle?: string
+  /** Sous-titre du sélecteur de club. Défaut : « Sélectionnez le club à afficher. ». */
+  clubSelectorSubtitle?: string
+  /** `aria-label` du bouton fermer du sélecteur. Défaut : « Fermer ». */
+  clubSelectorClose?: string
+  /** Mention « club actif » (badge sur l'option courante + rappel sous l'entrée). Défaut : « Club actif ». */
+  activeClub?: string
 }
 
 export interface AppTopbarProps {
@@ -58,6 +79,16 @@ export interface AppTopbarProps {
   themeToggle?: React.ReactNode
   /** Slot pour le sélecteur de langue (ex. `<LocaleSwitcher />`), avant le thème. */
   localeSwitcher?: React.ReactNode
+  /**
+   * Liste des clubs du membre (NAV-001). Si ≥ 2 clubs ET `onClubChange` fourni, une entrée
+   * « Changer de club » apparaît dans le menu avatar (desktop ET mobile) ouvrant un sélecteur.
+   * Mono-club (< 2) ⇒ aucune entrée (non destructif).
+   */
+  clubs?: AppTopbarClub[]
+  /** `id` du club actif (option surlignée dans le sélecteur + rappelée sous l'entrée du menu). */
+  activeClubId?: string
+  /** Action déclenchée au choix d'un club dans le sélecteur (l'app pose le cookie + recharge). */
+  onClubChange?: (clubId: string) => void
   /** Affiche le logo sur mobile (la sidebar étant cachée). Défaut true. */
   showLogoOnMobile?: boolean
   /** Nom du club actif. Sur MOBILE, remplace le logotype de marque (le logo reste) —
@@ -93,6 +124,9 @@ export function AppTopbar({
   dateLabel,
   themeToggle,
   localeSwitcher,
+  clubs,
+  activeClubId,
+  onClubChange,
   showLogoOnMobile = true,
   logoSrc,
   clubName,
@@ -104,11 +138,28 @@ export function AppTopbar({
   const profileLabel = labels?.profile ?? 'Profil'
   const logoutLabel = labels?.logout ?? 'Déconnexion'
   const votesLabel = labels?.votes ?? 'Votes'
+  const changeClubLabel = labels?.changeClub ?? 'Changer de club'
+  const clubSelectorTitle = labels?.clubSelectorTitle ?? 'Changer de club'
+  const clubSelectorSubtitle = labels?.clubSelectorSubtitle ?? 'Sélectionnez le club à afficher.'
+  const clubSelectorCloseLabel = labels?.clubSelectorClose ?? 'Fermer'
+  const activeClubLabel = labels?.activeClub ?? 'Club actif'
   const feedbackText = feedbackLabel ?? 'Retour'
 
   // Votes : badge chiffré (capé « 9+ ») + pastille « non lu » sur l'avatar.
   const hasUnreadVotes = pollsToVote > 0
   const pollsBadge = hasUnreadVotes ? (pollsToVote > 9 ? '9+' : String(pollsToVote)) : null
+
+  // Changement de club (NAV-001) : entrée + sélecteur visibles uniquement si ≥ 2 clubs
+  // ET un handler fourni (non destructif). État local d'ouverture du sélecteur.
+  const clubList = clubs ?? []
+  const canSwitchClub = clubList.length >= 2 && !!onClubChange
+  const [clubSelectorOpen, setClubSelectorOpen] = React.useState(false)
+  const activeClub = clubList.find((c) => c.id === activeClubId)
+
+  const handleClubSelect = (clubId: string) => {
+    setClubSelectorOpen(false)
+    if (clubId !== activeClubId) onClubChange?.(clubId)
+  }
 
   return (
     <header
@@ -277,6 +328,34 @@ export function AppTopbar({
                   ) : null}
                 </DropdownMenu.Item>
               ) : null}
+              {/* Changer de club (NAV-001) : juste avant Déconnexion, uniquement si ≥ 2 clubs.
+                  Rappelle le club actif sous le libellé. `onSelect` ferme le menu Radix ; on
+                  ouvre le sélecteur au tick suivant pour éviter un conflit de focus-trap. */}
+              {canSwitchClub ? (
+                <DropdownMenu.Item
+                  data-testid="topbar-change-club"
+                  onSelect={(event) => {
+                    event.preventDefault()
+                    // Laisse le DropdownMenu se fermer proprement avant d'ouvrir le Dialog.
+                    setTimeout(() => setClubSelectorOpen(true), 0)
+                  }}
+                  className={cn(
+                    'flex cursor-pointer select-none items-start gap-2 rounded-sm px-3 py-2',
+                    'text-[14px] text-text outline-none',
+                    'data-[highlighted]:bg-neutral-100'
+                  )}
+                >
+                  <Icon name="RefreshCw" size={16} aria-hidden="true" className="mt-0.5" />
+                  <span className="flex min-w-0 flex-col">
+                    <span>{changeClubLabel}</span>
+                    {activeClub ? (
+                      <span className="truncate text-[12px] text-text-ter">
+                        {activeClubLabel} · {activeClub.name}
+                      </span>
+                    ) : null}
+                  </span>
+                </DropdownMenu.Item>
+              ) : null}
               <DropdownMenu.Item
                 onSelect={() => onLogout?.()}
                 className={cn(
@@ -292,6 +371,139 @@ export function AppTopbar({
           </DropdownMenu.Portal>
         </DropdownMenu.Root>
       </div>
+
+      {/* Sélecteur de club (NAV-001) — Dialog desktop centré / bottom-sheet mobile. Le club
+          actif est surligné (token data-positive ; jamais le rouge brand). Monté seulement
+          si le switch est possible. */}
+      {canSwitchClub ? (
+        <ClubSelectorSheet
+          open={clubSelectorOpen}
+          onOpenChange={setClubSelectorOpen}
+          clubs={clubList}
+          activeClubId={activeClubId}
+          onSelect={handleClubSelect}
+          title={clubSelectorTitle}
+          subtitle={clubSelectorSubtitle}
+          closeLabel={clubSelectorCloseLabel}
+          activeLabel={activeClubLabel}
+        />
+      ) : null}
     </header>
+  )
+}
+
+/* ── Sélecteur de club ─────────────────────────────────────────────────────── */
+
+interface ClubSelectorSheetProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  clubs: AppTopbarClub[]
+  activeClubId?: string
+  onSelect: (clubId: string) => void
+  title: string
+  subtitle: string
+  closeLabel: string
+  activeLabel: string
+}
+
+/**
+ * Sélecteur de club actif. Bottom-sheet ancré bas sur mobile, modale centrée 420px sur
+ * desktop (Radix Dialog : focus-trap, Escape, Title + Description). Chaque club est un
+ * bouton ≥ 44px ; le club actif porte une bordure + check `data-positive`.
+ */
+function ClubSelectorSheet({
+  open,
+  onOpenChange,
+  clubs,
+  activeClubId,
+  onSelect,
+  title,
+  subtitle,
+  closeLabel,
+  activeLabel,
+}: ClubSelectorSheetProps) {
+  const descId = React.useId()
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 motion-safe:animate-in motion-safe:fade-in" />
+        <Dialog.Content
+          aria-describedby={descId}
+          className={cn(
+            'fixed z-50 bg-card shadow-[var(--sh-modal)] focus:outline-none',
+            // Mobile : bottom-sheet ancré bas.
+            'inset-x-0 bottom-0 w-full rounded-t-[var(--r-lg)] border border-border',
+            'px-5 pt-3 pb-[max(24px,env(safe-area-inset-bottom))]',
+            // Desktop : modale centrée.
+            'sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:w-[420px] sm:max-w-[calc(100vw-2rem)]',
+            'sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-[var(--r-lg)] sm:p-7',
+            'max-h-[92vh] overflow-y-auto',
+            'motion-safe:animate-in motion-safe:fade-in motion-safe:duration-[220ms]'
+          )}
+        >
+          {/* Grab-handle mobile (décoratif). */}
+          <div
+            className="mx-auto mb-3 h-1 w-10 rounded-full bg-border-strong sm:hidden"
+            aria-hidden="true"
+          />
+
+          <Dialog.Title className="font-display text-[20px] font-extrabold leading-tight text-text">
+            {title}
+          </Dialog.Title>
+          <Dialog.Description id={descId} className="mt-1 text-[13px] text-text-sec">
+            {subtitle}
+          </Dialog.Description>
+
+          <ul className="mt-5 flex list-none flex-col gap-2 p-0">
+            {clubs.map((club) => {
+              const isActive = club.id === activeClubId
+              return (
+                <li key={club.id}>
+                  <button
+                    type="button"
+                    aria-current={isActive ? 'true' : undefined}
+                    onClick={() => onSelect(club.id)}
+                    className={cn(
+                      'flex w-full min-h-[52px] items-center gap-3 rounded-[var(--r-md)] px-4 text-left',
+                      'border bg-card transition-colors duration-[150ms]',
+                      'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)] outline-none',
+                      isActive
+                        ? 'border-2 border-data-positive bg-data-positive-50'
+                        : 'border border-border-strong hover:border-data-positive/50'
+                    )}
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate text-[14px] font-semibold text-text">
+                        {club.name}
+                      </span>
+                      {club.city ? (
+                        <span className="truncate text-[12px] text-text-ter">{club.city}</span>
+                      ) : null}
+                    </span>
+                    {isActive ? (
+                      <span className="inline-flex shrink-0 items-center gap-1.5 text-data-positive">
+                        <span className="sr-only">{activeLabel}</span>
+                        <Icon name="Check" size={20} aria-hidden="true" />
+                      </span>
+                    ) : null}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+
+          <Dialog.Close
+            aria-label={closeLabel}
+            className={cn(
+              'absolute right-4 top-4 inline-flex min-h-[44px] min-w-[44px] items-center justify-center',
+              'rounded-md text-text-ter hover:text-text-sec',
+              'focus-visible:outline-none focus-visible:shadow-[var(--sh-glow)] outline-none'
+            )}
+          >
+            <Icon name="X" size={20} aria-hidden="true" />
+          </Dialog.Close>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   )
 }
