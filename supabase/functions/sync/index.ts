@@ -299,9 +299,15 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       const clubUpsert = mapParametragesToClub(rows, sheetId)
       // Capture des dirigeants pour la réconciliation des rôles (étape post-Base).
       officers = mapParametragesToOfficers(rows)
-      const { error } = await supabase
-        .from('clubs')
-        .upsert({ id: clubId, ...clubUpsert }, { onConflict: 'id' })
+      // Le club EXISTE toujours quand la sync tourne (créé en amont par le réseau via le wizard,
+      // ou itéré par le cron sur les clubs ayant un sheet_id) → on fait un UPDATE, pas un upsert.
+      // Pourquoi pas `upsert(onConflict:'id')` : Postgres tente d'ABORD l'INSERT avec les colonnes
+      // fournies ; sans `slug` (NOT NULL) il échoue AVANT la résolution ON CONFLICT. Et AVEC le
+      // slug dérivé du « Nom du club », la branche DO UPDATE l'écraserait → collision clubs_slug_key
+      // si ce slug est déjà pris par un autre club. L'UPDATE ne touche donc JAMAIS le slug
+      // (identité applicative fixée à la création) ; il met à jour le reste (nom, ville, plafond…).
+      const { slug: _slugIgnored, ...clubUpdate } = clubUpsert
+      const { error } = await supabase.from('clubs').update(clubUpdate).eq('id', clubId)
       if (error) throw new Error(`upsert clubs: ${error.message}`)
       snapshots['PARAMETRAGES'] = await createSnapshot(
         supabase,
