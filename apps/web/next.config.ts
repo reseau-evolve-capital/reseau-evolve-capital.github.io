@@ -77,7 +77,6 @@ function buildCsp(): string {
   const connectSrc = [
     "'self'",
     ...supabaseConnectSources(), // REST/Auth/Storage https + Realtime wss
-    'https://cloudflareinsights.com', // beacon Cloudflare POST les métriques ici (OPS-002)
     // Sentry : couvre le DSN classique (*.ingest.sentry.io) ET les DSN RÉGIONAUX
     // (*.ingest.de.sentry.io / .us.) — le wildcard simple ne matche pas le segment régional.
     'https://*.sentry.io', // ingestion Sentry, toutes régions (OPS-001)
@@ -87,7 +86,6 @@ function buildCsp(): string {
     // 'unsafe-inline' : script anti-flash thème (dangerouslySetInnerHTML) dans layout.tsx.
     // Compromis pragmatique documenté ; nonce per-request via middleware = amélioration V1.
     "'unsafe-inline'",
-    'https://static.cloudflareinsights.com', // beacon.min.js (OPS-002)
   ]
   if (isDev) {
     // HMR / React Refresh de Next en dev s'appuie sur eval + websockets localhost.

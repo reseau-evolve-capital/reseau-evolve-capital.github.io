@@ -142,7 +142,7 @@ Les `.otf` sont **gitignorées** (licence, repo public). `scripts/ensure-fonts.m
 
 ### Variables (cf. matrice §5)
 
-Obligatoires : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`. Recommandées : `NEXT_PUBLIC_SENTRY_DSN`, `(NEXT_PUBLIC_)SENTRY_ENVIRONMENT`, `NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN`. Build Sentry : `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`. Optionnelles : `SUPABASE_SERVICE_ROLE_KEY` (**server-only**, invitations ADM-007), `UPSTASH_REDIS_REST_URL`/`_TOKEN`, price providers, `EVOLVE_FONTS_SRC`.
+Obligatoires : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`. Recommandées : `NEXT_PUBLIC_SENTRY_DSN`, `(NEXT_PUBLIC_)SENTRY_ENVIRONMENT`, `NEXT_PUBLIC_GA_ID_APP` (analytics GA4). Build Sentry : `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`. Optionnelles : `SUPABASE_SERVICE_ROLE_KEY` (**server-only**, invitations ADM-007), `UPSTASH_REDIS_REST_URL`/`_TOKEN`, price providers, `EVOLVE_FONTS_SRC`.
 
 ---
 
@@ -178,7 +178,7 @@ Obligatoires : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEX
 | `NEXT_PUBLIC_SENTRY_DSN`                                                                | public            | reco         | vide = no-op                     |
 | `(NEXT_PUBLIC_)SENTRY_ENVIRONMENT`                                                      | server/public     | opt          | étiquette                        |
 | `SENTRY_AUTH_TOKEN`/`SENTRY_ORG`/`SENTRY_PROJECT`                                       | build secret      | reco         | source-maps (sinon skip)         |
-| `NEXT_PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN`                                                | public            | opt          | vide = pas de beacon             |
+| `NEXT_PUBLIC_GA_ID_APP`                                                                 | public            | reco         | vide = analytics GA4 no-op       |
 | `UPSTASH_REDIS_REST_URL`/`_TOKEN`                                                       | server secret     | opt          | rate-limit (sinon fail-open)     |
 | `GOOGLE_APPS_SCRIPT_URL`/`_SECRET`, `GOOGLE_SHEETS_PRICE_SHEET_ID`, `ALPHA_VANTAGE_KEY` | server            | opt          | price providers (sinon snapshot) |
 | `EVOLVE_FONTS_SRC`                                                                      | build             | opt          | dossier `.otf` (sinon stubs)     |
@@ -226,7 +226,7 @@ Obligatoires : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEX
 - **Vitrine** (après `make vitrine-deploy`, Strapi up) : `curl -I https://reseauevolvecapital.com` → 200 ; pages clés OK ; **blog peuplé** (vérifier qu'il n'est pas vide = Strapi tournait au build) ; formulaires contact/newsletter ; analytics. Pages reste sur « branch `gh-pages` ».
 - **App web** : login magic link (email Brevo brandé, lien-only) → 1er clic → dashboard non vide ; sync trésorier → toast + données ; attestation PDF ; light/dark + fr/en ; curseur pointer sur les cliquables.
 - **Supabase** : `db push` clean ; Edge functions répondent ; crons planifiés ; `clubs.sheet_id` posé + matrice partagée au service account.
-- **Observabilité** : Sentry (DSN + CSP `*.sentry.io`) ; Cloudflare analytics.
+- **Observabilité** : Sentry (DSN + CSP `*.sentry.io`) ; GA4 (`NEXT_PUBLIC_GA_ID_APP`, consent-gated).
 
 ---
 
