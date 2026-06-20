@@ -14,7 +14,14 @@ import { hasVoted } from '@evolve/data'
 import { AppChromeSidebar, AppChromeTopbar, AppChromeBottom } from '@/components/chrome/AppChrome'
 import { InstallBannerMount } from '@/components/pwa/InstallBannerMount'
 import { PushOptInMount } from '@/components/push/PushOptInMount'
-import { getSessionUser, getActiveClubMembership, getNetworkContext } from '@/lib/data/request'
+import {
+  getSessionUser,
+  getActiveClubMembership,
+  getUserClubMemberships,
+  getNetworkContext,
+  type ClubMembershipSummary,
+} from '@/lib/data/request'
+import { isStaffRole } from '@/lib/data/admin'
 import { getOpenPolls, hasPollActivity as checkPollActivity } from '@/lib/data/polls'
 
 // Les pages app/* nécessitent l'auth Supabase — pas de prérendu statique
@@ -49,16 +56,20 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   let pollActivity = false
   // Badge : nombre de votes ouverts non encore votés. Best-effort (jamais bloquant).
   let pollsToVote = 0
+  // ClubSwitcher : liste de toutes les adhésions actives (non null si multi-club).
+  let allClubMemberships: ClubMembershipSummary[] = []
+  let activeClubId: string | undefined
 
   if (authUser) {
     const salt = process.env.ANALYTICS_USER_ID_SALT ?? 'evolve-uba'
     userIdHash = createHash('sha256').update(`${salt}:${authUser.id}`).digest('hex').slice(0, 32)
 
     // 5 lectures indépendantes → parallélisées (fix latence par-navigation, ticket C).
-    // Club actif = dernière adhésion active (helper mémoïsé, PARTAGÉ avec les pages) ;
-    // alimente la carte « CLUB ACTIF » + le statut sync. Contexte réseau (NET-002) mémoïsé,
-    // PARTAGÉ avec le layout /reseau : null = non-membre → item « Réseau » en teaser.
-    const [{ count }, { data: profileData }, { data: staffData }, membership, networkCtx] =
+    // Club actif = adhésion du club sélectionné (cookie) sinon la plus récente (helper mémoïsé,
+    // PARTAGÉ avec les pages) ; alimente la carte « CLUB ACTIF » + le statut sync.
+    // getUserClubMemberships : liste toutes les adhésions (ClubSwitcher). Contexte réseau
+    // (NET-002) mémoïsé, PARTAGÉ avec le layout /reseau : null = non-membre → item « Réseau » teaser.
+    const [{ count }, { data: profileData }, membership, allMemberships, networkCtx] =
       await Promise.all([
         supabase
           .from('memberships')
@@ -66,14 +77,19 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           .eq('user_id', authUser.id)
           .eq('is_active', true),
         supabase.from('users').select('full_name, avatar_url').eq('id', authUser.id).single(),
-        supabase.rpc('user_is_staff'),
         getActiveClubMembership(authUser.id),
+        getUserClubMemberships(authUser.id),
         getNetworkContext(authUser.id),
       ])
     clubCount = count ?? 0
     profile = profileData
-    isStaff = staffData ?? false
+    // isStaff suit le CLUB ACTIF (pas un rôle global) : trésorier/président/network_admin DANS
+    // le club sélectionné. Sur un club où l'user est simple membre → false → pas d'entrée Admin.
+    isStaff = isStaffRole(membership?.role ?? null)
+    // Accès RÉSEAU = appartenance à l'équipe réseau (org-level, indépendant du club actif).
     isNetworkMember = networkCtx !== null
+    allClubMemberships = allMemberships
+    activeClubId = membership?.club_id
 
     const club = membership?.clubs
     if (club) {
@@ -127,6 +143,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               isStaff={isStaff}
               isNetworkMember={isNetworkMember}
               clubActif={clubActif}
+              allClubs={allClubMemberships}
+              activeClubId={activeClubId}
             />
             <div className="flex min-w-0 flex-1 flex-col">
               <AppChromeTopbar

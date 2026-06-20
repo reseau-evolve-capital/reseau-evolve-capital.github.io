@@ -86,14 +86,20 @@ const POLL_COLUMNS =
   'id, title, description, question_type, options, results_visibility, status, closes_at, closed_manually_at, created_at, notify_by_email'
 
 /**
- * Votes visibles du club courant (RLS membre : open + closed uniquement). Pour la page /votes.
- * Triés : ouverts d'abord (clôture la plus proche), puis clôturés (plus récents). Jamais throw —
- * une erreur RLS/réseau remonte (la page a un error.tsx) ; l'absence de données → [].
+ * Votes visibles du club actif du membre (RLS membre : open + closed uniquement). Pour la page /votes.
+ * `clubId` borne explicitement la requête au club actif — évite de croiser les votes
+ * des autres clubs si le membre appartient à plusieurs.
+ * Triés par date de création décroissante. Jamais throw — une erreur RLS/réseau remonte
+ * (la page a un error.tsx) ; l'absence de données → [].
  */
-export async function getMemberPolls(supabase: ServerClient): Promise<PollSummary[]> {
+export async function getMemberPolls(
+  supabase: ServerClient,
+  clubId: string
+): Promise<PollSummary[]> {
   const { data, error } = await supabase
     .from('polls')
     .select(POLL_COLUMNS)
+    .eq('club_id', clubId)
     .in('status', ['open', 'closed'])
     .order('created_at', { ascending: false })
     .returns<PollRow[]>()

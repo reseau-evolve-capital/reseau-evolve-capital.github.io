@@ -8,6 +8,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
 import { resolveAdminContext, type AdminContext } from '@/lib/data/admin'
+import { ACTIVE_CLUB_COOKIE } from '@/lib/data/request'
 
 type ServerClient = ReturnType<typeof createServerClient>
 
@@ -40,7 +41,8 @@ export async function guardStaff(): Promise<GuardOk | GuardErr> {
     }
   }
 
-  const ctx = await resolveAdminContext(supabase, auth.user.id)
+  const activeClubId = cookieStore.get(ACTIVE_CLUB_COOKIE)?.value ?? null
+  const ctx = await resolveAdminContext(supabase, auth.user.id, activeClubId)
   if (!ctx) {
     return {
       ok: false,

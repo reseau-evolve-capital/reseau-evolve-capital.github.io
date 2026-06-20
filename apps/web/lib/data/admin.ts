@@ -163,17 +163,33 @@ export function computeContribStats(amounts: number[]): ContribStats {
 
 // ─── Helpers DB (session + RLS treasurer) ───────────────────────────────────
 
-/** Résout le club de staff du user courant. Null si trésorier+ dans aucun club. */
+/**
+ * Résout le contexte staff du user courant, **scopé au club actif** quand il est fourni.
+ *
+ * - `activeClubId` fourni (cookie `evolve_active_club`) → on ne renvoie un contexte QUE si
+ *   l'utilisateur est trésorier+ DANS CE club. S'il y est simple membre → `null` (pas de
+ *   retombée sur un autre club : on respecte le club choisi par le ClubSwitcher).
+ * - `activeClubId` absent (pas de cookie) → comportement V0 : club staff le plus récent.
+ *
+ * Sans ce scoping, un membre président d'un club A et simple membre d'un club B continuait
+ * de voir les surfaces admin du club A après avoir basculé sur B (cookie ignoré). Réf bug
+ * « ClubSwitcher : les vues role-aware ne changent pas au switch ».
+ */
 export async function resolveAdminContext(
   supabase: ServerClient,
-  userId: string
+  userId: string,
+  activeClubId?: string | null
 ): Promise<AdminContext | null> {
-  const { data: m } = await supabase
+  let query = supabase
     .from('memberships')
     .select('club_id, role')
     .eq('user_id', userId)
     .eq('is_active', true)
     .in('role', STAFF_ROLES as unknown as string[])
+  // Scope au club actif : le rôle suit le club sélectionné, pas le plus récent.
+  if (activeClubId) query = query.eq('club_id', activeClubId)
+
+  const { data: m } = await query
     .order('joined_at', { ascending: false })
     .limit(1)
     .maybeSingle<Pick<MembershipRow, 'club_id' | 'role'>>()

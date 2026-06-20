@@ -29,6 +29,7 @@ import { LocaleSwitcherClient } from '@/components/i18n/LocaleSwitcherClient'
 import { submitFeedbackAction } from '@/lib/feedback/actions'
 import { clearPwaDataCaches } from '@/lib/pwa/register-sw'
 import { BRAND_LOGO_SRC } from '@/lib/brand'
+import { ClubSwitcher, type ClubSwitcherClub } from '@/components/chrome/ClubSwitcher'
 
 // Logo de marque servi par l'app (source unique : @/lib/brand → tuile crème
 // icon-192.png, fond #F4F4F2, artwork centré) pour la topbar et la sidebar web.
@@ -82,11 +83,17 @@ export function AppChromeSidebar({
   isStaff,
   isNetworkMember = false,
   clubActif,
+  allClubs,
+  activeClubId,
 }: {
   isStaff: boolean
   /** Membre de l'équipe RÉSEAU (NET-002) : active l'item « Réseau » (sinon teaser « Bientôt »). */
   isNetworkMember?: boolean
   clubActif?: SidebarClub
+  /** Liste de toutes les adhésions actives du membre (pour le ClubSwitcher). */
+  allClubs?: ClubSwitcherClub[]
+  /** club_id du club actif (pour pré-sélectionner le ClubSwitcher). */
+  activeClubId?: string
 }) {
   const t = useTranslations('nav')
   const pathname = usePathname()
@@ -94,6 +101,17 @@ export function AppChromeSidebar({
   const items: NavItem[] = isStaff
     ? [...base, { label: t('sidebar.admin'), href: '/admin', icon: 'ShieldCheck' }]
     : base
+
+  // ClubSwitcher : affiché uniquement si l'utilisateur a ≥ 2 clubs ET qu'on a un club actif.
+  const clubSwitcher =
+    allClubs && allClubs.length >= 2 && activeClubId ? (
+      <ClubSwitcher
+        clubs={allClubs}
+        activeClubId={activeClubId}
+        ariaLabel={t('sidebar.clubTitle')}
+      />
+    ) : undefined
+
   return (
     <Sidebar
       items={items}
@@ -108,6 +126,7 @@ export function AppChromeSidebar({
         soon: t('sidebar.soon'),
         clubTitle: t('sidebar.clubTitle'),
       }}
+      footer={clubSwitcher}
     />
   )
 }
