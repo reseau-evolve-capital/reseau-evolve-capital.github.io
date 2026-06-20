@@ -13,6 +13,7 @@ import { z } from 'zod'
 import { createServerClient, createServiceRoleClient, dispatchNotification } from '@evolve/data'
 import type { Database } from '@evolve/data'
 import { resolveAdminContext } from '@/lib/data/admin'
+import { getActiveClubId } from '@/lib/data/request'
 
 type PollOptionsJson = Database['public']['Tables']['polls']['Insert']['options']
 
@@ -161,7 +162,7 @@ export async function createPollAction(
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'unauthorized' }
-  const ctx = await resolveAdminContext(supabase, user.id)
+  const ctx = await resolveAdminContext(supabase, user.id, await getActiveClubId())
   if (!ctx) return { ok: false, error: 'forbidden' }
 
   const status = parsedAction.data === 'publish' ? 'open' : 'draft'
@@ -208,7 +209,7 @@ export async function closePollAction(pollId: string): Promise<ActionResult> {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'unauthorized' }
-  const ctx = await resolveAdminContext(supabase, user.id)
+  const ctx = await resolveAdminContext(supabase, user.id, await getActiveClubId())
   if (!ctx) return { ok: false, error: 'forbidden' }
 
   const { error } = await supabase

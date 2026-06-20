@@ -11,6 +11,7 @@ import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { createServerClient } from '@evolve/data'
 import { resolveAdminContext } from '@/lib/data/admin'
+import { getActiveClubId } from '@/lib/data/request'
 import { buildUpdateArgs, validateInput, type ClubSettingsInput } from '@/lib/data/clubSettings'
 import { getInvitationMailer } from '@/lib/invitations/mailer'
 import { newInviteToken, hashInviteToken, inviteUrl } from '@/lib/invitations/token'
@@ -86,7 +87,7 @@ export async function createInvitationAction(rawEmail: string): Promise<Invitati
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'unauthorized' }
-  const ctx = await resolveAdminContext(supabase, user.id)
+  const ctx = await resolveAdminContext(supabase, user.id, await getActiveClubId())
   if (!ctx) return { ok: false, error: 'forbidden' }
 
   const token = newInviteToken()
@@ -203,7 +204,7 @@ export async function updateClubSettingsAction(input: ClubSettingsInput): Promis
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'unauthorized' }
-  const ctx = await resolveAdminContext(supabase, user.id)
+  const ctx = await resolveAdminContext(supabase, user.id, await getActiveClubId())
   if (!ctx) return { ok: false, error: 'forbidden' }
 
   const validationErrors = validateInput(input)

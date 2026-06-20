@@ -71,6 +71,11 @@ test('membre réseau → accède à /reseau', async ({ page }) => {
   await restoreSeedNetworkMembership()
   await loginAsSeedMember(page)
 
+  // Non-régression : l'entrée de nav « Réseau » (sidebar) doit être un lien actif vers /reseau
+  // pour un membre réseau (role-aware NET-002). Garde contre la disparition de l'accès au
+  // réseau dans le chrome.
+  await expect(page.locator('a[href="/reseau"]').first()).toBeVisible()
+
   await page.goto('/reseau')
   // /reseau redirige vers /reseau/clubs (NET-005, non livré) : l'important est qu'on RESTE
   // dans le scope /reseau (pas de redirect vers /dashboard par le middleware).
@@ -86,6 +91,8 @@ test('membre simple → redirigé hors de /reseau', async ({ page }) => {
   await removeSeedNetworkMembership()
   try {
     await loginAsSeedMember(page)
+    // Non-régression : sans rôle réseau, aucune entrée « Réseau » cliquable dans le chrome.
+    await expect(page.locator('a[href="/reseau"]')).toHaveCount(0)
     await page.goto('/reseau')
     await expect(page).toHaveURL(/\/dashboard/)
   } finally {

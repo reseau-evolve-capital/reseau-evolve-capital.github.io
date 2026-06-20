@@ -5,9 +5,13 @@ import { loginAsSeedMember } from './helpers.ts'
  * FLOW-015 — Vote anonyme (parcours membre).
  *
  * Couvre le flux irréversible « découvrir → voter → résultats » (cf. docs/qa/FLOWS.md).
- * S'appuie sur le seed `supabase/seed.sql` (club E2E `aaaaaaaa-…001`, 4 votes ouverts dont
- * `POLL_YESNO` en `live`, + 1 clôturé). `global-setup` purge les `poll_responses` du membre
- * de seed avant chaque run → le membre démarre toujours « n'a pas encore voté ».
+ * S'appuie sur le seed `supabase/seed.sql` : les votes vivent dans le club dédié
+ * « Club Votes E2E » (`eeee…001`), 4 votes ouverts dont `POLL_YESNO` en `live` + 1 clôturé.
+ * Le membre de seed appartient à ce club ET au club E2E (`aaaa`) ; son club actif par défaut
+ * est `aaaa` (joined_at plus récent). Comme la page /votes scope au CLUB ACTIF
+ * (getMemberPolls), on bascule explicitement le club actif sur le club des votes via le
+ * cookie `evolve_active_club`. `global-setup` purge les `poll_responses` du membre de seed
+ * avant chaque run → le membre démarre toujours « n'a pas encore voté ».
  *
  * Anonymat : la vue résultats expose des agrégats, jamais d'identité (la RPC
  * `get_poll_results` SECURITY DEFINER ne renvoie pas `user_id`). On vérifie qu'aucun UUID
@@ -15,10 +19,22 @@ import { loginAsSeedMember } from './helpers.ts'
  */
 
 const POLL_YESNO = 'dddddddd-0000-0000-0000-000000000001' // yes_no · live
+const VOTES_CLUB = 'eeeeeeee-0000-0000-0000-000000000001' // « Club Votes E2E » — club des votes seedés
 
 test.describe('FLOW-015 · vote anonyme (membre)', () => {
   test('bannière dashboard → page /votes → voter → résultats live', async ({ page }) => {
     await loginAsSeedMember(page)
+
+    // Bascule le club actif sur le club des votes (la page /votes scope au club actif).
+    await page.context().addCookies([
+      {
+        name: 'evolve_active_club',
+        value: VOTES_CLUB,
+        url: new URL(page.url()).origin,
+        sameSite: 'Lax',
+        secure: false,
+      },
+    ])
 
     // 1. Découverte : bannière de vote sur le dashboard (≥2 votes → variante agrégée).
     const banner = page.getByText(/votes? en attente de votre réponse/i)

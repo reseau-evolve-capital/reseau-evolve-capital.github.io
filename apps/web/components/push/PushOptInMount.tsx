@@ -25,6 +25,7 @@ import { useToast } from '@evolve/ui'
 
 import { analyticsEvents } from '@/lib/analytics'
 import { useConsentResolved } from '@/lib/consent/use-consent'
+import { peekSkipPushPromptOnce, clearSkipPushPromptOnce } from '@/lib/push/skip-prompt'
 import { usePushOptIn } from '@/lib/push/use-push-opt-in'
 import { PushOptInErrorBoundary } from './PushOptInErrorBoundary'
 import { PushOptInSheet } from './PushOptInSheet'
@@ -37,8 +38,14 @@ function PushOptInInner() {
 
   const { capability, shouldShowPrePrompt, requestOptIn, dismiss } = usePushOptIn()
 
-  // Masquage local après une action terminée.
-  const [hidden, setHidden] = useState(false)
+  // Masquage local après une action terminée. Initialisé à `true` si un reload technique de
+  // bascule de club vient d'avoir lieu (drapeau one-shot posé par le ClubSwitcher) → on ne
+  // rouvre pas le pre-prompt à cause de ce reload (le cooldown 7j gère le cas normal).
+  // peek (pur) à l'init, clear dans un effet (séparation requise pour React StrictMode).
+  const [hidden, setHidden] = useState(peekSkipPushPromptOnce)
+  useEffect(() => {
+    clearSkipPushPromptOnce()
+  }, [])
 
   const onDashboard = pathname === '/dashboard'
   const visible = onDashboard && shouldShowPrePrompt && consentResolved && !hidden

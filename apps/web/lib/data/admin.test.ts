@@ -10,6 +10,7 @@ import {
   countActiveMembers,
   computeContribStats,
   isStaffRole,
+  resolveAdminContext,
   ACTIVE_MEMBER_LIMIT,
   type ClubMember,
 } from './admin'
@@ -166,6 +167,48 @@ describe('isStaffRole', () => {
   })
   it('faux pour null', () => {
     expect(isStaffRole(null)).toBe(false)
+  })
+})
+
+describe('resolveAdminContext (scope club actif)', () => {
+  // Mock minimal et chaînable du query builder Supabase utilisé par resolveAdminContext.
+  // Capture le filtre .eq('club_id', …) pour vérifier le scoping au club actif.
+  function makeSupabase(maybeSingleData: { club_id: string; role: string } | null) {
+    const calls = { clubFilter: undefined as string | undefined }
+    const chain = {
+      select: () => chain,
+      in: () => chain,
+      order: () => chain,
+      limit: () => chain,
+      eq: (col: string, val: unknown) => {
+        if (col === 'club_id') calls.clubFilter = val as string
+        return chain
+      },
+      maybeSingle: async () => ({ data: maybeSingleData }),
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return { client: { from: () => chain } as any, calls }
+  }
+
+  it('scope la résolution au club actif et renvoie le contexte si l’user y est staff', async () => {
+    const { client, calls } = makeSupabase({ club_id: 'club-B', role: 'president' })
+    const ctx = await resolveAdminContext(client, 'u1', 'club-B')
+    expect(ctx).toEqual({ userId: 'u1', clubId: 'club-B', role: 'president' })
+    expect(calls.clubFilter).toBe('club-B')
+  })
+
+  it('renvoie null si l’user n’est PAS staff dans le club actif (simple membre)', async () => {
+    const { client, calls } = makeSupabase(null)
+    const ctx = await resolveAdminContext(client, 'u1', 'club-B')
+    expect(ctx).toBeNull()
+    expect(calls.clubFilter).toBe('club-B')
+  })
+
+  it('sans club actif (pas de cookie) : pas de filtre club, club staff le plus récent', async () => {
+    const { client, calls } = makeSupabase({ club_id: 'club-A', role: 'treasurer' })
+    const ctx = await resolveAdminContext(client, 'u1')
+    expect(ctx).toEqual({ userId: 'u1', clubId: 'club-A', role: 'treasurer' })
+    expect(calls.clubFilter).toBeUndefined()
   })
 })
 
