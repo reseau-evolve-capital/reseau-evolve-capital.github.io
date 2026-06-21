@@ -1,7 +1,7 @@
 export { readSheet } from './sheets/client.ts'
 export { mapBaseRowToMember } from './sheets/mappers/base.mapper.ts'
 export { resolveBaseEmail, normalizeName } from './sheets/mappers/baseEmailResolution.ts'
-export { mapParametragesToClub } from './sheets/mappers/parametrages.mapper.ts'
+export { mapParametragesToClub, stripEmptyClubMeta } from './sheets/mappers/parametrages.mapper.ts'
 export { mapPortefeuilleRows, mapAggregateRows } from './sheets/mappers/portefeuille.mapper.ts'
 export { mapHistoriqueRows } from './sheets/mappers/historique.mapper.ts'
 export { mapCotisationsRows } from './sheets/mappers/cotisations.mapper.ts'

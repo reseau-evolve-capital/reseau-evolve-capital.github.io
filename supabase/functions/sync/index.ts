@@ -35,6 +35,7 @@ import {
 import {
   mapParametragesToClub,
   mapParametragesToOfficers,
+  stripEmptyClubMeta,
 } from '../../../packages/data/src/sheets/mappers/parametrages.mapper.ts'
 import type { ClubOfficers } from '../../../packages/data/src/sheets/mappers/parametrages.mapper.ts'
 import { normalizeName } from '../../../packages/data/src/sheets/normalizeName.ts'
@@ -327,7 +328,11 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       // slug dérivé du « Nom du club », la branche DO UPDATE l'écraserait → collision clubs_slug_key
       // si ce slug est déjà pris par un autre club. L'UPDATE ne touche donc JAMAIS le slug
       // (identité applicative fixée à la création) ; il met à jour le reste (nom, ville, plafond…).
-      const { slug: _slugIgnored, ...clubUpdate } = clubUpsert
+      const { slug: _slugIgnored, ...clubUpdateAll } = clubUpsert
+      // Option A (anti-écrasement) : la feuille ne fait pas autorité sur ville/pays. Si elle ne
+      // les fournit pas (colonnes absentes → null), on NE réécrit PAS ces colonnes pour ne pas
+      // null-ifier la valeur saisie à la création du club. cf. stripEmptyClubMeta + bug ville vide.
+      const clubUpdate = stripEmptyClubMeta(clubUpdateAll)
       const { error } = await supabase.from('clubs').update(clubUpdate).eq('id', clubId)
       if (error) throw new Error(`upsert clubs: ${error.message}`)
       snapshots['PARAMETRAGES'] = await createSnapshot(

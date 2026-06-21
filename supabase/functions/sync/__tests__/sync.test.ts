@@ -1099,6 +1099,33 @@ Deno.test('handler : ordre impératif → PARAMETRAGES avant Base', async () => 
   assert(idxParam < idxBase, 'PARAMETRAGES doit précéder Base')
 })
 
+// Test 5bis — anti-écrasement ville/pays (option A) : la feuille ne fait PAS autorité sur
+// ville/pays. Si PARAMETRAGES ne les fournit pas, le sync NE DOIT PAS null-ifier les valeurs
+// saisies à la création du club (bug : ville/pays vidés après connexion de la vraie matrice).
+Deno.test(
+  'handler : PARAMETRAGES sans ville/pays → city/country saisis préservés (anti-écrasement)',
+  async () => {
+    const store = emptyStore(true)
+    // Club créé via l'assistant avec une ville/pays renseignés.
+    store.clubs[0]!.city = 'Cotonou'
+    store.clubs[0]!.country = 'BJ'
+    // Matrice réelle dont PARAMETRAGES n'a PAS de lignes Ville/Pays.
+    const paramsNoCity: string[][] = [
+      ['Paramètre', 'Valeur'],
+      ['Nom du club', 'Évolve Capital'],
+      ['Cotisation min', '100'],
+    ]
+    const res = await buildHandler(store, { overrides: { PARAMETRAGES: paramsNoCity } })(
+      syncRequest(CLUB_ID)
+    )
+    assertEquals(res.status, 200)
+    // La sync a tourné (nom MAJ) mais ville/pays sont CONSERVÉS (non écrasés par null).
+    const club = store.clubs.find((c) => c.id === CLUB_ID)!
+    assertEquals(club.city, 'Cotonou')
+    assertEquals(club.country, 'BJ')
+  }
+)
+
 // ===========================================================================
 // 3bis. RÉCONCILIATION DES RÔLES (B1) — dérivés de PARAMETRAGES
 // ===========================================================================
