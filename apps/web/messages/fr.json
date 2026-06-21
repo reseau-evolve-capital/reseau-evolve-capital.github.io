@@ -720,11 +720,23 @@
         "sendEmail": "Envoyer par email",
         "noEmail": "Email non disponible",
         "cancel": "Annuler",
+        "close": "Fermer",
         "sending": "Envoi en cours…",
         "successTitle": "Relance envoyée",
         "successMessage": "Email envoyé à {name}.",
         "errorTitle": "Erreur d'envoi",
-        "errorMessage": "Impossible d'envoyer la relance. Réessayez."
+        "errorMessage": "Impossible d'envoyer la relance. Réessayez.",
+        "descriptionHasEmail": "Un email sera envoyé à {email}. Tu peux modifier le message ci-dessous.",
+        "descriptionNoEmail": "Aucun email disponible pour ce membre. Transmets ce message par un autre canal.",
+        "warningNoEmail": "Email manquant — ce membre n'a pas d'email renseigné. L'envoi par email est désactivé.",
+        "unexpectedError": "Une erreur inattendue est survenue. Veuillez réessayer.",
+        "error": {
+          "unauthorized": "Tu dois être connecté pour effectuer cette action.",
+          "forbidden": "Tu n'as pas les droits pour envoyer une relance dans ce club.",
+          "missing_email": "L'adresse email du membre est manquante.",
+          "missing_message": "Le message ne peut pas être vide.",
+          "send_failed": "L'envoi de l'email a échoué. Veuillez réessayer."
+        }
       },
       "empty": {
         "title": "Aucune cotisation",
