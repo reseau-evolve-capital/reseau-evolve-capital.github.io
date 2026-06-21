@@ -2,7 +2,14 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
-import { getClubContributionsTimeline, getClubMembers } from '@/lib/data/admin'
+import {
+  getClubMembers,
+  getClubRawMonths,
+  computeRecoveryRate,
+  computeEncaisse,
+  buildRegulariserList,
+  type ClubCotisationsStats,
+} from '@/lib/data/admin'
 import { getSessionUser, getAdminContext, getActiveClubMembership } from '@/lib/data/request'
 import { AdminCotisationsView } from './AdminCotisationsView'
 import { Forbidden } from '../Forbidden'
@@ -23,16 +30,46 @@ export default async function AdminCotisationsPage() {
   const ctx = await getAdminContext(user.id)
   if (!ctx) return <Forbidden />
 
-  const [timeline, members, membership] = await Promise.all([
-    getClubContributionsTimeline(supabase, ctx.clubId, null),
+  const [members, rawMonths, membership] = await Promise.all([
     getClubMembers(supabase, ctx.clubId),
+    getClubRawMonths(supabase, ctx.clubId),
     getActiveClubMembership(user.id),
   ])
   const currency = membership?.clubs?.currency ?? 'EUR'
 
+  // Comptage des mois en retard par membre (pour buildRegulariserList).
+  const lateMonthsByMembership = new Map<string, number>()
+  for (const m of rawMonths) {
+    if (m.status === 'late') {
+      lateMonthsByMembership.set(
+        m.membership_id,
+        (lateMonthsByMembership.get(m.membership_id) ?? 0) + 1
+      )
+    }
+  }
+
+  const clubStats: ClubCotisationsStats = {
+    recoveryRate: computeRecoveryRate(rawMonths),
+    encaisse: computeEncaisse(rawMonths),
+    lateAmount: members.filter((m) => m.isUnpaid).reduce((s, m) => s + m.amountDue, 0),
+    lateCount: members.filter((m) => m.isUnpaid).length,
+  }
+
+  const regulariserList = buildRegulariserList(members, lateMonthsByMembership)
+
+  // Shims @deprecated : AdminCotisationsView utilise encore l'ancienne forme jusqu'à T6.
+  const legacyStats = { total: clubStats.encaisse, count: 0, average: 0 }
+
   return (
     <AdminCotisationsView
-      initialData={{ clubId: ctx.clubId, years: timeline.years, stats: timeline.stats }}
+      initialData={{
+        clubId: ctx.clubId,
+        clubStats,
+        regulariserList,
+        member: null,
+        stats: legacyStats,
+        years: [],
+      }}
       currency={currency}
       members={members.map((m) => ({
         id: m.id,
