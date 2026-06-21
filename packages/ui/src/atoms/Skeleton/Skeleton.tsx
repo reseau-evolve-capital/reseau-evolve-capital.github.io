@@ -12,7 +12,7 @@ export function Skeleton({ width, height, radius = '10px', className }: Skeleton
   return (
     <div
       aria-hidden="true"
-      className={cn('bg-neutral-200 animate-pulse motion-reduce:animate-none', className)}
+      className={cn('bg-border animate-pulse motion-reduce:animate-none', className)}
       style={{ width: width ?? '100%', height: height ?? '1rem', borderRadius: radius }}
     />
   )

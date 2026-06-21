@@ -42,6 +42,24 @@ async function setSeedRole(clubId: string, role: string): Promise<void> {
   }
 }
 
+/**
+ * Ouvre le menu avatar (DropdownMenu Radix) de façon résiliente.
+ *
+ * Après un `window.location.reload()` (cf. switch de club), le bouton est peint AVANT que
+ * React n'ait rattaché le handler Radix : un clic « actionnable » côté Playwright peut donc
+ * partir dans le vide et le menu ne pas s'ouvrir. On reclique jusqu'à ce qu'une entrée stable
+ * du menu (Déconnexion) soit visible — web-first, sans `waitForTimeout` arbitraire.
+ */
+async function openAvatarMenu(page: import('@playwright/test').Page) {
+  const trigger = page.getByRole('button', { name: /Menu utilisateur/ })
+  await expect(trigger).toBeVisible()
+  await expect(async () => {
+    await trigger.click()
+    // « Déconnexion » est toujours rendue dans le menu → preuve que le menu est ouvert.
+    await expect(page.getByRole('menuitem', { name: /Déconnexion/ })).toBeVisible({ timeout: 1000 })
+  }).toPass({ timeout: 15_000 })
+}
+
 /** Pose le cookie de club actif sur l'origine courante, puis recharge le dashboard. */
 async function switchActiveClub(page: import('@playwright/test').Page, clubId: string) {
   const origin = new URL(page.url()).origin
@@ -114,13 +132,19 @@ test.describe('ClubSwitcher — le rôle suit le club actif', () => {
 // disparaît (AppChrome ne rend « Changer de club » que si ≥ 2 adhésions actives). afterEach
 // restaure is_active=true pour ne pas polluer les autres specs.
 
-/** (Dé)active une adhésion du seed dans un club (par EMAIL → robuste au re-key user). */
+/**
+ * (Dé)active une adhésion du seed dans un club (par EMAIL → robuste au re-key user).
+ * NB : `memberships.is_active` est GENERATED ALWAYS AS (status = 'active') STORED
+ * (migration 004) → écriture directe refusée par Postgres. On pilote donc `status`
+ * (enum member_status = 'active' | 'left', cf. migration 001).
+ */
 async function setSeedMembershipActive(clubId: string, active: boolean): Promise<void> {
   const sql = postgres(DB_URL, { max: 1 })
+  const status = active ? 'active' : 'left'
   try {
     await sql`
       UPDATE public.memberships m
-         SET is_active = ${active}
+         SET status = ${status}
         FROM public.users u
        WHERE u.id = m.user_id AND u.email = ${SEED_EMAIL} AND m.club_id = ${clubId}::uuid
     `
@@ -147,35 +171,52 @@ test.describe('NAV-001 — « Changer de club » (flux UI mobile, menu avatar)',
     await setSeedMembershipActive(MEMBER_CLUB, true)
   })
 
-  test('multi-club : ouvre le menu avatar → « Changer de club » → sélectionne → le rôle suit le club', async ({
+  test('multi-club : ouvre le menu avatar → « Changer de club » → sélectionne → le club actif suit', async ({
     page,
   }) => {
+    // Contrat NAV-001 (flux UI, viewport mobile 375) : le menu avatar expose « Changer de
+    // club » en multi-club, le sélecteur s'ouvre et liste les deux clubs, et choisir l'autre
+    // club déclenche le reload puis met à jour le club actif.
+    // NB : la bascule de RLS « le rôle suit le club » est couverte par admin.spec/access.spec
+    // (et le bloc « le rôle suit le club actif » ci-dessus, en viewport desktop). On ne
+    // re-teste pas l'accès /admin ici — la sidebar (et donc `a[href="/admin"]`) est masquée
+    // en mobile, ce qui rendrait cette assertion faussement rouge.
     await loginAsSeedMember(page)
     // Partir d'un club actif connu (président) pour que le switch vers l'autre soit observable.
     await switchActiveClub(page, PRESIDENT_CLUB)
-    await expect(page.locator('a[href="/admin"]').first()).toBeVisible()
 
     // Ouvrir le menu avatar (DropdownMenu Radix). aria-label « Menu utilisateur » (cf. @evolve/ui).
-    await page.getByRole('button', { name: /Menu utilisateur/ }).click()
+    await openAvatarMenu(page)
 
     // L'entrée « Changer de club » est présente en contexte multi-club.
     const changeClub = page.getByTestId('topbar-change-club')
     await expect(changeClub).toBeVisible()
     await changeClub.click()
 
-    // Le sélecteur (Dialog/bottom-sheet) s'ouvre et liste les clubs.
+    // Le sélecteur (Dialog/bottom-sheet) s'ouvre et liste les DEUX clubs du seed.
     const dialog = page.getByRole('dialog')
     await expect(dialog).toBeVisible()
+    await expect(dialog.getByText('Club E2E', { exact: true })).toBeVisible()
+    await expect(dialog.getByText('Club Votes E2E', { exact: true })).toBeVisible()
+    // Le club actif de départ (Club E2E) est marqué `aria-current` dans le sélecteur.
+    await expect(dialog.getByRole('button', { name: /Club E2E/ })).toHaveAttribute(
+      'aria-current',
+      'true'
+    )
 
-    // Sélectionner l'AUTRE club (celui où l'user est simple membre) déclenche le switch
+    // Sélectionner l'AUTRE club (Club Votes E2E) déclenche le switch
     // (Server Action setActiveClub → cookie → window.location.reload()).
-    await dialog.getByText('Club Votes E2E').click()
+    await dialog.getByText('Club Votes E2E', { exact: true }).click()
     await page.waitForURL(/\/dashboard/, { timeout: 20_000 })
 
-    // Le rôle suit le nouveau club actif : plus d'entrée admin, /admin refusé.
-    await expect(page.locator('a[href="/admin"]')).toHaveCount(0)
-    await page.goto('/admin')
-    await expect(page.getByText('Accès refusé')).toBeVisible()
+    // Le club actif a bien basculé : on rouvre le menu avatar et l'entrée « Changer de club »
+    // rappelle désormais « Club actif · Club Votes E2E » dans son sous-titre (cf. AppTopbar).
+    // (Signal robuste, indépendant de la sidebar `a[href="/admin"]` masquée en mobile.)
+    await openAvatarMenu(page)
+    const changeClubAfter = page.getByTestId('topbar-change-club')
+    await expect(changeClubAfter).toBeVisible()
+    await expect(changeClubAfter).toContainText('Club Votes E2E')
+    await expect(changeClubAfter).not.toContainText('· Club E2E')
   })
 
   test('mono-club : aucune entrée « Changer de club » dans le menu avatar', async ({ page }) => {
@@ -185,7 +226,9 @@ test.describe('NAV-001 — « Changer de club » (flux UI mobile, menu avatar)',
       await loginAsSeedMember(page)
       await switchActiveClub(page, PRESIDENT_CLUB)
 
-      await page.getByRole('button', { name: /Menu utilisateur/ }).click()
+      // Ouverture résiliente (assure que le menu est bien ouvert avant de conclure à l'absence
+      // de l'entrée — sinon `toHaveCount(0)` passerait à tort si le menu n'avait pas ouvert).
+      await openAvatarMenu(page)
       // L'entrée n'est PAS rendue (AppChrome exige ≥ 2 adhésions actives).
       await expect(page.getByTestId('topbar-change-club')).toHaveCount(0)
     } finally {
