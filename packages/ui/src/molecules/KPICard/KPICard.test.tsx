@@ -110,6 +110,30 @@ describe('KPICard — prop hint', () => {
     const { container } = render(<KPICard title="Mon titre" value={1234.56} />)
     expect(container.textContent).toContain('Mon titre')
   })
+
+  it('hint absent → pas de div wrapper autour du titre (pas de régression structurelle)', () => {
+    const { container } = render(<KPICard title="Mon titre" value={1234.56} />)
+    // Le <p> du titre doit être enfant direct du flex row, sans <div> intermédiaire.
+    const titleEl = container.querySelector('p')
+    expect(titleEl?.textContent).toBe('Mon titre')
+    // Pas de div avec class flex/items-center/gap autour du titre seul.
+    const flexWrapper = container.querySelector('.flex.items-center.gap-1\\.5')
+    expect(flexWrapper).toBeNull()
+  })
+
+  it('hint présent → bouton (i) a aria-describedby pointant vers le contenu de la bulle', async () => {
+    const user = userEvent.setup()
+    render(<KPICard title="Quote-part" value={1234.56} hint={HINT_TEXT} hintLabel={HINT_LABEL} />)
+    const trigger = screen.getByRole('button', { name: HINT_LABEL })
+    const describedById = trigger.getAttribute('aria-describedby')
+    expect(describedById).toBeTruthy()
+    // Ouvrir la bulle puis vérifier que l'élément avec cet id existe dans le document.
+    await user.click(trigger)
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const content = document.getElementById(describedById!)
+    expect(content).toBeTruthy()
+    expect(content?.textContent).toContain(HINT_TEXT)
+  })
 })
 
 describe('KPICard — règle hex (pas de hex codé en dur dans le HTML rendu)', () => {

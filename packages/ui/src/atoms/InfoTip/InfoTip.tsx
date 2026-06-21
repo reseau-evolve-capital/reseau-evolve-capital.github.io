@@ -13,6 +13,11 @@ export interface InfoTipProps {
   /** Côté d'ouverture préféré (Radix repositionne en cas de collision). */
   side?: 'top' | 'bottom'
   className?: string
+  /**
+   * `id` HTML à poser sur l'élément de contenu de la bulle.
+   * Permet au déclencheur d'exposer `aria-describedby` pointant vers cet id.
+   */
+  contentId?: string
 }
 
 /** Délai avant fermeture au mouseleave — laisse le temps d'amener le pointeur
@@ -41,6 +46,7 @@ export function InfoTip({
   'aria-label': ariaLabel,
   side = 'top',
   className,
+  contentId,
 }: InfoTipProps) {
   const [open, setOpen] = React.useState(false)
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -73,6 +79,7 @@ export function InfoTip({
         <button
           type="button"
           aria-label={ariaLabel}
+          aria-describedby={contentId}
           onPointerEnter={(e) => {
             if (e.pointerType === 'mouse') {
               cancelClose()
@@ -119,6 +126,7 @@ export function InfoTip({
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content
+          id={contentId}
           side={side}
           sideOffset={6}
           collisionPadding={12}
