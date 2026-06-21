@@ -403,3 +403,19 @@ Lot livré sur la branche `feat/net-a-lancer-un-club` : espace `/reseau` (FLOW-0
 - **Panneau « Synthèse IA » des consoles feedbacks = « Bientôt »** dans cette vague (pattern `ComingSoonCard`). Le **digest LLM agrégé** est livré en **NET-C / NET-017** (analytics + IA poussée), volontairement hors NET-B+.
 - **PWA-002 (skeleton)** et **OPS-006 (retrait Cloudflare)**, **OPS-007 (audit-log)** : pas de maquette dédiée (réutilisent l'existant / purement technique).
 - **Numérotation des migrations** : à attribuer en Phase 0 selon la plage libre réelle (la plage backlog peut être périmée, cf. NET-A 040-049 ; vérifier `supabase/migrations/` avant d'écrire).
+
+### ✅ LIVRÉ — Vague NET-B+ (2026-06-21, branche `feat/net-b-vague`)
+
+Migrations attribuées : **050** `clubs.is_active` (NET-018) · **051** `feedback.club_id` + RLS resserrée (NET-019) · **052** `memberships.role_source` (ADM-008) · **053** `audit_log` (OPS-007) · **054** UPDATE statut feedback staff-par-club (ADM-009) · **055** RPC read bureau réseau (NET-020).
+
+| Écran / route                               | Ticket  | Réf maquette          | Conformité light/dark   |
+| ------------------------------------------- | ------- | --------------------- | ----------------------- |
+| `/reseau/clubs/[id]` (Statut) + badge liste | NET-018 | Roles & Statuts 01-02 | ✅ 96 %                 |
+| `/reseau/retours`                           | NET-019 | Retours 01/01-B/03    | ✅ 97 %                 |
+| `/admin/members` (éditeur rôle)             | ADM-008 | Roles & Statuts 03    | ✅ 97 %                 |
+| `/admin/retours`                            | ADM-009 | Retours 02            | ✅ 97 %                 |
+| `/reseau/bureau`                            | NET-020 | Roles & Statuts 04    | ✅ 98 %                 |
+| Menu avatar « Changer de club »             | NAV-001 | Roles & Statuts 05    | ✅ 98 %                 |
+| Skeleton de boot `(app)/loading.tsx`        | PWA-002 | —                     | ✅ (token dark corrigé) |
+
+**Arbitrages LEAD loggés** : (1) NET-018 = colonne `clubs.is_active` qui gate `get_user_club_ids()` (vs statut par-membre) — owner ✅. (2) RLS feedback resserrée (staff = son club, ≠ ancienne policy globale) — owner ✅. (3) NET-020 construit l'écran Bureau (teaser → actif). (4) `ComingSoonCard` pour la Synthèse IA (digest → NET-017). Détails et preuves : `docs/qa/QA_REPORT_2026-06-21-net-b-vague.md`.

@@ -275,7 +275,39 @@ Disponibles dans la **barre supérieure** (et aussi sur l'écran de connexion) :
 
 ---
 
-## 7. À venir (non encore disponible)
+## 7. Nouveautés (juin 2026)
+
+**Pour tout membre**
+
+- **Changer de club** (si vous appartenez à plusieurs clubs) : dans le **menu avatar** (en haut à
+  droite), l'entrée **« Changer de club »** ouvre un sélecteur (plein écran sur mobile, fenêtre sur
+  ordinateur) ; le club actif est mis en évidence. Disponible aussi sur mobile, plus seulement au pied
+  de la barre latérale.
+- **Lancement plus fluide** : à l'ouverture, l'application affiche désormais une **silhouette de
+  chargement** (au lieu d'un écran noir), en thème clair comme sombre.
+
+**Espace trésorier / président (bureau de club)**
+
+- **Modifier le rôle d'un membre** depuis `/admin` › **Membres** : un rôle attribué dans
+  l'application **n'est plus écrasé** par la synchronisation de la matrice. Un trésorier ne peut pas
+  se promouvoir président (garde-fou).
+- **Retours du club** (`/admin` › **Retours**) : consultez, filtrez et traitez les retours envoyés
+  par les membres **de votre club** (le statut est modifiable). La synthèse IA agrégée arrive plus tard
+  (« Bientôt »).
+
+**Administration du réseau** (rôles réseau uniquement)
+
+- **Désactiver / réactiver un club** depuis sa fiche (`/reseau` › Clubs › un club) : un club
+  désactivé devient **inaccessible à ses membres** (matrice et synchronisation bloquées) **sans aucune
+  perte de données** ; il porte un badge « Désactivé » dans la liste. Réversible.
+- **Retours du réseau** (`/reseau` › **Retours**) : tous les retours, tous clubs, avec filtres et
+  mini-statistiques.
+- **Bureau du réseau** (`/reseau` › **Bureau**) : attribuer / retirer les rôles réseau (avec garde-fou
+  « dernier administrateur »).
+
+---
+
+## 8. À venir (non encore disponible)
 
 Fonctionnalités annoncées ou prévues, mais **pas encore actives** aujourd'hui :
 
@@ -287,7 +319,9 @@ Fonctionnalités annoncées ou prévues, mais **pas encore actives** aujourd'hui
   position** (historique pas encore enregistré).
 - **Historique des transactions** du portefeuille.
 - **Connexion par passkey** (alternative au lien magique).
-- **Réseau des clubs** / annuaire (entrée de navigation visible mais désactivée, marquée
-  « Bientôt »).
+- **Réseau : Vue d'ensemble (cockpit)** et **Annuaire** (entrées de navigation visibles mais
+  désactivées, marquées « Bientôt »). _Les onglets Clubs, Retours et Bureau du réseau sont, eux,
+  actifs._
+- **Synthèse IA agrégée** des retours (consoles réseau et club) — actuellement « Bientôt ».
 - **Format des nombres et dates localisé en anglais** (les textes EN sont déjà traduits).
 - **Fiche membre détaillée** et **historique des accès** d'un membre (espace trésorier).
