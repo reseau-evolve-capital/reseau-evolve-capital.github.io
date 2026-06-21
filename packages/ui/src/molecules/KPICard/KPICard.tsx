@@ -2,6 +2,7 @@ import * as React from 'react'
 import { formatEUR, formatPct } from '@evolve/utils'
 import { TrendBadge, type TrendBadgeProps } from '../TrendBadge'
 import { Icon, type IconName } from '../../atoms/Icon'
+import { InfoTip } from '../../atoms/InfoTip'
 import { Skeleton } from '../../atoms/Skeleton'
 import { cn } from '../../lib/cn'
 
@@ -17,6 +18,10 @@ export interface KPICardProps {
   className?: string
   /** Libellé du lien « voir détail ». Défaut FR. */
   detailLabel?: string
+  /** Texte explicatif affiché dans une bulle au clic/hover de l'icône (i). Copy via props. */
+  hint?: string
+  /** Libellé accessible du bouton (i). Requis si hint est fourni. */
+  hintLabel?: string
 }
 
 function renderValue(value: number | string, format: NonNullable<KPICardProps['format']>): string {
@@ -35,6 +40,8 @@ export function KPICard({
   isLoading = false,
   className,
   detailLabel = 'Voir détail',
+  hint,
+  hintLabel = 'En savoir plus',
 }: KPICardProps) {
   return (
     <div
@@ -48,7 +55,10 @@ export function KPICard({
       )}
     >
       <div className="flex items-center justify-between mb-3.5">
-        <p className="font-display font-bold text-[14px] tracking-[-0.01em] text-text">{title}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="font-display font-bold text-[14px] tracking-[-0.01em] text-text">{title}</p>
+          {hint && <InfoTip content={hint} aria-label={hintLabel} side="top" />}
+        </div>
         {icon && <Icon name={icon} size={20} className="text-text-ter" />}
       </div>
 

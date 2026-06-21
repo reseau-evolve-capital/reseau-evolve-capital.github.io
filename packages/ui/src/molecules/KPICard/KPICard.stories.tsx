@@ -70,6 +70,16 @@ export const Loading: Story = {
   },
 }
 
+export const WithHint: Story = {
+  args: {
+    title: 'Quote-part estimée',
+    value: 65574.87,
+    hint: 'La quote-part correspond à votre part du portefeuille collectif, calculée sur la base des cotisations versées.',
+    hintLabel: 'En savoir plus sur la quote-part',
+    trend: { direction: 'up', value: '+1,2 %', subValue: '+773 €' },
+  },
+}
+
 export const LightAndDark: Story = {
   render: () => (
     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, padding: 16 }}>
