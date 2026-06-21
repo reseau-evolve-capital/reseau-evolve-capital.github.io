@@ -12,6 +12,7 @@
 
 import * as React from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
+import { useTranslations } from 'next-intl'
 import { Button, Icon, TextArea, useToast } from '@evolve/ui'
 import { buildRelanceMessage, type LateMonth } from '@/lib/data/admin'
 import { sendRelanceEmail } from '@/app/(app)/admin/cotisations/actions'
@@ -72,6 +73,7 @@ export function RelanceModal({
   currency = 'EUR',
   memberEmail,
 }: RelanceModalProps) {
+  const t = useTranslations('admin.cotisations.relance')
   const toast = useToast()
   const descId = React.useId()
 
@@ -112,16 +114,15 @@ export function RelanceModal({
 
       if (result.success) {
         toast.success({
-          title: 'Relance envoyée',
-          message: `Email envoyé à ${memberName}.`,
+          title: t('successTitle'),
+          message: t('successMessage', { name: memberName }),
         })
         onClose()
       } else {
-        const errorMsg = mapErrorMessage(result.error)
-        setError(errorMsg)
+        setError(mapErrorMessage(result.error, t))
       }
     } catch {
-      setError('Une erreur inattendue est survenue. Veuillez réessayer.')
+      setError(t('unexpectedError'))
     } finally {
       setIsPending(false)
     }
@@ -151,13 +152,13 @@ export function RelanceModal({
           </span>
 
           <Dialog.Title className="mt-4 font-display font-bold text-[18px] text-text">
-            Relancer {memberName}
+            {t('modalTitle', { name: memberName })}
           </Dialog.Title>
 
           <Dialog.Description id={descId} className="mt-2 text-[14px] text-text-sec">
             {hasEmail
-              ? `Un email sera envoyé à ${memberEmail}. Vous pouvez modifier le message ci-dessous.`
-              : 'Aucun email disponible pour ce membre. Transmettez ce message par un autre canal.'}
+              ? t('descriptionHasEmail', { email: memberEmail ?? '' })
+              : t('descriptionNoEmail')}
           </Dialog.Description>
 
           {/* Textarea du message — éditable. */}
@@ -166,7 +167,7 @@ export function RelanceModal({
               htmlFor="relance-message"
               className="text-[12px] font-semibold uppercase tracking-wide text-text-ter"
             >
-              Message
+              {t('messageLabel')}
             </label>
             <TextArea
               id="relance-message"
@@ -186,10 +187,7 @@ export function RelanceModal({
               className="mt-4 flex items-start gap-2 rounded-[10px] p-3 bg-data-warning-50 text-data-warning-strong"
             >
               <Icon name="TriangleAlert" size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
-              <span className="text-[13px]">
-                Email manquant — ce membre n&apos;a pas d&apos;email renseigné. L&apos;envoi par
-                email est désactivé.
-              </span>
+              <span className="text-[13px]">{t('warningNoEmail')}</span>
             </div>
           )}
 
@@ -204,7 +202,7 @@ export function RelanceModal({
           <div className="mt-6 flex items-center justify-end gap-2">
             <Dialog.Close asChild>
               <Button variant="ghost" disabled={isPending}>
-                Annuler
+                {t('cancel')}
               </Button>
             </Dialog.Close>
             <Button
@@ -213,13 +211,13 @@ export function RelanceModal({
               disabled={!hasEmail || isPending}
               aria-disabled={!hasEmail || undefined}
             >
-              Envoyer par email
+              {t('sendEmail')}
             </Button>
           </div>
 
           {/* Bouton fermer (croix) — ≥ 44×44px, focus visible. */}
           <Dialog.Close
-            aria-label="Fermer"
+            aria-label={t('close')}
             className="absolute top-4 right-4 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-text-ter focus-visible:shadow-[var(--sh-glow)] outline-none"
           >
             <Icon name="X" size={16} aria-hidden="true" />
@@ -230,20 +228,21 @@ export function RelanceModal({
   )
 }
 
-/** Traduit les codes d'erreur de la Server Action en messages FR. */
-function mapErrorMessage(code: string | undefined): string {
-  switch (code) {
-    case 'unauthorized':
-      return 'Vous devez être connecté pour effectuer cette action.'
-    case 'forbidden':
-      return "Vous n'avez pas les droits pour envoyer une relance dans ce club."
-    case 'missing_email':
-      return "L'adresse email du membre est manquante."
-    case 'missing_message':
-      return 'Le message ne peut pas être vide.'
-    case 'send_failed':
-      return "L'envoi de l'email a échoué. Veuillez réessayer."
-    default:
-      return code ?? 'Une erreur est survenue. Veuillez réessayer.'
+/** Traduit les codes d'erreur de la Server Action via les clés i18n. */
+function mapErrorMessage(
+  code: string | undefined,
+  t: ReturnType<typeof useTranslations<'admin.cotisations.relance'>>
+): string {
+  const knownCodes = [
+    'unauthorized',
+    'forbidden',
+    'missing_email',
+    'missing_message',
+    'send_failed',
+  ] as const
+  type KnownCode = (typeof knownCodes)[number]
+  if (code && (knownCodes as readonly string[]).includes(code)) {
+    return t(`error.${code as KnownCode}`)
   }
+  return t('errorMessage')
 }

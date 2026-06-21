@@ -720,11 +720,23 @@
         "sendEmail": "Send by email",
         "noEmail": "Email not available",
         "cancel": "Cancel",
+        "close": "Close",
         "sending": "Sending…",
         "successTitle": "Message sent",
         "successMessage": "Follow-up sent to {name}.",
         "errorTitle": "Send error",
-        "errorMessage": "Unable to send the follow-up. Please try again."
+        "errorMessage": "Unable to send the follow-up. Please try again.",
+        "descriptionHasEmail": "An email will be sent to {email}. You can edit the message below.",
+        "descriptionNoEmail": "No email available for this member. Please send this message through another channel.",
+        "warningNoEmail": "Email missing — this member has no email address on file. Email sending is disabled.",
+        "unexpectedError": "An unexpected error occurred. Please try again.",
+        "error": {
+          "unauthorized": "You must be signed in to perform this action.",
+          "forbidden": "You do not have permission to send a follow-up in this club.",
+          "missing_email": "The member's email address is missing.",
+          "missing_message": "The message cannot be empty.",
+          "send_failed": "Failed to send the email. Please try again."
+        }
       },
       "empty": {
         "title": "No contributions",
