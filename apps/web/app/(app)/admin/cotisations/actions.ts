@@ -99,10 +99,25 @@ export async function sendRelanceEmail(params: {
     return { success: false, error: 'forbidden' }
   }
 
-  // 2. Validation basique.
-  if (!memberEmail || memberEmail.trim() === '') {
+  // 2. Résolution de l'email côté serveur (ne pas faire confiance au client).
+  // On relit l'email depuis la DB scoped au club pour éviter qu'un trésorier ne
+  // redirige la relance vers une adresse arbitraire.
+  const { data: memberRow, error: memberErr } = await supabase
+    .from('memberships')
+    .select('users!memberships_user_id_fkey!inner(email, email_is_placeholder)')
+    .eq('id', membershipId)
+    .eq('club_id', clubId)
+    .maybeSingle<{ users: { email: string; email_is_placeholder: boolean } }>()
+  if (memberErr) {
+    console.error('[sendRelanceEmail] lookup erreur:', memberErr)
+    return { success: false, error: 'send_failed' }
+  }
+  const resolvedEmail = memberRow?.users.email
+  const isPlaceholder = memberRow?.users.email_is_placeholder ?? false
+  if (!resolvedEmail || isPlaceholder) {
     return { success: false, error: 'missing_email' }
   }
+
   if (!message || message.trim() === '') {
     return { success: false, error: 'missing_message' }
   }
@@ -110,7 +125,7 @@ export async function sendRelanceEmail(params: {
   // 3. Envoi Brevo.
   try {
     await sendBrevoEmail({
-      to: [{ email: memberEmail.trim(), name: memberName }],
+      to: [{ email: resolvedEmail, name: memberName }],
       subject: 'Rappel de cotisation — Evolve Capital',
       htmlContent: `<div style="font-family:sans-serif;font-size:14px;color:inherit;">${textToHtml(message)}</div>`,
       sender: SENDER,
