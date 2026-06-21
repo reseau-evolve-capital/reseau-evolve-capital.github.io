@@ -33,7 +33,8 @@ const TABS: Tab[] = [
   { key: 'overview', href: '/reseau', icon: 'LayoutDashboard', disabled: true },
   { key: 'clubs', href: '/reseau/clubs', icon: 'Building2', disabled: false },
   { key: 'directory', href: '/reseau/annuaire', icon: 'Users', disabled: true },
-  { key: 'board', href: '/reseau/bureau', icon: 'Crown', disabled: true },
+  // « Bureau » : gestion des rôles réseau (NET-020) — branchée dans cette vague.
+  { key: 'board', href: '/reseau/bureau', icon: 'Crown', disabled: false },
   // « Retours » : console feedbacks réseau (NET-019) — branchée dans cette vague.
   { key: 'feedback', href: '/reseau/retours', icon: 'MessageSquare', disabled: false },
 ]
