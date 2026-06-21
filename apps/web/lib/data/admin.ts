@@ -637,8 +637,8 @@ export async function getMemberCotisationsForAdmin(
   const currentYear = now.getFullYear()
   const nowYM = currentYear * 12 + now.getMonth()
 
-  // Parallélise les trois requêtes indépendantes.
-  const [membershipRes, contribRes, monthsRes] = await Promise.all([
+  // Parallélise les quatre requêtes indépendantes.
+  const [membershipRes, contribRes, monthsRes, clubRes] = await Promise.all([
     supabase
       .from('memberships')
       .select(
@@ -678,11 +678,18 @@ export async function getMemberCotisationsForAdmin(
           paid_at: string | null
         }[]
       >(),
+    supabase
+      .from('clubs')
+      .select('min_contribution')
+      .eq('id', clubId)
+      .single<{ min_contribution: number }>(),
   ])
 
   if (membershipRes.error) throw membershipRes.error
   if (contribRes.error) throw contribRes.error
   if (monthsRes.error) throw monthsRes.error
+  if (clubRes.error) throw clubRes.error
+  const minContribution = clubRes.data?.min_contribution ?? 100
 
   // Membership introuvable dans ce club → null.
   if (!membershipRes.data) return null
@@ -703,10 +710,17 @@ export async function getMemberCotisationsForAdmin(
   const sheetStatus: ContributionStatus = contrib?.status ?? 'pending'
   const status = deriveContributionStatus(sheetStatus, months, joinedAtYM, nowYM)
 
-  // Montant dû : donnée source prime, sinon dérivé (minContribution=0 → 0 si absent).
-  const amountDue = deriveAmountDue(Number(contrib?.amount_due ?? 0), months, joinedAtYM, nowYM, 0)
+  // Montant dû : donnée source prime, sinon dérivé (plancher = min_contribution du club).
+  const amountDue = deriveAmountDue(
+    Number(contrib?.amount_due ?? 0),
+    months,
+    joinedAtYM,
+    nowYM,
+    minContribution
+  )
 
   // Mois en retard exploitables (post-adhésion, ≤ mois courant).
+  // amount = max(amount_db, min_contribution) : les mois non encore encaissés ont souvent 0.
   const lateMonths: LateMonth[] = months
     .filter((m) => {
       if (m.status !== 'late') return false
@@ -715,7 +729,11 @@ export async function getMemberCotisationsForAdmin(
       if (ym > nowYM) return false
       return true
     })
-    .map((m) => ({ year: m.year, month: m.month, amount: m.amount }))
+    .map((m) => ({
+      year: m.year,
+      month: m.month,
+      amount: m.amount > 0 ? m.amount : minContribution,
+    }))
 
   // Taux de recouvrement du membre (sur ses propres mois).
   const recoveryRate = computeRecoveryRate(months)
