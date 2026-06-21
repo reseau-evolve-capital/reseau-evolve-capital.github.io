@@ -236,3 +236,83 @@ export async function getNetworkClubDetail(
     staff,
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NET-020 — Bureau du réseau (écran /reseau/bureau) : membres de l'équipe réseau
+// + users éligibles à recevoir un rôle (Select du Dialog « Ajouter au bureau »).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Un membre de l'équipe réseau, forme présentationnelle (table « Bureau »). */
+export interface NetworkBoardMember {
+  userId: string
+  fullName: string
+  email: string
+  avatarUrl: string | null
+  role: NetworkRole
+  title: NetworkTitle | null
+}
+
+/** Un user candidat à recevoir un rôle réseau (option du Select). `isMember` = déjà au bureau. */
+export interface NetworkEligibleMember {
+  userId: string
+  fullName: string
+  email: string
+  avatarUrl: string | null
+  /** true = a déjà un rôle réseau (l'UI propose alors une modification, pas un doublon). */
+  isMember: boolean
+}
+
+/** Données de l'écran /reseau/bureau : membres du bureau + candidats à l'attribution. */
+export interface NetworkBoardPayload {
+  board: NetworkBoardMember[]
+  eligible: NetworkEligibleMember[]
+}
+
+/**
+ * Liste les membres de l'équipe réseau via le RPC `network_list_board()` (SECURITY DEFINER,
+ * gardé `is_network_member()` — migration 055). La jointure users serait barrée par la RLS
+ * per-club ; on passe donc par la RPC. LECTURE SEULE. JAMAIS de service-role.
+ */
+export async function getNetworkBoard(supabase: ServerClient): Promise<NetworkBoardMember[]> {
+  const { data, error } = await supabase.rpc('network_list_board')
+  if (error) throw error
+  type Row = Database['public']['Functions']['network_list_board']['Returns'][number]
+  return ((data ?? []) as Row[]).map((m) => ({
+    userId: m.user_id,
+    fullName: m.full_name,
+    email: m.email,
+    // `avatar_url` est typé non-null par types.gen.ts mais la colonne est nullable.
+    avatarUrl: (m.avatar_url as string | null) ?? null,
+    role: m.role,
+    // `title` est typé non-null par types.gen.ts mais la colonne est nullable.
+    title: (m.title as NetworkTitle | null) ?? null,
+  }))
+}
+
+/**
+ * Liste les users candidats à un rôle réseau via `network_list_eligible_members()` (migration 055,
+ * gardé membre réseau). Sert à peupler le Select du Dialog « Ajouter au bureau ». LECTURE SEULE.
+ */
+export async function getNetworkEligibleMembers(
+  supabase: ServerClient
+): Promise<NetworkEligibleMember[]> {
+  const { data, error } = await supabase.rpc('network_list_eligible_members')
+  if (error) throw error
+  type Row = Database['public']['Functions']['network_list_eligible_members']['Returns'][number]
+  return ((data ?? []) as Row[]).map((u) => ({
+    userId: u.user_id,
+    fullName: u.full_name,
+    email: u.email,
+    avatarUrl: (u.avatar_url as string | null) ?? null,
+    isMember: Boolean(u.is_member),
+  }))
+}
+
+/** Charge en une passe les deux jeux de données de l'écran Bureau (board + éligibles). */
+export async function getNetworkBoardPayload(supabase: ServerClient): Promise<NetworkBoardPayload> {
+  const [board, eligible] = await Promise.all([
+    getNetworkBoard(supabase),
+    getNetworkEligibleMembers(supabase),
+  ])
+  return { board, eligible }
+}
