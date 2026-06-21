@@ -11,8 +11,10 @@
 //
 // Réf : T5 brief, CLAUDE.md (jamais service-role côté client, RLS staff, no any).
 
+import { createElement } from 'react'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
+import { RelanceEmail, renderEmailHtml } from '@evolve/data/emails'
 import { resolveAdminContext } from '@/lib/data/admin'
 
 /** Expéditeur transactionnel Brevo (miroir de supabase/functions/send-email/index.ts). */
@@ -46,20 +48,6 @@ async function sendBrevoEmail(payload: BrevoEmailPayload): Promise<void> {
     const detail = await res.text().catch(() => '')
     throw new Error(`Brevo ${res.status}: ${detail}`)
   }
-}
-
-/**
- * Convertit un message texte en HTML basique (préserve les sauts de ligne).
- * Simple : les retours à la ligne deviennent des <br /> ; les paragraphes vides = <br />.
- */
-function textToHtml(text: string): string {
-  return text
-    .split('\n')
-    .map((line) => {
-      const escaped = line.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      return escaped === '' ? '<br />' : `<p style="margin:0 0 4px 0">${escaped}</p>`
-    })
-    .join('\n')
 }
 
 /**
@@ -124,10 +112,18 @@ export async function sendRelanceEmail(params: {
 
   // 3. Envoi Brevo.
   try {
+    const htmlContent = await renderEmailHtml(
+      createElement(RelanceEmail, {
+        memberName,
+        message,
+        clubName: undefined,
+        appUrl: process.env['NEXT_PUBLIC_APP_URL'] ?? 'https://app.reseauevolvecapital.com',
+      })
+    )
     await sendBrevoEmail({
       to: [{ email: resolvedEmail, name: memberName }],
-      subject: 'Rappel de cotisation — Evolve Capital',
-      htmlContent: `<div style="font-family:sans-serif;font-size:14px;color:inherit;">${textToHtml(message)}</div>`,
+      subject: 'Rappel de cotisation · Evolve Capital',
+      htmlContent,
       sender: SENDER,
     })
   } catch (err) {
