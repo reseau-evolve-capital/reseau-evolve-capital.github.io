@@ -20,12 +20,6 @@ export interface DemoEvolutionSeries {
   deltaPct: number
 }
 
-/** Valorisation DEMO du portefeuille club (teaser desktop) — montants illustratifs. */
-export const DEMO_CLUB_PORTFOLIO: { totalValuation: number; variation1dPercent: number } = {
-  totalValuation: 708408,
-  variation1dPercent: 0.8,
-}
-
 const DAY_MS = 86_400_000
 /** Croissance cible par borne de tranche quotidienne (daysBack → valeur_finale / valeur). */
 const DAILY_GROWTH_CONTROLS: Array<[daysBack: number, growth: number]> = [

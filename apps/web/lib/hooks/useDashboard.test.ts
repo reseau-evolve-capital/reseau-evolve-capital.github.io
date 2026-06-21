@@ -12,6 +12,7 @@ const sample: DashboardData = {
   contribution: { status: 'ok', amountDue: 0 },
   investment: { cap: 5500, yearInvested: 500, remaining: 5000 },
   club: { name: 'Club Test' },
+  clubPortfolio: { value: 708408, gainLossEur: 120000, gainLossPct: 0.2 },
   syncedAt: '2026-05-31T10:00:00.000Z',
 }
 
