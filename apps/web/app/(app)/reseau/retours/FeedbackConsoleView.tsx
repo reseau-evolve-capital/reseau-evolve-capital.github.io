@@ -1,23 +1,29 @@
 'use client'
 
-// Console feedbacks RÉSEAU (NET-019, écran /reseau/retours).
+// Console feedbacks PARTAGÉE (NET-019 réseau /reseau/retours · ADM-009 club /admin/retours).
 //
-// Composition (cf. PROMPT-DESIGN-feedback-console.md, écrans 01/01-B/03) :
-//   A. En-tête : titre + sous-titre + sélecteur de période.
-//   B. Panneau « Synthèse IA » = ComingSoonCard (le digest IA agrégé arrive en NET-C/NET-017).
+// Le même composant sert les DEUX écrans via la prop `scope` :
+//   - scope='network' (NET-019, écrans 01/01-B/03) : filtre + colonne « Club », dataviz « Volume
+//     par club », données cross-club (RLS membre réseau lit tout).
+//   - scope='club' (ADM-009, écran 02) : PAS de filtre ni colonne « Club », dataviz « Volume par
+//     semaine », données scopées au club actif du bureau (RLS staff-par-club + filtre serveur).
+//
+// Composition commune :
+//   A. En-tête : titre + sous-titre (fournis par la page selon le scope) + sélecteur de période.
+//   B. Panneau « Synthèse IA » = ComingSoonCard (digest IA agrégé → NET-C/NET-017).
 //   C. Bandeau KPI : Retours · Bugs (dont bloquants) · Idées · Taux de traitement.
-//   D. Mini-dataviz : donut « Par catégorie » + barres « Volume par club ».
-//   E. Barre de filtres : Type · Sévérité · Statut · Club · recherche.
-//   F. Tableau (style MembersList) : Retour (titre IA) · Type · Sévérité · Club · Membre · Date · Statut.
+//   D. Mini-dataviz : donut « Par catégorie » + barres (« Volume par club » | « Volume par semaine »).
+//   E. Barre de filtres : Type · Sévérité · Statut · [Club si réseau] · recherche.
+//   F. Tableau (style MembersList) : Retour · Type · Sévérité · [Club si réseau] · Membre · Date · Statut.
 //   G. États empty / loading / error explicites (jamais NaN/undefined → « — »).
 //   + Slide-over détail (écran 03) au clic sur une ligne.
 //
 // Présentationnel + état local (filtres en mémoire). La période recharge la page (query param)
-// — les données sont chargées côté serveur (RLS membre réseau). Le changement de statut appelle
-// la Server Action updateFeedbackStatusAction (RLS), puis router.refresh().
+// — les données sont chargées côté serveur (RLS). Le changement de statut appelle la Server Action
+// fournie par la page (réseau → membre réseau ; club → staff du club) puis router.refresh().
 //
 // Tokens uniquement (sévérité bloquant = data-negative, gênant = data-warning, jamais rouge brand).
-// Formatage via @evolve/utils ; i18n via next-intl ; a11y AA.
+// Formatage via @evolve/utils ; i18n via next-intl (namespace 'reseau.retours' partagé) ; a11y AA.
 
 import { useMemo, useState, useTransition } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -33,7 +39,11 @@ import {
   type BadgeVariant,
 } from '@evolve/ui'
 import type {
-  NetworkFeedbackPayload,
+  FeedbackClubOption,
+  FeedbackCategorySlice,
+  FeedbackClubVolume,
+  FeedbackWeekVolume,
+  FeedbackKpis,
   FeedbackItem,
   FeedbackType,
   FeedbackSeverity,
@@ -45,12 +55,30 @@ import {
   FEEDBACK_STATUSES,
   filterFeedback,
 } from '@/lib/data/feedback'
-import { updateFeedbackStatusAction } from './actions'
 import { CategoryDonut } from './CategoryDonut'
 import { ClubVolumeBars } from './ClubVolumeBars'
 import { FeedbackDetailSheet } from './FeedbackDetailSheet'
 
 export type FeedbackPeriod = '30d' | '90d' | 'all'
+
+/** Portée de la console : réseau (cross-club) ou bureau de club (mono-club). */
+export type FeedbackScope = 'network' | 'club'
+
+/** Résultat conventionnel de la Server Action de changement de statut (réseau OU club). */
+export type UpdateStatusResult = { ok: true } | { ok: false; error: string }
+
+/** Données injectées par la page, normalisées pour les deux scopes. */
+export interface FeedbackConsoleData {
+  items: FeedbackItem[]
+  kpis: FeedbackKpis
+  byCategory: FeedbackCategorySlice[]
+  /** Présent en scope réseau uniquement (dataviz « Volume par club » + filtre Club). */
+  byClub?: FeedbackClubVolume[]
+  /** Présent en scope club uniquement (dataviz « Volume par semaine »). */
+  byWeek?: FeedbackWeekVolume[]
+  /** Liste des clubs pour le filtre « Club » (scope réseau uniquement). */
+  clubs?: FeedbackClubOption[]
+}
 
 const TYPE_BADGE: Record<FeedbackType, BadgeVariant> = {
   bug: 'neutral',
@@ -64,11 +92,25 @@ const SEVERITY_BADGE: Record<FeedbackSeverity, BadgeVariant> = {
 }
 
 export function FeedbackConsoleView({
+  scope,
   initialData,
   period,
+  title,
+  subtitle,
+  basePath,
+  updateStatusAction,
 }: {
-  initialData: NetworkFeedbackPayload
+  scope: FeedbackScope
+  initialData: FeedbackConsoleData
   period: FeedbackPeriod
+  /** Titre H1 (varie selon le scope ; fourni par la page). */
+  title: string
+  /** Sous-titre (varie selon le scope ; fourni par la page). */
+  subtitle: string
+  /** Route de base pour le changement de période (`/reseau/retours` | `/admin/retours`). */
+  basePath: string
+  /** Server Action de changement de statut (réseau OU club) — RLS appliquée côté serveur. */
+  updateStatusAction: (id: string, next: FeedbackStatus) => Promise<UpdateStatusResult>
 }) {
   const t = useTranslations('reseau.retours')
   const locale = useLocale()
@@ -76,7 +118,11 @@ export function FeedbackConsoleView({
   const searchParams = useSearchParams()
   const [isPending, startTransition] = useTransition()
 
-  const { items, clubs, kpis, byCategory, byClub } = initialData
+  const isNetwork = scope === 'network'
+  const { items, kpis, byCategory } = initialData
+  const clubs = initialData.clubs ?? []
+  const byClub = initialData.byClub ?? []
+  const byWeek = initialData.byWeek ?? []
 
   // ── Filtres locaux (en mémoire) ────────────────────────────────────────────
   const [typeFilter, setTypeFilter] = useState<FeedbackType | 'all'>('all')
@@ -96,21 +142,22 @@ export function FeedbackConsoleView({
         type: typeFilter,
         severity: severityFilter,
         status: statusFilter,
-        club: clubFilter,
+        // En scope club, le filtre Club n'existe pas (mono-club) → toujours « all ».
+        club: isNetwork ? clubFilter : 'all',
         search,
       }),
-    [items, typeFilter, severityFilter, statusFilter, clubFilter, search]
+    [items, typeFilter, severityFilter, statusFilter, clubFilter, search, isNetwork]
   )
 
   const setPeriod = (next: FeedbackPeriod) => {
     const params = new URLSearchParams(searchParams?.toString())
     params.set('periode', next)
-    router.push(`/reseau/retours?${params.toString()}`)
+    router.push(`${basePath}?${params.toString()}`)
   }
 
   const onStatusChange = (item: FeedbackItem, next: FeedbackStatus) => {
     startTransition(async () => {
-      const res = await updateFeedbackStatusAction(item.id, next)
+      const res = await updateStatusAction(item.id, next)
       if (res.ok) {
         router.refresh()
         // Reflète immédiatement dans le slide-over ouvert le cas échéant.
@@ -120,7 +167,10 @@ export function FeedbackConsoleView({
   }
 
   const donutData = byCategory.map((c) => ({ label: categoryLabel(c.category), count: c.count }))
-  const barsData = byClub.map((c) => ({ label: clubLabel(c.clubName), count: c.count }))
+  // Dataviz secondaire : « Volume par club » (réseau) ou « Volume par semaine » (club).
+  const barsData = isNetwork
+    ? byClub.map((c) => ({ label: clubLabel(c.clubName), count: c.count }))
+    : byWeek.map((w) => ({ label: w.label, count: w.count }))
 
   return (
     <div className="flex flex-col gap-6">
@@ -128,9 +178,9 @@ export function FeedbackConsoleView({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <Heading level="h1" className="text-[20px]">
-            {t('title')}
+            {title}
           </Heading>
-          <Text className="text-[14px] text-text-sec">{t('subtitle')}</Text>
+          <Text className="text-[14px] text-text-sec">{subtitle}</Text>
         </div>
         <label className="inline-flex items-center gap-2 text-[13px] text-text-sec">
           <span>{t('period.label')}</span>
@@ -199,14 +249,17 @@ export function FeedbackConsoleView({
           )}
         </section>
         <section
-          aria-label={t('dataviz.byClub')}
+          aria-label={isNetwork ? t('dataviz.byClub') : t('dataviz.byWeek')}
           className="rounded-[14px] border border-border bg-card p-5 shadow-[var(--sh-card)]"
         >
           <h2 className="mb-4 font-display text-[15px] font-extrabold text-text">
-            {t('dataviz.byClub')}
+            {isNetwork ? t('dataviz.byClub') : t('dataviz.byWeek')}
           </h2>
           {barsData.length > 0 ? (
-            <ClubVolumeBars data={barsData} ariaLabel={t('dataviz.byClubAria')} />
+            <ClubVolumeBars
+              data={barsData}
+              ariaLabel={isNetwork ? t('dataviz.byClubAria') : t('dataviz.byWeekAria')}
+            />
           ) : (
             <Text className="text-[13px] text-text-ter">{t('dataviz.empty')}</Text>
           )}
@@ -250,15 +303,18 @@ export function FeedbackConsoleView({
             ...FEEDBACK_STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) })),
           ]}
         />
-        <FilterSelect
-          label={t('filters.club')}
-          value={clubFilter}
-          onChange={setClubFilter}
-          options={[
-            { value: 'all', label: t('filters.allClubs') },
-            ...clubs.map((c) => ({ value: c.id, label: c.name })),
-          ]}
-        />
+        {/* Filtre « Club » : réseau uniquement (la console club est déjà scopée à un club). */}
+        {isNetwork && (
+          <FilterSelect
+            label={t('filters.club')}
+            value={clubFilter}
+            onChange={setClubFilter}
+            options={[
+              { value: 'all', label: t('filters.allClubs') },
+              ...clubs.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+          />
+        )}
         <label className="relative flex-1 min-w-[180px]">
           <span className="sr-only">{t('filters.search')}</span>
           <Icon
@@ -287,6 +343,7 @@ export function FeedbackConsoleView({
       ) : (
         <FeedbackTable
           items={filtered}
+          showClub={isNetwork}
           locale={localeTag}
           isPending={isPending}
           onSelect={setSelected}
@@ -302,6 +359,7 @@ export function FeedbackConsoleView({
         open={selected != null}
         onOpenChange={(open) => !open && setSelected(null)}
         onStatusChange={onStatusChange}
+        showClub={isNetwork}
         locale={localeTag}
         clubLabel={clubLabel}
       />
@@ -376,6 +434,7 @@ type TFn = ReturnType<typeof useTranslations>
 
 function FeedbackTable({
   items,
+  showClub,
   locale,
   isPending,
   onSelect,
@@ -384,6 +443,8 @@ function FeedbackTable({
   t,
 }: {
   items: FeedbackItem[]
+  /** Affiche la colonne « Club » (scope réseau uniquement). */
+  showClub: boolean
   locale: string
   isPending: boolean
   onSelect: (item: FeedbackItem) => void
@@ -391,22 +452,24 @@ function FeedbackTable({
   clubLabel: (name: string) => string
   t: TFn
 }) {
+  type Column = 'feedback' | 'type' | 'severity' | 'club' | 'member' | 'date' | 'status'
+  const columns: Column[] = showClub
+    ? ['feedback', 'type', 'severity', 'club', 'member', 'date', 'status']
+    : ['feedback', 'type', 'severity', 'member', 'date', 'status']
   return (
     <div className="w-full overflow-x-auto">
       <table className="w-full border-collapse" aria-label={t('table.tableLabel')}>
         <thead>
           <tr className="border-b border-border">
-            {(['feedback', 'type', 'severity', 'club', 'member', 'date', 'status'] as const).map(
-              (c) => (
-                <th
-                  key={c}
-                  scope="col"
-                  className="px-3 py-2 text-left text-[12px] font-semibold text-text-ter first:pl-0"
-                >
-                  {t(`table.columns.${c}`)}
-                </th>
-              )
-            )}
+            {columns.map((c) => (
+              <th
+                key={c}
+                scope="col"
+                className="px-3 py-2 text-left text-[12px] font-semibold text-text-ter first:pl-0"
+              >
+                {t(`table.columns.${c}`)}
+              </th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -455,10 +518,12 @@ function FeedbackTable({
                   </span>
                 )}
               </td>
-              {/* Club */}
-              <td className="px-3 py-3 text-[13px] text-text-sec">
-                {item.clubName ? clubLabel(item.clubName) : t('table.noClub')}
-              </td>
+              {/* Club (réseau uniquement — la console club est mono-club) */}
+              {showClub && (
+                <td className="px-3 py-3 text-[13px] text-text-sec">
+                  {item.clubName ? clubLabel(item.clubName) : t('table.noClub')}
+                </td>
+              )}
               {/* Membre (prénom RGPD) */}
               <td className="px-3 py-3 text-[13px] text-text-sec">{item.authorName}</td>
               {/* Date relative */}

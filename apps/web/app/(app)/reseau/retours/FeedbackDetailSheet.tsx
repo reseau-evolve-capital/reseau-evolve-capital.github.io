@@ -37,6 +37,7 @@ export function FeedbackDetailSheet({
   open,
   onOpenChange,
   onStatusChange,
+  showClub = true,
   locale,
   clubLabel,
 }: {
@@ -44,6 +45,8 @@ export function FeedbackDetailSheet({
   open: boolean
   onOpenChange: (open: boolean) => void
   onStatusChange: (item: FeedbackItem, next: FeedbackStatus) => void
+  /** Affiche la ligne « Club » des métadonnées (scope réseau ; masqué en console club). */
+  showClub?: boolean
   locale: string
   clubLabel: (name: string) => string
 }) {
@@ -101,10 +104,14 @@ export function FeedbackDetailSheet({
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[13px]">
                 <dt className="text-text-ter">{t('detail.author')}</dt>
                 <dd className="text-text">{item.authorName}</dd>
-                <dt className="text-text-ter">{t('detail.club')}</dt>
-                <dd className="text-text">
-                  {item.clubName ? clubLabel(item.clubName) : t('table.noClub')}
-                </dd>
+                {showClub && (
+                  <>
+                    <dt className="text-text-ter">{t('detail.club')}</dt>
+                    <dd className="text-text">
+                      {item.clubName ? clubLabel(item.clubName) : t('table.noClub')}
+                    </dd>
+                  </>
+                )}
                 <dt className="text-text-ter">{t('detail.date')}</dt>
                 <dd className="text-text">{formatDate(item.createdAt, locale)}</dd>
                 <dt className="text-text-ter">{t('detail.page')}</dt>

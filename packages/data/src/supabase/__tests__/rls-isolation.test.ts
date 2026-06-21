@@ -778,16 +778,47 @@ describe.skipIf(!HAS_DB)('RLS — isolation cross-club (OPS-003)', () => {
       expect(data?.[0]?.status).toBe('in_progress')
     })
 
-    it('le staff du club ne peut PAS UPDATE le statut (0 ligne affectée — réservé réseau)', async () => {
+    // ADM-009 (migration 054) — le staff d'un club PEUT désormais changer le statut des feedbacks
+    // de SON club, mais JAMAIS ceux d'un autre club (isolation staff club A ≠ club B).
+    it('le staff du club A PEUT UPDATE le statut d’un feedback de SON club (A)', async () => {
+      const staff = authedClientFor(fbIds.staffA)
+      const { data, error } = await staff
+        .from('feedback')
+        .update({ status: 'done' })
+        .eq('id', FB_A)
+        .select('id, status')
+      expect(error).toBeNull()
+      expect(data).toHaveLength(1)
+      expect(data?.[0]?.status).toBe('done')
+    })
+
+    it('le staff du club A ne peut PAS UPDATE le statut d’un feedback du club B (0 ligne)', async () => {
+      // Lecture service-role du statut avant tentative (pour prouver l'absence d'écriture).
+      const admin = createServiceRoleClient()
+      const before = await admin
+        .from('feedback')
+        .select('status')
+        .eq('id', FB_B)
+        .maybeSingle<{ status: string }>()
+
       const staff = authedClientFor(fbIds.staffA)
       const { data, error } = await staff
         .from('feedback')
         .update({ status: 'closed' })
-        .eq('id', FB_A)
+        .eq('id', FB_B)
         .select('id')
-      // Aucune policy UPDATE pour le staff de club (LOT C/ADM-009) → USING false → 0 ligne.
+      // RLS « club staff update » : club_id (B) ∉ get_user_club_ids() du staff A → USING false → 0 ligne.
       expect(error).toBeNull()
       expect(data).toEqual([])
+
+      // Contrôle service-role : le statut du feedback B est resté INCHANGÉ (jamais passé à 'closed').
+      const after = await admin
+        .from('feedback')
+        .select('status')
+        .eq('id', FB_B)
+        .maybeSingle<{ status: string }>()
+      expect(after.data?.status).toBe(before.data?.status)
+      expect(after.data?.status).not.toBe('closed')
     })
   })
 })
