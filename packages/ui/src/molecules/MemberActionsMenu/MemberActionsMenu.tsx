@@ -28,6 +28,8 @@ export interface MemberActionsMenuLabels {
   viewProfile?: string
   /** Entrée « Renseigner l'email » (membre importé sans email réel). */
   editEmail?: string
+  /** Entrée « Modifier le rôle » (ADM-008). */
+  editRole?: string
 }
 
 const DEFAULT_LABELS: Required<MemberActionsMenuLabels> = {
@@ -36,6 +38,7 @@ const DEFAULT_LABELS: Required<MemberActionsMenuLabels> = {
   unlock: 'Débloquer',
   viewProfile: 'Voir la fiche',
   editEmail: "Renseigner l'email",
+  editRole: 'Modifier le rôle',
 }
 
 export interface MemberActionsMenuProps {
@@ -45,6 +48,8 @@ export interface MemberActionsMenuProps {
   onViewProfile?: () => void
   /** Action « Renseigner l'email » — n'apparaît que si fournie (membre sans email réel). */
   onEditEmail?: () => void
+  /** Action « Modifier le rôle » (ADM-008) — n'apparaît que si fournie (membre actif, staff). */
+  onEditRole?: () => void
   /** Libellés (i18n). Chaque clé absente retombe sur son défaut FR. */
   labels?: MemberActionsMenuLabels
   className?: string
@@ -62,6 +67,7 @@ export function MemberActionsMenu({
   onUnlock,
   onViewProfile,
   onEditEmail,
+  onEditRole,
   labels,
   className,
 }: MemberActionsMenuProps) {
@@ -105,6 +111,16 @@ export function MemberActionsMenu({
             >
               <Icon name="LockOpen" size={16} aria-hidden="true" />
               <span>{t.unlock}</span>
+            </DropdownMenu.Item>
+          )}
+
+          {onEditRole && (
+            <DropdownMenu.Item
+              onSelect={() => onEditRole()}
+              className={cn(ITEM_CLASS, 'text-text')}
+            >
+              <Icon name="UserCog" size={16} aria-hidden="true" />
+              <span>{t.editRole}</span>
             </DropdownMenu.Item>
           )}
 
