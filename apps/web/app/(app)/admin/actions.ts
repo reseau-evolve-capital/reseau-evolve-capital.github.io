@@ -83,7 +83,7 @@ async function tryDeliverInvitation(to: string, link: string): Promise<boolean> 
  * email hors club, code 'not_member'), puis tente l'envoi. Renvoie toujours le lien clair et
  * `delivered` (faux en V0) pour que l'UI distingue « envoyé » de « lien à copier ».
  */
-export async function createInvitationAction(rawEmail: string): Promise<InvitationActionResult> {
+async function _createInvitationAction(rawEmail: string): Promise<InvitationActionResult> {
   const email = rawEmail.trim().toLowerCase()
   if (!emailSchema.safeParse(email).success) return { ok: false, error: 'invalid_email' }
 
@@ -111,10 +111,24 @@ export async function createInvitationAction(rawEmail: string): Promise<Invitati
   return { ok: true, link, delivered }
 }
 
+/**
+ * `createInvitationAction` enveloppée par {@link withAudit} : trace dans `audit_log` sur succès.
+ * On NE journalise NI l'email (PII) NI le token : seul l'événement « invitation créée » et le
+ * fait qu'un email ait réellement été délivré sont tracés.
+ */
+export const createInvitationAction: (rawEmail: string) => Promise<InvitationActionResult> =
+  withAudit(_createInvitationAction, {
+    action: 'invitation.create',
+    targetType: 'invitation',
+    metadata: (result) => {
+      const r = result as InvitationActionResult
+      return { delivered: r.ok ? r.delivered : false }
+    },
+    shouldLog: (result) => result.ok,
+  })
+
 /** Renvoyer : régénère le token (invalide l'ancien), remet 72 h, renvoie le nouveau lien. */
-export async function resendInvitationAction(
-  invitationId: string
-): Promise<InvitationActionResult> {
+async function _resendInvitationAction(invitationId: string): Promise<InvitationActionResult> {
   const supabase = await serverClient()
   const {
     data: { user },
@@ -138,8 +152,17 @@ export async function resendInvitationAction(
   return { ok: true, link, delivered }
 }
 
+/** Renvoie (régénère le token) une invitation, journalisé (audit fire-and-forget sur succès). */
+export const resendInvitationAction: (invitationId: string) => Promise<InvitationActionResult> =
+  withAudit(_resendInvitationAction, {
+    action: 'invitation.resend',
+    targetType: 'invitation',
+    targetId: (_result, invitationId: string) => invitationId,
+    shouldLog: (result) => result.ok,
+  })
+
 /** Révoquer une invitation en attente. */
-export async function revokeInvitationAction(invitationId: string): Promise<ActionResult> {
+async function _revokeInvitationAction(invitationId: string): Promise<ActionResult> {
   const supabase = await serverClient()
   const {
     data: { user },
@@ -154,8 +177,19 @@ export async function revokeInvitationAction(invitationId: string): Promise<Acti
   return { ok: true }
 }
 
+/** Révoque une invitation, journalisé (audit fire-and-forget sur succès uniquement). */
+export const revokeInvitationAction: (invitationId: string) => Promise<ActionResult> = withAudit(
+  _revokeInvitationAction,
+  {
+    action: 'invitation.revoke',
+    targetType: 'invitation',
+    targetId: (_result, invitationId: string) => invitationId,
+    shouldLog: (result) => result.ok,
+  }
+)
+
 /** Verrouiller un membre (motif optionnel). */
-export async function lockMemberAction(
+async function _lockMemberAction(
   membershipId: string,
   reason: string | null
 ): Promise<ActionResult> {
@@ -177,8 +211,22 @@ export async function lockMemberAction(
   return { ok: true }
 }
 
+/**
+ * Verrouille l'accès d'un membre, journalisé. Le motif n'est PAS journalisé (peut contenir du
+ * texte libre) — seul l'événement « accès verrouillé » et sa cible (membership) sont tracés.
+ */
+export const lockMemberAction: (
+  membershipId: string,
+  reason: string | null
+) => Promise<ActionResult> = withAudit(_lockMemberAction, {
+  action: 'member.lock',
+  targetType: 'membership',
+  targetId: (_result, membershipId: string) => membershipId,
+  shouldLog: (result) => result.ok,
+})
+
 /** Déverrouiller un membre. */
-export async function unlockMemberAction(membershipId: string): Promise<ActionResult> {
+async function _unlockMemberAction(membershipId: string): Promise<ActionResult> {
   const supabase = await serverClient()
   const {
     data: { user },
@@ -197,13 +245,24 @@ export async function unlockMemberAction(membershipId: string): Promise<ActionRe
   return { ok: true }
 }
 
+/** Déverrouille l'accès d'un membre, journalisé (audit fire-and-forget sur succès uniquement). */
+export const unlockMemberAction: (membershipId: string) => Promise<ActionResult> = withAudit(
+  _unlockMemberAction,
+  {
+    action: 'member.unlock',
+    targetType: 'membership',
+    targetId: (_result, membershipId: string) => membershipId,
+    shouldLog: (result) => result.ok,
+  }
+)
+
 /**
  * Mettre à jour les paramètres du club (nom, ville, pays, réf. courtier, plafond).
  * La garde staff est dans la RPC `update_club_settings` (SECURITY DEFINER). On valide
  * aussi côté serveur avant l'appel : entrée invalide → erreur métier stable, pas d'appel DB.
  * Le double-warning « opération sensible » sur broker_account_ref est imposé côté UI.
  */
-export async function updateClubSettingsAction(input: ClubSettingsInput): Promise<ActionResult> {
+async function _updateClubSettingsAction(input: ClubSettingsInput): Promise<ActionResult> {
   const supabase = await serverClient()
   const {
     data: { user },
@@ -226,13 +285,26 @@ export async function updateClubSettingsAction(input: ClubSettingsInput): Promis
 }
 
 /**
+ * Met à jour les paramètres du club, journalisé. La cible (club) est le club ACTIF, résolu côté
+ * action et non passé en argument — on ne peut donc pas le dériver ici (targetId omis). On journalise
+ * les CLÉS de configuration modifiées (pas leurs valeurs, dont la réf. courtier sensible).
+ */
+export const updateClubSettingsAction: (input: ClubSettingsInput) => Promise<ActionResult> =
+  withAudit(_updateClubSettingsAction, {
+    action: 'club.update_settings',
+    targetType: 'club',
+    metadata: (_result, input: ClubSettingsInput) => ({ fields: Object.keys(input) }),
+    shouldLog: (result) => result.ok,
+  })
+
+/**
  * Renseigner / corriger l'email d'un membre (typiquement un sortant importé sans email,
  * cf. migration 026 : email placeholder + email_is_placeholder=true).
  * La garde staff est dans la RPC `update_member_email` (SECURITY DEFINER, scopée au club
  * DU membership). On valide aussi le format côté serveur avant l'appel. Le conflit d'unicité
  * (email déjà utilisé) remonte en erreur `duplicate`. JAMAIS de service-role ici.
  */
-export async function updateMemberEmailAction(
+async function _updateMemberEmailAction(
   membershipId: string,
   rawEmail: string
 ): Promise<ActionResult> {
@@ -255,6 +327,20 @@ export async function updateMemberEmailAction(
   }
   return { ok: true }
 }
+
+/**
+ * Met à jour / corrige l'email d'un membre, journalisé. Le nouvel email (PII) n'est PAS journalisé :
+ * seul l'événement « email du membre modifié » et la cible (membership) sont tracés.
+ */
+export const updateMemberEmailAction: (
+  membershipId: string,
+  rawEmail: string
+) => Promise<ActionResult> = withAudit(_updateMemberEmailAction, {
+  action: 'member.update_email',
+  targetType: 'membership',
+  targetId: (_result, membershipId: string) => membershipId,
+  shouldLog: (result) => result.ok,
+})
 
 /**
  * Changer le rôle CLUB d'un membre (ADM-008) : pose `role` + `role_source='manual'` (non réécrit

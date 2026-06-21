@@ -14,6 +14,7 @@ import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
 import { createServerClient } from '@evolve/data'
 import { captureActionError } from '@/lib/monitoring/sentry'
+import { withAudit } from '@/lib/actions/withAudit'
 import { FEEDBACK_STATUSES, type FeedbackStatus } from '@/lib/data/feedback'
 
 export type UpdateFeedbackStatusResult = { ok: true } | { ok: false; error: string }
@@ -26,7 +27,7 @@ function isStatus(v: unknown): v is FeedbackStatus {
  * Met à jour le statut d'un feedback (received→in_progress→done→closed). Réservé aux membres
  * réseau par la RLS (un non-membre verra 0 ligne affectée → erreur métier stable « forbidden »).
  */
-export async function updateFeedbackStatusAction(
+async function _updateFeedbackStatusAction(
   feedbackId: string,
   status: FeedbackStatus
 ): Promise<UpdateFeedbackStatusResult> {
@@ -61,3 +62,16 @@ export async function updateFeedbackStatusAction(
   revalidatePath('/reseau/retours')
   return { ok: true }
 }
+
+/**
+ * Version journalisée (OPS-007) : audite seulement les succès métier (`ok`). La cible est le
+ * feedback ; le statut visé est capturé en métadonnée (jamais de PII). Jumelle de la version
+ * club `updateClubFeedbackStatusAction` (app/(app)/admin/retours/actions.ts).
+ */
+export const updateFeedbackStatusAction = withAudit(_updateFeedbackStatusAction, {
+  action: 'network_feedback.status_change',
+  targetType: 'feedback',
+  targetId: (_r, feedbackId: string) => feedbackId,
+  metadata: (_r, _feedbackId: string, status: FeedbackStatus) => ({ status }),
+  shouldLog: (r) => r.ok,
+})
