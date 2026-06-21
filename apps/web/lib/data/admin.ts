@@ -12,6 +12,7 @@
 
 import type { createServerClient, Database } from '@evolve/data'
 import type { TimelineYear } from '@evolve/ui'
+import { formatCurrency } from '@evolve/utils'
 import { buildTimelineYears, type MonthInput } from './contributions'
 import { deriveContributionStatus, deriveAmountDue, joinedAtToYM } from './contributionStatus'
 
@@ -313,11 +314,7 @@ export function buildRelanceMessage(params: {
   currency: string
 }): string {
   const { memberName, lateMonthLabels, amountDue, currency } = params
-  const formattedAmount = new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(amountDue)
+  const formattedAmount = formatCurrency(amountDue, currency)
 
   const monthsLine =
     lateMonthLabels.length > 0
