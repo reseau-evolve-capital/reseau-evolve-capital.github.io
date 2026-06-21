@@ -2,14 +2,14 @@ import type { Metadata } from 'next'
 import { getTranslations } from 'next-intl/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
-import { getSessionUser, getNetworkContext } from '@/lib/data/request'
-import { getNetworkFeedback } from '@/lib/data/feedback'
+import { getSessionUser, getAdminContext } from '@/lib/data/request'
+import { getClubFeedback } from '@/lib/data/feedback'
 import { Forbidden } from '../Forbidden'
-import { FeedbackConsoleView, type FeedbackPeriod } from './FeedbackConsoleView'
-import { updateFeedbackStatusAction } from './actions'
+import { FeedbackConsoleView, type FeedbackPeriod } from '../../reseau/retours/FeedbackConsoleView'
+import { updateClubFeedbackStatusAction } from './actions'
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = await getTranslations('reseau.retours')
+  const t = await getTranslations('admin.retours')
   return { title: t('meta.title') }
 }
 
@@ -25,10 +25,12 @@ function parsePeriod(raw: string | string[] | undefined): FeedbackPeriod {
   return v === '90d' || v === 'all' ? v : '30d'
 }
 
-// Console feedbacks RÉSEAU (NET-019). Garde réseau portée par le layout /reseau (Forbidden) +
-// middleware ; on re-vérifie ici en défense. La lecture passe par la RLS « membre réseau lit tout »
-// (migration 051) — JAMAIS de service-role. Période par défaut : 30 jours.
-export default async function ReseauRetoursPage({
+// Console feedbacks BUREAU DE CLUB (ADM-009). Le layout /admin garde déjà la session + staff (any
+// club) ; on re-vérifie ici le contexte admin scopé au club ACTIF (Forbidden si simple membre du
+// club actif). La lecture passe par la RLS « staff lit son club » (migration 051) + filtre serveur
+// au club actif — JAMAIS de service-role. Période par défaut : 30 jours. Réutilise le composant
+// partagé de NET-019 en scope='club' (pas de filtre/colonne Club ; dataviz « Volume par semaine »).
+export default async function AdminRetoursPage({
   searchParams,
 }: {
   searchParams: Promise<{ periode?: string | string[] }>
@@ -39,22 +41,22 @@ export default async function ReseauRetoursPage({
   const user = await getSessionUser()
   if (!user) return <Forbidden />
 
-  const ctx = await getNetworkContext(user.id)
+  const ctx = await getAdminContext(user.id)
   if (!ctx) return <Forbidden />
 
   const period = parsePeriod((await searchParams).periode)
-  const data = await getNetworkFeedback(supabase, sinceFor(period))
-  const t = await getTranslations('reseau.retours')
+  const data = await getClubFeedback(supabase, ctx.clubId, sinceFor(period))
+  const t = await getTranslations('admin.retours')
 
   return (
     <FeedbackConsoleView
-      scope="network"
+      scope="club"
       initialData={data}
       period={period}
       title={t('title')}
       subtitle={t('subtitle')}
-      basePath="/reseau/retours"
-      updateStatusAction={updateFeedbackStatusAction}
+      basePath="/admin/retours"
+      updateStatusAction={updateClubFeedbackStatusAction}
     />
   )
 }
