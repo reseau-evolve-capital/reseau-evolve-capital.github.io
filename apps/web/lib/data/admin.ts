@@ -13,6 +13,7 @@
 import type { createServerClient, Database } from '@evolve/data'
 import type { TimelineYear } from '@evolve/ui'
 import { buildTimelineYears, type MonthInput } from './contributions'
+import { deriveContributionStatus, deriveAmountDue, joinedAtToYM } from './contributionStatus'
 
 type ServerClient = ReturnType<typeof createServerClient>
 type MembershipRow = Database['public']['Tables']['memberships']['Row']
@@ -95,6 +96,74 @@ export interface ContribStats {
   average: number
 }
 
+// ─── Nouveaux types cotisations V2 ──────────────────────────────────────────
+
+/** Membre en retard de cotisation, avec comptage de mois en retard. */
+export interface RegulariserMember {
+  membershipId: string
+  fullName: string
+  lateMonthsCount: number
+  amountDue: number
+}
+
+/** Statistiques de recouvrement du club pour la page cotisations V2. */
+export interface ClubCotisationsStats {
+  /** Taux de recouvrement : paid / (paid + late + due). Fraction 0..1. Retourne 1 si aucun mois exploitable. */
+  recoveryRate: number
+  /** Σ amountDue des membres en retard (isUnpaid=true). */
+  lateAmount: number
+  /** Nombre de membres en retard. */
+  lateCount: number
+  /** Σ amount des mois avec status='paid'. */
+  encaisse: number
+}
+
+/** Un mois en retard d'un membre (pour la fiche membre admin). */
+export interface LateMonth {
+  year: number
+  month: number
+  amount: number
+}
+
+/** Données de cotisation d'un membre spécifique pour la vue trésorier. */
+export interface MemberCotisationsData {
+  fullName: string
+  joinedAt: string | null
+  /** Statut dérivé via deriveContributionStatus. */
+  status: ContributionStatus
+  /** Taux de recouvrement du membre. Fraction 0..1. */
+  recoveryRate: number
+  amountDue: number
+  netMarketValue: number | null
+  lateMonths: LateMonth[]
+  years: TimelineYear[]
+}
+
+/** Payload de l'API cotisations admin V2 (remplace l'ancien payload years+stats). */
+export interface AdminContribPayload {
+  clubId: string
+  clubStats: ClubCotisationsStats
+  regulariserList: RegulariserMember[]
+  /** null = mode club (vue agrégée) ; non-null = mode membre (fiche individuelle). */
+  member: MemberCotisationsData | null
+  /** @deprecated Conservé pour compatibilité ascendante AdminCotisationsView jusqu'à T6. */
+  stats: ContribStats
+  /** @deprecated Conservé pour compatibilité ascendante AdminCotisationsView jusqu'à T6. */
+  years: TimelineYear[]
+}
+
+/** Paramètres déterministes de la synthèse trésorier (i18n côté UI). */
+export interface SyntheseParams {
+  /** Taux de recouvrement. Fraction 0..1. */
+  recoveryRate: number
+  lateCount: number
+  lateAmount: number
+  /** Nom du premier membre en retard (montant le plus élevé). null si 0 retard. */
+  topMemberName: string | null
+  /** Montant dû du premier membre. null si 0 retard. */
+  topMemberAmount: number | null
+}
+
 // ─── Helpers PURS (testés sans DB) ──────────────────────────────────────────
 
 /** Un membre est « en impayé » si retard/en attente OU s'il reste un montant dû. */
@@ -165,6 +234,109 @@ export function computeContribStats(amounts: number[]): ContribStats {
   const total = amounts.reduce((s, n) => s + n, 0)
   const count = amounts.length
   return { total, count, average: count === 0 ? 0 : total / count }
+}
+
+// ─── Fonctions pures cotisations V2 ─────────────────────────────────────────
+
+/**
+ * Taux de recouvrement = paid / (paid + late + due). Exclut exempt.
+ * Retourne 1 si aucun mois exploitable (club sans historique).
+ */
+export function computeRecoveryRate(months: Array<{ status: MonthStatus }>): number {
+  let paid = 0
+  let late = 0
+  let due = 0
+  for (const m of months) {
+    if (m.status === 'paid') paid++
+    else if (m.status === 'late') late++
+    else if (m.status === 'due') due++
+    // 'exempt' ignoré
+  }
+  const total = paid + late + due
+  if (total === 0) return 1
+  return paid / total
+}
+
+/**
+ * Montant encaissé = Σ amount sur les lignes status='paid'.
+ */
+export function computeEncaisse(months: Array<{ amount: number; status: MonthStatus }>): number {
+  return months.reduce((s, m) => (m.status === 'paid' ? s + m.amount : s), 0)
+}
+
+/**
+ * Liste nominative des membres en retard (isUnpaid=true), triée par amountDue décroissant.
+ * lateMonthsCount = calculé depuis lateMonthsByMembership (Map membershipId → count).
+ */
+export function buildRegulariserList(
+  members: ClubMember[],
+  lateMonthsByMembership: Map<string, number>
+): RegulariserMember[] {
+  return members
+    .filter((m) => m.isUnpaid)
+    .map((m) => ({
+      membershipId: m.id,
+      fullName: m.fullName,
+      lateMonthsCount: lateMonthsByMembership.get(m.id) ?? 0,
+      amountDue: m.amountDue,
+    }))
+    .sort((a, b) => b.amountDue - a.amountDue)
+}
+
+/**
+ * Gabarit synthèse déterministe. Variantes : 0 / 1 / N retards.
+ * Retourne un objet { recoveryRate, lateCount, lateAmount, topMemberName, topMemberAmount }
+ * pour permettre l'i18n côté UI (la traduction se fait dans le composant, pas ici).
+ */
+export function buildSyntheseParams(
+  clubStats: ClubCotisationsStats,
+  regulariserList: RegulariserMember[]
+): SyntheseParams {
+  const top = regulariserList.length > 0 ? regulariserList[0] : null
+  return {
+    recoveryRate: clubStats.recoveryRate,
+    lateCount: clubStats.lateCount,
+    lateAmount: clubStats.lateAmount,
+    topMemberName: top?.fullName ?? null,
+    topMemberAmount: top?.amountDue ?? null,
+  }
+}
+
+/**
+ * Gabarit de message de relance déterministe (v1).
+ * Retourne le message texte complet (éditable dans la modale).
+ */
+export function buildRelanceMessage(params: {
+  memberName: string
+  lateMonthLabels: string[]
+  amountDue: number
+  currency: string
+}): string {
+  const { memberName, lateMonthLabels, amountDue, currency } = params
+  const formattedAmount = new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+  }).format(amountDue)
+
+  const monthsLine =
+    lateMonthLabels.length > 0
+      ? `Mois concernés : ${lateMonthLabels.join(', ')}.`
+      : 'Aucun mois spécifié.'
+
+  return [
+    `Bonjour ${memberName},`,
+    '',
+    `Nous vous rappelons que votre cotisation au club présente un solde impayé.`,
+    '',
+    monthsLine,
+    `Montant total dû : ${formattedAmount}`,
+    '',
+    `Merci de régulariser votre situation dans les meilleurs délais.`,
+    '',
+    `Cordialement,`,
+    `L'équipe du club`,
+  ].join('\n')
 }
 
 // ─── Helpers DB (session + RLS treasurer) ───────────────────────────────────
@@ -411,5 +583,153 @@ export async function getClubContributionsTimeline(
     years: buildTimelineYears(aggregateMonthsByPeriod(months), null, nowYM),
     // Stats = tous les versements individuels (total/nombre/moyenne du club).
     stats: computeContribStats(months.map((m) => m.amount)),
+  }
+}
+
+// ─── Nouvelles fonctions DB cotisations V2 ───────────────────────────────────
+
+/**
+ * Récupère les mois bruts du club (avec membership_id) bornés à l'année courante.
+ * Utilisée pour computeRecoveryRate, computeEncaisse et le comptage late par membre.
+ * RLS treasurer.
+ */
+export async function getClubRawMonths(
+  supabase: ServerClient,
+  clubId: string
+): Promise<
+  Array<{ membership_id: string; amount: number; status: MonthStatus; year: number; month: number }>
+> {
+  const currentYear = new Date().getFullYear()
+  const { data, error } = await supabase
+    .from('contribution_months')
+    .select('membership_id, amount, status, year, month')
+    .eq('club_id', clubId)
+    .lte('year', currentYear)
+    .returns<
+      {
+        membership_id: string
+        amount: number | null
+        status: MonthStatus
+        year: number
+        month: number
+      }[]
+    >()
+  if (error) throw error
+  return (data ?? []).map((r) => ({
+    membership_id: r.membership_id,
+    amount: Number(r.amount ?? 0),
+    status: r.status,
+    year: r.year,
+    month: r.month,
+  }))
+}
+
+/**
+ * Données de cotisation d'un membre spécifique pour la vue trésorier.
+ * Utilisée par l'API route (mode membre). RLS treasurer.
+ * Retourne null si le membership n'appartient pas au club.
+ */
+export async function getMemberCotisationsForAdmin(
+  supabase: ServerClient,
+  clubId: string,
+  membershipId: string
+): Promise<MemberCotisationsData | null> {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const nowYM = currentYear * 12 + now.getMonth()
+
+  // Parallélise les trois requêtes indépendantes.
+  const [membershipRes, contribRes, monthsRes] = await Promise.all([
+    supabase
+      .from('memberships')
+      .select('id, joined_at, users!memberships_user_id_fkey!inner(full_name)')
+      .eq('id', membershipId)
+      .eq('club_id', clubId)
+      .maybeSingle<{
+        id: string
+        joined_at: string | null
+        users: { full_name: string }
+      }>(),
+    supabase
+      .from('contributions')
+      .select('status, amount_due, net_market_value')
+      .eq('membership_id', membershipId)
+      .eq('club_id', clubId)
+      .maybeSingle<{
+        status: ContributionStatus
+        amount_due: number | null
+        net_market_value: number | null
+      }>(),
+    supabase
+      .from('contribution_months')
+      .select('year, month, amount, status, paid_at')
+      .eq('membership_id', membershipId)
+      .eq('club_id', clubId)
+      .lte('year', currentYear)
+      .order('year', { ascending: false })
+      .order('month', { ascending: false })
+      .returns<
+        {
+          year: number
+          month: number
+          amount: number | null
+          status: MonthStatus
+          paid_at: string | null
+        }[]
+      >(),
+  ])
+
+  if (membershipRes.error) throw membershipRes.error
+  if (contribRes.error) throw contribRes.error
+  if (monthsRes.error) throw monthsRes.error
+
+  // Membership introuvable dans ce club → null.
+  if (!membershipRes.data) return null
+
+  const membership = membershipRes.data
+  const contrib = contribRes.data
+  const joinedAtYM = joinedAtToYM(membership.joined_at)
+
+  const months: MonthInput[] = (monthsRes.data ?? []).map((r) => ({
+    year: r.year,
+    month: r.month,
+    amount: Number(r.amount ?? 0),
+    status: r.status,
+    paidAt: r.paid_at,
+  }))
+
+  // Statut dérivé (fallback si colonne feuille illisible).
+  const sheetStatus: ContributionStatus = contrib?.status ?? 'pending'
+  const status = deriveContributionStatus(sheetStatus, months, joinedAtYM, nowYM)
+
+  // Montant dû : donnée source prime, sinon dérivé (minContribution=0 → 0 si absent).
+  const amountDue = deriveAmountDue(Number(contrib?.amount_due ?? 0), months, joinedAtYM, nowYM, 0)
+
+  // Mois en retard exploitables (post-adhésion, ≤ mois courant).
+  const lateMonths: LateMonth[] = months
+    .filter((m) => {
+      if (m.status !== 'late') return false
+      const ym = m.year * 12 + (m.month - 1)
+      if (joinedAtYM != null && ym < joinedAtYM) return false
+      if (ym > nowYM) return false
+      return true
+    })
+    .map((m) => ({ year: m.year, month: m.month, amount: m.amount }))
+
+  // Taux de recouvrement du membre (sur ses propres mois).
+  const recoveryRate = computeRecoveryRate(months)
+
+  // Frise des années (même logique que la vue membre).
+  const years = buildTimelineYears(months, joinedAtYM, nowYM)
+
+  return {
+    fullName: membership.users.full_name,
+    joinedAt: membership.joined_at,
+    status,
+    recoveryRate,
+    amountDue,
+    netMarketValue: contrib?.net_market_value != null ? Number(contrib.net_market_value) : null,
+    lateMonths,
+    years,
   }
 }
