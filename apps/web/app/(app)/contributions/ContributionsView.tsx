@@ -28,10 +28,15 @@ import {
 import { formatCurrency } from '@evolve/utils'
 
 import { analyticsEvents } from '@/lib/analytics'
-import { openAttestation } from '@/lib/attestation/openAttestation'
+import {
+  chooseAttestationStrategy,
+  downloadAttestationBlob,
+  openAttestation,
+} from '@/lib/attestation/openAttestation'
 import type { ContributionsData, ContributionStatus } from '@/lib/data/contributions'
 import { useContributions } from '@/lib/hooks/useContributions'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
+import { detectPwaCase } from '@/lib/pwa/platform-detection'
 
 // La variante visuelle (couleur) du Pill reste interne ; seul le libellé est externalisé (i18n).
 const STATUS_PILL: Record<ContributionStatus, PillStatus> = {
@@ -71,35 +76,59 @@ export function ContributionsView({
     },
   })
 
-  // Ouvre le PDF d'attestation dans un nouvel onglet (lecture inline — meilleure UX mobile).
+  // Délivre le PDF d'attestation selon le contexte (web vs PWA installée).
   //
-  // FIX iOS (CHANTIER 3) : l'ancien flux `fetch → blob → a.click()` plaçait l'ouverture APRÈS
-  // un `await`, ce qui casse sur iOS Safari (le geste utilisateur synchrone est perdu → popup
-  // bloquée, rien ne s'ouvre). On rend donc l'ouverture SYNCHRONE : `window.open(url)` est la
-  // 1re action du onClick, sur l'URL GET de la route (qui sert déjà le PDF `inline` via le cookie
-  // d'auth — pas besoin de fetch côté client). Aucun `await` avant le window.open.
+  // WEB / navigateur (y compris iOS Safari hors-PWA) : ouverture SYNCHRONE dans un nouvel onglet.
+  // L'ouverture est la 1re action du onClick, sans `await` préalable → préserve le geste
+  // utilisateur sur iOS Safari (sinon popup bloquée). La route sert déjà le PDF `inline` via le
+  // cookie d'auth. FIX RT-04 : le helper `openAttestation` ne passe PAS 'noopener' (sinon
+  // window.open renvoie `null` même en succès → faux toast d'erreur). Erreur QUE si 'blocked'.
   //
-  // FIX RT-04 : on délègue l'ouverture au helper pur `openAttestation` qui ne passe PLUS 'noopener'
-  // — avec 'noopener', window.open renvoyait `null` même en cas de SUCCÈS (faux toast d'erreur
-  // persistant à chaque clic). On n'affiche donc l'erreur QUE si le helper renvoie 'blocked'.
+  // FIX PWA iOS (standalone) : dans une PWA installée, `_blank` navigue SUR PLACE → le PDF inline
+  // remplit l'unique vue sans retour possible (utilisateur piégé). On télécharge alors le PDF en
+  // blob (`<a download>`) → iOS ouvre l'aperçu Fichiers avec un bouton « OK » qui ramène dans l'app.
   function downloadAttestation() {
     if (downloading) return
     setAttestationError(null)
     const clubId = data?.clubId
     const qs = clubId ? `?clubId=${encodeURIComponent(clubId)}` : ''
-    const result = openAttestation(window.open.bind(window), `/api/attestation/detention${qs}`)
-    if (result === 'blocked') {
-      // Popup réellement bloquée (navigateur/extension) → erreur inline persistante (role=alert) + toast.
+    const url = `/api/attestation/detention${qs}`
+
+    const fail = () => {
       setAttestationError(t('attestation.error'))
       toast.error({ title: t('attestation.error') })
+    }
+    const succeed = () => {
+      toast.success({ title: t('attestation.success') })
+      // 🎯 attestation_download (key event) — succès uniquement, déclenchement in-app.
+      analyticsEvents.attestation.downloaded({ triggerSource: 'in_app' })
+    }
+
+    if (chooseAttestationStrategy(detectPwaCase()) === 'download') {
+      // PWA standalone : téléchargement blob (asynchrone) — flag visuel maintenu le temps du fetch.
+      setDownloading(true)
+      void downloadAttestationBlob(url, 'attestation-detention.pdf').then((r) => {
+        setDownloading(false)
+        if (r === 'error') {
+          fail()
+          return
+        }
+        succeed()
+      })
+      return
+    }
+
+    // Web : ouverture synchrone dans un nouvel onglet.
+    const result = openAttestation(window.open.bind(window), url)
+    if (result === 'blocked') {
+      // Popup réellement bloquée (navigateur/extension) → erreur inline persistante (role=alert) + toast.
+      fail()
       return
     }
     // Confirmation éphémère + flag visuel bref (l'ouverture n'est pas toujours visible).
     setDownloading(true)
     setTimeout(() => setDownloading(false), 1500)
-    toast.success({ title: t('attestation.success') })
-    // 🎯 attestation_download (key event) — succès uniquement, déclenchement in-app.
-    analyticsEvents.attestation.downloaded({ triggerSource: 'in_app' })
+    succeed()
   }
 
   async function refresh() {

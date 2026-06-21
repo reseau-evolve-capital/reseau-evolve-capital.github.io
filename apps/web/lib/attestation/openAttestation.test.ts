@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { openAttestation } from './openAttestation'
+import { chooseAttestationStrategy, openAttestation } from './openAttestation'
 
 // RT-04 — Régression du faux popup « génération échouée ».
 //
@@ -49,5 +49,20 @@ describe('openAttestation', () => {
     if (features !== undefined) {
       expect(features).not.toContain('noopener')
     }
+  })
+})
+
+// FIX PWA iOS (standalone) — la stratégie d'ouverture dépend du contexte PWA.
+describe('chooseAttestationStrategy', () => {
+  it("télécharge (blob) en PWA installée (standalone) — sinon l'utilisateur reste piégé", () => {
+    expect(chooseAttestationStrategy('standalone')).toBe('download')
+  })
+
+  it('ouvre un nouvel onglet partout ailleurs (web, iOS Safari hors-PWA, Android, desktop)', () => {
+    expect(chooseAttestationStrategy('ios-safari')).toBe('open')
+    expect(chooseAttestationStrategy('ios-other')).toBe('open')
+    expect(chooseAttestationStrategy('android-chrome')).toBe('open')
+    expect(chooseAttestationStrategy('desktop')).toBe('open')
+    expect(chooseAttestationStrategy('unsupported')).toBe('open')
   })
 })
