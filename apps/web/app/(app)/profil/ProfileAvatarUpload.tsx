@@ -1,15 +1,16 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
 
-import { AvatarUpload, useToast } from '@evolve/ui'
+import { AvatarUpload, AvatarCropModal, useToast } from '@evolve/ui'
 import { useSupabase } from '@/components/providers/SupabaseProvider'
-import { resizeAndUploadAvatar } from '@/lib/upload/avatar'
+import { useAvatarCropFlow } from '@/lib/upload/useAvatarCropFlow'
 
 /**
  * Wrapper client autour de AvatarUpload pour la page /profil.
- * Upload dans le bucket `avatars`, puis MAJ de `users.avatar_url` (RLS self-update).
+ * Sélection fichier → modale de crop → upload du Blob croppé → MAJ `users.avatar_url`
+ * (RLS self-update) → `router.refresh()` pour rafraîchir aussi l'avatar du topbar (layout RSC).
  */
 export function ProfileAvatarUpload({
   initialUrl,
@@ -19,57 +20,52 @@ export function ProfileAvatarUpload({
   name: string
 }) {
   const t = useTranslations('profile')
+  const tCrop = useTranslations('avatarCrop')
   const toast = useToast()
   const supabase = useSupabase()
+  const router = useRouter()
 
-  const [previewUrl, setPreviewUrl] = useState<string | null>(initialUrl)
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | undefined>()
-  const localPreviewRef = useRef<string | null>(null)
-
-  async function handleFileSelected(file: File) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) return
-
-    // Aperçu optimiste local avant l'upload.
-    if (localPreviewRef.current) URL.revokeObjectURL(localPreviewRef.current)
-    const localUrl = URL.createObjectURL(file)
-    localPreviewRef.current = localUrl
-    setPreviewUrl(localUrl)
-
-    setIsUploading(true)
-    setUploadError(undefined)
-    try {
-      const url = await resizeAndUploadAvatar(supabase, user.id, file)
-      // MAJ directe via RLS « users: self update » (auth.uid() = user.id).
-      const { error } = await supabase.from('users').update({ avatar_url: url }).eq('id', user.id)
+  const flow = useAvatarCropFlow({
+    initialPreview: initialUrl,
+    fallbackErrorLabel: t('avatarError'),
+    onUploaded: async (url, userId) => {
+      const { error } = await supabase.from('users').update({ avatar_url: url }).eq('id', userId)
       if (error) throw new Error(t('avatarError'))
-      setPreviewUrl(url)
       toast.success({ title: t('avatarUpdated') })
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : t('avatarError'))
-      setPreviewUrl(initialUrl)
-    } finally {
-      if (localPreviewRef.current) {
-        URL.revokeObjectURL(localPreviewRef.current)
-        localPreviewRef.current = null
-      }
-      setIsUploading(false)
-    }
-  }
+      // Rafraîchit le layout RSC → l'avatar du topbar reflète la nouvelle photo.
+      router.refresh()
+    },
+  })
 
   return (
-    <AvatarUpload
-      previewUrl={previewUrl}
-      onFileSelected={handleFileSelected}
-      isUploading={isUploading}
-      error={uploadError}
-      uploadAriaLabel={t('avatarUploadAria', { name })}
-      emptyLabel={t('avatarEmpty')}
-      uploadingLabel={t('avatarUploading')}
-      uploadingAriaLabel={t('avatarUploadingAria')}
-    />
+    <>
+      <AvatarUpload
+        previewUrl={flow.previewUrl}
+        onFileSelected={flow.handleFileSelected}
+        isUploading={flow.isUploading}
+        error={flow.error}
+        uploadAriaLabel={t('avatarUploadAria', { name })}
+        emptyLabel={t('avatarEmpty')}
+        uploadingLabel={t('avatarUploading')}
+        uploadingAriaLabel={t('avatarUploadingAria')}
+      />
+      <AvatarCropModal
+        open={flow.cropOpen}
+        onOpenChange={flow.setCropOpen}
+        imageSrc={flow.cropSrc}
+        onConfirm={flow.handleCropConfirm}
+        onCancel={flow.handleCropCancel}
+        labels={{
+          title: tCrop('title'),
+          description: tCrop('description'),
+          cancel: tCrop('cancel'),
+          confirm: tCrop('confirm'),
+          confirming: tCrop('confirming'),
+          zoomLabel: tCrop('zoom'),
+          close: tCrop('close'),
+          error: tCrop('error'),
+        }}
+      />
+    </>
   )
 }

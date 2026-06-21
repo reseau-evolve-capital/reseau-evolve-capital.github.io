@@ -859,6 +859,16 @@
     "description": "Cette page n’existe pas ou a été déplacée. Pas d’inquiétude, on te ramène en terrain connu.",
     "backToDashboard": "Retour au tableau de bord"
   },
+  "avatarCrop": {
+    "title": "Ajuster ta photo",
+    "description": "Déplace et zoome pour cadrer ton visage dans le cercle.",
+    "cancel": "Annuler",
+    "confirm": "Utiliser cette photo",
+    "confirming": "Traitement…",
+    "zoom": "Zoom",
+    "close": "Fermer",
+    "error": "Échec du recadrage de l'image."
+  },
   "profile": {
     "metaTitle": "Mon profil — Evolve Capital",
     "title": "Mon profil",
