@@ -70,7 +70,7 @@ export function RegulariserList({
               'hover:bg-surface-raised focus-visible:bg-surface-raised',
               'outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
             )}
-            data-testid={`regulariser-row-${index}`}
+            data-testid={`regulariser-row-${item.membershipId}`}
           >
             {/* Left: member info */}
             <div className="flex flex-col gap-0.5 min-w-0">
