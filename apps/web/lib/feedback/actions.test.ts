@@ -18,7 +18,19 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
   upload: vi.fn(),
   createSignedUrl: vi.fn(),
+  // Lecture memberships pour dériver feedback.club_id (NET-019). maybeSingle renvoie le club actif.
+  membershipMaybeSingle: vi.fn(),
 }))
+
+// Builder memberships chainable (select → eq → eq → [eq] → [order] → [limit] → maybeSingle).
+function membershipsBuilder() {
+  const builder: Record<string, unknown> = {}
+  for (const m of ['select', 'eq', 'order', 'limit']) {
+    builder[m] = () => builder
+  }
+  builder.maybeSingle = () => mocks.membershipMaybeSingle()
+  return builder
+}
 
 vi.mock('@evolve/data', () => ({
   createServerClient: () => ({
@@ -26,7 +38,8 @@ vi.mock('@evolve/data', () => ({
     storage: {
       from: () => ({ upload: mocks.upload, createSignedUrl: mocks.createSignedUrl }),
     },
-    from: () => ({ insert: mocks.insert }),
+    from: (table: string) =>
+      table === 'memberships' ? membershipsBuilder() : { insert: mocks.insert },
   }),
 }))
 
@@ -68,10 +81,13 @@ beforeEach(() => {
   mocks.insert.mockReset()
   mocks.upload.mockReset()
   mocks.createSignedUrl.mockReset()
+  mocks.membershipMaybeSingle.mockReset()
   // Par défaut, un membre authentifié, un INSERT et un upload qui réussissent.
   mocks.getUser.mockResolvedValue({ data: { user: USER } })
   mocks.insert.mockResolvedValue({ error: null })
   mocks.upload.mockResolvedValue({ error: null })
+  // Par défaut : aucune adhésion active → club_id null (le test club_id dédié surcharge).
+  mocks.membershipMaybeSingle.mockResolvedValue({ data: null })
 })
 
 describe('submitFeedbackAction', () => {
@@ -187,6 +203,7 @@ describe('submitFeedbackAction', () => {
     expect(mocks.insert).toHaveBeenCalledWith({
       user_id: USER.id,
       user_email: USER.email,
+      club_id: null,
       type: 'feature',
       message: 'Ajouter un export CSV',
       screenshot_urls: null,
@@ -194,5 +211,23 @@ describe('submitFeedbackAction', () => {
       page_route: '/dashboard',
       user_agent: 'jsdom',
     })
+  })
+
+  it('dérive feedback.club_id depuis l’adhésion active de l’auteur (NET-019)', async () => {
+    mocks.membershipMaybeSingle.mockResolvedValue({ data: { club_id: 'club-abc' } })
+
+    const res = await submitFeedbackAction(makeSubmission())
+
+    expect(res).toEqual({ ok: true })
+    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ club_id: 'club-abc' }))
+  })
+
+  it('club_id null quand l’auteur n’a aucune adhésion active', async () => {
+    mocks.membershipMaybeSingle.mockResolvedValue({ data: null })
+
+    const res = await submitFeedbackAction(makeSubmission())
+
+    expect(res).toEqual({ ok: true })
+    expect(mocks.insert).toHaveBeenCalledWith(expect.objectContaining({ club_id: null }))
   })
 })

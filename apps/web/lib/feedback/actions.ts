@@ -29,6 +29,7 @@ import { createServerClient } from '@evolve/data'
 import type { FeedbackSubmission } from '@evolve/ui'
 import { MAX_FEEDBACK_IMAGES } from '@evolve/ui'
 import { captureActionError } from '@/lib/monitoring/sentry'
+import { ACTIVE_CLUB_COOKIE } from '@/lib/data/request'
 
 /** Résultat discriminé (jamais de throw) — l'UI mappe l'erreur sur un message i18n. */
 export type FeedbackActionResult = { ok: true } | { ok: false; error: string }
@@ -76,15 +77,61 @@ function decodeImageDataUrl(dataUrl: string): DecodedImage | null {
   }
 }
 
+/**
+ * Dérive le club d'adhésion active de l'auteur au moment du submit (NET-019 → feedback.club_id).
+ *
+ * Priorité : (1) le club actif préféré (cookie `evolve_active_club`) s'il correspond à une
+ * adhésion ACTIVE de l'auteur ; sinon (2) l'adhésion active la plus récente ; sinon (3) NULL
+ * (auteur sans adhésion active — ex. membre réseau pur, ou compte pré-import sans club).
+ *
+ * Lecture sous la RLS du membre (il lit ses propres memberships) — JAMAIS de service-role.
+ * Non fatal : toute erreur de lecture retombe sur NULL (le feedback est inséré dans tous les cas).
+ */
+async function resolveActiveClubId(
+  supabase: ReturnType<typeof createServerClient>,
+  userId: string,
+  preferredClubId: string | null
+): Promise<string | null> {
+  try {
+    if (preferredClubId) {
+      const { data: preferred } = await supabase
+        .from('memberships')
+        .select('club_id')
+        .eq('user_id', userId)
+        .eq('club_id', preferredClubId)
+        .eq('is_active', true)
+        .maybeSingle<{ club_id: string }>()
+      if (preferred) return preferred.club_id
+    }
+
+    const { data } = await supabase
+      .from('memberships')
+      .select('club_id')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .order('joined_at', { ascending: false })
+      .limit(1)
+      .maybeSingle<{ club_id: string }>()
+    return data?.club_id ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function submitFeedbackAction(
   submission: FeedbackSubmission
 ): Promise<FeedbackActionResult> {
-  const supabase = createServerClient(await cookies())
+  const cookieStore = await cookies()
+  const supabase = createServerClient(cookieStore)
 
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { ok: false, error: 'unauthorized' }
+
+  // club_id dérivé de l'adhésion active de l'auteur (NET-019). NULL si aucune adhésion active.
+  const preferredClubId = cookieStore.get(ACTIVE_CLUB_COOKIE)?.value ?? null
+  const clubId = await resolveActiveClubId(supabase, user.id, preferredClubId)
 
   // ── Images jointes (optionnelles, non fatales) ─────────────────────────────
   // Validation : tronque à MAX_FEEDBACK_IMAGES, décode/valide chaque entrée, ignore le reste.
@@ -113,6 +160,8 @@ export async function submitFeedbackAction(
   const { error: insertError } = await supabase.from('feedback').insert({
     user_id: user.id,
     user_email: user.email ?? '',
+    // Club d'adhésion active de l'auteur (NET-019). NULL = aucune adhésion active.
+    club_id: clubId,
     type: submission.type,
     message: submission.message,
     // Colonne text[] (migration 036) : tableau des URLs signées des images qui ont survécu,
