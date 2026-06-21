@@ -5,7 +5,7 @@ import { useCallback, useState, useSyncExternalStore } from 'react'
 import type { PwaCase } from '@evolve/types'
 
 import { detectPwaCase } from '@/lib/pwa/platform-detection'
-import { canSubscribeOnPlatform } from './permission'
+import { canSubscribeOnPlatform, readNotificationPermission } from './permission'
 import { pushDismissStore } from './dismiss-storage'
 import { subscribePush, type SubscribeResult } from './subscribe'
 import type { PushPlatformCapability } from './platform-push'
@@ -42,10 +42,34 @@ const getClientCooldownEligible = (): boolean => {
 }
 const getServerCooldownEligible = (): boolean => false
 
+/**
+ * Décision PURE d'affichage du pre-prompt (PUSH-001 ; spec §6.3/§6.4) — extraite pour
+ * être testable sans React.
+ *
+ * Règle non négociable : on ne re-prompte JAMAIS une fois la permission décidée. Seul
+ * `permission === 'default'` (décision en attente) autorise l'affichage — `granted` (déjà
+ * abonné) comme `denied` (refusé) masquent définitivement le pre-prompt maison. Sans ce
+ * garde, un appareil ayant ACCORDÉ la permission restait `capability === 'ready'` et le
+ * pre-prompt se ré-affichait à chaque reload (aucun cooldown n'étant posé à l'acceptation).
+ */
+export function shouldShowPushPrePrompt(args: {
+  capability: PushPlatformCapability
+  permission: NotificationPermission
+  eligibleByCooldown: boolean
+  hidden: boolean
+}): boolean {
+  return (
+    args.capability === 'ready' &&
+    args.permission === 'default' &&
+    args.eligibleByCooldown &&
+    !args.hidden
+  )
+}
+
 export type UsePushOptInReturn = {
   /** Capacité de l'appareil (unsupported / needs_pwa_install / needs_safari / blocked / ready). */
   capability: PushPlatformCapability
-  /** Vrai si le pre-prompt doit s'afficher (ready + cooldown expiré + non encore décidé). */
+  /** Vrai si le pre-prompt doit s'afficher (ready + permission 'default' + cooldown expiré + non masqué). */
   shouldShowPrePrompt: boolean
   /** Lance le flux requestPermission → subscribe → POST. Retourne le code de résultat. */
   requestOptIn: () => Promise<SubscribeResult>
@@ -63,19 +87,33 @@ export function usePushOptIn(): UsePushOptInReturn {
   )
   const [hidden, setHidden] = useState(false)
 
+  // Permission Notification lue au render (gardée crash-safe). Côté serveur → 'default'.
+  let permission: NotificationPermission = 'default'
+  try {
+    permission = readNotificationPermission()
+  } catch {
+    permission = 'default'
+  }
+
   // Capacité dérivée du render (pure : pwaCase + permission Notification, gardée crash-safe).
   // Côté serveur, pwaCase = 'unsupported' → canSubscribeOnPlatform → 'unsupported'.
   let capability: PushPlatformCapability = 'unsupported'
   try {
-    capability = canSubscribeOnPlatform(pwaCase)
+    capability = canSubscribeOnPlatform(pwaCase, permission)
   } catch {
     capability = 'unsupported'
   }
 
   // Le pre-prompt maison ne s'affiche QUE si l'appareil peut s'abonner immédiatement
-  // (`ready`). Les cas iOS (needs_pwa_install / needs_safari) sont gérés par le fallback
-  // (réutilise PwaInstallSheet), `unsupported`/`blocked` n'affichent rien.
-  const shouldShowPrePrompt = capability === 'ready' && eligibleByCooldown && !hidden
+  // (`ready`) ET que la permission n'est pas encore décidée (`default`). Les cas iOS
+  // (needs_pwa_install / needs_safari) sont gérés par le fallback (réutilise PwaInstallSheet) ;
+  // `unsupported`/`blocked`/`granted` n'affichent rien (granted = déjà abonné, ne pas re-prompter).
+  const shouldShowPrePrompt = shouldShowPushPrePrompt({
+    capability,
+    permission,
+    eligibleByCooldown,
+    hidden,
+  })
 
   const requestOptIn = useCallback(async (): Promise<SubscribeResult> => {
     setHidden(true)
