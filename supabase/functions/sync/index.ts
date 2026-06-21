@@ -177,10 +177,10 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 3. Résolution du sheet_id du club.
+    // 3. Résolution du sheet_id du club + garde « club désactivé » (NET-018).
     const { data: club, error: clubErr } = await supabase
       .from('clubs')
-      .select('sheet_id')
+      .select('sheet_id, is_active')
       .eq('id', clubId)
       .maybeSingle()
     if (clubErr) {
@@ -189,6 +189,27 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     if (!club) {
       return json({ error: `Club introuvable: ${clubId}` }, 404)
     }
+
+    // GARDE CLUB DÉSACTIVÉ (NET-018) — anti « sync zombie » : un club soft-désactivé par un
+    // network_admin (clubs.is_active = false) ne doit JAMAIS être ré-importé tant qu'il n'est pas
+    // réactivé, sinon le cron ressusciterait des données qu'on a volontairement rendues invisibles
+    // à ses membres (la RLS les masque déjà via get_user_club_ids, migration 050). On REFUSE
+    // proprement : 200 + success=true + `skipped: 'club_disabled'`, AUCUNE écriture, AUCUN snapshot.
+    // success=true volontaire : le cron qui itère les clubs ne doit pas compter ce refus comme un
+    // échec global (pas d'alerte trésorier/Discord pour une désactivation voulue).
+    if (club.is_active === false) {
+      return json({
+        success: true,
+        club_id: clubId,
+        skipped: 'club_disabled',
+        synced_sheets: [],
+        errors: [],
+        warnings: ['Club désactivé : synchronisation ignorée (NET-018).'],
+        duration_ms: Date.now() - startTime,
+        snapshots: {},
+      })
+    }
+
     const sheetId = (club.sheet_id ?? '').trim()
     if (sheetId === '') {
       return json({ error: 'Pas de Google Sheets configuré pour ce club.' }, 400)
@@ -477,24 +498,33 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         // dirigeant courant a été identifié (PARAMETRAGES exploitable). Si AUCUN n'est résolu
         // (feuille vide/malformée), on NE TOUCHE À RIEN — jamais de wipe du staff sur source
         // absente. On ne rétrograde QUE president/treasurer ; network_admin et member intacts.
+        // ANTI-ÉCRASEMENT (ADM-008) : un rôle défini EN APP (role_source='manual') n'est JAMAIS
+        // réécrit par la sync — ni rétrogradé au reset, ni promu. Les gardes `.neq('role_source',
+        // 'manual')` ci-dessous laissent ces memberships intactes. PostgREST traite NULL (colonne
+        // absente sur un env antérieur à la migration 052) comme « non égal à 'manual' » → la garde
+        // est rétro-compatible : sans la colonne, le comportement historique (tout 'sheet') tient.
         if (matched.length > 0) {
           const { error: resetErr } = await supabase
             .from('memberships')
             .update({ role: 'member' })
             .eq('club_id', clubId)
             .in('role', ['president', 'treasurer'])
+            .neq('role_source', 'manual')
           if (resetErr) {
             warnings.push(`Rôles: échec réinitialisation des dirigeants: ${resetErr.message}`)
           }
         }
 
-        // PROMOTION des dirigeants courants (jamais sur un network_admin : garde .neq).
+        // PROMOTION des dirigeants courants (jamais sur un network_admin : garde .neq ; jamais sur
+        // un rôle manuel : garde .neq role_source). Un membership figé en app conserve son rôle même
+        // si PARAMETRAGES le mentionne — l'app est désormais l'autorité pour les rôles 'manual'.
         for (const m of matched) {
           const { error: roleErr } = await supabase
             .from('memberships')
             .update({ role: m.role })
             .eq('id', m.id)
             .neq('role', 'network_admin')
+            .neq('role_source', 'manual')
           if (roleErr) {
             warnings.push(`Rôles: échec MAJ ${m.role} (membership ${m.id}): ${roleErr.message}`)
           }

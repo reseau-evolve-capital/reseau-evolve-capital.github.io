@@ -16,6 +16,11 @@ import { buildUpdateArgs, validateInput, type ClubSettingsInput } from '@/lib/da
 import { getInvitationMailer } from '@/lib/invitations/mailer'
 import { newInviteToken, hashInviteToken, inviteUrl } from '@/lib/invitations/token'
 import { captureActionError } from '@/lib/monitoring/sentry'
+import { withAudit } from '@/lib/actions/withAudit'
+
+/** Rôles club attribuables depuis l'éditeur (network_admin = scope réseau, exclu). */
+export type EditableMemberRole = 'member' | 'treasurer' | 'president'
+const EDITABLE_ROLES: readonly EditableMemberRole[] = ['member', 'treasurer', 'president']
 
 /** Résultat sans payload (lock/unlock/revoke). */
 export type ActionResult = { ok: true } | { ok: false; error: string }
@@ -250,3 +255,42 @@ export async function updateMemberEmailAction(
   }
   return { ok: true }
 }
+
+/**
+ * Changer le rôle CLUB d'un membre (ADM-008) : pose `role` + `role_source='manual'` (non réécrit
+ * par la sync). La garde staff-par-club ET l'anti-escalade (un trésorier ne peut pas nommer un
+ * président) sont DANS la RPC `admin_change_member_role` (SECURITY DEFINER) — code 42501 → 'forbidden'.
+ * On borne aussi le rôle côté serveur (jamais network_admin). JAMAIS de service-role ici.
+ * Enveloppée par withAudit : l'audit est posé APRÈS un succès (fire-and-forget), jamais bloquant.
+ */
+async function _changeMemberRoleAction(
+  membershipId: string,
+  role: EditableMemberRole
+): Promise<ActionResult> {
+  if (!EDITABLE_ROLES.includes(role)) return { ok: false, error: 'invalid' }
+
+  const supabase = await serverClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'unauthorized' }
+
+  const { error } = await supabase.rpc('admin_change_member_role', {
+    p_membership_id: membershipId,
+    p_role: role,
+  })
+  if (error) {
+    captureIfUnknown(error, 'changeMemberRole', user.id)
+    return { ok: false, error: mapPgError(error.code) }
+  }
+  return { ok: true }
+}
+
+export const changeMemberRoleAction = withAudit(_changeMemberRoleAction, {
+  action: 'admin_change_member_role',
+  targetType: 'membership',
+  targetId: (_r, membershipId: string) => membershipId,
+  metadata: (_r, _membershipId: string, role: EditableMemberRole) => ({ role }),
+  // Ne journalise que les changements réellement appliqués (résultat ok).
+  shouldLog: (r) => r.ok,
+})

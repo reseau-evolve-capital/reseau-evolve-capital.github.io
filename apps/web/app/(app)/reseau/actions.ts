@@ -19,6 +19,7 @@ import { createServerClient, type Database } from '@evolve/data'
 import { resolveNetworkContext } from '@/lib/data/network'
 import { buildUpdateArgs, validateInput, type ClubSettingsInput } from '@/lib/data/clubSettings'
 import { captureActionError } from '@/lib/monitoring/sentry'
+import { withAudit } from '@/lib/actions/withAudit'
 
 type NetworkRole = Database['public']['Enums']['network_role']
 type NetworkTitle = Database['public']['Enums']['network_title']
@@ -635,7 +636,7 @@ export async function getServiceAccountEmail(): Promise<string | null> {
  *
  * JAMAIS de service-role : la garde est dans la RPC + le pré-check réseau.
  */
-export async function deleteClubAction(clubId: string): Promise<NetworkActionResult> {
+async function deleteClubActionImpl(clubId: string): Promise<NetworkActionResult> {
   if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
@@ -651,3 +652,79 @@ export async function deleteClubAction(clubId: string): Promise<NetworkActionRes
   revalidatePath('/reseau')
   return { ok: true }
 }
+
+/**
+ * Démonstration OPS-007 : `deleteClubAction` est enveloppée par {@link withAudit}, qui journalise
+ * la suppression dans `audit_log` APRÈS succès, en fire-and-forget (un log raté n'annule jamais la
+ * suppression). On NE journalise QUE le succès métier (`shouldLog: (r) => r.ok`) : une suppression
+ * refusée (forbidden / invalid) n'écrit pas de trace. La cible (`club` + id) est dérivée des args.
+ *
+ * NB : `network_delete_club` (RPC 047) trace DÉJÀ dans `network_events` ; cette double trace est
+ * volontaire pour la démo (audit_log = vue transverse de toutes les actions sensibles). Le câblage
+ * des ~15 autres actions critiques (votes, admin, rôles, statut feedback) se fait en LOT C.
+ */
+export const deleteClubAction: (clubId: string) => Promise<NetworkActionResult> = withAudit(
+  deleteClubActionImpl,
+  {
+    action: 'deleteClub',
+    targetType: 'club',
+    targetId: (_result, clubId: string) => clubId,
+    shouldLog: (result) => result.ok,
+  }
+)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NET-018 — Désactiver / réactiver un club (soft-disable réseau).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Désactive / réactive un club (network_admin uniquement). La RPC `network_set_club_active`
+ * (migration 050) porte la garde `is_network_admin()` fail-closed, bascule `clubs.is_active`
+ * (qui gate `get_user_club_ids()` → la RLS masque le club à ses membres), et journalise
+ * l'événement dans network_events (action `club_disabled` / `club_enabled` + raison optionnelle).
+ *
+ * Aucune donnée n'est supprimée : la réactivation restaure l'accès à l'identique. L'Edge `sync`
+ * refuse par ailleurs tout club désactivé (anti « sync zombie », NET-018).
+ *
+ * JAMAIS de service-role : la garde est dans la RPC + le pré-check réseau.
+ */
+async function setClubActiveActionImpl(
+  clubId: string,
+  active: boolean,
+  reason?: string
+): Promise<NetworkActionResult> {
+  if (!isUuidLike(clubId)) return { ok: false, error: 'invalid' }
+
+  const supabase = await serverClient()
+  // network_admin REQUIS — action sensible (board = lecture seule).
+  const auth = await requireNetworkAdmin(supabase)
+  if (!auth.ok) return auth
+
+  const trimmedReason = reason?.trim()
+  const { error } = await supabase.rpc('network_set_club_active', {
+    p_club_id: clubId,
+    p_active: active,
+    ...(trimmedReason ? { p_reason: trimmedReason } : {}),
+  })
+  if (error) {
+    captureIfUnknown(error, 'setClubActive', auth.userId)
+    return { ok: false, error: mapPgError(error.code) }
+  }
+  revalidatePath('/reseau')
+  return { ok: true }
+}
+
+/**
+ * `setClubActiveAction` enveloppée par {@link withAudit} : trace transverse dans `audit_log`
+ * (en plus de la trace `network_events` posée par la RPC), sur succès uniquement.
+ */
+export const setClubActiveAction: (
+  clubId: string,
+  active: boolean,
+  reason?: string
+) => Promise<NetworkActionResult> = withAudit(setClubActiveActionImpl, {
+  action: 'setClubActive',
+  targetType: 'club',
+  targetId: (_result, clubId: string) => clubId,
+  shouldLog: (result) => result.ok,
+})
