@@ -2,7 +2,12 @@ import { describe, it, expect } from 'vitest'
 
 import type { createServerClient } from '@evolve/data'
 
-import { contributionStatusLabel, getDashboardData, type ContributionStatus } from './dashboard'
+import {
+  clubPortfolioFromAggregates,
+  contributionStatusLabel,
+  getDashboardData,
+  type ContributionStatus,
+} from './dashboard'
 
 type ServerClient = ReturnType<typeof createServerClient>
 
@@ -26,6 +31,10 @@ function makeSupabaseMock(fixtures: Record<string, SingleResult>): ServerClient 
     chain.order = () => chain
     chain.maybeSingle = () => Promise.resolve(result)
     chain.returns = () => Promise.resolve(result)
+    // `portfolio_aggregates` est awaité SANS terminateur (le builder Supabase est thenable) →
+    // on rend la chaîne thenable pour qu'un `await` résolve vers la fixture {data, error}.
+    chain.then = (onFulfilled: (v: SingleResult) => unknown) =>
+      Promise.resolve(result).then(onFulfilled)
     return chain
   }
   return { from } as unknown as ServerClient
@@ -79,11 +88,20 @@ describe('getDashboardData', () => {
       users: { data: { firstname: 'Ruben', full_name: 'AFOUDAH Ruben' }, error: null },
       // E2 : syncedAt vient de clubs.synced_at (timestamp du club), pas de member_quote_part.
       clubs: { data: { name: 'Club Test', synced_at: '2026-06-05T10:00:00Z' }, error: null },
+      // Valo club RÉELLE (teaser V2) : agrégat « Portefeuille » → valeur + gain/perte total.
+      portfolio_aggregates: {
+        data: [{ label: 'Portefeuille', market_value: 732510.61, book_value: 315429.61 }],
+        error: null,
+      },
     })
 
     const result = await getDashboardData(supabase, 'user-1', 'club-1')
 
     expect(result).not.toBeNull()
+    // clubPortfolio : valeur = market_value de l'agrégat « Portefeuille » (même source que /portfolio).
+    expect(result?.clubPortfolio.value).toBe(732510.61)
+    expect(result?.clubPortfolio.gainLossEur).toBeCloseTo(417081, 0)
+    expect(result?.clubPortfolio.gainLossPct).toBeCloseTo(1.3223, 3)
     // E2 : la source du statut de sync est clubs.synced_at (unifiée avec la topbar desktop).
     expect(result?.syncedAt).toBe('2026-06-05T10:00:00Z')
     // Coercition Number() : valeurs numériques renvoyées comme number, pas string.
@@ -191,5 +209,79 @@ describe('getDashboardData', () => {
 
     const result = await getDashboardData(supabase, 'user-1', 'club-1')
     expect(result?.contribution.status).toBe('ok')
+  })
+
+  it('clubPortfolio.value null quand l’agrégat « Portefeuille » est absent', async () => {
+    const supabase = makeSupabaseMock({
+      member_quote_part: {
+        data: {
+          role: 'member',
+          joined_at: null,
+          detention_pct: '0',
+          total_contributed: '0',
+          net_market_value: '0',
+          contribution_status: 'ok',
+          amount_due: '0',
+        },
+        error: null,
+      },
+      users: { data: null, error: null },
+      clubs: { data: { name: 'Club Test' }, error: null },
+      // pas de fixture portfolio_aggregates → aucune ligne « Portefeuille ».
+    })
+
+    const result = await getDashboardData(supabase, 'user-1', 'club-1')
+    expect(result?.clubPortfolio.value).toBeNull()
+    expect(result?.clubPortfolio.gainLossPct).toBeNull()
+  })
+})
+
+describe('clubPortfolioFromAggregates', () => {
+  it('extrait la valeur + le gain/perte total depuis l’agrégat « Portefeuille »', () => {
+    const out = clubPortfolioFromAggregates([
+      { label: 'Portefeuille', market_value: 1200, book_value: 1000 },
+      { label: 'ESPECES', market_value: 50, book_value: null },
+    ])
+    expect(out.value).toBe(1200)
+    expect(out.gainLossEur).toBe(200)
+    expect(out.gainLossPct).toBeCloseTo(0.2, 6)
+  })
+
+  it('match insensible à la casse/aux accents (« PORTEFEUILLE »)', () => {
+    const out = clubPortfolioFromAggregates([
+      { label: '  PORTEFEUILLE ', market_value: 500, book_value: 400 },
+    ])
+    expect(out.value).toBe(500)
+    expect(out.gainLossEur).toBe(100)
+  })
+
+  it('agrégat absent → tout null', () => {
+    expect(clubPortfolioFromAggregates([])).toEqual({
+      value: null,
+      gainLossEur: null,
+      gainLossPct: null,
+    })
+  })
+
+  it('prix d’achat absent ou ≤ 0 → valeur seule, gain/perte null (jamais de division par 0)', () => {
+    const noBook = clubPortfolioFromAggregates([
+      { label: 'Portefeuille', market_value: 1200, book_value: null },
+    ])
+    expect(noBook.value).toBe(1200)
+    expect(noBook.gainLossEur).toBeNull()
+    expect(noBook.gainLossPct).toBeNull()
+
+    const zeroBook = clubPortfolioFromAggregates([
+      { label: 'Portefeuille', market_value: 1200, book_value: 0 },
+    ])
+    expect(zeroBook.gainLossPct).toBeNull()
+  })
+
+  it('perte (valeur < prix d’achat) → gain/perte négatif', () => {
+    const out = clubPortfolioFromAggregates([
+      { label: 'Portefeuille', market_value: 800, book_value: 1000 },
+    ])
+    expect(out.gainLossEur).toBe(-200)
+    expect(out.gainLossPct).toBeCloseTo(-0.2, 6)
   })
 })

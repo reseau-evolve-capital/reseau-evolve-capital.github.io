@@ -2,11 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { EvolutionPeriod } from '@evolve/ui'
 
-import {
-  DEMO_CLUB_PORTFOLIO,
-  getDemoEvolutionSeries,
-  getDemoVariation1d,
-} from './dashboard-chart-demo'
+import { getDemoEvolutionSeries, getDemoVariation1d } from './dashboard-chart-demo'
 
 const ANCHOR = '2026-06-10T08:00:00.000Z'
 const FINAL = 65574.87
@@ -107,12 +103,5 @@ describe('getDemoVariation1d', () => {
     const v = getDemoVariation1d(ANCHOR, Number.NaN)
     expect(v.amount).toBe(0)
     expect(Number.isFinite(v.percent)).toBe(true)
-  })
-})
-
-describe('DEMO_CLUB_PORTFOLIO', () => {
-  it('expose la valorisation demo du club et sa variation 1j', () => {
-    expect(DEMO_CLUB_PORTFOLIO.totalValuation).toBe(708408)
-    expect(DEMO_CLUB_PORTFOLIO.variation1dPercent).toBe(0.8)
   })
 })

@@ -13,7 +13,11 @@
 //     branché sur variations.d1 (null → pas de badge — jamais de NaN). Pas de label demo.
 //   - DEMO  : `chartData` null (aucune ligne REPORTING / erreur serveur) → séries demo
 //     déterministes ILLUSTRATIVES, comportement historique STRICTEMENT inchangé, label
-//     « Courbe illustrative » affiché. Le teaser club desktop reste demo dans les deux modes.
+//     « Courbe illustrative » affiché.
+//
+// Le teaser « Portefeuille du club » (desktop) affiche la valo club RÉELLE (agrégat
+// « Portefeuille » de portfolio_aggregates, via DashboardData.clubPortfolio) dans les deux
+// modes — même source que /portfolio, fin du montant demo codé en dur.
 //
 // Réf : PROMPT-DEV-DASHBOARD-V2-AB, DSH-011/DSH-012, CLAUDE.md (jamais de NaN, a11y, tokens).
 
@@ -46,11 +50,7 @@ import { type DashboardData } from '@/lib/data/dashboard'
 // Import type-only : dashboard-chart.ts est un module serveur (requêtes Supabase) — seul
 // son CONTRAT est consommé ici, effacé à la compilation (aucun code serveur dans le bundle).
 import type { DashboardChartData } from '@/lib/data/dashboard-chart'
-import {
-  DEMO_CLUB_PORTFOLIO,
-  getDemoEvolutionSeries,
-  getDemoVariation1d,
-} from '@/lib/data/dashboard-chart-demo'
+import { getDemoEvolutionSeries, getDemoVariation1d } from '@/lib/data/dashboard-chart-demo'
 import { downsample, slicePeriod, summarize } from '@/lib/data/dashboard-chart-view'
 import { useDashboard } from '@/lib/hooks/useDashboard'
 import { useSyncStatus } from '@/lib/hooks/useSyncStatus'
@@ -480,8 +480,10 @@ export function DashboardViewV2({
           </section>
 
           {/* Teaser « Portefeuille du club » — desktop. Card entière cliquable (Link →
-              cursor géré par la règle globale a[href]). Valorisation DEMO : la valeur club
-              réelle n'est pas exposée aux membres en V0 (/api/admin/* est réservé staff). */}
+              cursor géré par la règle globale a[href]). Valorisation RÉELLE : même source que la
+              page /portfolio (agrégat « Portefeuille »), pour des valeurs cohérentes entre les
+              deux écrans. Badge = gain/perte total (valeur de marché vs prix d'achat) ; masqué si
+              le prix d'achat club est absent. Valeur « — » si l'agrégat n'est pas encore synchronisé. */}
           <Link
             href="/portfolio"
             className="group hidden flex-col gap-1 rounded-[10px] border border-border bg-card px-4 py-3 shadow-[var(--sh-card)] outline-none hover:border-accent focus-visible:shadow-[var(--sh-glow)] motion-safe:transition-colors motion-safe:duration-[var(--dur-fast)] lg:flex"
@@ -492,12 +494,16 @@ export function DashboardViewV2({
             <p className="text-[13px] text-text-sec">{data.club.name}</p>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-display text-[22px] font-bold tabular-nums text-text">
-                {currNoCents(DEMO_CLUB_PORTFOLIO.totalValuation, currency)}
+                {data.clubPortfolio.value !== null
+                  ? currNoCents(data.clubPortfolio.value, currency)
+                  : '—'}
               </span>
-              <TrendBadge
-                direction="up"
-                value={formatPct(DEMO_CLUB_PORTFOLIO.variation1dPercent / 100)}
-              />
+              {data.clubPortfolio.gainLossPct !== null ? (
+                <TrendBadge
+                  direction={data.clubPortfolio.gainLossPct >= 0 ? 'up' : 'down'}
+                  value={formatPct(data.clubPortfolio.gainLossPct)}
+                />
+              ) : null}
             </div>
             <span className="mt-1 text-[13px] font-semibold text-text group-hover:underline">
               {t('v2.club.viewDetail')} <span aria-hidden="true">→</span>

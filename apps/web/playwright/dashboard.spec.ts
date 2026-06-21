@@ -60,6 +60,7 @@ function makeDashboardData(syncedAt: string): DashboardData {
     contribution: { status: 'ok', amountDue: 0 },
     investment: { cap: 5500, yearInvested: 2000, remaining: 3500 },
     club: { name: 'Club E2E' },
+    clubPortfolio: { value: 732_510, gainLossEur: 417_081, gainLossPct: 1.3223 },
     syncedAt,
   }
 }

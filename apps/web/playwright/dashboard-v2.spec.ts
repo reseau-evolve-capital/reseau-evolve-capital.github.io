@@ -68,9 +68,47 @@ async function purgeReportingRows(): Promise<void> {
   }
 }
 
-// File-level (workers:1) : table REPORTING propre AVANT tous les tests du fichier.
+// Valo club RÉELLE du teaser desktop (clubPortfolio, lue depuis l'agrégat « Portefeuille »).
+// Valeur 732 510 €, prix d'achat 315 429 € → gain/perte total = +417 081 € (+132,23 %).
+const CLUB_AGG_VALUE = 732_510
+const CLUB_AGG_BOOK = 315_429
+
+/** Seede l'agrégat « Portefeuille » du club seed → le teaser V2 affiche une valo club réelle
+ *  (le seed de base n'en pose pas, sinon la carte tomberait sur « — »). Idempotent. */
+async function seedPortefeuilleAggregate(): Promise<void> {
+  const sql = postgres(DB_URL, { max: 1 })
+  try {
+    await sql`
+      INSERT INTO portfolio_aggregates (club_id, label, market_value, book_value, is_active, synced_at)
+      VALUES (${SEED_CLUB_ID}::uuid, 'Portefeuille', ${CLUB_AGG_VALUE}, ${CLUB_AGG_BOOK}, true, now())
+      ON CONFLICT (club_id, label) DO UPDATE
+        SET market_value = EXCLUDED.market_value, book_value = EXCLUDED.book_value,
+            is_active = true, synced_at = now()
+    `
+  } finally {
+    await sql.end()
+  }
+}
+
+/** Retire l'agrégat seedé (n'impacte pas les autres specs). */
+async function purgePortefeuilleAggregate(): Promise<void> {
+  const sql = postgres(DB_URL, { max: 1 })
+  try {
+    await sql`DELETE FROM portfolio_aggregates WHERE club_id = ${SEED_CLUB_ID}::uuid AND label = 'Portefeuille'`
+  } finally {
+    await sql.end()
+  }
+}
+
+// File-level (workers:1) : table REPORTING propre + agrégat « Portefeuille » seedé AVANT tous
+// les tests du fichier.
 test.beforeAll(async () => {
   await purgeReportingRows()
+  await seedPortefeuilleAggregate()
+})
+
+test.afterAll(async () => {
+  await purgePortefeuilleAggregate()
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -106,6 +144,8 @@ function makeDashboardData(syncedAt: string): DashboardData {
     contribution: { status: 'ok', amountDue: 0 },
     investment: { cap: 5500, yearInvested: 2000, remaining: 3500 },
     club: { name: 'Club E2E' },
+    // Valo club RÉELLE (teaser V2) : valeur + gain/perte total déterministes.
+    clubPortfolio: { value: 732_510, gainLossEur: 417_081, gainLossPct: 1.3223 },
     syncedAt,
   }
 }
@@ -294,6 +334,10 @@ test.describe('Dashboard V2 — cookie v2, desktop', () => {
     await expect(teaser).toBeVisible()
     await expect(teaser).toHaveAttribute('href', '/portfolio')
     await expect(teaser.getByText(/voir le détail/i)).toBeVisible()
+    // Valo club RÉELLE (≠ ancien montant demo codé en dur) : la carte affiche la valeur de
+    // l'agrégat « Portefeuille » seedé (732 510 €) et le badge gain/perte total (+132,23 %).
+    await expect(teaser.getByText(/732\s?510/)).toBeVisible()
+    await expect(teaser.getByText(/132,23\s?%/)).toBeVisible()
   })
 
   test('« Comprendre ma quote-part » ouvre le dialog ; Escape ferme', async ({ page }) => {

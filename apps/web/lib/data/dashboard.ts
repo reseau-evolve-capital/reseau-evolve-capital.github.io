@@ -16,6 +16,7 @@ import type { createServerClient } from '@evolve/data'
 import type { Database } from '@evolve/data'
 
 import { deriveContributionStatus, joinedAtToYM } from './contributionStatus'
+import { normalizeAggregateLabel } from './portfolio'
 
 /** Client Supabase serveur tel que retourné par `createServerClient` (session + RLS). */
 type ServerClient = ReturnType<typeof createServerClient>
@@ -40,7 +41,48 @@ export interface DashboardData {
    *  `cap`/`remaining` null si le plafond n'est pas renseigné sur le club. */
   investment: { cap: number | null; yearInvested: number; remaining: number | null }
   club: { name: string }
+  /** Valorisation RÉELLE du portefeuille du club (teaser dashboard V2). Lue depuis l'agrégat
+   *  « Portefeuille » de `portfolio_aggregates` — MÊME source que la page /portfolio, donc
+   *  valeurs cohérentes entre les deux écrans (fin du teaser demo codé en dur).
+   *  `value` null si l'agrégat est absent ; `gainLoss*` null si le prix d'achat club manque. */
+  clubPortfolio: ClubPortfolioSummary
   syncedAt: string | null
+}
+
+/** Synthèse de la valo club affichée sur la carte teaser (valeur + gain/perte total). */
+export interface ClubPortfolioSummary {
+  /** Valeur de marché de l'agrégat « Portefeuille » (€), ou null si absent. */
+  value: number | null
+  /** Gain/perte total en € (valeur de marché − prix d'achat), ou null si prix d'achat absent. */
+  gainLossEur: number | null
+  /** Gain/perte total en fraction 0..1 (pour formatPct), ou null si prix d'achat absent/nul. */
+  gainLossPct: number | null
+}
+
+/** Libellé normalisé de l'agrégat « Portefeuille » (= total club affiché). */
+const PORTEFEUILLE_AGG_LABEL = 'portefeuille'
+
+/**
+ * Calcule la synthèse de valo club depuis les lignes d'agrégat. PUR.
+ * Le gain/perte total dérive de l'agrégat « Portefeuille » (market_value vs book_value) — c'est
+ * le « Gain/perte total » du club, cohérent dans l'esprit avec celui de /portfolio. Si le prix
+ * d'achat (book_value) est absent ou ≤ 0, on n'affiche que la valeur (gain/perte null).
+ */
+export function clubPortfolioFromAggregates(
+  rows: Array<{ label: string; market_value: number | null; book_value: number | null }>
+): ClubPortfolioSummary {
+  const row = rows.find((a) => normalizeAggregateLabel(a.label) === PORTEFEUILLE_AGG_LABEL)
+  const value =
+    typeof row?.market_value === 'number' && Number.isFinite(row.market_value)
+      ? row.market_value
+      : null
+  const book =
+    typeof row?.book_value === 'number' && Number.isFinite(row.book_value) ? row.book_value : null
+  if (value === null || book === null || book <= 0) {
+    return { value, gainLossEur: null, gainLossPct: null }
+  }
+  const gainLossEur = value - book
+  return { value, gainLossEur, gainLossPct: gainLossEur / book }
 }
 
 const STATUS_LABEL: Record<ContributionStatus, string> = {
@@ -65,46 +107,66 @@ export async function getDashboardData(
   // La vue ne porte PAS les colonnes de nom : profil lu séparément (DATA_MODEL.md §2).
   // `clubs.synced_at` : source unique du statut de sync (E2), partagée avec la topbar.
   // `memberships.id` : requis pour cibler contribution_months (clé par adhésion, E3).
-  const [{ data: mqp, error }, { data: profile }, { data: club }, { data: membership }] =
-    await Promise.all([
-      supabase
-        .from('member_quote_part')
-        .select(
-          'role, joined_at, detention_pct, total_contributed, net_market_value, contribution_status, amount_due'
-        )
-        .eq('user_id', userId)
-        .eq('club_id', clubId)
-        .maybeSingle<
-          Pick<
-            MemberQuotePartRow,
-            | 'role'
-            | 'joined_at'
-            | 'detention_pct'
-            | 'total_contributed'
-            | 'net_market_value'
-            | 'contribution_status'
-            | 'amount_due'
-          >
-        >(),
-      supabase
-        .from('users')
-        .select('firstname, full_name')
-        .eq('id', userId)
-        .maybeSingle<Pick<UserRow, 'firstname' | 'full_name'>>(),
-      supabase
-        .from('clubs')
-        .select('name, synced_at, annual_investment_cap')
-        .eq('id', clubId)
-        .maybeSingle<Pick<ClubRow, 'name' | 'synced_at' | 'annual_investment_cap'>>(),
-      supabase
-        .from('memberships')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('club_id', clubId)
-        .maybeSingle<{ id: string }>(),
-    ])
+  const [
+    { data: mqp, error },
+    { data: profile },
+    { data: club },
+    { data: membership },
+    { data: aggRows },
+  ] = await Promise.all([
+    supabase
+      .from('member_quote_part')
+      .select(
+        'role, joined_at, detention_pct, total_contributed, net_market_value, contribution_status, amount_due'
+      )
+      .eq('user_id', userId)
+      .eq('club_id', clubId)
+      .maybeSingle<
+        Pick<
+          MemberQuotePartRow,
+          | 'role'
+          | 'joined_at'
+          | 'detention_pct'
+          | 'total_contributed'
+          | 'net_market_value'
+          | 'contribution_status'
+          | 'amount_due'
+        >
+      >(),
+    supabase
+      .from('users')
+      .select('firstname, full_name')
+      .eq('id', userId)
+      .maybeSingle<Pick<UserRow, 'firstname' | 'full_name'>>(),
+    supabase
+      .from('clubs')
+      .select('name, synced_at, annual_investment_cap')
+      .eq('id', clubId)
+      .maybeSingle<Pick<ClubRow, 'name' | 'synced_at' | 'annual_investment_cap'>>(),
+    supabase
+      .from('memberships')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('club_id', clubId)
+      .maybeSingle<{ id: string }>(),
+    // Agrégats du club (RLS isole par club, comme /portfolio) → valo club RÉELLE du teaser V2.
+    // Un échec de lecture ne casse PAS le dashboard : `aggRows` null → clubPortfolio.value null.
+    supabase
+      .from('portfolio_aggregates')
+      .select('label, market_value, book_value')
+      .eq('club_id', clubId)
+      .eq('is_active', true),
+  ])
   if (error) throw error
   if (!mqp) return null
+
+  const clubPortfolio = clubPortfolioFromAggregates(
+    (aggRows as Array<{
+      label: string
+      market_value: number | null
+      book_value: number | null
+    }> | null) ?? []
+  )
 
   // E3 — capacité d'investissement restante de l'année (même calcul que l'attestation :
   // plafond annuel du club − somme des mois cotisés `paid` de l'année en cours).
@@ -156,6 +218,7 @@ export async function getDashboardData(
     },
     investment: { cap, yearInvested, remaining },
     club: { name: club?.name ?? '—' },
+    clubPortfolio,
     // E2 : statut de sync unifié sur le timestamp du CLUB (≠ member_quote_part.synced_at par-membre).
     syncedAt: club?.synced_at ?? null,
   }
