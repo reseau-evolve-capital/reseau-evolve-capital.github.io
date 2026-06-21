@@ -95,8 +95,7 @@ export function ClubCotisationsPanel({
           emptyTitle: t('regulariser.emptyTitle'),
           emptyDesc: t('regulariser.emptyDesc'),
           relancer: t('regulariser.relancer'),
-          lateMonthsLabel: (count: number) =>
-            count === 1 ? '1 mois en retard' : `${count} mois en retard`,
+          lateMonthsLabel: (count: number) => t('regulariser.lateMonths', { n: count }),
           amountDueAriaLabel: t('kpi.amountDue'),
         }}
         formatAmount={(amount) => formatEUR(amount)}
