@@ -195,7 +195,7 @@ export type CreateClubInput = z.infer<typeof createClubSchema>
  * Créer un club (network_admin uniquement). Le slug dupliqué remonte en erreur `duplicate`.
  * Renvoie l'id du club créé pour enchaîner sur le branchement de la matrice / le provisioning.
  */
-export async function createClubAction(rawInput: CreateClubInput): Promise<CreateClubResult> {
+async function createClubActionImpl(rawInput: CreateClubInput): Promise<CreateClubResult> {
   const parsed = createClubSchema.safeParse(rawInput)
   if (!parsed.success) return { ok: false, error: 'invalid' }
 
@@ -221,10 +221,29 @@ export async function createClubAction(rawInput: CreateClubInput): Promise<Creat
 }
 
 /**
+ * `createClubAction` enveloppée par {@link withAudit} : trace transverse dans `audit_log` sur succès
+ * uniquement. La cible (`club` + id du club créé) est dérivée du résultat. Le slug est journalisé en
+ * métadonnée (jamais de PII).
+ */
+export const createClubAction: (rawInput: CreateClubInput) => Promise<CreateClubResult> = withAudit(
+  createClubActionImpl,
+  {
+    action: 'club.create',
+    targetType: 'club',
+    targetId: (result) => {
+      const r = result as CreateClubResult
+      return r.ok ? r.clubId : null
+    },
+    metadata: (_result, rawInput: CreateClubInput) => ({ slug: rawInput.slug }),
+    shouldLog: (result) => result.ok,
+  }
+)
+
+/**
  * Brancher / mettre à jour la matrice Google Sheets d'un club (network_admin). Une chaîne vide
  * débranche la matrice (sheet_id → NULL côté RPC).
  */
-export async function setClubSheetAction(
+async function setClubSheetActionImpl(
   clubId: string,
   sheetId: string
 ): Promise<NetworkActionResult> {
@@ -247,11 +266,25 @@ export async function setClubSheetAction(
 }
 
 /**
+ * `setClubSheetAction` enveloppée par {@link withAudit} : trace transverse dans `audit_log` sur
+ * succès. On NE journalise PAS le `sheet_id` (donnée de configuration sensible) — seul l'événement
+ * « la matrice du club a changé » (`unlinked` quand l'id est vide) est tracé.
+ */
+export const setClubSheetAction: (clubId: string, sheetId: string) => Promise<NetworkActionResult> =
+  withAudit(setClubSheetActionImpl, {
+    action: 'club.set_sheet',
+    targetType: 'club',
+    targetId: (_result, clubId: string) => clubId,
+    metadata: (_result, _clubId: string, sheetId: string) => ({ unlinked: sheetId.trim() === '' }),
+    shouldLog: (result) => result.ok,
+  })
+
+/**
  * Provisionner le premier staff d'un club (network_admin) par user_id — voie « membre importé ».
  * Le rôle est restreint à president / treasurer (la RPC refuse les autres en check_violation).
  * La voie INVITATION PAR EMAIL est différée (NET-006, réutilisera l'invitation existante).
  */
-export async function provisionFirstStaffAction(
+async function provisionFirstStaffActionImpl(
   clubId: string,
   userId: string,
   role: StaffRole
@@ -278,10 +311,27 @@ export async function provisionFirstStaffAction(
 }
 
 /**
+ * `provisionFirstStaffAction` enveloppée par {@link withAudit} : trace dans `audit_log` sur succès.
+ * Cible = le membership provisionné (`club` + clubId) ; le rôle et l'utilisateur ciblé sont en
+ * métadonnée (l'userId n'est pas une PII directe — c'est un identifiant opaque).
+ */
+export const provisionFirstStaffAction: (
+  clubId: string,
+  userId: string,
+  role: StaffRole
+) => Promise<NetworkActionResult> = withAudit(provisionFirstStaffActionImpl, {
+  action: 'club.provision_staff',
+  targetType: 'club',
+  targetId: (_result, clubId: string) => clubId,
+  metadata: (_result, _clubId: string, userId: string, role: StaffRole) => ({ userId, role }),
+  shouldLog: (result) => result.ok,
+})
+
+/**
  * Attribuer / mettre à jour un rôle réseau (network_admin) : upsert d'une ligne network_members
  * (rôle + titre optionnel). Idempotent côté RPC (ON CONFLICT (user_id)).
  */
-export async function grantNetworkRoleAction(
+async function grantNetworkRoleActionImpl(
   userId: string,
   role: NetworkRole,
   title: NetworkTitle | null = null
@@ -306,12 +356,28 @@ export async function grantNetworkRoleAction(
   return { ok: true }
 }
 
+/** Attribue un rôle réseau, journalisé (audit fire-and-forget sur succès uniquement). */
+export const grantNetworkRoleAction: (
+  userId: string,
+  role: NetworkRole,
+  title?: NetworkTitle | null
+) => Promise<NetworkActionResult> = withAudit(grantNetworkRoleActionImpl, {
+  action: 'network_grant_role',
+  targetType: 'network_member',
+  targetId: (_result, userId: string) => userId,
+  metadata: (_result, _userId: string, role: NetworkRole, title: NetworkTitle | null = null) => ({
+    role,
+    title,
+  }),
+  shouldLog: (result) => result.ok,
+})
+
 /**
  * Retirer un membre de l'équipe réseau (network_admin). Idempotent (no-op si déjà absent).
  * Le garde-fou « dernier administrateur réseau » est dans la RPC : retirer le dernier admin
  * remonte en erreur `invalid` (check_violation) plutôt que de verrouiller le réseau.
  */
-export async function revokeNetworkRoleAction(userId: string): Promise<NetworkActionResult> {
+async function revokeNetworkRoleActionImpl(userId: string): Promise<NetworkActionResult> {
   if (!isUuidLike(userId)) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
@@ -326,6 +392,17 @@ export async function revokeNetworkRoleAction(userId: string): Promise<NetworkAc
   revalidatePath('/reseau')
   return { ok: true }
 }
+
+/** Retire un membre de l'équipe réseau, journalisé (audit fire-and-forget sur succès uniquement). */
+export const revokeNetworkRoleAction: (userId: string) => Promise<NetworkActionResult> = withAudit(
+  revokeNetworkRoleActionImpl,
+  {
+    action: 'network_revoke_role',
+    targetType: 'network_member',
+    targetId: (_result, userId: string) => userId,
+    shouldLog: (result) => result.ok,
+  }
+)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NET-007 — Fiche club : historique des syncs + édition des paramètres (réseau).
@@ -660,8 +737,10 @@ async function deleteClubActionImpl(clubId: string): Promise<NetworkActionResult
  * refusée (forbidden / invalid) n'écrit pas de trace. La cible (`club` + id) est dérivée des args.
  *
  * NB : `network_delete_club` (RPC 047) trace DÉJÀ dans `network_events` ; cette double trace est
- * volontaire pour la démo (audit_log = vue transverse de toutes les actions sensibles). Le câblage
- * des ~15 autres actions critiques (votes, admin, rôles, statut feedback) se fait en LOT C.
+ * volontaire (audit_log = vue transverse de toutes les actions sensibles). Le câblage des autres
+ * actions critiques (création/sheet/staff/rôles réseau, votes, invitations/membres admin, statut
+ * feedback) est fait en LOT C — chaque action sensible est enveloppée par withAudit sur le même
+ * modèle (impl `_xxx` privée + ré-export sous le nom public, succès métier uniquement).
  */
 export const deleteClubAction: (clubId: string) => Promise<NetworkActionResult> = withAudit(
   deleteClubActionImpl,

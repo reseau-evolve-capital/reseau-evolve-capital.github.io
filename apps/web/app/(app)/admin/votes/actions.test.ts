@@ -78,6 +78,15 @@ vi.mock('@/lib/data/admin', () => ({
   resolveAdminContext: (...args: unknown[]) => mocks.resolveAdminContext(...args),
 }))
 
+// withAudit : passthrough qui EXÉCUTE l'action et ignore la journalisation (testée à part dans
+// lib/actions/withAudit.test.ts). Garantit l'hermétisme : pas d'appel RPC log_audit_event ici.
+vi.mock('@/lib/actions/withAudit', () => ({
+  withAudit:
+    (fn: (...a: unknown[]) => unknown) =>
+    (...a: unknown[]) =>
+      fn(...a),
+}))
+
 import { createPollAction, closePollAction } from './actions'
 
 type CreatePayload = {

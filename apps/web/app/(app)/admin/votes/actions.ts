@@ -14,6 +14,7 @@ import { createServerClient, createServiceRoleClient, dispatchNotification } fro
 import type { Database } from '@evolve/data'
 import { resolveAdminContext } from '@/lib/data/admin'
 import { getActiveClubId } from '@/lib/data/request'
+import { withAudit } from '@/lib/actions/withAudit'
 
 type PollOptionsJson = Database['public']['Tables']['polls']['Insert']['options']
 
@@ -143,10 +144,7 @@ async function notifyPollClosed(clubId: string, pollId: string, title: string): 
  * `action='publish'` → status 'open' (membres notifiés, réponses acceptées). La validation
  * fine (≥2 options pour single/multiple) est faite côté formulaire ; on garde-fou ici aussi.
  */
-export async function createPollAction(
-  payload: unknown,
-  action: unknown
-): Promise<AdminPollResult> {
+async function _createPollAction(payload: unknown, action: unknown): Promise<AdminPollResult> {
   const parsedPayload = createSchema.safeParse(payload)
   const parsedAction = actionSchema.safeParse(action)
   if (!parsedPayload.success || !parsedAction.success) return { ok: false, error: 'invalid' }
@@ -197,11 +195,30 @@ export async function createPollAction(
 }
 
 /**
+ * `createPollAction` enveloppée par {@link withAudit} : trace dans `audit_log` sur succès. La cible
+ * (`poll` + id créé) est dérivée du résultat ; le type de question et le fait d'avoir publié (vs
+ * brouillon) sont en métadonnée. Le titre du vote n'est PAS journalisé (texte libre).
+ */
+export const createPollAction: (payload: unknown, action: unknown) => Promise<AdminPollResult> =
+  withAudit(_createPollAction, {
+    action: 'poll.create',
+    targetType: 'poll',
+    targetId: (result) => {
+      const r = result as AdminPollResult
+      return r.ok ? r.pollId : null
+    },
+    metadata: (_result, _payload: unknown, action: unknown) => ({
+      published: action === 'publish',
+    }),
+    shouldLog: (result) => result.ok,
+  })
+
+/**
  * Clôture manuelle d'un vote (président/trésorier). Passe status → 'closed' et horodate
  * `closed_manually_at`. Scopé au club staff (RLS + filtre explicite). Idempotent côté UI :
  * un vote déjà clos n'est plus listé en « En cours ».
  */
-export async function closePollAction(pollId: string): Promise<ActionResult> {
+async function _closePollAction(pollId: string): Promise<ActionResult> {
   if (!pollId) return { ok: false, error: 'invalid' }
 
   const supabase = await serverClient()
@@ -240,3 +257,14 @@ export async function closePollAction(pollId: string): Promise<ActionResult> {
 
   return { ok: true }
 }
+
+/** Clôture manuelle d'un vote, journalisée (audit fire-and-forget sur succès uniquement). */
+export const closePollAction: (pollId: string) => Promise<ActionResult> = withAudit(
+  _closePollAction,
+  {
+    action: 'poll.close',
+    targetType: 'poll',
+    targetId: (_result, pollId: string) => pollId,
+    shouldLog: (result) => result.ok,
+  }
+)
