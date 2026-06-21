@@ -29,3 +29,5 @@ export * from './FeedbackSheet'
 export * from './PollVoteSheet'
 export * from './PollResultsView'
 export * from './PollCreateForm'
+// Cotisations admin V2
+export * from './RegulariserList'
