@@ -26,6 +26,8 @@ export { mapArticleToEmail } from './mappers/article-to-email.ts'
 export type { MapArticleOptions } from './mappers/article-to-email.ts'
 export { PollEmail } from './PollEmail.tsx'
 export type { PollEmailProps, PollEmailVariant, PollEmailLocale } from './PollEmail.tsx'
+export { RelanceEmail } from './RelanceEmail.tsx'
+export type { RelanceEmailProps } from './RelanceEmail.tsx'
 
 /** Rend un email React Email en chaîne HTML prête à l'envoi. */
 export function renderEmailHtml(element: ReactElement): Promise<string> {
