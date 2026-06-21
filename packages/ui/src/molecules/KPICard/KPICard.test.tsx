@@ -1,6 +1,15 @@
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { axe, toHaveNoViolations } from 'jest-axe'
 import { KPICard } from './KPICard'
+
+// Radix Popover (InfoTip) utilise ResizeObserver — polyfill minimal pour jsdom.
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver = ResizeObserverMock
 
 expect.extend(toHaveNoViolations)
 
@@ -73,6 +82,33 @@ describe('KPICard — isLoading', () => {
   it('isLoading=false → la valeur est visible', () => {
     const { container } = render(<KPICard title="Quote-part" value={1234.56} isLoading={false} />)
     expect(container.textContent).toMatch(/1[\s  ]234,56/)
+  })
+})
+
+describe('KPICard — prop hint', () => {
+  const HINT_TEXT = 'La quote-part correspond à votre part du portefeuille collectif.'
+  const HINT_LABEL = 'En savoir plus sur la quote-part'
+
+  it('sans hint → aucun bouton (i) rendu', () => {
+    render(<KPICard title="Quote-part" value={1234.56} />)
+    expect(screen.queryByRole('button', { name: /savoir plus/i })).toBeNull()
+  })
+
+  it('avec hint → bouton (i) visible avec libellé accessible', () => {
+    render(<KPICard title="Quote-part" value={1234.56} hint={HINT_TEXT} hintLabel={HINT_LABEL} />)
+    expect(screen.getByRole('button', { name: HINT_LABEL })).toBeTruthy()
+  })
+
+  it('clic sur (i) → le texte du hint devient visible', async () => {
+    const user = userEvent.setup()
+    render(<KPICard title="Quote-part" value={1234.56} hint={HINT_TEXT} hintLabel={HINT_LABEL} />)
+    await user.click(screen.getByRole('button', { name: HINT_LABEL }))
+    expect(screen.getByText(HINT_TEXT)).toBeVisible()
+  })
+
+  it('hint absent → rétrocompatibilité structurelle (titre direct dans le DOM)', () => {
+    const { container } = render(<KPICard title="Mon titre" value={1234.56} />)
+    expect(container.textContent).toContain('Mon titre')
   })
 })
 
