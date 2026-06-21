@@ -1,17 +1,17 @@
 // GET /api/newsletter/preview?slug=… — aperçu HTML de la newsletter (EDI-006).
-// Garde staff. Renvoie le HTML brut (text/html) pour affichage en <iframe srcDoc>.
+// Garde réseau. Renvoie le HTML brut (text/html) pour affichage en <iframe srcDoc>.
 // Pas de service-role. La lecture Strapi ne renvoie que le publié (draftAndPublish).
 
 import { NextResponse } from 'next/server'
 import { getNewsletterBySlug } from '@/lib/strapi-editorial'
-import { guardStaff } from '../_guard'
+import { guardNetwork } from '../_guard'
 import { renderNewsletterHtml } from '../_render'
 import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
 
 export async function GET(request: Request): Promise<Response> {
-  const guard = await guardStaff()
+  const guard = await guardNetwork()
   if (!guard.ok) return guard.response
 
   const slug = new URL(request.url).searchParams.get('slug')

@@ -688,8 +688,7 @@
       "cotisationsTitle": "Cotisations — Admin Evolve Capital",
       "membersTitle": "Membres — Admin Evolve Capital",
       "invitationsTitle": "Invitations — Admin Evolve Capital",
-      "settingsTitle": "Paramètres du club — Admin Evolve Capital",
-      "newsletterTitle": "Newsletter — Admin Evolve Capital"
+      "settingsTitle": "Paramètres du club — Admin Evolve Capital"
     },
     "tabs": {
       "dashboard": "Tableau de bord",
@@ -697,7 +696,6 @@
       "cotisations": "Cotisations",
       "retours": "Retours",
       "invitations": "Invitations",
-      "newsletter": "Newsletter",
       "navLabel": "Navigation espace trésorier",
       "settings": "Paramètres",
       "votes": "Votes"
@@ -710,41 +708,6 @@
       "subtitle": "Ce que les membres de ton club remontent.",
       "error": {
         "title": "Impossible de charger les retours du club."
-      }
-    },
-    "newsletter": {
-      "title": "Newsletter",
-      "subtitle": "Prévisualisez l'édition, envoyez-vous un test, puis diffusez « La Quote-Part » à la liste des membres.",
-      "loadError": "Impossible de charger les éditions depuis le CMS. Réessayez plus tard.",
-      "selectLabel": "Édition à envoyer",
-      "editionPrefix": "Édition",
-      "empty": {
-        "title": "Aucune édition publiée",
-        "description": "Publiez une newsletter dans le CMS pour la prévisualiser et l'envoyer ici."
-      },
-      "preview": {
-        "title": "Aperçu",
-        "iframeTitle": "Aperçu de la newsletter",
-        "note": "Rendu indicatif. Le rendu final peut varier selon le client de messagerie.",
-        "error": "Impossible de charger l'aperçu. Vérifie que le CMS est accessible, puis réessaie."
-      },
-      "test": {
-        "title": "1. Envoyer un test",
-        "note": "Un email de test (sujet préfixé « [TEST] ») est envoyé aux destinataires configurés.",
-        "button": "Envoyer un test",
-        "success": "Test envoyé à {count} destinataire(s). Vérifiez votre boîte de réception.",
-        "error": "Échec de l'envoi du test. Vérifiez la configuration Brevo."
-      },
-      "send": {
-        "title": "2. Envoyer la campagne",
-        "confirmLabel": "J'ai vérifié l'aperçu et l'email de test.",
-        "button": "Envoyer la campagne",
-        "success": "Campagne envoyée à la liste des membres.",
-        "error": "Échec de l'envoi de la campagne. Réessayez plus tard.",
-        "errorAlreadySent": "Cette édition a déjà été envoyée.",
-        "errorDraft": "Cette édition est en brouillon ou introuvable — publiez-la d'abord.",
-        "errorNoEdition": "Numéro d'édition manquant sur la newsletter.",
-        "errorConfirm": "Cochez la case de confirmation avant d'envoyer."
       }
     },
     "invitations": {
@@ -1423,7 +1386,49 @@
       "drawerTitle": "Espace réseau",
       "drawerDescription": "Choisis une section de l'espace réseau.",
       "drawerClose": "Fermer",
-      "feedback": "Retours"
+      "feedback": "Retours",
+      "newsletter": "Newsletter"
+    },
+    "meta": {
+      "newsletterTitle": "Newsletter — Réseau Evolve Capital"
+    },
+    "newsletter": {
+      "title": "Newsletter",
+      "subtitle": "Prévisualisez l'édition, envoyez-vous un test, puis diffusez « La Quote-Part » à la liste des membres.",
+      "loadError": "Impossible de charger les éditions depuis le CMS. Réessayez plus tard.",
+      "selectLabel": "Édition à envoyer",
+      "editionPrefix": "Édition",
+      "empty": {
+        "title": "Aucune édition publiée",
+        "description": "Publiez une newsletter dans le CMS pour la prévisualiser et l'envoyer ici."
+      },
+      "preview": {
+        "title": "Aperçu",
+        "iframeTitle": "Aperçu de la newsletter",
+        "note": "Rendu indicatif. Le rendu final peut varier selon le client de messagerie.",
+        "error": "Impossible de charger l'aperçu. Vérifie que le CMS est accessible, puis réessaie."
+      },
+      "test": {
+        "title": "1. Envoyer un test",
+        "note": "Un email de test (sujet préfixé « [TEST] ») est envoyé aux destinataires configurés.",
+        "button": "Envoyer un test",
+        "success": "Test envoyé à {count} destinataire(s). Vérifiez votre boîte de réception.",
+        "error": "Échec de l'envoi du test. Vérifiez la configuration Brevo."
+      },
+      "send": {
+        "title": "2. Envoyer la campagne",
+        "confirmLabel": "J'ai vérifié l'aperçu et l'email de test.",
+        "button": "Envoyer la campagne",
+        "success": "Campagne envoyée à la liste des membres.",
+        "error": "Échec de l'envoi de la campagne. Réessayez plus tard.",
+        "errorAlreadySent": "Cette édition a déjà été envoyée.",
+        "errorDraft": "Cette édition est en brouillon ou introuvable — publiez-la d'abord.",
+        "errorNoEdition": "Numéro d'édition manquant sur la newsletter.",
+        "errorConfirm": "Cochez la case de confirmation avant d'envoyer."
+      },
+      "error": {
+        "title": "Impossible de charger la newsletter."
+      }
     },
     "clubs": {
       "meta": {
