@@ -1029,6 +1029,60 @@ Deno.test('handler : club introuvable → HTTP 404', async () => {
   assert(body.error.includes('introuvable'))
 })
 
+// Test 4bis — club DÉSACTIVÉ (NET-018) : la sync est refusée proprement, AUCUNE écriture.
+// clubs.is_active = false → 200 + success=true + skipped='club_disabled' + warnings, mais
+// aucune feuille lue, aucun snapshot, aucune ligne importée (anti « sync zombie »).
+Deno.test(
+  'handler : club désactivé (is_active=false) → refus propre, aucune écriture',
+  async () => {
+    const store = emptyStore(true)
+    // Soft-disable du club (NET-018). Le mock clubs.maybeSingle() renvoie la ligne complète,
+    // donc is_active flue jusqu'au handler.
+    store.clubs[0]!.is_active = false
+
+    const order: string[] = []
+    const rpcCalls: RpcCalls = { names: [] }
+    const handler = buildHandler(store, { order, rpcCalls })
+    const res = await handler(syncRequest(CLUB_ID))
+
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as SyncResponseBody & { skipped?: string }
+    // Succès « mou » volontaire : le cron ne doit pas compter un club désactivé comme un échec.
+    assertEquals(body.success, true)
+    assertEquals(body.skipped, 'club_disabled')
+    assertEquals(body.synced_sheets.length, 0)
+    assertEquals(body.errors.length, 0)
+    // Un warning explicatif (jamais d'erreur dure).
+    assert(body.warnings.length >= 1)
+    assertEquals(Object.keys(body.snapshots).length, 0)
+
+    // AUCUNE feuille lue (la garde court-circuite avant toute lecture Sheets).
+    assertEquals(order.length, 0)
+    // AUCUNE écriture : ni membres, ni positions, ni snapshot persisté, ni RPC.
+    assertEquals(store.users.length, 0)
+    assertEquals(store.memberships.length, 0)
+    assertEquals(store.positions.length, 0)
+    assertEquals(store.sheet_snapshots.length, 0)
+    assertEquals(rpcCalls.names.length, 0)
+  }
+)
+
+// Test 4ter — un club ACTIF (is_active=true) reste synchronisé normalement (non-régression).
+Deno.test(
+  'handler : club actif (is_active=true) → sync normale (non-régression NET-018)',
+  async () => {
+    const store = emptyStore(true)
+    store.clubs[0]!.is_active = true
+    const handler = buildHandler(store)
+    const res = await handler(syncRequest(CLUB_ID))
+    assertEquals(res.status, 200)
+    const body = (await res.json()) as SyncResponseBody & { skipped?: string }
+    assertEquals(body.success, true)
+    assertEquals(body.skipped, undefined)
+    assertEquals(body.synced_sheets.length, 7)
+  }
+)
+
 // Test 5 — ordre impératif : PARAMETRAGES est traité AVANT Base.
 Deno.test('handler : ordre impératif → PARAMETRAGES avant Base', async () => {
   const store = emptyStore(true)
@@ -1208,6 +1262,83 @@ Deno.test('handler : dirigeant introuvable → warning, success reste true', asy
   assertEquals(body.errors.length, 0)
   assert(body.warnings.some((w) => w.includes('INCONNU Personne')))
 })
+
+// ===========================================================================
+// 3bis-2. ANTI-ÉCRASEMENT DES RÔLES MANUELS (ADM-008) — role_source='manual'
+// ===========================================================================
+// Un rôle défini EN APP (admin_change_member_role → role_source='manual') ne doit JAMAIS
+// être réécrit par la réconciliation sync : ni rétrogradé au reset, ni re-promu par PARAMETRAGES.
+
+/** Pré-seede un membership existant (Fabien, dans Base) figé en rôle MANUEL. */
+function seedManualFabien(store: Store, role: string): void {
+  const fabienId = userIdFromEmail('fabien@club.fr')
+  store.memberships.push({
+    id: `membership-${fabienId}-${CLUB_ID}`,
+    user_id: fabienId,
+    club_id: CLUB_ID,
+    role,
+    role_source: 'manual',
+    joined_at: '2018-06-01',
+  })
+}
+
+// Test ADM-008 a — un dirigeant MANUEL absent de PARAMETRAGES n'est PAS rétrogradé par le reset.
+Deno.test(
+  'handler : rôle manuel (role_source=manual) jamais rétrogradé par la réconciliation',
+  async () => {
+    const store = emptyStore(true)
+    // Fabien a été nommé trésorier EN APP (manual) ; il n'apparaît PAS dans PARAMETRAGES (qui ne
+    // liste qu'Edem président + Valentino trésorier). Sans la garde, le reset le ramènerait 'member'.
+    seedManualFabien(store, 'treasurer')
+    const handler = buildHandler(store, {
+      overrides: { PARAMETRAGES: PARAMS_WITH_OFFICERS, Base: BASE_WITH_OFFICERS },
+    })
+    const res = await handler(syncRequest(CLUB_ID))
+    assertEquals(res.status, 200)
+    // Le rôle manuel de Fabien est PRÉSERVÉ ; les rôles 'sheet' sont réconciliés normalement.
+    assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'treasurer')
+    assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+    assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'treasurer')
+  }
+)
+
+// Test ADM-008 b — un rôle manuel n'est PAS écrasé même si PARAMETRAGES nomme la personne autrement.
+Deno.test('handler : rôle manuel non écrasé même si PARAMETRAGES le contredit', async () => {
+  const store = emptyStore(true)
+  // Fabien est figé PRÉSIDENT en app, mais PARAMETRAGES voudrait le nommer trésorier.
+  seedManualFabien(store, 'president')
+  const paramsNameFabienTreasurer: string[][] = [
+    ['Paramètre', 'Valeur'],
+    ['Nom du club', 'Évolve Capital'],
+    ['Cotisation min', '100'],
+    ['Président(e)', 'AGBEHONOU Edem'],
+    ['Trésorier(e)', 'LASKARI Fabien'],
+  ]
+  const handler = buildHandler(store, {
+    overrides: { PARAMETRAGES: paramsNameFabienTreasurer, Base: BASE_WITH_OFFICERS },
+  })
+  await handler(syncRequest(CLUB_ID))
+  // La feuille est ignorée pour ce membership manuel : Fabien reste président.
+  assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'president')
+  // Le rôle 'sheet' (Edem) est bien réconcilié.
+  assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+})
+
+// Test ADM-008 c — non-régression : un rôle 'sheet' (défaut) reste mis à jour normalement.
+Deno.test(
+  'handler : rôle sheet (défaut) toujours réconcilié — non-régression ADM-008',
+  async () => {
+    const store = emptyStore(true)
+    const handler = buildHandler(store, {
+      overrides: { PARAMETRAGES: PARAMS_WITH_OFFICERS, Base: BASE_WITH_OFFICERS },
+    })
+    await handler(syncRequest(CLUB_ID))
+    // Aucun membership manuel : la réconciliation s'applique pleinement (= B1 a).
+    assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+    assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'treasurer')
+    assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'member')
+  }
+)
 
 // ===========================================================================
 // 3ter. POSITIONS FANTÔMES (B2) — désactivation des absentes de la matrice

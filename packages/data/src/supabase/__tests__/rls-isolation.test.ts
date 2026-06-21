@@ -58,6 +58,26 @@ const MEM_B = 'ffffffff-0000-0000-0000-0000000000b3'
 const EMAIL_A = 'rls.member.a@example.test'
 const EMAIL_B = 'rls.member.b@example.test'
 
+// NET-019 — fixtures feedback. La table feedback.user_id référence auth.users (≠ public.users) :
+// on crée donc de VRAIS comptes auth via l'API admin GoTrue, et on capture leurs IDs générés.
+// Acteurs : un auteur dans le club A, un auteur dans le club B, un trésorier (staff) du club A,
+// et un membre réseau (network_board). IDs résolus dans beforeAll.
+const EMAIL_FB_AUTHOR_A = 'rls.fb.author.a@example.test'
+const EMAIL_FB_AUTHOR_B = 'rls.fb.author.b@example.test'
+const EMAIL_STAFF_A = 'rls.fb.staff.a@example.test'
+const EMAIL_NET = 'rls.fb.network@example.test'
+const FB_A = 'ffffffff-0000-0000-0000-0000000000e1' // feedback club A
+const FB_B = 'ffffffff-0000-0000-0000-0000000000e2' // feedback club B
+const FB_EMAILS = [EMAIL_FB_AUTHOR_A, EMAIL_FB_AUTHOR_B, EMAIL_STAFF_A, EMAIL_NET] as const
+
+/** IDs auth résolus à la création (beforeAll). */
+const fbIds = {
+  authorA: '',
+  authorB: '',
+  staffA: '',
+  net: '',
+}
+
 // ─── Signature JWT HS256 maison (zéro dépendance) ─────────────────────────────
 
 function b64url(input: string | Buffer): string {
@@ -215,8 +235,18 @@ beforeAll(async () => {
   const admin = createServiceRoleClient()
 
   // Nettoyage défensif (run précédent interrompu) puis seed frais.
+  await admin.from('feedback').delete().in('id', [FB_A, FB_B])
   await admin.from('clubs').delete().in('id', [CLUB_A, CLUB_B])
   await admin.from('users').delete().in('id', [USER_A, USER_B])
+  // Comptes auth des fixtures feedback (createUser échoue sur email dupliqué) — purge préalable.
+  {
+    const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 })
+    for (const u of list?.users ?? []) {
+      if (u.email && (FB_EMAILS as readonly string[]).includes(u.email)) {
+        await admin.auth.admin.deleteUser(u.id)
+      }
+    }
+  }
 
   const ins = async (
     label: string,
@@ -265,15 +295,120 @@ beforeAll(async () => {
 
   await seedClubData(admin, CLUB_A, MEM_A)
   await seedClubData(admin, CLUB_B, MEM_B)
+
+  // ── NET-019 — fixtures feedback (club_id + RLS resserrée, migration 051) ─────
+  // feedback.user_id → auth.users : on crée de vrais comptes auth (API admin) et on capture
+  // leurs IDs. On insère ensuite les public.users miroir (FK memberships) + memberships +
+  // network_member + 2 feedbacks (un par club).
+  const createAuth = async (email: string): Promise<string> => {
+    const { data, error } = await admin.auth.admin.createUser({ email, email_confirm: true })
+    if (error || !data.user) throw new Error(`createUser ${email} : ${error?.message}`)
+    return data.user.id
+  }
+  fbIds.authorA = await createAuth(EMAIL_FB_AUTHOR_A)
+  fbIds.authorB = await createAuth(EMAIL_FB_AUTHOR_B)
+  fbIds.staffA = await createAuth(EMAIL_STAFF_A)
+  fbIds.net = await createAuth(EMAIL_NET)
+
+  // public.users miroir (FK memberships.user_id → public.users). createUser ne déclenche le
+  // re-key handle_new_user que s'il existe déjà une ligne public.users au même email (ici non) :
+  // on insère donc explicitement, avec les IDs auth générés.
+  await ins(
+    'users (feedback)',
+    admin.from('users').insert([
+      { id: fbIds.authorA, email: EMAIL_FB_AUTHOR_A, full_name: 'FB Author A' },
+      { id: fbIds.authorB, email: EMAIL_FB_AUTHOR_B, full_name: 'FB Author B' },
+      { id: fbIds.staffA, email: EMAIL_STAFF_A, full_name: 'FB Staff A' },
+      { id: fbIds.net, email: EMAIL_NET, full_name: 'FB Network' },
+    ])
+  )
+  await ins(
+    'memberships (feedback)',
+    admin.from('memberships').insert([
+      // Auteurs = simples membres de leur club respectif.
+      {
+        user_id: fbIds.authorA,
+        club_id: CLUB_A,
+        role: 'member',
+        status: 'active',
+        joined_at: '2021-01-01',
+      },
+      {
+        user_id: fbIds.authorB,
+        club_id: CLUB_B,
+        role: 'member',
+        status: 'active',
+        joined_at: '2021-01-01',
+      },
+      // Trésorier du club A (staff per-club).
+      {
+        user_id: fbIds.staffA,
+        club_id: CLUB_A,
+        role: 'treasurer',
+        status: 'active',
+        joined_at: '2021-01-01',
+      },
+      // Membre réseau = simple membre du club B : il verra AUSSI le feedback du club A uniquement
+      // grâce à son rôle réseau (pas à une adhésion club A).
+      {
+        user_id: fbIds.net,
+        club_id: CLUB_B,
+        role: 'member',
+        status: 'active',
+        joined_at: '2021-01-01',
+      },
+    ])
+  )
+  await ins(
+    'network_members (feedback)',
+    admin.from('network_members').insert({ user_id: fbIds.net, role: 'network_board' })
+  )
+  await ins(
+    'feedback',
+    admin.from('feedback').insert([
+      {
+        id: FB_A,
+        user_id: fbIds.authorA,
+        user_email: EMAIL_FB_AUTHOR_A,
+        club_id: CLUB_A,
+        type: 'bug',
+        message: 'Bug club A',
+        page_url: 'http://x/a',
+        page_route: '/a',
+        status: 'received',
+      },
+      {
+        id: FB_B,
+        user_id: fbIds.authorB,
+        user_email: EMAIL_FB_AUTHOR_B,
+        club_id: CLUB_B,
+        type: 'bug',
+        message: 'Bug club B',
+        page_url: 'http://x/b',
+        page_route: '/b',
+        status: 'received',
+      },
+    ])
+  )
 }, 60_000)
 
 afterAll(async () => {
   if (!HAS_DB) return
   const admin = createServiceRoleClient()
+  // Feedback : club_id est ON DELETE SET NULL (pas cascade) → on supprime explicitement les lignes
+  // avant de retirer clubs/users (sinon elles survivent, orphelines).
+  await admin.from('feedback').delete().in('id', [FB_A, FB_B])
   // CASCADE : supprimer les clubs efface positions/transactions/contributions/cm/snapshots/
   // invitations ; supprimer les users efface memberships → attestation_sends + access_events.
   await admin.from('clubs').delete().in('id', [CLUB_A, CLUB_B])
   await admin.from('users').delete().in('id', [USER_A, USER_B])
+  // Comptes auth créés pour les fixtures feedback (cascade public.users/memberships/network_members).
+  const { data: list } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  for (const u of list?.users ?? []) {
+    if (u.email && (FB_EMAILS as readonly string[]).includes(u.email)) {
+      await admin.auth.admin.deleteUser(u.id)
+    }
+  }
 })
 
 // ─── Suite ────────────────────────────────────────────────────────────────────
@@ -299,6 +434,38 @@ describe.skipIf(!HAS_DB)('RLS — isolation cross-club (OPS-003)', () => {
       const foreign = await asA().rpc('get_user_role_in_club', { p_club_id: CLUB_B })
       expect(foreign.error).toBeNull()
       expect(foreign.data).toBeNull()
+    })
+
+    // NET-018 — un club DÉSACTIVÉ (clubs.is_active = false) sort de get_user_club_ids() :
+    // son membre ne le voit plus via la RLS (aucune donnée supprimée). Réactivé → réapparaît.
+    it('club désactivé (is_active=false) sort de get_user_club_ids() ; réactivé → réapparaît', async () => {
+      const admin = createServiceRoleClient()
+      // 1. État initial : le club A est actif → présent.
+      const before = await asA().rpc('get_user_club_ids')
+      expect(before.error).toBeNull()
+      expect((before.data ?? []) as unknown as string[]).toContain(CLUB_A)
+
+      // 2. Désactivation (soft-disable via service role) → le membre A ne voit plus son club.
+      const off = await admin.from('clubs').update({ is_active: false }).eq('id', CLUB_A)
+      expect(off.error).toBeNull()
+      try {
+        const during = await asA().rpc('get_user_club_ids')
+        expect(during.error).toBeNull()
+        expect((during.data ?? []) as unknown as string[]).not.toContain(CLUB_A)
+
+        // La RLS qui consomme le helper masque alors les positions du club désactivé.
+        const positions = await asA().from('positions').select('id').eq('club_id', CLUB_A)
+        expect(positions.error).toBeNull()
+        expect(positions.data).toEqual([])
+      } finally {
+        // 3. Réactivation (toujours, même si une assertion échoue) → restauration à l'identique.
+        const on = await admin.from('clubs').update({ is_active: true }).eq('id', CLUB_A)
+        expect(on.error).toBeNull()
+      }
+
+      const after = await asA().rpc('get_user_club_ids')
+      expect(after.error).toBeNull()
+      expect((after.data ?? []) as unknown as string[]).toContain(CLUB_A)
     })
   })
 
@@ -550,6 +717,77 @@ describe.skipIf(!HAS_DB)('RLS — isolation cross-club (OPS-003)', () => {
       const clubIds = new Set((positions.data ?? []).map((p) => p.club_id))
       expect(clubIds.has(CLUB_A)).toBe(true)
       expect(clubIds.has(CLUB_B)).toBe(true)
+    })
+  })
+
+  // ─── NET-019 — feedback : RLS resserrée (migration 051) ──────────────────────
+  // Acteurs créés en beforeAll : auteur A (club A), auteur B (club B), trésorier A (staff club A),
+  // membre réseau (network_board, simple membre du club B). On lit feedback sous chaque session.
+  describe('feedback (NET-019 — réseau/club/self read)', () => {
+    const onlyIds = (data: { id: string }[] | null) => new Set((data ?? []).map((r) => r.id))
+
+    it('le membre réseau lit TOUS les feedbacks (cross-club)', async () => {
+      const net = authedClientFor(fbIds.net)
+      const { data, error } = await net.from('feedback').select('id').in('id', [FB_A, FB_B])
+      expect(error).toBeNull()
+      const ids = onlyIds(data)
+      expect(ids.has(FB_A)).toBe(true)
+      expect(ids.has(FB_B)).toBe(true)
+    })
+
+    it('le staff du club A lit le feedback de A, JAMAIS celui de B', async () => {
+      const staff = authedClientFor(fbIds.staffA)
+      const own = await staff.from('feedback').select('id').eq('id', FB_A)
+      expect(own.error).toBeNull()
+      expect((own.data ?? []).length).toBe(1)
+
+      const foreign = await staff.from('feedback').select('id').eq('id', FB_B)
+      expect(foreign.error).toBeNull()
+      expect(foreign.data).toEqual([])
+    })
+
+    it('un membre simple ne lit QUE ses propres feedbacks (pas ceux des autres)', async () => {
+      // L'auteur A est simple membre : il voit SON feedback (self read), pas celui de B.
+      const author = authedClientFor(fbIds.authorA)
+      const own = await author.from('feedback').select('id').eq('id', FB_A)
+      expect(own.error).toBeNull()
+      expect((own.data ?? []).length).toBe(1)
+
+      const foreign = await author.from('feedback').select('id').eq('id', FB_B)
+      expect(foreign.error).toBeNull()
+      expect(foreign.data).toEqual([])
+    })
+
+    it('un membre simple d’un autre club ne lit pas un feedback dont il n’est pas l’auteur', async () => {
+      // L'auteur B (simple membre club B, non staff, non réseau) ne voit pas FB_A.
+      const author = authedClientFor(fbIds.authorB)
+      const foreign = await author.from('feedback').select('id').eq('id', FB_A)
+      expect(foreign.error).toBeNull()
+      expect(foreign.data).toEqual([])
+    })
+
+    it('le membre réseau peut UPDATE le statut (received → in_progress)', async () => {
+      const net = authedClientFor(fbIds.net)
+      const { data, error } = await net
+        .from('feedback')
+        .update({ status: 'in_progress' })
+        .eq('id', FB_A)
+        .select('id, status')
+      expect(error).toBeNull()
+      expect(data).toHaveLength(1)
+      expect(data?.[0]?.status).toBe('in_progress')
+    })
+
+    it('le staff du club ne peut PAS UPDATE le statut (0 ligne affectée — réservé réseau)', async () => {
+      const staff = authedClientFor(fbIds.staffA)
+      const { data, error } = await staff
+        .from('feedback')
+        .update({ status: 'closed' })
+        .eq('id', FB_A)
+        .select('id')
+      // Aucune policy UPDATE pour le staff de club (LOT C/ADM-009) → USING false → 0 ligne.
+      expect(error).toBeNull()
+      expect(data).toEqual([])
     })
   })
 })

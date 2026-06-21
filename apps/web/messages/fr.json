@@ -609,6 +609,29 @@
           "forbiddenMessage": "Vous n'avez pas les droits pour modifier ce membre."
         }
       },
+      "role": {
+        "action": "Modifier le rôle",
+        "fromSheet": "Défini via la matrice (PARAMETRAGES)",
+        "modal": {
+          "title": "Modifier le rôle de {name}",
+          "description": "Choisissez le rôle de ce membre dans le club. Ce changement prend effet immédiatement.",
+          "roleLabel": "Rôle",
+          "rolePlaceholder": "Choisir un rôle",
+          "warning": "Ce rôle a été défini manuellement et ne sera plus écrasé par la synchronisation Google Sheets.",
+          "cancel": "Annuler",
+          "confirm": "Enregistrer",
+          "close": "Fermer"
+        },
+        "errors": {
+          "forbidden": "Vous n'avez pas les droits pour attribuer ce rôle.",
+          "invalid": "Rôle invalide.",
+          "generic": "Une erreur est survenue. Réessayez."
+        },
+        "toast": {
+          "successTitle": "Rôle mis à jour",
+          "successMessage": "Le rôle du membre a été modifié et ne sera plus écrasé par la synchronisation."
+        }
+      },
       "access": {
         "column": "Accès",
         "active": "Actif",
@@ -1388,7 +1411,8 @@
       "soon": "Bientôt",
       "drawerTitle": "Espace réseau",
       "drawerDescription": "Choisis une section de l'espace réseau.",
-      "drawerClose": "Fermer"
+      "drawerClose": "Fermer",
+      "feedback": "Retours"
     },
     "clubs": {
       "meta": {
@@ -1432,7 +1456,8 @@
         "empty": {
           "title": "Aucun club",
           "description": "Ajoute un premier club pour démarrer le réseau."
-        }
+        },
+        "disabledBadge": "Désactivé"
       },
       "error": {
         "title": "Impossible de charger les clubs du réseau."
@@ -1539,7 +1564,8 @@
       "back": "Retour aux clubs",
       "readOnly": "Lecture seule",
       "status": {
-        "active": "Actif"
+        "active": "Actif",
+        "disabled": "Désactivé"
       },
       "kpi": {
         "members": "Membres actifs",
@@ -1614,7 +1640,8 @@
             "partial": "Avertissement",
             "failed": "Échec"
           }
-        }
+        },
+        "disabledTooltip": "Club désactivé"
       },
       "settings": {
         "title": "Paramètres",
@@ -1679,6 +1706,139 @@
         "toastSuccessMessage": "Le club a été supprimé du réseau.",
         "toastErrorTitle": "Suppression impossible",
         "toastErrorMessage": "La suppression du club a échoué. Réessaie dans un instant."
+      },
+      "statusSection": {
+        "title": "Statut du club",
+        "activeLabel": "Club actif",
+        "disabledLabel": "Club désactivé",
+        "activeHint": "Les membres accèdent à la matrice et la synchronisation tourne normalement.",
+        "disabledHint": "Aucune donnée supprimée. Accès bloqué jusqu’à réactivation.",
+        "enableButton": "Réactiver",
+        "disableButton": "Désactiver",
+        "banner": {
+          "title": "Club désactivé",
+          "body": "Aucune donnée supprimée. Accès bloqué pour tous les membres jusqu’à réactivation."
+        },
+        "confirm": {
+          "title": "Désactiver le club {name} ?",
+          "description": "Aucune donnée supprimée. Accès bloqué pour tous les membres (matrice et synchronisation) jusqu’à réactivation.",
+          "acknowledge": "Je comprends que les membres perdent l’accès jusqu’à réactivation.",
+          "typeToConfirm": "Tape {slug} pour confirmer"
+        },
+        "toast": {
+          "disabledTitle": "Club désactivé",
+          "disabledMessage": "Le club est désactivé : ses membres n’y ont plus accès.",
+          "enabledTitle": "Club réactivé",
+          "enabledMessage": "Le club est réactivé : ses membres y ont de nouveau accès.",
+          "errorTitle": "Action impossible",
+          "errorMessage": "Le changement de statut a échoué. Réessaie dans un instant."
+        }
+      }
+    },
+    "retours": {
+      "meta": {
+        "title": "Retours des membres"
+      },
+      "title": "Retours des membres",
+      "subtitle": "Ce que les membres remontent à travers le réseau.",
+      "error": {
+        "title": "Impossible de charger les retours."
+      },
+      "period": {
+        "label": "Période",
+        "30d": "30 jours",
+        "90d": "90 jours",
+        "all": "Tout"
+      },
+      "aiDigest": {
+        "title": "Synthèse IA",
+        "badge": "Bientôt",
+        "description": "Le digest IA agrégé des retours (thèmes récurrents, sentiment, priorités) arrive bientôt. En attendant, l'analyse IA par retour reste disponible dans le détail de chaque ligne."
+      },
+      "kpi": {
+        "total": "Retours",
+        "bugs": "Bugs",
+        "blocking": "{count} bloquant(s)",
+        "ideas": "Idées",
+        "treatmentRate": "Taux de traitement"
+      },
+      "dataviz": {
+        "byCategory": "Par catégorie",
+        "byCategoryAria": "Retours par catégorie : ",
+        "byClub": "Volume par club",
+        "byClubAria": "Volume de retours par club",
+        "legend": "Légende des catégories",
+        "donutTotal": "retours",
+        "empty": "Pas encore de données sur la période."
+      },
+      "filters": {
+        "group": "Filtres des retours",
+        "type": "Type",
+        "allTypes": "Tous les types",
+        "severity": "Sévérité",
+        "allSeverities": "Toutes les sévérités",
+        "status": "Statut",
+        "allStatuses": "Tous les statuts",
+        "club": "Club",
+        "allClubs": "Tous les clubs",
+        "search": "Rechercher",
+        "searchPlaceholder": "Rechercher un retour…"
+      },
+      "type": {
+        "bug": "Bug",
+        "feature": "Idée",
+        "question": "Question"
+      },
+      "severity": {
+        "blocking": "Bloquant",
+        "annoying": "Gênant",
+        "minor": "Mineur"
+      },
+      "status": {
+        "received": "Reçu",
+        "in_progress": "En cours",
+        "done": "Fait",
+        "closed": "Fermé"
+      },
+      "category": {
+        "other": "Autre"
+      },
+      "table": {
+        "tableLabel": "Retours des membres",
+        "columns": {
+          "feedback": "Retour",
+          "type": "Type",
+          "severity": "Sévérité",
+          "club": "Club",
+          "member": "Membre",
+          "date": "Date",
+          "status": "Statut"
+        },
+        "untitled": "Sans titre",
+        "noClub": "Sans club",
+        "hasAttachments": "Contient des captures",
+        "changeStatus": "Changer le statut",
+        "empty": {
+          "title": "Aucun retour",
+          "description": "Aucun retour ne correspond à ces filtres sur la période."
+        }
+      },
+      "detail": {
+        "description": "Détail d'un retour membre.",
+        "close": "Fermer",
+        "status": "Statut",
+        "author": "Auteur",
+        "club": "Club",
+        "date": "Date",
+        "page": "Page concernée",
+        "userAgent": "Navigateur",
+        "message": "Message",
+        "attachments": "Captures",
+        "attachmentAlt": "Capture {n}",
+        "aiAnalysis": "Analyse IA",
+        "category": "Catégorie",
+        "viewGithub": "Voir l'issue GitHub",
+        "viewNotion": "Voir dans Notion"
       }
     }
   }

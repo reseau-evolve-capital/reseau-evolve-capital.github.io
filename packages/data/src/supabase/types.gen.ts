@@ -66,6 +66,44 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          id: string
+          metadata: Json
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'audit_log_actor_id_fkey'
+            columns: ['actor_id']
+            isOneToOne: false
+            referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       club_reporting_daily: {
         Row: {
           capital_gain: number | null
@@ -122,6 +160,7 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          is_active: boolean
           last_error_email_sent_at: string | null
           min_contribution: number
           name: string
@@ -139,6 +178,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          is_active?: boolean
           last_error_email_sent_at?: string | null
           min_contribution?: number
           name: string
@@ -156,6 +196,7 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          is_active?: boolean
           last_error_email_sent_at?: string | null
           min_contribution?: number
           name?: string
@@ -293,6 +334,7 @@ export type Database = {
           ai_severity: string | null
           ai_summary: string | null
           ai_title: string | null
+          club_id: string | null
           created_at: string
           discord_notified: boolean
           email_sent: boolean
@@ -314,6 +356,7 @@ export type Database = {
           ai_severity?: string | null
           ai_summary?: string | null
           ai_title?: string | null
+          club_id?: string | null
           created_at?: string
           discord_notified?: boolean
           email_sent?: boolean
@@ -335,6 +378,7 @@ export type Database = {
           ai_severity?: string | null
           ai_summary?: string | null
           ai_title?: string | null
+          club_id?: string | null
           created_at?: string
           discord_notified?: boolean
           email_sent?: boolean
@@ -351,7 +395,15 @@ export type Database = {
           user_email?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: 'feedback_club_id_fkey'
+            columns: ['club_id']
+            isOneToOne: false
+            referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+        ]
       }
       invitations: {
         Row: {
@@ -469,6 +521,7 @@ export type Database = {
           locked_by: string | null
           locked_reason: string | null
           role: Database['public']['Enums']['member_role']
+          role_source: string
           status: Database['public']['Enums']['member_status']
           updated_at: string
           user_id: string
@@ -486,6 +539,7 @@ export type Database = {
           locked_by?: string | null
           locked_reason?: string | null
           role?: Database['public']['Enums']['member_role']
+          role_source?: string
           status?: Database['public']['Enums']['member_status']
           updated_at?: string
           user_id: string
@@ -503,6 +557,7 @@ export type Database = {
           locked_by?: string | null
           locked_reason?: string | null
           role?: Database['public']['Enums']['member_role']
+          role_source?: string
           status?: Database['public']['Enums']['member_status']
           updated_at?: string
           user_id?: string
@@ -1197,6 +1252,13 @@ export type Database = {
     }
     Functions: {
       accept_invitation: { Args: { p_token_hash: string }; Returns: string }
+      admin_change_member_role: {
+        Args: {
+          p_membership_id: string
+          p_role: Database['public']['Enums']['member_role']
+        }
+        Returns: undefined
+      }
       admin_create_invitation: {
         Args: { p_club_id: string; p_email: string; p_token_hash: string }
         Returns: string
@@ -1228,11 +1290,21 @@ export type Database = {
         Args: { p_club_id: string }
         Returns: Database['public']['Enums']['member_role']
       }
+      has_club_staff_access: { Args: { p_club_id: string }; Returns: boolean }
       has_voted: { Args: { p_poll_id: string }; Returns: boolean }
       health_status: { Args: never; Returns: Json }
       is_club_staff: { Args: { p_club_id: string }; Returns: boolean }
       is_network_admin: { Args: never; Returns: boolean }
       is_network_member: { Args: never; Returns: boolean }
+      log_audit_event: {
+        Args: {
+          p_action: string
+          p_metadata?: Json
+          p_target_id?: string
+          p_target_type?: string
+        }
+        Returns: undefined
+      }
       network_create_club: {
         Args: {
           p_city?: string
@@ -1245,6 +1317,11 @@ export type Database = {
         Returns: string
       }
       network_delete_club: { Args: { p_club_id: string }; Returns: undefined }
+      network_disable_club: {
+        Args: { p_club_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      network_enable_club: { Args: { p_club_id: string }; Returns: undefined }
       network_grant_role: {
         Args: {
           p_role: Database['public']['Enums']['network_role']
@@ -1272,6 +1349,7 @@ export type Database = {
           country: string
           created_at: string
           id: string
+          is_active: boolean
           last_synced_at: string
           matrix_connected: boolean
           name: string
@@ -1306,6 +1384,10 @@ export type Database = {
         Returns: string
       }
       network_revoke_role: { Args: { p_user_id: string }; Returns: undefined }
+      network_set_club_active: {
+        Args: { p_active: boolean; p_club_id: string; p_reason?: string }
+        Returns: undefined
+      }
       network_set_club_sheet: {
         Args: { p_club_id: string; p_sheet_id: string }
         Returns: undefined

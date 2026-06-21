@@ -609,6 +609,29 @@
           "forbiddenMessage": "You don't have permission to edit this member."
         }
       },
+      "role": {
+        "action": "Change role",
+        "fromSheet": "Set via the matrix (PARAMETRAGES)",
+        "modal": {
+          "title": "Change {name}'s role",
+          "description": "Choose this member's role in the club. The change takes effect immediately.",
+          "roleLabel": "Role",
+          "rolePlaceholder": "Choose a role",
+          "warning": "This role has been set manually and will no longer be overwritten by the Google Sheets sync.",
+          "cancel": "Cancel",
+          "confirm": "Save",
+          "close": "Close"
+        },
+        "errors": {
+          "forbidden": "You don't have permission to assign this role.",
+          "invalid": "Invalid role.",
+          "generic": "Something went wrong. Please try again."
+        },
+        "toast": {
+          "successTitle": "Role updated",
+          "successMessage": "The member's role has been changed and will no longer be overwritten by the sync."
+        }
+      },
       "access": {
         "column": "Access",
         "active": "Active",
@@ -1388,7 +1411,8 @@
       "soon": "Soon",
       "drawerTitle": "Network area",
       "drawerDescription": "Choose a section of the network area.",
-      "drawerClose": "Close"
+      "drawerClose": "Close",
+      "feedback": "Feedback"
     },
     "clubs": {
       "meta": {
@@ -1432,7 +1456,8 @@
         "empty": {
           "title": "No club",
           "description": "Add a first club to launch the network."
-        }
+        },
+        "disabledBadge": "Disabled"
       },
       "error": {
         "title": "Unable to load the network clubs."
@@ -1539,7 +1564,8 @@
       "back": "Back to clubs",
       "readOnly": "Read only",
       "status": {
-        "active": "Active"
+        "active": "Active",
+        "disabled": "Disabled"
       },
       "kpi": {
         "members": "Active members",
@@ -1614,7 +1640,8 @@
             "partial": "Warning",
             "failed": "Failed"
           }
-        }
+        },
+        "disabledTooltip": "Club disabled"
       },
       "settings": {
         "title": "Settings",
@@ -1679,6 +1706,139 @@
         "toastSuccessMessage": "The club has been removed from the network.",
         "toastErrorTitle": "Deletion failed",
         "toastErrorMessage": "Deleting the club failed. Please try again in a moment."
+      },
+      "statusSection": {
+        "title": "Club status",
+        "activeLabel": "Club active",
+        "disabledLabel": "Club disabled",
+        "activeHint": "Members can access the matrix and synchronisation runs normally.",
+        "disabledHint": "No data is deleted. Access is blocked until reactivation.",
+        "enableButton": "Reactivate",
+        "disableButton": "Disable",
+        "banner": {
+          "title": "Club disabled",
+          "body": "No data is deleted. Access is blocked for all members until reactivation."
+        },
+        "confirm": {
+          "title": "Disable club {name}?",
+          "description": "No data is deleted. Access is blocked for all members (matrix and synchronisation) until reactivation.",
+          "acknowledge": "I understand members lose access until reactivation.",
+          "typeToConfirm": "Type {slug} to confirm"
+        },
+        "toast": {
+          "disabledTitle": "Club disabled",
+          "disabledMessage": "The club is disabled: its members no longer have access.",
+          "enabledTitle": "Club reactivated",
+          "enabledMessage": "The club is reactivated: its members have access again.",
+          "errorTitle": "Action failed",
+          "errorMessage": "The status change failed. Please try again shortly."
+        }
+      }
+    },
+    "retours": {
+      "meta": {
+        "title": "Member feedback"
+      },
+      "title": "Member feedback",
+      "subtitle": "What members report across the network.",
+      "error": {
+        "title": "Could not load feedback."
+      },
+      "period": {
+        "label": "Period",
+        "30d": "30 days",
+        "90d": "90 days",
+        "all": "All"
+      },
+      "aiDigest": {
+        "title": "AI summary",
+        "badge": "Soon",
+        "description": "The aggregated AI digest of feedback (recurring themes, sentiment, priorities) is coming soon. In the meantime, per-item AI analysis is available in each row detail."
+      },
+      "kpi": {
+        "total": "Feedback",
+        "bugs": "Bugs",
+        "blocking": "{count} blocking",
+        "ideas": "Ideas",
+        "treatmentRate": "Resolution rate"
+      },
+      "dataviz": {
+        "byCategory": "By category",
+        "byCategoryAria": "Feedback by category: ",
+        "byClub": "Volume by club",
+        "byClubAria": "Feedback volume by club",
+        "legend": "Categories legend",
+        "donutTotal": "items",
+        "empty": "No data for this period yet."
+      },
+      "filters": {
+        "group": "Feedback filters",
+        "type": "Type",
+        "allTypes": "All types",
+        "severity": "Severity",
+        "allSeverities": "All severities",
+        "status": "Status",
+        "allStatuses": "All statuses",
+        "club": "Club",
+        "allClubs": "All clubs",
+        "search": "Search",
+        "searchPlaceholder": "Search feedback…"
+      },
+      "type": {
+        "bug": "Bug",
+        "feature": "Idea",
+        "question": "Question"
+      },
+      "severity": {
+        "blocking": "Blocking",
+        "annoying": "Annoying",
+        "minor": "Minor"
+      },
+      "status": {
+        "received": "Received",
+        "in_progress": "In progress",
+        "done": "Done",
+        "closed": "Closed"
+      },
+      "category": {
+        "other": "Other"
+      },
+      "table": {
+        "tableLabel": "Member feedback",
+        "columns": {
+          "feedback": "Feedback",
+          "type": "Type",
+          "severity": "Severity",
+          "club": "Club",
+          "member": "Member",
+          "date": "Date",
+          "status": "Status"
+        },
+        "untitled": "Untitled",
+        "noClub": "No club",
+        "hasAttachments": "Has attachments",
+        "changeStatus": "Change status",
+        "empty": {
+          "title": "No feedback",
+          "description": "No feedback matches these filters for this period."
+        }
+      },
+      "detail": {
+        "description": "Member feedback detail.",
+        "close": "Close",
+        "status": "Status",
+        "author": "Author",
+        "club": "Club",
+        "date": "Date",
+        "page": "Page",
+        "userAgent": "Browser",
+        "message": "Message",
+        "attachments": "Attachments",
+        "attachmentAlt": "Attachment {n}",
+        "aiAnalysis": "AI analysis",
+        "category": "Category",
+        "viewGithub": "View GitHub issue",
+        "viewNotion": "View in Notion"
       }
     }
   }

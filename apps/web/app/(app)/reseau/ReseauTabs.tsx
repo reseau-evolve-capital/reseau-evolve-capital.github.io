@@ -18,7 +18,7 @@ import { useTranslations } from 'next-intl'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Icon, type IconName } from '@evolve/ui'
 
-type TabKey = 'overview' | 'clubs' | 'directory' | 'board'
+type TabKey = 'overview' | 'clubs' | 'directory' | 'board' | 'feedback'
 
 interface Tab {
   key: TabKey
@@ -34,6 +34,8 @@ const TABS: Tab[] = [
   { key: 'clubs', href: '/reseau/clubs', icon: 'Building2', disabled: false },
   { key: 'directory', href: '/reseau/annuaire', icon: 'Users', disabled: true },
   { key: 'board', href: '/reseau/bureau', icon: 'Crown', disabled: true },
+  // « Retours » : console feedbacks réseau (NET-019) — branchée dans cette vague.
+  { key: 'feedback', href: '/reseau/retours', icon: 'MessageSquare', disabled: false },
 ]
 
 function isActive(pathname: string, href: string): boolean {
