@@ -859,6 +859,16 @@
     "description": "This page doesn't exist or has been moved. No worries, we'll bring you back to familiar ground.",
     "backToDashboard": "Back to dashboard"
   },
+  "avatarCrop": {
+    "title": "Adjust your photo",
+    "description": "Drag and zoom to frame your face inside the circle.",
+    "cancel": "Cancel",
+    "confirm": "Use this photo",
+    "confirming": "Processing…",
+    "zoom": "Zoom",
+    "close": "Close",
+    "error": "Could not crop the image."
+  },
   "profile": {
     "metaTitle": "My profile — Evolve Capital",
     "title": "My profile",

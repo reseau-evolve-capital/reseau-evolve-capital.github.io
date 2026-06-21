@@ -1,78 +1,40 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { OnboardingShell, AvatarUpload, FormField, Input, Button } from '@evolve/ui'
+import {
+  OnboardingShell,
+  AvatarUpload,
+  AvatarCropModal,
+  FormField,
+  Input,
+  Button,
+} from '@evolve/ui'
 import { useOnboardingStore } from '@/lib/stores/onboarding'
-import { useSupabase } from '@/components/providers/SupabaseProvider'
-import { resizeAndUploadAvatar } from '@/lib/upload/avatar'
+import { useAvatarCropFlow } from '@/lib/upload/useAvatarCropFlow'
 import type { OnboardingDefaults } from '@/lib/data/profile'
 
 export function Step2Form({ defaults }: { defaults?: OnboardingDefaults }) {
   const router = useRouter()
   const t = useTranslations('onboarding')
   const tCommon = useTranslations('common')
+  const tCrop = useTranslations('avatarCrop')
   const store = useOnboardingStore()
-  const supabase = useSupabase()
 
   // Pré-remplissage (BUG 1) : le store prime (saisie en cours / retour arrière), `defaults`
   // (valeurs synchronisées lues côté serveur) ne sert que de repli quand le store est vide.
-  // On ne clobber donc jamais une saisie en cours.
-  const [userId, setUserId] = useState<string | null>(null)
   const [phone, setPhone] = useState(() => store.phone || defaults?.phone || '')
   const [address, setAddress] = useState(() => store.address || defaults?.address || '')
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    () => store.avatarUrl ?? defaults?.avatarUrl ?? null
-  )
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | undefined>()
 
-  // Object URL de l'aperçu optimiste local (BUG 2) — révoqué après succès et au démontage.
-  const localPreviewRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserId(data.user.id)
-    })
-  }, [supabase])
-
-  // Libère tout object URL local encore vivant au démontage (évite les fuites mémoire).
-  useEffect(() => {
-    return () => {
-      if (localPreviewRef.current) URL.revokeObjectURL(localPreviewRef.current)
-    }
-  }, [])
-
-  async function handleFileSelected(file: File) {
-    if (!userId) return
-
-    // Aperçu OPTIMISTE (BUG 2) : on affiche l'image choisie immédiatement, avant l'upload,
-    // pour un retour visuel instantané. On révoque tout aperçu local précédent au passage.
-    if (localPreviewRef.current) URL.revokeObjectURL(localPreviewRef.current)
-    const localUrl = URL.createObjectURL(file)
-    localPreviewRef.current = localUrl
-    setPreviewUrl(localUrl)
-
-    setIsUploading(true)
-    setUploadError(undefined)
-    try {
-      const url = await resizeAndUploadAvatar(supabase, userId, file)
+  // Flux crop partagé : sélection → modale crop → upload Blob → store.patch({ avatarUrl }).
+  const flow = useAvatarCropFlow({
+    initialPreview: store.avatarUrl ?? defaults?.avatarUrl ?? null,
+    fallbackErrorLabel: t('step2.uploadError'),
+    onUploaded: (url) => {
       store.patch({ avatarUrl: url })
-      setPreviewUrl(url)
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : t('step2.uploadError'))
-      // En cas d'échec, on retombe sur l'avatar précédent (synchronisé) plutôt que l'aperçu local.
-      setPreviewUrl(store.avatarUrl)
-    } finally {
-      // L'aperçu local a joué son rôle (remplacé par l'URL publique ou réverti) : on le libère.
-      if (localPreviewRef.current) {
-        URL.revokeObjectURL(localPreviewRef.current)
-        localPreviewRef.current = null
-      }
-      setIsUploading(false)
-    }
-  }
+    },
+  })
 
   function handleContinue() {
     store.patch({ phone: phone.trim(), address: address.trim() })
@@ -115,10 +77,10 @@ export function Step2Form({ defaults }: { defaults?: OnboardingDefaults }) {
       <div className="flex flex-col gap-6">
         <div className="flex flex-col items-center gap-2">
           <AvatarUpload
-            previewUrl={previewUrl}
-            onFileSelected={handleFileSelected}
-            isUploading={isUploading}
-            error={uploadError}
+            previewUrl={flow.previewUrl}
+            onFileSelected={flow.handleFileSelected}
+            isUploading={flow.isUploading}
+            error={flow.error}
             uploadAriaLabel={t('step2.avatarUploadAria')}
             emptyLabel={t('step2.avatarEmpty')}
             uploadingLabel={t('step2.avatarUploading')}
@@ -154,6 +116,24 @@ export function Step2Form({ defaults }: { defaults?: OnboardingDefaults }) {
           )}
         </FormField>
       </div>
+
+      <AvatarCropModal
+        open={flow.cropOpen}
+        onOpenChange={flow.setCropOpen}
+        imageSrc={flow.cropSrc}
+        onConfirm={flow.handleCropConfirm}
+        onCancel={flow.handleCropCancel}
+        labels={{
+          title: tCrop('title'),
+          description: tCrop('description'),
+          cancel: tCrop('cancel'),
+          confirm: tCrop('confirm'),
+          confirming: tCrop('confirming'),
+          zoomLabel: tCrop('zoom'),
+          close: tCrop('close'),
+          error: tCrop('error'),
+        }}
+      />
     </OnboardingShell>
   )
 }
