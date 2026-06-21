@@ -326,14 +326,14 @@ export function buildRelanceMessage(params: {
   return [
     `Bonjour ${memberName},`,
     '',
-    `Nous vous rappelons que votre cotisation au club présente un solde impayé.`,
+    `On te rappelle que ta cotisation au club présente un solde impayé.`,
     '',
     monthsLine,
     `Montant total dû : ${formattedAmount}`,
     '',
-    `Merci de régulariser votre situation dans les meilleurs délais.`,
+    `Merci de régulariser ça dès que tu peux — et n'hésite pas à nous contacter si tu as des questions !`,
     '',
-    `Cordialement,`,
+    `À très vite,`,
     `L'équipe du club`,
   ].join('\n')
 }
