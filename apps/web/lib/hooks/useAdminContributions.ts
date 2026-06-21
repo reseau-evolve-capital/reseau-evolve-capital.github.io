@@ -41,6 +41,9 @@ export function useAdminContributions(
   return useQuery({
     queryKey: ['admin', 'contributions', initialData.clubId, membershipId],
     queryFn: () => fetchAdminContributions(initialData.clubId, membershipId),
+    // Mode club (membershipId=null) : l'initialData SSR fait autorité, ne jamais refetch
+    // (le refetch renverrait EMPTY_CLUB_STATS depuis l'API route et écraserait les vraies stats).
+    enabled: membershipId !== null,
     initialData: membershipId ? undefined : initialData,
     placeholderData: (prev) => prev,
     staleTime: 2 * 60 * 1000,
