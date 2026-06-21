@@ -10,8 +10,6 @@ import { captureRouteError } from '@/lib/monitoring/sentry'
 export const runtime = 'nodejs'
 
 const EMPTY_CLUB_STATS = { recoveryRate: 0, lateAmount: 0, lateCount: 0, encaisse: 0 }
-const EMPTY_LEGACY_STATS = { total: 0, count: 0, average: 0 }
-const EMPTY_YEARS: never[] = []
 
 export async function GET(request: Request): Promise<NextResponse> {
   const cookieStore = await cookies()
@@ -37,28 +35,14 @@ export async function GET(request: Request): Promise<NextResponse> {
       // Mode membre : fiche individuelle avec mois de retard, frise, taux de recouvrement.
       const member = await getMemberCotisationsForAdmin(supabase, clubId, membershipId)
       return NextResponse.json(
-        {
-          clubId,
-          clubStats: EMPTY_CLUB_STATS,
-          regulariserList: [],
-          member,
-          stats: EMPTY_LEGACY_STATS,
-          years: EMPTY_YEARS,
-        },
+        { clubId, clubStats: EMPTY_CLUB_STATS, regulariserList: [], member },
         { headers: { 'Cache-Control': 'private, no-store' } }
       )
     } else {
       // Mode club : le hook ne fetche jamais cette branche (initialData SSR utilisé).
       // On renvoie une forme valide pour la cohérence de type.
       return NextResponse.json(
-        {
-          clubId,
-          clubStats: EMPTY_CLUB_STATS,
-          regulariserList: [],
-          member: null,
-          stats: EMPTY_LEGACY_STATS,
-          years: EMPTY_YEARS,
-        },
+        { clubId, clubStats: EMPTY_CLUB_STATS, regulariserList: [], member: null },
         { headers: { 'Cache-Control': 'private, no-store' } }
       )
     }

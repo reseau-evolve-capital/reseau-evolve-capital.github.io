@@ -86,6 +86,7 @@ export function RelanceModal({
   // Réinitialise le message et l'erreur à chaque (ré)ouverture.
   React.useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- reason: dialog reset on re-open, no cascading risk (guarded by `open`)
       setMessage(buildInitialMessage(memberName, lateMonths, amountDue, currency))
       setError(null)
     }

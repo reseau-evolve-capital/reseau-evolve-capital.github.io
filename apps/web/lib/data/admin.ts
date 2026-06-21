@@ -147,10 +147,6 @@ export interface AdminContribPayload {
   regulariserList: RegulariserMember[]
   /** null = mode club (vue agrégée) ; non-null = mode membre (fiche individuelle). */
   member: MemberCotisationsData | null
-  /** @deprecated Conservé pour compatibilité ascendante AdminCotisationsView jusqu'à T6. */
-  stats: ContribStats
-  /** @deprecated Conservé pour compatibilité ascendante AdminCotisationsView jusqu'à T6. */
-  years: TimelineYear[]
 }
 
 /** Paramètres déterministes de la synthèse trésorier (i18n côté UI). */

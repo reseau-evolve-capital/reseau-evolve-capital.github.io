@@ -669,18 +669,66 @@
       }
     },
     "cotisations": {
-      "title": "Cotisations du club",
+      "title": "Cotisations",
       "filterMember": "Filtrer par membre",
       "allMembers": "Tous les membres",
+      "backToClub": "← Tous les membres",
+      "synthese": {
+        "allGood": "Tout le monde est à jour 🎉",
+        "oneMember": "Ton club est à jour à {rate}. {name} cumule {amount} de retard.",
+        "manyMembers": "Ton club est à jour à {rate}. {count} membres cumulent {amount} de retard, dont {topName} ({topAmount}) en priorité."
+      },
       "kpi": {
+        "recoveryRate": "Taux de recouvrement",
+        "recoveryRateHint": "Mois payés ÷ mois dus exploitables (hors futurs et exemptés).",
+        "late": "En retard",
+        "lateHint": "Total des cotisations impayées du club (mois en retard ou en attente).",
+        "encaisse": "Encaissé",
+        "encaisseHint": "Somme des cotisations effectivement reçues (mois au statut « payé »).",
+        "memberRecovery": "Recouvrement",
+        "memberRecoveryHint": "Mois payés ÷ mois dus de ce membre.",
+        "amountDue": "Montant dû",
+        "amountDueHint": "Cotisations impayées de ce membre.",
+        "netMarketValue": "Valeur nette de la part",
+        "netMarketValueHint": "Valeur de marché des positions détenues par ce membre.",
         "total": "Total cotisé",
         "count": "Versements",
-        "average": "Versement moyen",
-        "netMarketValue": "Valeur nette de la part"
+        "average": "Versement moyen"
+      },
+      "regulariser": {
+        "title": "À régulariser",
+        "emptyTitle": "Tout le monde est à jour",
+        "emptyDesc": "Aucun membre n'a de cotisation en retard.",
+        "relancer": "Relancer",
+        "lateMonths": "{n, plural, =1 {1 mois} other {# mois}}"
+      },
+      "member": {
+        "since": "Membre depuis {date}",
+        "statusBadge": {
+          "ok": "À jour",
+          "late": "En retard",
+          "pending": "En attente",
+          "exempt": "Exempté"
+        },
+        "lateMonthsTitle": "Mois en retard",
+        "relancer": "Relancer",
+        "backToClub": "← Tous les membres"
+      },
+      "relance": {
+        "modalTitle": "Relancer {name}",
+        "messageLabel": "Message",
+        "sendEmail": "Envoyer par email",
+        "noEmail": "Email non disponible",
+        "cancel": "Annuler",
+        "sending": "Envoi en cours…",
+        "successTitle": "Relance envoyée",
+        "successMessage": "Email envoyé à {name}.",
+        "errorTitle": "Erreur d'envoi",
+        "errorMessage": "Impossible d'envoyer la relance. Réessayez."
       },
       "empty": {
         "title": "Aucune cotisation",
-        "description": "Aucun versement enregistré pour ce filtre."
+        "description": "Ce club n'a pas encore de données de cotisation."
       }
     },
     "meta": {

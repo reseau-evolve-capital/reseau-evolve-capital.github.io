@@ -669,18 +669,66 @@
       }
     },
     "cotisations": {
-      "title": "Club contributions",
+      "title": "Contributions",
       "filterMember": "Filter by member",
       "allMembers": "All members",
+      "backToClub": "← All members",
+      "synthese": {
+        "allGood": "Everyone is up to date 🎉",
+        "oneMember": "Your club is {rate} up to date. {name} owes {amount} in arrears.",
+        "manyMembers": "Your club is {rate} up to date. {count} members owe {amount} in arrears, with {topName} ({topAmount}) as a priority."
+      },
       "kpi": {
+        "recoveryRate": "Recovery rate",
+        "recoveryRateHint": "Paid months ÷ eligible due months (excluding future and exempt).",
+        "late": "Overdue",
+        "lateHint": "Total unpaid contributions for the club (late or pending months).",
+        "encaisse": "Collected",
+        "encaisseHint": "Sum of contributions actually received (months with status paid).",
+        "memberRecovery": "Recovery",
+        "memberRecoveryHint": "Paid months ÷ due months for this member.",
+        "amountDue": "Amount due",
+        "amountDueHint": "Unpaid contributions for this member.",
+        "netMarketValue": "Member net value",
+        "netMarketValueHint": "Market value of positions held by this member.",
         "total": "Total contributed",
         "count": "Payments",
-        "average": "Average payment",
-        "netMarketValue": "Member net value"
+        "average": "Average payment"
+      },
+      "regulariser": {
+        "title": "To regularise",
+        "emptyTitle": "Everyone is up to date",
+        "emptyDesc": "No member has overdue contributions.",
+        "relancer": "Follow up",
+        "lateMonths": "{n, plural, =1 {1 month} other {# months}}"
+      },
+      "member": {
+        "since": "Member since {date}",
+        "statusBadge": {
+          "ok": "Up to date",
+          "late": "Overdue",
+          "pending": "Pending",
+          "exempt": "Exempt"
+        },
+        "lateMonthsTitle": "Overdue months",
+        "relancer": "Follow up",
+        "backToClub": "← All members"
+      },
+      "relance": {
+        "modalTitle": "Follow up {name}",
+        "messageLabel": "Message",
+        "sendEmail": "Send by email",
+        "noEmail": "Email not available",
+        "cancel": "Cancel",
+        "sending": "Sending…",
+        "successTitle": "Message sent",
+        "successMessage": "Follow-up sent to {name}.",
+        "errorTitle": "Send error",
+        "errorMessage": "Unable to send the follow-up. Please try again."
       },
       "empty": {
         "title": "No contributions",
-        "description": "No payment recorded for this filter."
+        "description": "This club has no contribution data yet."
       }
     },
     "meta": {

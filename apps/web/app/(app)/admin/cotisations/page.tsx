@@ -57,9 +57,6 @@ export default async function AdminCotisationsPage() {
 
   const regulariserList = buildRegulariserList(members, lateMonthsByMembership)
 
-  // Shims @deprecated : AdminCotisationsView utilise encore l'ancienne forme jusqu'à T6.
-  const legacyStats = { total: clubStats.encaisse, count: 0, average: 0 }
-
   return (
     <AdminCotisationsView
       initialData={{
@@ -67,8 +64,6 @@ export default async function AdminCotisationsPage() {
         clubStats,
         regulariserList,
         member: null,
-        stats: legacyStats,
-        years: [],
       }}
       currency={currency}
       members={members.map((m) => ({
