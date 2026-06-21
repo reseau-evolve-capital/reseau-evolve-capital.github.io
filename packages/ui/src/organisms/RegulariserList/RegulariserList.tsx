@@ -67,7 +67,7 @@ export function RegulariserList({
             className={cn(
               'flex items-center justify-between gap-3 px-4 py-3',
               'transition-colors duration-[150ms]',
-              'hover:bg-surface-raised focus-visible:bg-surface-raised',
+              'hover:bg-neutral-100 focus-visible:bg-neutral-100',
               'outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-inset'
             )}
             data-testid={`regulariser-row-${item.membershipId}`}

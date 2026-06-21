@@ -56,7 +56,7 @@ export function ClubCotisationsPanel({
   return (
     <div className="flex flex-col gap-6">
       {/* ── Bandeau synthèse ── */}
-      <div className="bg-surface border border-border rounded-[10px] px-4 py-3">
+      <div className="bg-card-sub border border-border rounded-[10px] px-4 py-3">
         <p className="text-[14px] text-text leading-relaxed">{syntheseText}</p>
       </div>
 
