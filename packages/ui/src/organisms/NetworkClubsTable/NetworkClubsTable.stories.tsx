@@ -92,6 +92,24 @@ export const ClubNeuf: Story = {
   },
 }
 
+/** NET-018 — club désactivé : badge « Désactivé » (data-negative) + ligne atténuée mais cliquable. */
+export const ClubDesactive: Story = {
+  args: {
+    clubs: [CLUBS[0]!, { ...CLUBS[1]!, isActive: false }],
+  },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement)
+    // Le club désactivé porte le badge « Désactivé » et le marqueur data-disabled.
+    await expect(canvas.getByText('Désactivé')).toBeInTheDocument()
+    const rows = canvas.getAllByTestId('network-club-row')
+    const disabledRow = rows.find((r) => r.getAttribute('data-disabled') === 'true')
+    await expect(disabledRow).toBeTruthy()
+    // Ligne atténuée mais CLIQUABLE : « Voir » reste fonctionnel (entrer pour réactiver).
+    await userEvent.click(canvas.getByRole('button', { name: /Voir le club Cercle Lyonnais/i }))
+    await expect(args.onView).toHaveBeenCalledWith(expect.objectContaining({ id: 'lyon' }))
+  },
+}
+
 /** État vide : aucun club → CTA d'amorçage. */
 export const Empty: Story = {
   args: { clubs: [] },

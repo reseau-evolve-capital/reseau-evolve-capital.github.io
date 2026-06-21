@@ -47,6 +47,12 @@ export interface NetworkClubRow {
   createdAt?: string | null
   /** Matrice Sheets branchée (clubs.sheet_id non vide). */
   matrixConnected: boolean
+  /**
+   * Club actif (true / défaut) ou désactivé (false, soft-disable NET-018). Un club désactivé est
+   * affiché avec un badge « Désactivé » (data-negative) et une ligne ATTÉNUÉE mais lisible &
+   * cliquable (entrer pour réactiver). Optionnel : `undefined`/`true` = actif (compat ascendante).
+   */
+  isActive?: boolean
 }
 
 /** En-têtes de colonnes (défauts FR). */
@@ -81,6 +87,8 @@ export interface NetworkClubsTableLabels {
   neverSynced?: string
   /** Libellés du badge matrice. */
   matrix?: { connected?: string; disconnected?: string }
+  /** Badge « Désactivé » (club soft-désactivé, NET-018). */
+  disabledBadge?: string
   /** Texte « — » de valo absente (aria-label / title du tiret muet). */
   valuationNone?: string
   /** aria-label « Voir le club {nom} ». */
@@ -104,6 +112,7 @@ const DEFAULT_SYNC_STATUS_LABEL: Record<ClubSyncStatus, string> = {
 const DEFAULT_NEVER_SYNCED = 'Jamais synchronisé'
 const DEFAULT_MATRIX_CONNECTED = 'Connectée'
 const DEFAULT_MATRIX_DISCONNECTED = 'Non connectée'
+const DEFAULT_DISABLED_BADGE = 'Désactivé'
 const DEFAULT_VALUATION_NONE = 'Valorisation indisponible'
 const DEFAULT_EMPTY_TITLE = 'Aucun club'
 const DEFAULT_EMPTY_DESCRIPTION = 'Ajoute un premier club pour démarrer le réseau.'
@@ -206,6 +215,7 @@ export function NetworkClubsTable({
   const neverSynced = labels?.neverSynced ?? DEFAULT_NEVER_SYNCED
   const matrixConnectedLabel = labels?.matrix?.connected ?? DEFAULT_MATRIX_CONNECTED
   const matrixDisconnectedLabel = labels?.matrix?.disconnected ?? DEFAULT_MATRIX_DISCONNECTED
+  const disabledBadgeLabel = labels?.disabledBadge ?? DEFAULT_DISABLED_BADGE
   const valuationNone = labels?.valuationNone ?? DEFAULT_VALUATION_NONE
   const viewLabel = labels?.viewLabel ?? defaultViewLabel
   const syncLabel = labels?.syncLabel ?? defaultSyncLabel
@@ -270,30 +280,44 @@ export function NetworkClubsTable({
               ))
             : clubs.map((club) => {
                 const status = deriveSyncStatus(club.lastSyncedAt, refNow, staleAfterMs)
+                // Club désactivé (NET-018) : ligne ATTÉNUÉE mais lisible & cliquable (entrer pour
+                // réactiver). On atténue uniquement les colonnes de données — le badge « Désactivé »
+                // (data-negative) et les actions restent à pleine opacité (lisibilité + clic).
+                const isDisabled = club.isActive === false
+                const dim = isDisabled ? 'opacity-60' : ''
                 return (
                   <tr
                     key={club.id}
                     data-testid="network-club-row"
+                    data-disabled={isDisabled ? 'true' : undefined}
                     className="border-b border-border align-middle"
                   >
-                    {/* Club : initiale + nom + slug mono atténué. */}
+                    {/* Club : initiale + nom + slug mono atténué + badge « Désactivé » si soft-disable. */}
                     <td className={TD_CLASS}>
                       <div className="flex items-center gap-3">
                         <span
                           aria-hidden="true"
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card-sub font-display text-[14px] font-bold text-text-sec"
+                          className={cn(
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-card-sub font-display text-[14px] font-bold text-text-sec',
+                            dim
+                          )}
                         >
                           {clubInitial(club.name)}
                         </span>
                         <div className="flex flex-col">
-                          <span className="font-semibold text-text">{club.name}</span>
-                          <span className="font-mono text-[12px] text-text-ter">{club.slug}</span>
+                          <span className="flex items-center gap-2">
+                            <span className={cn('font-semibold text-text', dim)}>{club.name}</span>
+                            {isDisabled && <Badge variant="error">{disabledBadgeLabel}</Badge>}
+                          </span>
+                          <span className={cn('font-mono text-[12px] text-text-ter', dim)}>
+                            {club.slug}
+                          </span>
                         </div>
                       </div>
                     </td>
 
                     {/* Date d'ajout du club (créé le). « — » muet si absente. */}
-                    <td className={cn(TD_CLASS, 'text-text-sec whitespace-nowrap')}>
+                    <td className={cn(TD_CLASS, 'text-text-sec whitespace-nowrap', dim)}>
                       {club.createdAt ? (
                         formatDate(club.createdAt, locale)
                       ) : (
@@ -302,10 +326,10 @@ export function NetworkClubsTable({
                     </td>
 
                     {/* Membres actifs. */}
-                    <td className={cn(TD_CLASS, numClass)}>{club.activeMembersCount}</td>
+                    <td className={cn(TD_CLASS, numClass, dim)}>{club.activeMembersCount}</td>
 
                     {/* Valo agrégée : « — » muet mais explicité (jamais un tiret ambigu). */}
-                    <td className={cn(TD_CLASS, numClass, 'font-semibold')}>
+                    <td className={cn(TD_CLASS, numClass, 'font-semibold', dim)}>
                       {club.aggregatedValuation == null ? (
                         <span role="img" title={valuationNone} aria-label={valuationNone}>
                           <span aria-hidden="true">—</span>
@@ -316,7 +340,7 @@ export function NetworkClubsTable({
                     </td>
 
                     {/* Dernière sync : pastille statut (dataviz) + temps relatif / « jamais ». */}
-                    <td className={cn(TD_CLASS, 'text-text-sec')}>
+                    <td className={cn(TD_CLASS, 'text-text-sec', dim)}>
                       <span className="inline-flex items-center gap-2">
                         <span
                           className={cn('h-2 w-2 shrink-0 rounded-full', SYNC_DOT_CLASS[status])}
@@ -333,7 +357,7 @@ export function NetworkClubsTable({
                     </td>
 
                     {/* Matrice : badge success/neutral (tokens dataviz). */}
-                    <td className={TD_CLASS}>
+                    <td className={cn(TD_CLASS, dim)}>
                       <Badge variant={club.matrixConnected ? 'success' : 'neutral'}>
                         {club.matrixConnected ? matrixConnectedLabel : matrixDisconnectedLabel}
                       </Badge>

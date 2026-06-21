@@ -76,12 +76,18 @@ export interface NetworkClubsPayload {
  * Calcule les 3 KPIs du bandeau depuis les lignes clubs. Pur & exporté pour test.
  * `cumulativeCapital` est `null` tant qu'aucun club n'a de valorisation connue (jamais de delta
  * « 0 € » trompeur sur un réseau non synchronisé) — l'UI masque alors la pill de variation.
+ *
+ * NET-018 — les clubs DÉSACTIVÉS (soft-disable, `isActive === false`) sont EXCLUS de tous les
+ * agrégats : ils n'opèrent plus (matrice + sync bloqués, membres sans accès), il serait trompeur
+ * de les compter dans « Clubs », « Membres actifs » ou « Capital cumulé ». Ils restent listés
+ * (l'UI les distingue par un badge) mais ne pèsent pas sur les chiffres du réseau.
  */
 export function deriveNetworkKpis(clubs: NetworkClubRow[]): NetworkKpis {
-  const withValuation = clubs.filter((c) => c.aggregatedValuation != null)
+  const activeClubs = clubs.filter((c) => c.isActive !== false)
+  const withValuation = activeClubs.filter((c) => c.aggregatedValuation != null)
   return {
-    clubsCount: clubs.length,
-    totalActiveMembers: clubs.reduce((sum, c) => sum + c.activeMembersCount, 0),
+    clubsCount: activeClubs.length,
+    totalActiveMembers: activeClubs.reduce((sum, c) => sum + c.activeMembersCount, 0),
     cumulativeCapital:
       withValuation.length === 0
         ? null
@@ -120,6 +126,9 @@ function mapClubRow(c: NetworkListClubsRow): NetworkClubRow {
     lastSyncedAt: (c.last_synced_at as string | null) ?? null,
     createdAt: (c.created_at as string | null) ?? null,
     matrixConnected: Boolean(c.matrix_connected),
+    // NET-018 — soft-disable. Le RPC renvoie toujours `is_active` (migration 050) ; on défausse
+    // sur `true` si la colonne est absente (compat type/listing pré-migration).
+    isActive: c.is_active ?? true,
   }
 }
 
