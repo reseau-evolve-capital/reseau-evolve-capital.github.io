@@ -105,6 +105,8 @@ export interface RegulariserMember {
   fullName: string
   lateMonthsCount: number
   amountDue: number
+  email: string
+  emailIsPlaceholder: boolean
 }
 
 /** Statistiques de recouvrement du club pour la page cotisations V2. */
@@ -138,6 +140,8 @@ export interface MemberCotisationsData {
   netMarketValue: number | null
   lateMonths: LateMonth[]
   years: TimelineYear[]
+  email: string
+  emailIsPlaceholder: boolean
 }
 
 /** Payload de l'API cotisations admin V2 (remplace l'ancien payload years+stats). */
@@ -276,6 +280,8 @@ export function buildRegulariserList(
       fullName: m.fullName,
       lateMonthsCount: lateMonthsByMembership.get(m.id) ?? 0,
       amountDue: m.amountDue,
+      email: m.email,
+      emailIsPlaceholder: m.emailIsPlaceholder,
     }))
     .sort((a, b) => b.amountDue - a.amountDue)
 }
@@ -635,13 +641,15 @@ export async function getMemberCotisationsForAdmin(
   const [membershipRes, contribRes, monthsRes] = await Promise.all([
     supabase
       .from('memberships')
-      .select('id, joined_at, users!memberships_user_id_fkey!inner(full_name)')
+      .select(
+        'id, joined_at, users!memberships_user_id_fkey!inner(full_name, email, email_is_placeholder)'
+      )
       .eq('id', membershipId)
       .eq('club_id', clubId)
       .maybeSingle<{
         id: string
         joined_at: string | null
-        users: { full_name: string }
+        users: { full_name: string; email: string; email_is_placeholder: boolean }
       }>(),
     supabase
       .from('contributions')
@@ -724,5 +732,7 @@ export async function getMemberCotisationsForAdmin(
     netMarketValue: contrib?.net_market_value != null ? Number(contrib.net_market_value) : null,
     lateMonths,
     years,
+    email: membership.users.email,
+    emailIsPlaceholder: membership.users.email_is_placeholder,
   }
 }

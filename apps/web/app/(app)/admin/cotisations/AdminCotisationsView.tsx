@@ -51,24 +51,33 @@ export function AdminCotisationsView({
   const [relanceOpen, setRelanceOpen] = useState(false)
   const [relanceMemberId, setRelanceMemberId] = useState<string>('')
   const [relanceMemberName, setRelanceMemberName] = useState<string>('')
+  const [relanceMemberEmail, setRelanceMemberEmail] = useState<string | null>(null)
+  const [relanceMemberEmailIsPlaceholder, setRelanceMemberEmailIsPlaceholder] = useState(false)
 
-  const openRelance = (mId: string, mName: string) => {
+  const openRelance = (mId: string, mName: string, email: string, emailIsPlaceholder: boolean) => {
     setRelanceMemberId(mId)
     setRelanceMemberName(mName)
+    setRelanceMemberEmail(email)
+    setRelanceMemberEmailIsPlaceholder(emailIsPlaceholder)
     setRelanceOpen(true)
   }
 
   const closeRelance = () => setRelanceOpen(false)
 
-  // Mode CLUB : on retrouve le nom depuis regulariserList
+  // Mode CLUB : on retrouve le nom et l'email depuis regulariserList
   const handleClubRelancer = (mId: string) => {
     const item = payload.regulariserList.find((m) => m.membershipId === mId)
-    openRelance(mId, item?.fullName ?? '')
+    openRelance(mId, item?.fullName ?? '', item?.email ?? '', item?.emailIsPlaceholder ?? true)
   }
 
-  // Mode MEMBRE : on utilise le nom du membre déjà chargé
+  // Mode MEMBRE : on utilise le nom et l'email du membre déjà chargé
   const handleMemberRelancer = (mId: string) => {
-    openRelance(mId, payload.member?.fullName ?? '')
+    openRelance(
+      mId,
+      payload.member?.fullName ?? '',
+      payload.member?.email ?? '',
+      payload.member?.emailIsPlaceholder ?? true
+    )
   }
 
   // lateMonths pour la RelanceModal : si on est en mode membre, on les a ;
@@ -161,7 +170,9 @@ export function AdminCotisationsView({
         lateMonths={relanceLateMonths}
         amountDue={relanceAmountDue}
         currency={currency}
-        memberEmail={null}
+        memberEmail={
+          relanceMemberEmailIsPlaceholder || !relanceMemberEmail ? null : relanceMemberEmail
+        }
         clubId={initialData.clubId}
       />
     </div>
