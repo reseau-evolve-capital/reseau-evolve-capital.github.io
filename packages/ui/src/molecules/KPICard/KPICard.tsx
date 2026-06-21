@@ -20,7 +20,7 @@ export interface KPICardProps {
   detailLabel?: string
   /** Texte explicatif affiché dans une bulle au clic/hover de l'icône (i). Copy via props. */
   hint?: string
-  /** Libellé accessible du bouton (i). Requis si hint est fourni. */
+  /** Libellé accessible du bouton (i). Utilisé comme aria-label du déclencheur. */
   hintLabel?: string
 }
 
@@ -43,6 +43,14 @@ export function KPICard({
   hint,
   hintLabel = 'En savoir plus',
 }: KPICardProps) {
+  // Id stable dérivé du titre, utilisé pour aria-describedby trigger → bulle.
+  const hintContentId = hint
+    ? `kpi-hint-${title
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, '')}`
+    : undefined
+
   return (
     <div
       className={cn(
@@ -55,10 +63,16 @@ export function KPICard({
       )}
     >
       <div className="flex items-center justify-between mb-3.5">
-        <div className="flex items-center gap-1.5">
+        {hint ? (
+          <div className="flex items-center gap-1.5">
+            <p className="font-display font-bold text-[14px] tracking-[-0.01em] text-text">
+              {title}
+            </p>
+            <InfoTip content={hint} aria-label={hintLabel} side="top" contentId={hintContentId} />
+          </div>
+        ) : (
           <p className="font-display font-bold text-[14px] tracking-[-0.01em] text-text">{title}</p>
-          {hint && <InfoTip content={hint} aria-label={hintLabel} side="top" />}
-        </div>
+        )}
         {icon && <Icon name={icon} size={20} className="text-text-ter" />}
       </div>
 
