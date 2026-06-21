@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest'
-import { mapParametragesToClub, mapParametragesToOfficers } from '../parametrages.mapper.ts'
+import {
+  mapParametragesToClub,
+  mapParametragesToOfficers,
+  stripEmptyClubMeta,
+} from '../parametrages.mapper.ts'
 
 describe('mapParametragesToClub', () => {
   it('génère slug + settings.penalty_rate', () => {
@@ -62,6 +66,34 @@ describe('mapParametragesToClub', () => {
   it('country null reste null (colonne devenue nullable, migration 024)', () => {
     const club = mapParametragesToClub([{ clubName: 'Club', minContribution: 0 }], 's')
     expect(club.country).toBeNull()
+  })
+})
+
+describe('stripEmptyClubMeta (anti-écrasement ville/pays au sync)', () => {
+  it("retire city/country quand null → l'UPDATE ne les touche pas (valeur en base préservée)", () => {
+    const out = stripEmptyClubMeta({ name: 'Club', city: null, country: null })
+    expect('city' in out).toBe(false)
+    expect('country' in out).toBe(false)
+    expect(out.name).toBe('Club')
+  })
+
+  it('retire city/country quand chaîne vide ou espaces', () => {
+    const out = stripEmptyClubMeta({ city: '', country: '   ' })
+    expect('city' in out).toBe(false)
+    expect('country' in out).toBe(false)
+  })
+
+  it('PRÉSERVE city/country quand renseignées (la feuille fait alors autorité)', () => {
+    const out = stripEmptyClubMeta({ city: 'Cotonou', country: 'BJ' })
+    expect(out.city).toBe('Cotonou')
+    expect(out.country).toBe('BJ')
+  })
+
+  it("ne mute pas l'objet source", () => {
+    const src = { city: null as string | null, country: 'FR' }
+    stripEmptyClubMeta(src)
+    expect(src.city).toBeNull()
+    expect(src.country).toBe('FR')
   })
 })
 

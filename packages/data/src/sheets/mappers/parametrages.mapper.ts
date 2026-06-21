@@ -33,6 +33,24 @@ export function mapParametragesToClub(rows: ParametragesRowDTO[], sheetId: strin
   }
 }
 
+/**
+ * Politique de sync « anti-écrasement » (option A) : ne JAMAIS null-ifier une métadonnée club
+ * saisie à la main (ville, pays) par une valeur vide venant de la feuille. La feuille
+ * PARAMETRAGES n'a pas toujours ces colonnes ; or l'admin/président les renseigne dans l'assistant
+ * d'ajout de club. Un `null`/`''` issu de la feuille ne doit donc PAS écraser la valeur existante.
+ *
+ * On RETIRE `city`/`country` de l'objet d'update quand elles sont vides → l'UPDATE Postgres ne
+ * touche tout simplement pas ces colonnes (la valeur courante en base est préservée). Pur.
+ */
+export function stripEmptyClubMeta<T extends { city?: string | null; country?: string | null }>(
+  club: T
+): T {
+  const out = { ...club }
+  if (out.city == null || out.city.trim() === '') delete out.city
+  if (out.country == null || out.country.trim() === '') delete out.country
+  return out
+}
+
 /** Noms BRUTS des dirigeants extraits de PARAMETRAGES (pour réconciliation des rôles). */
 export interface ClubOfficers {
   /** Nom complet du Président(e), ou null si absent de la feuille. */
