@@ -102,6 +102,7 @@ export function ClubsView({
             connected: t('table.matrix.connected'),
             disconnected: t('table.matrix.disconnected'),
           },
+          disabledBadge: t('table.disabledBadge'),
           valuationNone: t('table.valuationNone'),
           viewLabel: (name) => t('table.actions.view', { name }),
           syncLabel: (name) => t('table.actions.sync', { name }),

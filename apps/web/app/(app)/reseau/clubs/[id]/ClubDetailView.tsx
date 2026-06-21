@@ -51,6 +51,7 @@ import {
   listSheetSnapshots,
   probeSheet,
   provisionFirstStaffAction,
+  setClubActiveAction,
   setClubSheetAction,
   triggerInitialSync,
   updateNetworkClubSettings,
@@ -94,9 +95,28 @@ export function ClubDetailView({
   const locale = useLocale()
   const router = useRouter()
   const { club, sheetId, settings, staff } = detail
+  // NET-018 — soft-disable. Un club désactivé : bandeau data-negative en tête, sync/matrice
+  // verrouillées (on passe le flag à MatrixSection), badge de statut « Désactivé ».
+  const isDisabled = club.isActive === false
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Bandeau « club désactivé » (data-negative) en tête de fiche (NET-018, écran 01). */}
+      {isDisabled && (
+        <div
+          role="status"
+          className="flex flex-wrap items-center gap-3 rounded-[12px] border border-data-negative bg-data-negative-50 p-4"
+        >
+          <Icon name="Ban" size={20} className="shrink-0 text-data-negative" aria-hidden="true" />
+          <div className="flex flex-col">
+            <span className="text-[14px] font-semibold text-data-negative">
+              {t('statusSection.banner.title')}
+            </span>
+            <span className="text-[13px] text-text-sec">{t('statusSection.banner.body')}</span>
+          </div>
+        </div>
+      )}
+
       {/* Retour + lecture seule (board). */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
@@ -123,7 +143,10 @@ export function ClubDetailView({
             <Heading level="h1" className="text-[22px]">
               {club.name}
             </Heading>
-            <Badge variant="success">{t('status.active')}</Badge>
+            {/* Statut du club : success (actif) / error=data-negative (désactivé, NET-018). */}
+            <Badge variant={isDisabled ? 'error' : 'success'}>
+              {isDisabled ? t('status.disabled') : t('status.active')}
+            </Badge>
           </div>
           <Text className="text-[13.5px] text-text-sec">
             <span className="font-mono">{club.slug}</span>
@@ -163,6 +186,7 @@ export function ClubDetailView({
         sheetId={sheetId}
         initialSnapshots={initialSnapshots}
         isAdmin={isAdmin}
+        isDisabled={isDisabled}
         serviceAccountEmail={serviceAccountEmail}
       />
 
@@ -174,6 +198,17 @@ export function ClubDetailView({
         isAdmin={isAdmin}
         onChanged={() => router.refresh()}
       />
+
+      {/* Statut du club (NET-018, écran 01) : désactiver / réactiver (network_admin uniquement). */}
+      {isAdmin && (
+        <StatusSection
+          clubId={club.id}
+          clubSlug={club.slug}
+          clubName={club.name}
+          isDisabled={isDisabled}
+          onChanged={() => router.refresh()}
+        />
+      )}
 
       {/* Zone de danger : suppression du club (network_admin uniquement). Permet de nettoyer un club
           orphelin (créé puis abandonné à l'étape matrice) ou de retirer définitivement un club. */}
@@ -251,6 +286,119 @@ function DangerZoneSection({
   )
 }
 
+// ── Section Statut du club (NET-018, écran 01) ───────────────────────────────
+// Club actif : statut data-positive + bouton « Désactiver » (data-negative) → SensitiveConfirmModal
+// (acquittement « Aucune donnée supprimée. Accès bloqué jusqu'à réactivation. » + resaisie du slug).
+// Club désactivé : statut data-negative + bouton « Réactiver » (action non destructive → directe).
+function StatusSection({
+  clubId,
+  clubSlug,
+  clubName,
+  isDisabled,
+  onChanged,
+}: {
+  clubId: string
+  clubSlug: string
+  clubName: string
+  isDisabled: boolean
+  onChanged: () => void
+}) {
+  const t = useTranslations('reseau.clubDetail.statusSection')
+  const tc = useTranslations('common')
+  const toast = useToast()
+  const [confirmOpen, setConfirmOpen] = React.useState(false)
+  const [pending, startTransition] = React.useTransition()
+
+  /** Désactivation : action sensible (confirmée). Réactivation : directe (non destructive). */
+  function applyActive(active: boolean) {
+    startTransition(async () => {
+      const res = await setClubActiveAction(clubId, active)
+      if (!res.ok) {
+        toast.error({ title: t('toast.errorTitle'), message: t('toast.errorMessage') })
+        return
+      }
+      setConfirmOpen(false)
+      toast.success({
+        title: active ? t('toast.enabledTitle') : t('toast.disabledTitle'),
+        message: active ? t('toast.enabledMessage') : t('toast.disabledMessage'),
+      })
+      onChanged()
+    })
+  }
+
+  return (
+    <section className="flex flex-col gap-4 rounded-[12px] border border-border bg-card p-5">
+      <Heading level="h2" className="text-[16px]">
+        {t('title')}
+      </Heading>
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-col gap-1">
+          <span className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className={
+                isDisabled
+                  ? 'h-2.5 w-2.5 shrink-0 rounded-full bg-data-negative'
+                  : 'h-2.5 w-2.5 shrink-0 rounded-full bg-data-positive'
+              }
+            />
+            <span className="text-[14px] font-semibold text-text">
+              {isDisabled ? t('disabledLabel') : t('activeLabel')}
+            </span>
+          </span>
+          <Text className="max-w-prose text-[13px] text-text-sec">
+            {isDisabled ? t('disabledHint') : t('activeHint')}
+          </Text>
+        </div>
+
+        {isDisabled ? (
+          // Réactivation : action NON destructive → bouton primaire direct (pas de confirmation).
+          <Button
+            type="button"
+            onClick={() => applyActive(true)}
+            isLoading={pending}
+            disabled={pending}
+            iconLeft={pending ? undefined : <Icon name="Power" size={16} aria-hidden="true" />}
+            className="min-h-[44px]"
+          >
+            {t('enableButton')}
+          </Button>
+        ) : (
+          // Désactivation : action sensible → bouton data-negative + SensitiveConfirmModal.
+          <button
+            type="button"
+            onClick={() => setConfirmOpen(true)}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-[10px] border border-data-negative px-4 py-2 text-[14px] font-semibold text-data-negative transition-colors duration-[150ms] hover:bg-data-negative-50 focus:outline-none focus-visible:shadow-[var(--sh-glow)]"
+          >
+            <Icon name="Ban" size={16} aria-hidden="true" />
+            {t('disableButton')}
+          </button>
+        )}
+      </div>
+
+      {/* Modale de confirmation de DÉSACTIVATION : acquittement + resaisie du slug. */}
+      <SensitiveConfirmModal
+        open={confirmOpen}
+        onOpenChange={(o) => {
+          if (!o) setConfirmOpen(false)
+        }}
+        title={t('confirm.title', { name: clubName })}
+        description={t('confirm.description')}
+        acknowledgeLabel={t('confirm.acknowledge')}
+        confirmationText={clubSlug}
+        confirmationLabel={t('confirm.typeToConfirm', { slug: clubSlug })}
+        confirmationPlaceholder={clubSlug}
+        cancelLabel={tc('cancel')}
+        confirmLabel={t('disableButton')}
+        closeLabel={tc('close')}
+        isPending={pending}
+        onConfirm={() => applyActive(false)}
+      />
+    </section>
+  )
+}
+
 // ── Section Matrice & synchronisation ───────────────────────────────────────
 function MatrixSection({
   clubId,
@@ -260,6 +408,7 @@ function MatrixSection({
   sheetId,
   initialSnapshots,
   isAdmin,
+  isDisabled,
   serviceAccountEmail,
 }: {
   clubId: string
@@ -269,6 +418,8 @@ function MatrixSection({
   sheetId: string | null
   initialSnapshots: SheetSnapshotEntry[]
   isAdmin: boolean
+  /** Club désactivé (NET-018) → sync & changement de matrice verrouillés (tooltip « Club désactivé »). */
+  isDisabled: boolean
   serviceAccountEmail: string | null
 }) {
   const t = useTranslations('reseau.clubDetail')
@@ -394,7 +545,9 @@ function MatrixSection({
               variant="secondary"
               onClick={relaunchSync}
               isLoading={syncing}
-              disabled={syncing || !sheetId}
+              // NET-018 — club désactivé : sync verrouillée (tooltip « Club désactivé »).
+              disabled={syncing || !sheetId || isDisabled}
+              title={isDisabled ? t('matrix.disabledTooltip') : undefined}
               iconLeft={
                 syncing ? undefined : <Icon name="RefreshCw" size={16} aria-hidden="true" />
               }
@@ -403,12 +556,15 @@ function MatrixSection({
               {t('matrix.relaunchSync')}
             </Button>
             {/* « Changer la matrice » = action sensible → bouton data-negative (#C53030), JAMAIS
-                le rouge brand. Ouvre le flux dry-run + double/triple confirmation. */}
+                le rouge brand. Ouvre le flux dry-run + double/triple confirmation.
+                Club désactivé (NET-018) : verrouillé (tooltip « Club désactivé »). */}
             <button
               type="button"
               onClick={() => setChangeOpen((o) => !o)}
               aria-expanded={changeOpen}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-[10px] border border-data-negative px-4 py-2 text-[14px] font-semibold text-data-negative transition-colors duration-[150ms] hover:bg-data-negative-50 focus:outline-none focus-visible:shadow-[var(--sh-glow)]"
+              disabled={isDisabled}
+              title={isDisabled ? t('matrix.disabledTooltip') : undefined}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-[10px] border border-data-negative px-4 py-2 text-[14px] font-semibold text-data-negative transition-colors duration-[150ms] hover:bg-data-negative-50 focus:outline-none focus-visible:shadow-[var(--sh-glow)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Icon name="RefreshCw" size={16} aria-hidden="true" />
               {t('matrix.changeMatrix')}

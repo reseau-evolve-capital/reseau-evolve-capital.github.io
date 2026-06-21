@@ -50,4 +50,25 @@ describe('deriveNetworkKpis — KPIs du bandeau réseau', () => {
     ])
     expect(kpis.cumulativeCapital).toBeNull()
   })
+
+  // NET-018 — soft-disable : les clubs désactivés sortent de TOUS les agrégats.
+  it('exclut les clubs désactivés (isActive=false) du count, des membres et du capital', () => {
+    const kpis = deriveNetworkKpis([
+      club({ activeMembersCount: 18, aggregatedValuation: 642_188.42, isActive: true }),
+      club({ activeMembersCount: 11, aggregatedValuation: 128_400, isActive: false }), // désactivé → ignoré
+      club({ activeMembersCount: 5, aggregatedValuation: 50_000 }), // isActive undefined → traité actif
+    ])
+    expect(kpis.clubsCount).toBe(2) // 3 listés, 1 désactivé exclu
+    expect(kpis.totalActiveMembers).toBe(23) // 18 + 5 (le club désactivé exclu)
+    expect(kpis.cumulativeCapital).toBeCloseTo(692_188.42, 2) // 642 188,42 + 50 000
+  })
+
+  it('capital null si le seul club avec valo est désactivé', () => {
+    const kpis = deriveNetworkKpis([
+      club({ aggregatedValuation: 100_000, isActive: false }),
+      club({ aggregatedValuation: null, isActive: true }),
+    ])
+    expect(kpis.clubsCount).toBe(1)
+    expect(kpis.cumulativeCapital).toBeNull()
+  })
 })

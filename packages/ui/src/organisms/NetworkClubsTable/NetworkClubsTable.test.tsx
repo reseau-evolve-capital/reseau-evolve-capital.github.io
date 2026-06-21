@@ -88,6 +88,30 @@ describe('NetworkClubsTable — rendu', () => {
     expect(screen.getByText('Aucun club')).toBeInTheDocument()
     expect(screen.getByText('Ajoute un premier club pour démarrer le réseau.')).toBeInTheDocument()
   })
+
+  // NET-018 — club désactivé : badge « Désactivé » (data-negative) + ligne atténuée mais lisible.
+  it('club désactivé (isActive=false) → badge « Désactivé » + ligne marquée data-disabled', () => {
+    const disabled: NetworkClubRow = { ...CLUBS[0]!, isActive: false }
+    render(<NetworkClubsTable clubs={[disabled]} now={NOW} />)
+    expect(screen.getByText('Désactivé')).toBeInTheDocument()
+    expect(screen.getByTestId('network-club-row')).toHaveAttribute('data-disabled', 'true')
+    // Lisible : le nom du club reste présent (ligne atténuée, jamais masquée).
+    expect(screen.getByText('Evolve Capital')).toBeInTheDocument()
+  })
+
+  it('club actif → pas de badge « Désactivé », pas de marqueur data-disabled', () => {
+    render(<NetworkClubsTable clubs={[CLUBS[0]!]} now={NOW} />)
+    expect(screen.queryByText('Désactivé')).toBeNull()
+    expect(screen.getByTestId('network-club-row')).not.toHaveAttribute('data-disabled')
+  })
+
+  it('badge « Désactivé » i18n via label injecté', () => {
+    const disabled: NetworkClubRow = { ...CLUBS[0]!, isActive: false }
+    render(
+      <NetworkClubsTable clubs={[disabled]} now={NOW} labels={{ disabledBadge: 'Disabled' }} />
+    )
+    expect(screen.getByText('Disabled')).toBeInTheDocument()
+  })
 })
 
 describe('NetworkClubsTable — actions', () => {
