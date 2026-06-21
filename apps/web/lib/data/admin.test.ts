@@ -12,7 +12,14 @@ import {
   isStaffRole,
   resolveAdminContext,
   ACTIVE_MEMBER_LIMIT,
+  computeRecoveryRate,
+  computeEncaisse,
+  buildRegulariserList,
+  buildSyntheseParams,
+  buildRelanceMessage,
   type ClubMember,
+  type ClubCotisationsStats,
+  type MonthStatus,
 } from './admin'
 
 const mk = (over: Partial<ClubMember>): ClubMember => ({
@@ -219,5 +226,235 @@ describe('computeContribStats', () => {
   })
   it('moyenne 0 sur liste vide (jamais NaN)', () => {
     expect(computeContribStats([])).toEqual({ total: 0, count: 0, average: 0 })
+  })
+})
+
+// ─── Tests cotisations V2 ────────────────────────────────────────────────────
+
+type M = { status: MonthStatus }
+type MA = { status: MonthStatus; amount: number }
+
+describe('computeRecoveryRate', () => {
+  it('renvoie 1 sur liste vide (aucun mois exploitable)', () => {
+    expect(computeRecoveryRate([])).toBe(1)
+  })
+
+  it('renvoie 1 si tous les mois sont paid', () => {
+    const months: M[] = [{ status: 'paid' }, { status: 'paid' }, { status: 'paid' }]
+    expect(computeRecoveryRate(months)).toBe(1)
+  })
+
+  it('renvoie 0 si tous les mois sont late', () => {
+    const months: M[] = [{ status: 'late' }, { status: 'late' }]
+    expect(computeRecoveryRate(months)).toBe(0)
+  })
+
+  it('calcule correctement un mélange paid/late/due', () => {
+    // 2 paid, 1 late, 1 due → 2/4 = 0.5
+    const months: M[] = [
+      { status: 'paid' },
+      { status: 'paid' },
+      { status: 'late' },
+      { status: 'due' },
+    ]
+    expect(computeRecoveryRate(months)).toBe(0.5)
+  })
+
+  it('exclut les mois exempt du calcul', () => {
+    // 1 paid, 1 exempt (ignoré), 1 late → 1/2 = 0.5
+    const months: M[] = [{ status: 'paid' }, { status: 'exempt' }, { status: 'late' }]
+    expect(computeRecoveryRate(months)).toBe(0.5)
+  })
+
+  it('renvoie 1 si tous les mois sont exempt (aucun exploitable)', () => {
+    const months: M[] = [{ status: 'exempt' }, { status: 'exempt' }]
+    expect(computeRecoveryRate(months)).toBe(1)
+  })
+
+  it('taux fractionnaire précis : 3 paid sur 4 non-exempt', () => {
+    const months: M[] = [
+      { status: 'paid' },
+      { status: 'paid' },
+      { status: 'paid' },
+      { status: 'late' },
+    ]
+    expect(computeRecoveryRate(months)).toBeCloseTo(0.75)
+  })
+})
+
+describe('computeEncaisse', () => {
+  it('renvoie 0 sur liste vide', () => {
+    expect(computeEncaisse([])).toBe(0)
+  })
+
+  it('somme uniquement les mois paid', () => {
+    const months: MA[] = [
+      { status: 'paid', amount: 150 },
+      { status: 'late', amount: 100 },
+      { status: 'due', amount: 80 },
+      { status: 'exempt', amount: 50 },
+    ]
+    expect(computeEncaisse(months)).toBe(150)
+  })
+
+  it('somme plusieurs mois paid', () => {
+    const months: MA[] = [
+      { status: 'paid', amount: 200 },
+      { status: 'paid', amount: 300 },
+      { status: 'late', amount: 100 },
+    ]
+    expect(computeEncaisse(months)).toBe(500)
+  })
+
+  it('renvoie 0 si aucun mois paid', () => {
+    const months: MA[] = [
+      { status: 'late', amount: 100 },
+      { status: 'due', amount: 80 },
+    ]
+    expect(computeEncaisse(months)).toBe(0)
+  })
+})
+
+describe('buildRegulariserList', () => {
+  const lateMap = new Map<string, number>([
+    ['m1', 3],
+    ['m2', 1],
+  ])
+
+  it('renvoie une liste vide si aucun membre impayé', () => {
+    const members = [mk({ id: 'm1', isUnpaid: false })]
+    expect(buildRegulariserList(members, lateMap)).toHaveLength(0)
+  })
+
+  it('inclut uniquement les membres avec isUnpaid=true', () => {
+    const members = [
+      mk({ id: 'm1', isUnpaid: true, amountDue: 300 }),
+      mk({ id: 'm2', isUnpaid: false, amountDue: 0 }),
+    ]
+    const result = buildRegulariserList(members, lateMap)
+    expect(result).toHaveLength(1)
+    expect(result[0]!.membershipId).toBe('m1')
+  })
+
+  it('mappe correctement les champs (membershipId, fullName, lateMonthsCount, amountDue)', () => {
+    const members = [mk({ id: 'm1', isUnpaid: true, fullName: 'Alice', amountDue: 300 })]
+    const result = buildRegulariserList(members, lateMap)
+    expect(result[0]).toEqual({
+      membershipId: 'm1',
+      fullName: 'Alice',
+      lateMonthsCount: 3,
+      amountDue: 300,
+    })
+  })
+
+  it('lateMonthsCount vaut 0 si absente de la Map', () => {
+    const members = [mk({ id: 'unknown', isUnpaid: true, amountDue: 100 })]
+    const result = buildRegulariserList(members, lateMap)
+    expect(result[0]!.lateMonthsCount).toBe(0)
+  })
+
+  it('trie par amountDue décroissant (le plus gros impayé en premier)', () => {
+    const members = [
+      mk({ id: 'm2', isUnpaid: true, amountDue: 100 }),
+      mk({ id: 'm1', isUnpaid: true, amountDue: 300 }),
+      mk({ id: 'm3', isUnpaid: true, amountDue: 200 }),
+    ]
+    const result = buildRegulariserList(members, lateMap)
+    expect(result.map((r) => r.membershipId)).toEqual(['m1', 'm3', 'm2'])
+  })
+})
+
+describe('buildSyntheseParams', () => {
+  const baseStats: ClubCotisationsStats = {
+    recoveryRate: 0.85,
+    lateAmount: 600,
+    lateCount: 2,
+    encaisse: 3000,
+  }
+
+  it('0 retard : topMemberName et topMemberAmount sont null', () => {
+    const result = buildSyntheseParams({ ...baseStats, lateCount: 0, lateAmount: 0 }, [])
+    expect(result.topMemberName).toBeNull()
+    expect(result.topMemberAmount).toBeNull()
+    expect(result.lateCount).toBe(0)
+  })
+
+  it('1 retard : remonte le nom et le montant du seul membre', () => {
+    const regulariserList = [
+      { membershipId: 'm1', fullName: 'Alice', lateMonthsCount: 2, amountDue: 300 },
+    ]
+    const result = buildSyntheseParams(baseStats, regulariserList)
+    expect(result.topMemberName).toBe('Alice')
+    expect(result.topMemberAmount).toBe(300)
+    expect(result.lateCount).toBe(2)
+    expect(result.lateAmount).toBe(600)
+    expect(result.recoveryRate).toBe(0.85)
+  })
+
+  it('N retards : remonte le 1er (montant le plus élevé, liste déjà triée)', () => {
+    const regulariserList = [
+      { membershipId: 'm1', fullName: 'Bob', lateMonthsCount: 3, amountDue: 500 },
+      { membershipId: 'm2', fullName: 'Alice', lateMonthsCount: 1, amountDue: 200 },
+    ]
+    const result = buildSyntheseParams(baseStats, regulariserList)
+    expect(result.topMemberName).toBe('Bob')
+    expect(result.topMemberAmount).toBe(500)
+  })
+})
+
+describe('buildRelanceMessage', () => {
+  it('inclut le nom du membre', () => {
+    const msg = buildRelanceMessage({
+      memberName: 'Alice',
+      lateMonthLabels: ['janvier 2024'],
+      amountDue: 150,
+      currency: 'EUR',
+    })
+    expect(msg).toContain('Alice')
+  })
+
+  it('liste les mois en retard quand fournis', () => {
+    const msg = buildRelanceMessage({
+      memberName: 'Bob',
+      lateMonthLabels: ['janvier 2024', 'février 2024'],
+      amountDue: 300,
+      currency: 'EUR',
+    })
+    expect(msg).toContain('janvier 2024')
+    expect(msg).toContain('février 2024')
+  })
+
+  it('affiche le montant formaté en EUR', () => {
+    const msg = buildRelanceMessage({
+      memberName: 'Alice',
+      lateMonthLabels: ['mars 2024'],
+      amountDue: 150,
+      currency: 'EUR',
+    })
+    // Intl.NumberFormat fr-FR formate 150 EUR → '150,00 €'
+    expect(msg).toContain('150')
+  })
+
+  it('liste vide : affiche la variante sans mois', () => {
+    const msg = buildRelanceMessage({
+      memberName: 'Carol',
+      lateMonthLabels: [],
+      amountDue: 0,
+      currency: 'EUR',
+    })
+    expect(msg).toContain('Carol')
+    expect(msg).toContain('impayé')
+  })
+
+  it('mois unique : ne contient pas de virgule de liste', () => {
+    const msg = buildRelanceMessage({
+      memberName: 'Dave',
+      lateMonthLabels: ['avril 2024'],
+      amountDue: 100,
+      currency: 'EUR',
+    })
+    expect(msg).toContain('avril 2024')
+    // Un seul mois → pas de virgule dans la partie "Mois concernés"
+    expect(msg).not.toContain('avril 2024,')
   })
 })
