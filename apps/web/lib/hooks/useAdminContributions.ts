@@ -1,8 +1,9 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import type { TimelineYear } from '@evolve/ui'
-import type { ContribStats } from '@/lib/data/admin'
+import type { AdminContribPayload } from '@/lib/data/admin'
+
+export type { AdminContribPayload } from '@/lib/data/admin'
 
 export interface AdminContribOption {
   id: string
@@ -10,12 +11,6 @@ export interface AdminContribOption {
   /** Valeur boursière nette détenue par le membre (€). null si non renseignée.
    *  Affichée (carte dédiée) uniquement quand ce membre est filtré dans la vue admin. */
   netMarketValue: number | null
-}
-
-export interface AdminContribPayload {
-  clubId: string
-  years: TimelineYear[]
-  stats: ContribStats
 }
 
 export async function fetchAdminContributions(

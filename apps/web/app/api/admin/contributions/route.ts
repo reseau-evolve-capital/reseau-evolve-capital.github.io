@@ -4,10 +4,14 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
-import { getClubContributionsTimeline, isStaffRole } from '@/lib/data/admin'
+import { isStaffRole, getMemberCotisationsForAdmin } from '@/lib/data/admin'
 import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
+
+const EMPTY_CLUB_STATS = { recoveryRate: 0, lateAmount: 0, lateCount: 0, encaisse: 0 }
+const EMPTY_LEGACY_STATS = { total: 0, count: 0, average: 0 }
+const EMPTY_YEARS: never[] = []
 
 export async function GET(request: Request): Promise<NextResponse> {
   const cookieStore = await cookies()
@@ -29,11 +33,35 @@ export async function GET(request: Request): Promise<NextResponse> {
   if (!isStaffRole(role)) return NextResponse.json({ error: 'Rôle insuffisant.' }, { status: 403 })
 
   try {
-    const timeline = await getClubContributionsTimeline(supabase, clubId, membershipId)
-    return NextResponse.json(
-      { clubId, years: timeline.years, stats: timeline.stats },
-      { headers: { 'Cache-Control': 'private, no-store' } }
-    )
+    if (membershipId) {
+      // Mode membre : fiche individuelle avec mois de retard, frise, taux de recouvrement.
+      const member = await getMemberCotisationsForAdmin(supabase, clubId, membershipId)
+      return NextResponse.json(
+        {
+          clubId,
+          clubStats: EMPTY_CLUB_STATS,
+          regulariserList: [],
+          member,
+          stats: EMPTY_LEGACY_STATS,
+          years: EMPTY_YEARS,
+        },
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      )
+    } else {
+      // Mode club : le hook ne fetche jamais cette branche (initialData SSR utilisé).
+      // On renvoie une forme valide pour la cohérence de type.
+      return NextResponse.json(
+        {
+          clubId,
+          clubStats: EMPTY_CLUB_STATS,
+          regulariserList: [],
+          member: null,
+          stats: EMPTY_LEGACY_STATS,
+          years: EMPTY_YEARS,
+        },
+        { headers: { 'Cache-Control': 'private, no-store' } }
+      )
+    }
   } catch (error) {
     captureRouteError(error, {
       endpoint: '/api/admin/contributions',
