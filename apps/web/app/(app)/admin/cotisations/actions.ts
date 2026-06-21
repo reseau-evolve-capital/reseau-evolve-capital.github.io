@@ -14,7 +14,6 @@
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
 import { resolveAdminContext } from '@/lib/data/admin'
-import { getActiveClubId } from '@/lib/data/request'
 
 /** Expéditeur transactionnel Brevo (miroir de supabase/functions/send-email/index.ts). */
 const SENDER = {
@@ -87,18 +86,16 @@ export async function sendRelanceEmail(params: {
   } = await supabase.auth.getUser()
   if (!user) return { success: false, error: 'unauthorized' }
 
-  // Résolution du club cible : le client peut passer un clubId explicite, ou vide pour
-  // déléguer la résolution au cookie de préférence (evolve_active_club).
-  // Dans les deux cas, la garde resolveAdminContext re-vérifie via la DB.
-  const activeClubId = await getActiveClubId()
-  const resolvedClubId = clubId !== '' ? clubId : (activeClubId ?? '')
-  if (resolvedClubId === '') {
+  // Le clubId est fourni par le parent (AdminContext côté serveur) — pas de fallback cookie.
+  // La garde resolveAdminContext vérifie via la DB (RLS + session) que l'utilisateur est
+  // bien trésorier+ dans ce club précis.
+  if (clubId === '') {
     return { success: false, error: 'forbidden' }
   }
 
-  // On vérifie que l'utilisateur est staff dans le club RÉSOLU (DB + RLS, pas confiance aveugle).
-  const ctx = await resolveAdminContext(supabase, user.id, resolvedClubId)
-  if (!ctx || ctx.clubId !== resolvedClubId) {
+  // On vérifie que l'utilisateur est staff dans le club passé en paramètre (DB + RLS).
+  const ctx = await resolveAdminContext(supabase, user.id, clubId)
+  if (!ctx || ctx.clubId !== clubId) {
     return { success: false, error: 'forbidden' }
   }
 
@@ -115,19 +112,18 @@ export async function sendRelanceEmail(params: {
     await sendBrevoEmail({
       to: [{ email: memberEmail.trim(), name: memberName }],
       subject: 'Rappel de cotisation — Evolve Capital',
-      htmlContent: `<div style="font-family:sans-serif;font-size:14px;color:#1a1a1a;">${textToHtml(message)}</div>`,
+      htmlContent: `<div style="font-family:sans-serif;font-size:14px;color:inherit;">${textToHtml(message)}</div>`,
       sender: SENDER,
     })
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[sendRelanceEmail] Brevo error', { membershipId, error: msg })
-    return { success: false, error: msg }
+    console.error('[sendRelanceEmail] Brevo error:', err)
+    return { success: false, error: 'send_failed' }
   }
 
   // 4. Log V1 (pas d'insert member_access_events — prévu V2).
   console.info('[sendRelanceEmail] relance envoyée', {
     membershipId,
-    clubId: resolvedClubId,
+    clubId,
     userId: user.id,
   })
 
