@@ -1,11 +1,16 @@
 /**
- * Tests E2E — flux admin newsletter « La Quote-Part » (EDI-007 / EDI-006).
+ * Tests E2E — flux newsletter RÉSEAU « La Quote-Part » (EDI-007 / EDI-006).
+ *
+ * La newsletter est désormais pilotée par le BUREAU DU RÉSEAU (espace /reseau/newsletter),
+ * plus par le staff d'un club. La garde de page est donc `is_network_member()` (middleware
+ * /reseau) + le contexte réseau (RSC), et la garde API `/api/newsletter/*` est l'appartenance
+ * réseau (cf. _guard.ts).
  *
  * Stratégie SANS Strapi ni Brevo réels :
- *   - Login staff : on réutilise le pattern d'admin.spec.ts — le seed (test@example.com) est
- *     élevé temporairement au rôle 'treasurer' (beforeAll), restauré 'member' (afterAll).
- *     Identification par EMAIL (le login re-keye users.id). Aucune pollution des autres specs.
- *   - Le SSR de /admin/newsletter lit la LISTE des éditions via Strapi côté serveur Next.
+ *   - Accès réseau : le seed (test@example.com) est `network_admin` (seed.sql) → membre réseau.
+ *     On GARANTIT cette appartenance en beforeAll (INSERT ON CONFLICT, par EMAIL → robuste au
+ *     re-key users.id au login), et on la restaure en afterAll. Aucune pollution des autres specs.
+ *   - Le SSR de /reseau/newsletter lit la LISTE des éditions via Strapi côté serveur Next.
  *     `page.route` n'intercepte PAS le fetch serveur. Pour exercer le parcours complet, le
  *     serveur Next DOIT être lancé avec `NEXT_PUBLIC_STRAPI_API_URL` pointant vers un stub
  *     Strapi qui renvoie au moins une édition publiée (sinon la page tombe en état vide/erreur).
@@ -15,7 +20,8 @@
  *   - Les routes NAVIGATEUR (/api/newsletter/preview|send-test|send) sont mockées via page.route
  *     (preview = HTML statique, send-test = OK, send = OK) : on teste les GARDES UI, pas Brevo.
  *
- * Réf : EDI-007 (case E e2e), block-contract.md, CLAUDE.md (a11y AA, copy FR, jamais d'undefined).
+ * Réf : EDI-007 (case E e2e), block-contract.md, reseau-access.spec.ts (pattern network_members),
+ *       CLAUDE.md (a11y AA, copy FR, jamais d'undefined).
  */
 
 import { test, expect, type Page } from '@playwright/test'
@@ -26,7 +32,6 @@ import postgres from 'postgres'
 import { loginAsSeedMember, SEED_EMAIL } from './helpers'
 
 const DB_URL = process.env.E2E_DB_URL ?? 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
-const SEED_CLUB_ID = 'aaaaaaaa-0000-0000-0000-000000000001'
 const STUB_PORT = Number(process.env.E2E_STRAPI_STUB_PORT ?? '4571')
 
 const EDITION = {
@@ -58,15 +63,19 @@ function stopStrapiStub(): Promise<void> {
   })
 }
 
-// ─── Élévation de rôle (pattern admin.spec.ts) ───────────────────────────────
-async function setSeedRole(role: 'member' | 'treasurer'): Promise<void> {
+// ─── Appartenance réseau (pattern reseau-access.spec.ts) ──────────────────────
+// Le seed est `network_admin` par défaut (seed.sql) ; on garantit/restaure la ligne par EMAIL
+// (robuste au re-key users.id au login) pour rendre ce spec hermétique quel que soit l'ordre.
+async function ensureSeedNetworkMembership(): Promise<void> {
   const sql = postgres(DB_URL, { max: 1 })
   try {
     await sql`
-      UPDATE memberships
-         SET role = ${role}::member_role
-       WHERE club_id = ${SEED_CLUB_ID}::uuid
-         AND user_id IN (SELECT id FROM users WHERE email = ${SEED_EMAIL})
+      INSERT INTO network_members (user_id, role, title)
+      SELECT id, 'network_admin'::network_role, 'president'::network_title
+        FROM users
+       WHERE email = ${SEED_EMAIL}
+      ON CONFLICT (user_id) DO UPDATE
+         SET role = 'network_admin'::network_role, title = 'president'::network_title
     `
   } finally {
     await sql.end()
@@ -108,11 +117,11 @@ async function hasEditions(page: Page): Promise<boolean> {
 
 test.beforeAll(async () => {
   await startStrapiStub()
-  await setSeedRole('treasurer')
+  await ensureSeedNetworkMembership()
 })
 
 test.afterAll(async () => {
-  await setSeedRole('member')
+  await ensureSeedNetworkMembership()
   await stopStrapiStub()
 })
 
@@ -122,15 +131,15 @@ test.beforeEach(async ({ page }) => {
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
-test('la page newsletter se monte (titre) — garde staff OK', async ({ page }) => {
-  await page.goto('/admin/newsletter')
+test('la page newsletter se monte (titre) — garde réseau OK', async ({ page }) => {
+  await page.goto('/reseau/newsletter')
   await expect(page.getByRole('heading', { name: 'Newsletter' })).toBeVisible()
 })
 
 test('le bouton « Envoyer la campagne » est DÉSACTIVÉ tant que la case n’est pas cochée', async ({
   page,
 }) => {
-  await page.goto('/admin/newsletter')
+  await page.goto('/reseau/newsletter')
   test.skip(!(await hasEditions(page)), 'SSR Strapi non câblé (NEXT_PUBLIC_STRAPI_API_URL → stub).')
 
   const sendBtn = page.getByRole('button', { name: 'Envoyer la campagne' })
@@ -143,7 +152,7 @@ test('le bouton « Envoyer la campagne » est DÉSACTIVÉ tant que la case n’e
 })
 
 test('parcours : aperçu → envoi test → cocher → envoyer (chaque étape OK)', async ({ page }) => {
-  await page.goto('/admin/newsletter')
+  await page.goto('/reseau/newsletter')
   test.skip(!(await hasEditions(page)), 'SSR Strapi non câblé (NEXT_PUBLIC_STRAPI_API_URL → stub).')
 
   // 1) Aperçu : l'iframe pointe sur la route preview (mockée).
@@ -163,7 +172,7 @@ test('parcours : aperçu → envoi test → cocher → envoyer (chaque étape OK
 })
 
 test('a11y — aucune violation bloquante (axe wcag2a/aa)', async ({ page }) => {
-  await page.goto('/admin/newsletter')
+  await page.goto('/reseau/newsletter')
   await expect(page.getByRole('heading', { name: 'Newsletter' })).toBeVisible()
 
   const results = await new AxeBuilder({ page })

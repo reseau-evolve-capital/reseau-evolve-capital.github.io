@@ -688,8 +688,7 @@
       "cotisationsTitle": "Contributions — Admin Evolve Capital",
       "membersTitle": "Members — Admin Evolve Capital",
       "invitationsTitle": "Invitations — Evolve Capital Admin",
-      "settingsTitle": "Club settings — Evolve Capital Admin",
-      "newsletterTitle": "Newsletter — Evolve Capital Admin"
+      "settingsTitle": "Club settings — Evolve Capital Admin"
     },
     "tabs": {
       "dashboard": "Dashboard",
@@ -697,7 +696,6 @@
       "cotisations": "Contributions",
       "retours": "Feedback",
       "invitations": "Invitations",
-      "newsletter": "Newsletter",
       "navLabel": "Treasurer area navigation",
       "settings": "Settings",
       "votes": "Polls"
@@ -710,41 +708,6 @@
       "subtitle": "What your club members are reporting.",
       "error": {
         "title": "Could not load club feedback."
-      }
-    },
-    "newsletter": {
-      "title": "Newsletter",
-      "subtitle": "Preview the edition, send yourself a test, then broadcast \"La Quote-Part\" to the members list.",
-      "loadError": "Could not load editions from the CMS. Please try again later.",
-      "selectLabel": "Edition to send",
-      "editionPrefix": "Edition",
-      "empty": {
-        "title": "No published edition",
-        "description": "Publish a newsletter in the CMS to preview and send it here."
-      },
-      "preview": {
-        "title": "Preview",
-        "iframeTitle": "Newsletter preview",
-        "note": "Indicative rendering. The final result may vary across email clients.",
-        "error": "Could not load the preview. Make sure the CMS is reachable, then try again."
-      },
-      "test": {
-        "title": "1. Send a test",
-        "note": "A test email (subject prefixed with \"[TEST] \") is sent to the configured recipients.",
-        "button": "Send a test",
-        "success": "Test sent to {count} recipient(s). Check your inbox.",
-        "error": "Failed to send the test. Check the Brevo configuration."
-      },
-      "send": {
-        "title": "2. Send the campaign",
-        "confirmLabel": "I have reviewed the preview and the test email.",
-        "button": "Send the campaign",
-        "success": "Campaign sent to the members list.",
-        "error": "Failed to send the campaign. Please try again later.",
-        "errorAlreadySent": "This edition has already been sent.",
-        "errorDraft": "This edition is a draft or could not be found — publish it first.",
-        "errorNoEdition": "Edition number missing on the newsletter.",
-        "errorConfirm": "Tick the confirmation checkbox before sending."
       }
     },
     "invitations": {
@@ -1423,7 +1386,49 @@
       "drawerTitle": "Network area",
       "drawerDescription": "Choose a section of the network area.",
       "drawerClose": "Close",
-      "feedback": "Feedback"
+      "feedback": "Feedback",
+      "newsletter": "Newsletter"
+    },
+    "meta": {
+      "newsletterTitle": "Newsletter — Evolve Capital Network"
+    },
+    "newsletter": {
+      "title": "Newsletter",
+      "subtitle": "Preview the edition, send yourself a test, then broadcast \"La Quote-Part\" to the members list.",
+      "loadError": "Could not load editions from the CMS. Please try again later.",
+      "selectLabel": "Edition to send",
+      "editionPrefix": "Edition",
+      "empty": {
+        "title": "No published edition",
+        "description": "Publish a newsletter in the CMS to preview and send it here."
+      },
+      "preview": {
+        "title": "Preview",
+        "iframeTitle": "Newsletter preview",
+        "note": "Indicative rendering. The final result may vary across email clients.",
+        "error": "Could not load the preview. Make sure the CMS is reachable, then try again."
+      },
+      "test": {
+        "title": "1. Send a test",
+        "note": "A test email (subject prefixed with \"[TEST] \") is sent to the configured recipients.",
+        "button": "Send a test",
+        "success": "Test sent to {count} recipient(s). Check your inbox.",
+        "error": "Failed to send the test. Check the Brevo configuration."
+      },
+      "send": {
+        "title": "2. Send the campaign",
+        "confirmLabel": "I have reviewed the preview and the test email.",
+        "button": "Send the campaign",
+        "success": "Campaign sent to the members list.",
+        "error": "Failed to send the campaign. Please try again later.",
+        "errorAlreadySent": "This edition has already been sent.",
+        "errorDraft": "This edition is a draft or could not be found — publish it first.",
+        "errorNoEdition": "Edition number missing on the newsletter.",
+        "errorConfirm": "Tick the confirmation checkbox before sending."
+      },
+      "error": {
+        "title": "Could not load the newsletter."
+      }
     },
     "clubs": {
       "meta": {

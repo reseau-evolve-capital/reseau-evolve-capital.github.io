@@ -5,16 +5,16 @@ import type { EditorialArticle } from '@evolve/types'
 /**
  * EDI-007 — tests unitaires des routes /api/newsletter/{send,send-test} (EDI-006).
  *
- * Strapi (`@/lib/strapi-editorial`), le wrapper Brevo (`@evolve/data/brevo`), la garde staff
+ * Strapi (`@/lib/strapi-editorial`), le wrapper Brevo (`@evolve/data/brevo`), la garde RÉSEAU
  * (`../_guard`) et le rendu (`../_render`) sont MOCKÉS : on isole la LOGIQUE DE GARDE des routes
  * sans toucher au CMS ni à Brevo réels.
  *
  * Couverture :
  *   - send : confirm!==true → 400 ; brouillon/introuvable → 409 ; numeroEdition manquant → 409 ;
  *     idempotence (campagne déjà nommée) → 409 NO-OP (pas de createCampaign/sendCampaignNow) ;
- *     garde staff → 401/403 ; nom de campagne déterministe ;
+ *     garde réseau → 401/403 ; nom de campagne déterministe ;
  *   - send-test : cible NEWSLETTER_TEST_RECIPIENTS, sujet préfixé [TEST] (via wrapper),
- *     garde staff → 401/403 ;
+ *     garde réseau → 401/403 ;
  *   - _render : « Lire en ligne » = `${SITE_URL}/blog/{slug}` EXACT.
  */
 
@@ -35,7 +35,7 @@ vi.mock('@evolve/data/brevo', () => ({
 }))
 
 vi.mock('../_guard', () => ({
-  guardStaff: vi.fn(),
+  guardNetwork: vi.fn(),
 }))
 
 vi.mock('../_render', () => ({
@@ -53,7 +53,7 @@ import {
   sendCampaignNow,
   sendTestEmail,
 } from '@evolve/data/brevo'
-import { guardStaff } from '../_guard'
+import { guardNetwork } from '../_guard'
 import { POST as sendPost } from '../send/route'
 import { POST as sendTestPost } from '../send-test/route'
 
@@ -62,7 +62,7 @@ const createCampaignMock = vi.mocked(createCampaign)
 const findCampaignByNameMock = vi.mocked(findCampaignByName)
 const sendCampaignNowMock = vi.mocked(sendCampaignNow)
 const sendTestEmailMock = vi.mocked(sendTestEmail)
-const guardStaffMock = vi.mocked(guardStaff)
+const guardNetworkMock = vi.mocked(guardNetwork)
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -91,9 +91,9 @@ function jsonRequest(body: unknown): Request {
   })
 }
 
-/** Pose la garde staff en "succès" (le contexte n'est pas relu par les routes). */
-function allowStaff(): void {
-  guardStaffMock.mockResolvedValue({
+/** Pose la garde réseau en "succès" (le contexte n'est pas relu par les routes). */
+function allowNetwork(): void {
+  guardNetworkMock.mockResolvedValue({
     ok: true,
     // Le supabase/ctx ne sont pas utilisés par send/send-test → stubs minimaux.
     supabase: {} as never,
@@ -117,8 +117,8 @@ afterEach(() => {
 // ─── /api/newsletter/send — gardes d'envoi ───────────────────────────────────
 
 describe('POST /api/newsletter/send — gardes', () => {
-  it('garde staff : non authentifié → 401, aucune lecture Strapi/Brevo', async () => {
-    guardStaffMock.mockResolvedValue({
+  it('garde réseau : non authentifié → 401, aucune lecture Strapi/Brevo', async () => {
+    guardNetworkMock.mockResolvedValue({
       ok: false,
       response: NextResponse.json({ error: 'Non authentifié.' }, { status: 401 }),
     })
@@ -128,8 +128,8 @@ describe('POST /api/newsletter/send — gardes', () => {
     expect(createCampaignMock).not.toHaveBeenCalled()
   })
 
-  it('garde staff : rôle insuffisant → 403', async () => {
-    guardStaffMock.mockResolvedValue({
+  it('garde réseau : rôle insuffisant → 403', async () => {
+    guardNetworkMock.mockResolvedValue({
       ok: false,
       response: NextResponse.json({ error: 'Rôle insuffisant.' }, { status: 403 }),
     })
@@ -139,7 +139,7 @@ describe('POST /api/newsletter/send — gardes', () => {
   })
 
   it('confirm !== true → 400 (verrou UI), aucune campagne créée', async () => {
-    allowStaff()
+    allowNetwork()
     const res = await sendPost(jsonRequest({ slug: 'evitons-l-empressement' /* confirm absent */ }))
     expect(res.status).toBe(400)
     const body = (await res.json()) as { error?: string }
@@ -149,7 +149,7 @@ describe('POST /api/newsletter/send — gardes', () => {
   })
 
   it('article en brouillon / introuvable → 409 (draft), aucune campagne', async () => {
-    allowStaff()
+    allowNetwork()
     getNewsletterBySlugMock.mockResolvedValue(null)
     const res = await sendPost(jsonRequest({ slug: 'inconnu', confirm: true }))
     expect(res.status).toBe(409)
@@ -159,7 +159,7 @@ describe('POST /api/newsletter/send — gardes', () => {
   })
 
   it('numeroEdition manquant → 409 (no_edition)', async () => {
-    allowStaff()
+    allowNetwork()
     getNewsletterBySlugMock.mockResolvedValue(article({ numeroEdition: null }))
     const res = await sendPost(jsonRequest({ slug: 'evitons-l-empressement', confirm: true }))
     expect(res.status).toBe(409)
@@ -169,7 +169,7 @@ describe('POST /api/newsletter/send — gardes', () => {
   })
 
   it('IDEMPOTENCE : campagne déjà nommée → 409 (already_sent) NO-OP (pas de createCampaign/sendNow)', async () => {
-    allowStaff()
+    allowNetwork()
     getNewsletterBySlugMock.mockResolvedValue(article({ numeroEdition: 1 }))
     findCampaignByNameMock.mockResolvedValue({ id: 7, name: 'quote-part-n1', status: 'sent' })
     const res = await sendPost(jsonRequest({ slug: 'evitons-l-empressement', confirm: true }))
@@ -184,7 +184,7 @@ describe('POST /api/newsletter/send — gardes', () => {
   })
 
   it('chemin nominal : crée la campagne (listIds), envoie, et renvoie le nom déterministe', async () => {
-    allowStaff()
+    allowNetwork()
     getNewsletterBySlugMock.mockResolvedValue(article({ numeroEdition: 1 }))
     findCampaignByNameMock.mockResolvedValue(null)
     const res = await sendPost(jsonRequest({ slug: 'evitons-l-empressement', confirm: true }))
@@ -203,8 +203,8 @@ describe('POST /api/newsletter/send — gardes', () => {
 // ─── /api/newsletter/send-test ───────────────────────────────────────────────
 
 describe('POST /api/newsletter/send-test — cible & garde', () => {
-  it('garde staff : non authentifié → 401, aucun envoi', async () => {
-    guardStaffMock.mockResolvedValue({
+  it('garde réseau : non authentifié → 401, aucun envoi', async () => {
+    guardNetworkMock.mockResolvedValue({
       ok: false,
       response: NextResponse.json({ error: 'Non authentifié.' }, { status: 401 }),
     })
@@ -214,7 +214,7 @@ describe('POST /api/newsletter/send-test — cible & garde', () => {
   })
 
   it('cible bien NEWSLETTER_TEST_RECIPIENTS (CSV nettoyé)', async () => {
-    allowStaff()
+    allowNetwork()
     getNewsletterBySlugMock.mockResolvedValue(article())
     const res = await sendTestPost(jsonRequest({ slug: 'evitons-l-empressement' }))
     expect(res.status).toBe(200)
@@ -227,7 +227,7 @@ describe('POST /api/newsletter/send-test — cible & garde', () => {
   })
 
   it('NEWSLETTER_TEST_RECIPIENTS absent → 500, aucun envoi', async () => {
-    allowStaff()
+    allowNetwork()
     delete process.env.NEWSLETTER_TEST_RECIPIENTS
     getNewsletterBySlugMock.mockResolvedValue(article())
     const res = await sendTestPost(jsonRequest({ slug: 'evitons-l-empressement' }))
@@ -236,7 +236,7 @@ describe('POST /api/newsletter/send-test — cible & garde', () => {
   })
 
   it('édition introuvable → 404, aucun envoi', async () => {
-    allowStaff()
+    allowNetwork()
     getNewsletterBySlugMock.mockResolvedValue(null)
     const res = await sendTestPost(jsonRequest({ slug: 'inconnu' }))
     expect(res.status).toBe(404)

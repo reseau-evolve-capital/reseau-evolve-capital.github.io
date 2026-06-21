@@ -1,5 +1,5 @@
 // POST /api/newsletter/send { slug, confirm } — envoie la campagne réelle (EDI-006).
-// Garde staff. JAMAIS de service-role.
+// Garde réseau. JAMAIS de service-role.
 //
 // Gardes d'envoi (ordre) :
 //   (a) confirm !== true → 400 (déverrouillage UI : case « j'ai vérifié l'aperçu + le test ») ;
@@ -19,7 +19,7 @@ import {
   sendCampaignNow,
 } from '@evolve/data/brevo'
 import { getNewsletterBySlug } from '@/lib/strapi-editorial'
-import { guardStaff } from '../_guard'
+import { guardNetwork } from '../_guard'
 import { renderNewsletterHtml, subjectFor } from '../_render'
 import { membersListId, newsletterSender } from '../config'
 import { captureRouteError } from '@/lib/monitoring/sentry'
@@ -27,7 +27,7 @@ import { captureRouteError } from '@/lib/monitoring/sentry'
 export const runtime = 'nodejs'
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const guard = await guardStaff()
+  const guard = await guardNetwork()
   if (!guard.ok) return guard.response
 
   let body: { slug?: unknown; confirm?: unknown }

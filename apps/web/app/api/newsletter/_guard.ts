@@ -1,29 +1,31 @@
-// Garde staff partagée des routes /api/newsletter/* (EDI-006).
+// Garde RÉSEAU partagée des routes /api/newsletter/* (EDI-006 ; déplacée du staff club vers
+// le bureau du réseau).
 //
-// Même contrat que les routes /api/admin/* : auth → resolveAdminContext (trésorier+ dans
-// un club, via RLS) → sinon 401/403. JAMAIS de service-role. Renvoie le client + le contexte
-// pour la suite du traitement, ou une NextResponse d'erreur prête à retourner.
+// La newsletter « La Quote-Part » est pilotée par l'équipe RÉSEAU (network_admin / network_board),
+// pas par le staff d'un club. Comme /api/* est EXCLU du middleware (cf. middleware matcher), cette
+// garde est l'UNIQUE protection de ces routes : auth → resolveNetworkContext (membre réseau, via
+// la RLS self-read de network_members) → sinon 401/403. JAMAIS de service-role. Renvoie le client
+// + le contexte réseau pour la suite, ou une NextResponse d'erreur prête à retourner.
 
-import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
-import { resolveAdminContext, type AdminContext } from '@/lib/data/admin'
-import { ACTIVE_CLUB_COOKIE } from '@/lib/data/request'
+import { cookies } from 'next/headers'
+import { resolveNetworkContext, type NetworkContext } from '@/lib/data/network'
 
 type ServerClient = ReturnType<typeof createServerClient>
 
 export interface GuardOk {
   ok: true
   supabase: ServerClient
-  ctx: AdminContext
+  ctx: NetworkContext
 }
 export interface GuardErr {
   ok: false
   response: NextResponse
 }
 
-/** Garde staff : valide la session et le rôle trésorier+. */
-export async function guardStaff(): Promise<GuardOk | GuardErr> {
+/** Garde réseau : valide la session et l'appartenance à l'équipe réseau (network_admin/board). */
+export async function guardNetwork(): Promise<GuardOk | GuardErr> {
   const cookieStore = await cookies()
   const supabase = createServerClient(cookieStore)
 
@@ -41,8 +43,7 @@ export async function guardStaff(): Promise<GuardOk | GuardErr> {
     }
   }
 
-  const activeClubId = cookieStore.get(ACTIVE_CLUB_COOKIE)?.value ?? null
-  const ctx = await resolveAdminContext(supabase, auth.user.id, activeClubId)
+  const ctx = await resolveNetworkContext(supabase, auth.user.id)
   if (!ctx) {
     return {
       ok: false,

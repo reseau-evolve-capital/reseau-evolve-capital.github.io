@@ -1,11 +1,11 @@
 // POST /api/newsletter/send-test { slug } — envoie un email de TEST (EDI-006).
-// Garde staff. Rend la newsletter puis sendTestEmail (transactionnel, sujet préfixé [TEST])
+// Garde réseau. Rend la newsletter puis sendTestEmail (transactionnel, sujet préfixé [TEST])
 // vers NEWSLETTER_TEST_RECIPIENTS (CSV). BREVO_API_KEY server-only. Pas de service-role.
 
 import { NextResponse } from 'next/server'
 import { sendTestEmail } from '@evolve/data/brevo'
 import { getNewsletterBySlug } from '@/lib/strapi-editorial'
-import { guardStaff } from '../_guard'
+import { guardNetwork } from '../_guard'
 import { renderNewsletterHtml, subjectFor } from '../_render'
 import { newsletterSender, testRecipients } from '../config'
 import { captureRouteError } from '@/lib/monitoring/sentry'
@@ -13,7 +13,7 @@ import { captureRouteError } from '@/lib/monitoring/sentry'
 export const runtime = 'nodejs'
 
 export async function POST(request: Request): Promise<NextResponse> {
-  const guard = await guardStaff()
+  const guard = await guardNetwork()
   if (!guard.ok) return guard.response
 
   let slug: unknown

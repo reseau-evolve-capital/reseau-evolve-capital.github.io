@@ -1,9 +1,10 @@
 'use client'
 
-// Vue newsletter (EDI-006). Pipeline guidé : sélection d'une édition → APERÇU (iframe) →
-// ENVOI D'UN TEST → case « j'ai vérifié l'aperçu et l'email de test » qui DÉVERROUILLE le
-// bouton « Envoyer la campagne » (confirm=true). Le bouton d'envoi reste désactivé tant que
-// la case n'est pas cochée. États succès/erreur explicites (jamais d'undefined/crash).
+// Vue newsletter (EDI-006 ; déplacée de l'espace trésorier vers l'espace RÉSEAU). Pipeline
+// guidé : sélection d'une édition → APERÇU (iframe) → ENVOI D'UN TEST → case « j'ai vérifié
+// l'aperçu et l'email de test » qui DÉVERROUILLE le bouton « Envoyer la campagne » (confirm=true).
+// Le bouton d'envoi reste désactivé tant que la case n'est pas cochée. États succès/erreur
+// explicites (jamais d'undefined/crash).
 // a11y : focus visible (composants UI), boutons ≥44px, iframe titrée, statuts en role="status".
 
 import { useEffect, useMemo, useState } from 'react'
@@ -24,7 +25,7 @@ interface Props {
 }
 
 export function NewsletterView({ editions, loadError }: Props) {
-  const t = useTranslations('admin.newsletter')
+  const t = useTranslations('reseau.newsletter')
 
   const [selectedSlug, setSelectedSlug] = useState<string | null>(editions[0]?.slug ?? null)
   const [verified, setVerified] = useState(false)
