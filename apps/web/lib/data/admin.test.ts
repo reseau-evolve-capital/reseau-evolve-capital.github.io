@@ -336,14 +336,25 @@ describe('buildRegulariserList', () => {
     expect(result[0]!.membershipId).toBe('m1')
   })
 
-  it('mappe correctement les champs (membershipId, fullName, lateMonthsCount, amountDue)', () => {
-    const members = [mk({ id: 'm1', isUnpaid: true, fullName: 'Alice', amountDue: 300 })]
+  it('mappe correctement les champs (membershipId, fullName, lateMonthsCount, amountDue, email, emailIsPlaceholder)', () => {
+    const members = [
+      mk({
+        id: 'm1',
+        isUnpaid: true,
+        fullName: 'Alice',
+        amountDue: 300,
+        email: 'alice@x.fr',
+        emailIsPlaceholder: false,
+      }),
+    ]
     const result = buildRegulariserList(members, lateMap)
     expect(result[0]).toEqual({
       membershipId: 'm1',
       fullName: 'Alice',
       lateMonthsCount: 3,
       amountDue: 300,
+      email: 'alice@x.fr',
+      emailIsPlaceholder: false,
     })
   })
 
@@ -381,7 +392,14 @@ describe('buildSyntheseParams', () => {
 
   it('1 retard : remonte le nom et le montant du seul membre', () => {
     const regulariserList = [
-      { membershipId: 'm1', fullName: 'Alice', lateMonthsCount: 2, amountDue: 300 },
+      {
+        membershipId: 'm1',
+        fullName: 'Alice',
+        lateMonthsCount: 2,
+        amountDue: 300,
+        email: 'alice@example.com',
+        emailIsPlaceholder: false,
+      },
     ]
     const result = buildSyntheseParams(baseStats, regulariserList)
     expect(result.topMemberName).toBe('Alice')
@@ -393,8 +411,22 @@ describe('buildSyntheseParams', () => {
 
   it('N retards : remonte le 1er (montant le plus élevé, liste déjà triée)', () => {
     const regulariserList = [
-      { membershipId: 'm1', fullName: 'Bob', lateMonthsCount: 3, amountDue: 500 },
-      { membershipId: 'm2', fullName: 'Alice', lateMonthsCount: 1, amountDue: 200 },
+      {
+        membershipId: 'm1',
+        fullName: 'Bob',
+        lateMonthsCount: 3,
+        amountDue: 500,
+        email: 'bob@example.com',
+        emailIsPlaceholder: false,
+      },
+      {
+        membershipId: 'm2',
+        fullName: 'Alice',
+        lateMonthsCount: 1,
+        amountDue: 200,
+        email: 'alice@example.com',
+        emailIsPlaceholder: false,
+      },
     ]
     const result = buildSyntheseParams(baseStats, regulariserList)
     expect(result.topMemberName).toBe('Bob')
