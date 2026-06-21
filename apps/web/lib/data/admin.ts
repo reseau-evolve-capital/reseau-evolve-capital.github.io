@@ -51,6 +51,12 @@ export interface ClubMember {
    *  L'UI masque alors le placeholder et propose de renseigner le vrai email. */
   emailIsPlaceholder: boolean
   role: MemberRole
+  /**
+   * Origine du rôle (ADM-008) : 'sheet' = dérivé de la feuille PARAMETRAGES par la sync (écrasable) ;
+   * 'manual' = défini en app via admin_change_member_role (figé, non réécrit par la sync). L'UI
+   * affiche la note « Défini via la matrice (PARAMETRAGES) » tant que 'sheet'.
+   */
+  roleSource: 'sheet' | 'manual'
   totalContributed: number
   detentionPct: number // fraction 0..1
   monthsCount: number
@@ -240,7 +246,7 @@ export async function getClubMembers(
       // On lit TOUTES les lignes du club (actifs ET sortis) : pas de filtre is_active/status.
       // Les membres sortis (Base « Date de sortie » → status `left`) doivent rester visibles.
       .select(
-        'id, user_id, role, is_active, joined_at, status, leave_at, access_status, users!memberships_user_id_fkey!inner(full_name, email, email_is_placeholder)'
+        'id, user_id, role, role_source, is_active, joined_at, status, leave_at, access_status, users!memberships_user_id_fkey!inner(full_name, email, email_is_placeholder)'
       )
       .eq('club_id', clubId)
       .returns<
@@ -248,6 +254,7 @@ export async function getClubMembers(
           id: string
           user_id: string
           role: MemberRole
+          role_source: string
           is_active: boolean | null
           joined_at: string
           status: MemberStatus
@@ -289,6 +296,8 @@ export async function getClubMembers(
       email: m.users.email,
       emailIsPlaceholder: m.users.email_is_placeholder,
       role: m.role,
+      // Garde-fou : toute valeur DB inattendue retombe sur 'sheet' (comportement historique).
+      roleSource: m.role_source === 'manual' ? 'manual' : 'sheet',
       totalContributed: Number(c?.total_contributed ?? 0),
       detentionPct: Number(c?.detention_pct ?? 0),
       monthsCount: Number(c?.months_count ?? 0),

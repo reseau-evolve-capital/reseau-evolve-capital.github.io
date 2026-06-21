@@ -22,6 +22,7 @@ const mk = (over: Partial<ClubMember>): ClubMember => ({
   email: 'alice@x.fr',
   emailIsPlaceholder: false,
   role: 'member',
+  roleSource: 'sheet',
   totalContributed: 1000,
   detentionPct: 0.1,
   monthsCount: 10,

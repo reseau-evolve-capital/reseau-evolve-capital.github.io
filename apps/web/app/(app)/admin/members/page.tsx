@@ -25,5 +25,7 @@ export default async function AdminMembersPage() {
 
   const members = await getClubMembers(supabase, ctx.clubId)
 
-  return <MembersView initialData={{ clubId: ctx.clubId, members }} />
+  // Rôle de l'utilisateur courant dans le club : pilote l'anti-escalade côté UI (un trésorier ne
+  // voit pas l'option « Président » dans l'éditeur de rôle). La règle est aussi appliquée côté RPC.
+  return <MembersView initialData={{ clubId: ctx.clubId, members }} currentUserRole={ctx.role} />
 }

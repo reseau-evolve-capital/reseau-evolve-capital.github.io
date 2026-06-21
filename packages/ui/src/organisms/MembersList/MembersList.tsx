@@ -36,6 +36,11 @@ export interface MemberRow {
    */
   emailIsPlaceholder?: boolean
   role: MemberRoleKey
+  /**
+   * Origine du rôle (ADM-008). 'sheet' = dérivé de la matrice PARAMETRAGES (une note l'explique
+   * sous le badge) ; 'manual' = figé en app. Défaut `'sheet'` si omis (rétro-compatible).
+   */
+  roleSource?: 'sheet' | 'manual'
   totalContributed: number
   detentionPct: number // fraction 0..1
   monthsCount: number
@@ -72,6 +77,12 @@ export interface MembersListLabels {
    * gouvernance (on ne mélange pas gouvernance et état d'adhésion). Défaut FR « Ancien membre ».
    */
   formerRole?: string
+  /**
+   * Note d'origine affichée sous le badge rôle quand `roleSource === 'sheet'` (ADM-008) :
+   * explique que le rôle vient de la matrice. Défaut FR « Défini via la matrice (PARAMETRAGES) ».
+   * Omise pour les rôles 'manual' (figés en app). Jamais pour `member` (pas de gouvernance).
+   */
+  roleFromSheet?: string
   /** Libellés des statuts de cotisation (Pill). */
   statuses?: Partial<Record<MemberContribStatus, string>>
   /**
@@ -119,6 +130,11 @@ export interface MembersListProps {
    * menu que pour les membres dont l'email est un placeholder (`emailIsPlaceholder`).
    */
   onEditMemberEmail?: (member: MemberRow) => void
+  /**
+   * Action « Modifier le rôle » d'un membre (ADM-008). Si fournie, l'entrée apparaît dans le menu
+   * d'actions pour les membres actifs (jamais pour un membre sorti). Réservée au staff côté app.
+   */
+  onEditRole?: (member: MemberRow) => void
   /** Chaînes user-facing/a11y (i18n). Tout défaut est FR. */
   labels?: MembersListLabels
 }
@@ -149,6 +165,8 @@ const DEFAULT_STATUS_LABEL: Record<MemberContribStatus, string> = {
 }
 /** Libellé du « rôle » d'un membre sorti (remplace le badge rôle). */
 const DEFAULT_FORMER_ROLE_LABEL = 'Ancien membre'
+/** Note d'origine d'un rôle dérivé de la matrice (ADM-008). */
+const DEFAULT_ROLE_FROM_SHEET_LABEL = 'Défini via la matrice (PARAMETRAGES)'
 /** a11y du statut `null` (membre sans ligne de cotisation enregistrée). */
 const DEFAULT_STATUS_NONE_LABEL = 'Aucune cotisation enregistrée'
 
@@ -189,6 +207,8 @@ interface ActionsConfig {
   onViewProfile?: (member: MemberRow) => void
   /** Édition de l'email : n'est proposée que pour les membres au email placeholder. */
   onEditEmail?: (member: MemberRow) => void
+  /** Édition du rôle (ADM-008) : proposée pour les membres actifs (jamais sortis). */
+  onEditRole?: (member: MemberRow) => void
 }
 
 /** Libellés liés au statut « membre sorti ». */
@@ -202,6 +222,7 @@ function buildColumns(
   columnLabels: MembersListColumnLabels,
   roleLabels: Record<MemberRoleKey, string>,
   formerRoleLabel: string,
+  roleFromSheetLabel: string,
   statusLabels: Record<MemberContribStatus, string>,
   statusNoneLabel: string,
   accessLabels: Pick<AccessBadgeLabels, 'active' | 'locked'>,
@@ -259,7 +280,21 @@ function buildColumns(
         if (c.row.original.membershipStatus === 'left') {
           return <Badge variant="neutral">{formerRoleLabel}</Badge>
         }
-        return <Badge variant={ROLE_VARIANT[c.getValue()]}>{roleLabels[c.getValue()]}</Badge>
+        const roleKey = c.getValue()
+        // Note d'origine (ADM-008) : seulement pour un rôle de gouvernance (president/treasurer)
+        // encore dérivé de la matrice ('sheet'). Un rôle figé en app ('manual') ou un simple
+        // 'member' n'affiche pas la note.
+        const showOrigin =
+          (roleKey === 'president' || roleKey === 'treasurer') &&
+          (c.row.original.roleSource ?? 'sheet') === 'sheet'
+        return (
+          <div className="flex flex-col items-start gap-1">
+            <Badge variant={ROLE_VARIANT[roleKey]}>{roleLabels[roleKey]}</Badge>
+            {showOrigin && (
+              <span className="text-[11px] leading-tight text-text-ter">{roleFromSheetLabel}</span>
+            )}
+          </div>
+        )
       },
     }),
     col.accessor('totalContributed', {
@@ -340,6 +375,12 @@ function buildColumns(
                 ? () => actions.onEditEmail?.(c.row.original)
                 : undefined
             }
+            // « Modifier le rôle » (ADM-008) : uniquement pour les membres actifs (pas les sortis).
+            onEditRole={
+              actions.onEditRole && c.row.original.membershipStatus !== 'left'
+                ? () => actions.onEditRole?.(c.row.original)
+                : undefined
+            }
           />
         </div>
       ),
@@ -359,6 +400,7 @@ export function MembersList({
   onUnlockMember,
   onViewMember,
   onEditMemberEmail,
+  onEditRole,
   labels,
 }: MembersListProps) {
   const [sorting, setSorting] = React.useState<SortingState>([
@@ -378,6 +420,7 @@ export function MembersList({
     [labels?.statuses]
   )
   const formerRoleLabel = labels?.formerRole ?? DEFAULT_FORMER_ROLE_LABEL
+  const roleFromSheetLabel = labels?.roleFromSheet ?? DEFAULT_ROLE_FROM_SHEET_LABEL
   const statusNoneLabel = labels?.statusNone ?? DEFAULT_STATUS_NONE_LABEL
   const accessLabels = labels?.access ?? {}
   const detentionBarLabel = labels?.detentionBarLabel ?? defaultDetentionBarLabel
@@ -395,7 +438,7 @@ export function MembersList({
   // Le menu d'actions n'apparaît que si au moins un callback d'action est fourni
   // (rétro-compatibilité : sans callbacks, on garde la pastille sans le menu).
   const actionsEnabled = Boolean(
-    onLockMember || onUnlockMember || onViewMember || onEditMemberEmail
+    onLockMember || onUnlockMember || onViewMember || onEditMemberEmail || onEditRole
   )
   const actionsLabels = labels?.actions
 
@@ -405,6 +448,7 @@ export function MembersList({
         columnLabels,
         roleLabels,
         formerRoleLabel,
+        roleFromSheetLabel,
         statusLabels,
         statusNoneLabel,
         accessLabels,
@@ -418,12 +462,14 @@ export function MembersList({
           onUnlock: onUnlockMember,
           onViewProfile: onViewMember,
           onEditEmail: onEditMemberEmail,
+          onEditRole,
         }
       ),
     [
       columnLabels,
       roleLabels,
       formerRoleLabel,
+      roleFromSheetLabel,
       statusLabels,
       statusNoneLabel,
       accessLabels,
@@ -436,6 +482,7 @@ export function MembersList({
       onUnlockMember,
       onViewMember,
       onEditMemberEmail,
+      onEditRole,
     ]
   )
 

@@ -17,6 +17,8 @@ import {
   Switch,
   LockMemberModal,
   EditMemberEmailModal,
+  ChangeRoleModal,
+  type EditableRole,
   SelectRoot,
   SelectTrigger,
   SelectValue,
@@ -26,7 +28,7 @@ import {
   useToast,
   type MemberRow,
 } from '@evolve/ui'
-import type { ClubMember, MemberStateFilter } from '@/lib/data/admin'
+import type { ClubMember, MemberStateFilter, MemberRole } from '@/lib/data/admin'
 import {
   filterMembers,
   filterByMemberState,
@@ -34,7 +36,12 @@ import {
   ACTIVE_MEMBER_LIMIT,
 } from '@/lib/data/admin'
 import { useClubMembers, type ClubMembersPayload } from '@/lib/hooks/useClubMembers'
-import { lockMemberAction, unlockMemberAction, updateMemberEmailAction } from '../actions'
+import {
+  lockMemberAction,
+  unlockMemberAction,
+  updateMemberEmailAction,
+  changeMemberRoleAction,
+} from '../actions'
 
 /** ClubMember (data) → MemberRow (présentationnel). */
 function toRow(m: ClubMember): MemberRow {
@@ -44,6 +51,7 @@ function toRow(m: ClubMember): MemberRow {
     email: m.email,
     emailIsPlaceholder: m.emailIsPlaceholder,
     role: m.role,
+    roleSource: m.roleSource,
     totalContributed: m.totalContributed,
     detentionPct: m.detentionPct,
     monthsCount: m.monthsCount,
@@ -57,7 +65,14 @@ function toRow(m: ClubMember): MemberRow {
 const FILTER_ID = 'filter-impayes'
 const STATE_VALUES = ['all', 'active', 'left'] as const
 
-export function MembersView({ initialData }: { initialData: ClubMembersPayload }) {
+export function MembersView({
+  initialData,
+  currentUserRole,
+}: {
+  initialData: ClubMembersPayload
+  /** Rôle de l'utilisateur courant dans le club (anti-escalade : pilote l'option « Président »). */
+  currentUserRole: MemberRole
+}) {
   const t = useTranslations('admin')
   const toast = useToast()
   const router = useRouter()
@@ -75,6 +90,13 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
   const [emailModal, setEmailModal] = useState<MemberRow | null>(null)
   // Erreur inline de la modale email (ex. « email déjà utilisé »), réinitialisée à l'ouverture.
   const [emailError, setEmailError] = useState<string | null>(null)
+  // Modale d'édition du rôle (ADM-008) ; null = fermée.
+  const [roleModal, setRoleModal] = useState<MemberRow | null>(null)
+  // Erreur inline de la modale rôle (ex. escalade refusée), réinitialisée à l'ouverture.
+  const [roleError, setRoleError] = useState<string | null>(null)
+
+  // Anti-escalade UI : seul un président (ou network_admin) peut nommer un président.
+  const canPromotePresident = currentUserRole === 'president' || currentUserRole === 'network_admin'
 
   // Comptage des actifs (sur TOUS les membres, indépendant des filtres) vs limite légale.
   const activeCount = countActiveMembers(data.members)
@@ -138,6 +160,38 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
       }
     })
   }
+
+  /** Modifier le rôle d'un membre → changeMemberRoleAction (RPC staff + anti-escalade). */
+  function handleRoleSubmit(role: EditableRole) {
+    const member = roleModal
+    if (!member) return
+    setRoleError(null)
+    startTransition(async () => {
+      const res = await changeMemberRoleAction(member.id, role)
+      if (res.ok) {
+        toast.success({
+          title: t('members.role.toast.successTitle'),
+          message: t('members.role.toast.successMessage'),
+        })
+        await queryClient.invalidateQueries({ queryKey: ['admin'] })
+        router.refresh()
+        setRoleModal(null)
+      } else if (res.error === 'forbidden') {
+        // Garde RPC (staff requis) OU anti-escalade (trésorier→président) → message inline clair.
+        setRoleError(t('members.role.errors.forbidden'))
+      } else if (res.error === 'invalid') {
+        setRoleError(t('members.role.errors.invalid'))
+      } else {
+        setRoleError(t('members.role.errors.generic'))
+      }
+    })
+  }
+
+  /** Rôle courant projeté sur les rôles éditables (network_admin n'est pas éditable ici). */
+  const roleModalCurrent: EditableRole =
+    roleModal && (roleModal.role === 'treasurer' || roleModal.role === 'president')
+      ? roleModal.role
+      : 'member'
 
   return (
     <div className="flex flex-col gap-4">
@@ -231,6 +285,12 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
           setEmailError(null)
           setEmailModal(m)
         }}
+        // ADM-008 : édition du rôle club (jamais pour un network_admin = scope réseau).
+        onEditRole={(m) => {
+          if (m.role === 'network_admin') return
+          setRoleError(null)
+          setRoleModal(m)
+        }}
         labels={{
           columns: {
             fullName: t('members.columns.fullName'),
@@ -249,6 +309,8 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
           },
           // Membre sorti : « Ancien membre » remplace le badge rôle (F4).
           formerRole: t('members.roles.former'),
+          // Note d'origine du rôle dérivé de la matrice (ADM-008).
+          roleFromSheet: t('members.role.fromSheet'),
           statuses: {
             ok: t('members.statuses.ok'),
             pending: t('members.statuses.pending'),
@@ -267,6 +329,7 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             unlock: t('members.access.actions.unlock'),
             viewProfile: t('members.access.actions.viewProfile'),
             editEmail: t('members.email.action'),
+            editRole: t('members.role.action'),
           },
           emailMissing: t('members.email.missing'),
           emptyTitle: t('members.empty.title'),
@@ -331,6 +394,38 @@ export function MembersView({ initialData }: { initialData: ClubMembersPayload }
             cancel: t('members.email.modal.cancel'),
             confirm: t('members.email.modal.confirm'),
             close: t('members.email.modal.close'),
+          }}
+        />
+      )}
+      {roleModal && (
+        <ChangeRoleModal
+          open
+          onOpenChange={(o) => {
+            if (!o) {
+              setRoleModal(null)
+              setRoleError(null)
+            }
+          }}
+          memberName={roleModal.fullName}
+          currentRole={roleModalCurrent}
+          canPromotePresident={canPromotePresident}
+          isPending={isPending}
+          {...(roleError ? { error: roleError } : {})}
+          onConfirm={handleRoleSubmit}
+          labels={{
+            title: (name) => t('members.role.modal.title', { name }),
+            description: t('members.role.modal.description'),
+            roleLabel: t('members.role.modal.roleLabel'),
+            rolePlaceholder: t('members.role.modal.rolePlaceholder'),
+            roles: {
+              member: t('members.roles.member'),
+              treasurer: t('members.roles.treasurer'),
+              president: t('members.roles.president'),
+            },
+            warning: t('members.role.modal.warning'),
+            cancel: t('members.role.modal.cancel'),
+            confirm: t('members.role.modal.confirm'),
+            close: t('members.role.modal.close'),
           }}
         />
       )}
