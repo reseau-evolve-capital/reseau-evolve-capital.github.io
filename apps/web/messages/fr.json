@@ -695,11 +695,22 @@
       "dashboard": "Tableau de bord",
       "members": "Membres",
       "cotisations": "Cotisations",
+      "retours": "Retours",
       "invitations": "Invitations",
       "newsletter": "Newsletter",
       "navLabel": "Navigation espace trésorier",
       "settings": "Paramètres",
       "votes": "Votes"
+    },
+    "retours": {
+      "meta": {
+        "title": "Retours du club"
+      },
+      "title": "Retours du club",
+      "subtitle": "Ce que les membres de ton club remontent.",
+      "error": {
+        "title": "Impossible de charger les retours du club."
+      }
     },
     "newsletter": {
       "title": "Newsletter",
@@ -1767,6 +1778,8 @@
         "byCategoryAria": "Retours par catégorie : ",
         "byClub": "Volume par club",
         "byClubAria": "Volume de retours par club",
+        "byWeek": "Volume par semaine",
+        "byWeekAria": "Volume de retours par semaine",
         "legend": "Légende des catégories",
         "donutTotal": "retours",
         "empty": "Pas encore de données sur la période."
@@ -1839,6 +1852,79 @@
         "category": "Catégorie",
         "viewGithub": "Voir l'issue GitHub",
         "viewNotion": "Voir dans Notion"
+      }
+    },
+    "bureau": {
+      "meta": {
+        "title": "Bureau du réseau"
+      },
+      "title": "Bureau du réseau",
+      "subtitle": "Membres ayant un rôle réseau (admin ou bureau) et leur titre de gouvernance.",
+      "addToBoard": "Ajouter au bureau",
+      "readOnly": "Lecture seule",
+      "roles": {
+        "network_admin": "Admin réseau",
+        "network_board": "Bureau"
+      },
+      "titles": {
+        "president": "Président",
+        "vice_president": "Vice-président",
+        "treasurer": "Trésorier",
+        "secretary": "Secrétaire"
+      },
+      "table": {
+        "caption": "Membres du bureau du réseau",
+        "you": "(vous)",
+        "columns": {
+          "member": "Membre",
+          "role": "Rôle réseau",
+          "title": "Titre",
+          "actions": "Actions"
+        },
+        "actions": {
+          "edit": "Modifier",
+          "remove": "Retirer"
+        }
+      },
+      "empty": {
+        "title": "Aucun membre dans le bureau",
+        "description": "Ajoutez un premier membre à l'équipe réseau pour piloter la gouvernance."
+      },
+      "dialog": {
+        "addTitle": "Ajouter au bureau",
+        "editTitle": "Modifier le rôle réseau",
+        "description": "Attribuez un rôle réseau et, si besoin, un titre de gouvernance.",
+        "memberLabel": "Membre",
+        "memberPlaceholder": "Choisir un membre…",
+        "alreadyMember": "déjà au bureau",
+        "roleLabel": "Rôle réseau",
+        "titleLabel": "Titre (optionnel)",
+        "noTitle": "Aucun titre",
+        "add": "Ajouter",
+        "save": "Enregistrer"
+      },
+      "revoke": {
+        "title": "Retirer {name} du bureau ?",
+        "description": "Cette personne perdra son rôle réseau et l'accès à l'espace réseau. Aucune donnée de club n'est supprimée.",
+        "acknowledge": "Je confirme vouloir retirer ce membre du bureau du réseau.",
+        "confirm": "Retirer"
+      },
+      "toast": {
+        "grantSuccess": "Rôle réseau attribué",
+        "grantErrorTitle": "Échec de l'attribution",
+        "revokeSuccess": "Membre retiré du bureau",
+        "revokeErrorTitle": "Échec du retrait",
+        "lastAdminTitle": "Action bloquée",
+        "lastAdminMessage": "Impossible de retirer le dernier administrateur réseau : le réseau doit toujours conserver au moins un admin."
+      },
+      "errors": {
+        "forbidden": "Action réservée aux administrateurs réseau.",
+        "notFound": "Membre introuvable.",
+        "invalid": "Données invalides.",
+        "unknown": "Une erreur est survenue. Réessaie."
+      },
+      "error": {
+        "title": "Impossible de charger le bureau du réseau"
       }
     }
   }

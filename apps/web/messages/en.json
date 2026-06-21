@@ -695,11 +695,22 @@
       "dashboard": "Dashboard",
       "members": "Members",
       "cotisations": "Contributions",
+      "retours": "Feedback",
       "invitations": "Invitations",
       "newsletter": "Newsletter",
       "navLabel": "Treasurer area navigation",
       "settings": "Settings",
       "votes": "Polls"
+    },
+    "retours": {
+      "meta": {
+        "title": "Club feedback"
+      },
+      "title": "Club feedback",
+      "subtitle": "What your club members are reporting.",
+      "error": {
+        "title": "Could not load club feedback."
+      }
     },
     "newsletter": {
       "title": "Newsletter",
@@ -1767,6 +1778,8 @@
         "byCategoryAria": "Feedback by category: ",
         "byClub": "Volume by club",
         "byClubAria": "Feedback volume by club",
+        "byWeek": "Volume by week",
+        "byWeekAria": "Feedback volume by week",
         "legend": "Categories legend",
         "donutTotal": "items",
         "empty": "No data for this period yet."
@@ -1839,6 +1852,79 @@
         "category": "Category",
         "viewGithub": "View GitHub issue",
         "viewNotion": "View in Notion"
+      }
+    },
+    "bureau": {
+      "meta": {
+        "title": "Network board"
+      },
+      "title": "Network board",
+      "subtitle": "Members holding a network role (admin or board) and their governance title.",
+      "addToBoard": "Add to board",
+      "readOnly": "Read only",
+      "roles": {
+        "network_admin": "Network admin",
+        "network_board": "Board"
+      },
+      "titles": {
+        "president": "President",
+        "vice_president": "Vice-president",
+        "treasurer": "Treasurer",
+        "secretary": "Secretary"
+      },
+      "table": {
+        "caption": "Network board members",
+        "you": "(you)",
+        "columns": {
+          "member": "Member",
+          "role": "Network role",
+          "title": "Title",
+          "actions": "Actions"
+        },
+        "actions": {
+          "edit": "Edit",
+          "remove": "Remove"
+        }
+      },
+      "empty": {
+        "title": "No board members yet",
+        "description": "Add a first member to the network team to steer governance."
+      },
+      "dialog": {
+        "addTitle": "Add to board",
+        "editTitle": "Edit network role",
+        "description": "Assign a network role and, if needed, a governance title.",
+        "memberLabel": "Member",
+        "memberPlaceholder": "Choose a member…",
+        "alreadyMember": "already on board",
+        "roleLabel": "Network role",
+        "titleLabel": "Title (optional)",
+        "noTitle": "No title",
+        "add": "Add",
+        "save": "Save"
+      },
+      "revoke": {
+        "title": "Remove {name} from the board?",
+        "description": "This person will lose their network role and access to the network area. No club data is deleted.",
+        "acknowledge": "I confirm I want to remove this member from the network board.",
+        "confirm": "Remove"
+      },
+      "toast": {
+        "grantSuccess": "Network role granted",
+        "grantErrorTitle": "Grant failed",
+        "revokeSuccess": "Member removed from board",
+        "revokeErrorTitle": "Removal failed",
+        "lastAdminTitle": "Action blocked",
+        "lastAdminMessage": "You can't remove the last network admin: the network must always keep at least one admin."
+      },
+      "errors": {
+        "forbidden": "Restricted to network admins.",
+        "notFound": "Member not found.",
+        "invalid": "Invalid data.",
+        "unknown": "Something went wrong. Please retry."
+      },
+      "error": {
+        "title": "Couldn't load the network board"
       }
     }
   }

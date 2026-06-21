@@ -1330,6 +1330,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      network_list_board: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          role: Database['public']['Enums']['network_role']
+          title: Database['public']['Enums']['network_title']
+          user_id: string
+        }[]
+      }
       network_list_club_members: {
         Args: { p_club_id: string }
         Returns: {
@@ -1354,6 +1365,16 @@ export type Database = {
           matrix_connected: boolean
           name: string
           slug: string
+        }[]
+      }
+      network_list_eligible_members: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          email: string
+          full_name: string
+          is_member: boolean
+          user_id: string
         }[]
       }
       network_list_sheet_snapshots: {
