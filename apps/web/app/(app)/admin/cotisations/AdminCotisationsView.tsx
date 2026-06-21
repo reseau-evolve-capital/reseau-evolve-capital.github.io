@@ -1,18 +1,18 @@
 'use client'
 
-// Vue cotisations admin (ADM-005). Filtre membre en URL (nuqs) → timeline + stats du club.
-// Réutilise ContributionsTimeline (organism S6) + KPICard. Formatage via @evolve/utils.
+// Vue cotisations admin V2 (T6 — câblage mode club / mode membre + RelanceModal).
 //
-// Contrat Select vérifié sur packages/ui/src/atoms/Select/Select.tsx :
-//   - SelectItem enveloppe children dans RadixSelect.ItemText en interne → pas de SelectItemText externe.
-//   - SelectTrigger passe {...props} à RadixSelect.Trigger → aria-label est transmis au DOM.
-//   - aria-label="Filtrer par membre" sur SelectTrigger suffit pour getByLabel() Playwright.
+// Mode CLUB  (membershipId == null) : ClubCotisationsPanel — synthèse + KPI + RegulariserList.
+// Mode MEMBRE (membershipId != null) : MemberCotisationsPanel — fiche individuelle.
+// RelanceModal : contrôlée par état local (relanceOpen / relanceMemberId / relanceMemberName).
+//
+// Contrat Select : aria-label transmis via {...props} de SelectTrigger à RadixSelect.Trigger.
+// Sélecteur visible uniquement en mode CLUB — en mode MEMBRE, bouton « ← Tous les membres ».
 
+import { useState } from 'react'
 import { useQueryState } from 'nuqs'
 import { useTranslations } from 'next-intl'
 import {
-  ContributionsTimeline,
-  KPICard,
   Heading,
   EmptyState,
   SelectRoot,
@@ -22,12 +22,11 @@ import {
   SelectContent,
   SelectItem,
 } from '@evolve/ui'
-import { formatCurrency } from '@evolve/utils'
-import {
-  useAdminContributions,
-  type AdminContribPayload,
-  type AdminContribOption,
-} from '@/lib/hooks/useAdminContributions'
+import { ClubCotisationsPanel } from '@/components/admin/ClubCotisationsPanel'
+import { MemberCotisationsPanel } from '@/components/admin/MemberCotisationsPanel'
+import { RelanceModal } from '@/components/admin/RelanceModal'
+import { useAdminContributions, type AdminContribOption } from '@/lib/hooks/useAdminContributions'
+import type { AdminContribPayload } from '@/lib/data/admin'
 
 const ALL = 'all'
 
@@ -42,89 +41,129 @@ export function AdminCotisationsView({
   currency?: string
 }) {
   const t = useTranslations('admin')
-  const [member, setMember] = useQueryState('membre')
-  const membershipId = member && member !== ALL ? member : null
+  const [membre, setMembre] = useQueryState('membre')
+  const membershipId = membre && membre !== ALL ? membre : null
+
   const { data, isError, isFetching } = useAdminContributions(initialData, membershipId)
-
-  // data peut être undefined au 1er rendu filtré (query en cours, pas encore de placeholderData)
   const payload = data ?? initialData
-  const stats = payload.stats
 
-  // D5 — quand un membre est filtré, on remonte sa valeur nette détenue depuis la liste
-  // `members` (stable, fournie par la page RSC) pour afficher une carte dédiée.
-  const selectedMember = membershipId ? (members.find((m) => m.id === membershipId) ?? null) : null
+  // État RelanceModal
+  const [relanceOpen, setRelanceOpen] = useState(false)
+  const [relanceMemberId, setRelanceMemberId] = useState<string>('')
+  const [relanceMemberName, setRelanceMemberName] = useState<string>('')
+
+  const openRelance = (mId: string, mName: string) => {
+    setRelanceMemberId(mId)
+    setRelanceMemberName(mName)
+    setRelanceOpen(true)
+  }
+
+  const closeRelance = () => setRelanceOpen(false)
+
+  // Mode CLUB : on retrouve le nom depuis regulariserList
+  const handleClubRelancer = (mId: string) => {
+    const item = payload.regulariserList.find((m) => m.membershipId === mId)
+    openRelance(mId, item?.fullName ?? '')
+  }
+
+  // Mode MEMBRE : on utilise le nom du membre déjà chargé
+  const handleMemberRelancer = (mId: string) => {
+    openRelance(mId, payload.member?.fullName ?? '')
+  }
+
+  // lateMonths pour la RelanceModal : si on est en mode membre, on les a ;
+  // sinon on passe [] (le message se construit sans liste de mois).
+  const relanceLateMonths =
+    relanceMemberId === membershipId && payload.member != null ? payload.member.lateMonths : []
+
+  const relanceAmountDue =
+    relanceMemberId === membershipId && payload.member != null
+      ? payload.member.amountDue
+      : (payload.regulariserList.find((m) => m.membershipId === relanceMemberId)?.amountDue ?? 0)
 
   return (
     <div className="flex flex-col gap-6">
+      {/* ── En-tête : titre + sélecteur (mode club) ou bouton retour (mode membre) ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Heading level="h1" className="text-[20px]">
           {t('cotisations.title')}
         </Heading>
-        {/*
-          Accessibilité : aria-label transmis via {...props} de SelectTrigger à RadixSelect.Trigger.
-          Playwright getByLabel('Filtrer par membre') fonctionne via cet aria-label.
-          La liste des membres est tirée de initialData (stable) — pas de re-fetch nécessaire.
-        */}
-        <SelectRoot
-          value={membershipId ?? ALL}
-          onValueChange={(v) => void setMember(v === ALL ? null : v)}
-        >
-          <SelectTrigger aria-label={t('cotisations.filterMember')} className="w-full sm:w-56">
-            <SelectValue placeholder={t('cotisations.allMembers')} />
-          </SelectTrigger>
-          <SelectPortal>
-            <SelectContent>
-              <SelectItem value={ALL}>{t('cotisations.allMembers')}</SelectItem>
-              {members.map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.fullName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </SelectPortal>
-        </SelectRoot>
+
+        {membershipId ? (
+          <button
+            type="button"
+            onClick={() => void setMembre(null)}
+            className="text-[13px] font-semibold text-text-ter hover:text-text transition-colors"
+          >
+            {t('cotisations.backToClub')}
+          </button>
+        ) : (
+          <SelectRoot
+            value={membershipId ?? ALL}
+            onValueChange={(v) => void setMembre(v === ALL ? null : v)}
+          >
+            <SelectTrigger aria-label={t('cotisations.filterMember')} className="w-full sm:w-56">
+              <SelectValue placeholder={t('cotisations.allMembers')} />
+            </SelectTrigger>
+            <SelectPortal>
+              <SelectContent>
+                <SelectItem value={ALL}>{t('cotisations.allMembers')}</SelectItem>
+                {members.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.fullName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </SelectPortal>
+          </SelectRoot>
+        )}
       </div>
 
+      {/* ── Indicateur données périmées ── */}
       {isError && (
         <p role="status" className="text-[12px] text-text-ter">
           {t('staleData')}
         </p>
       )}
 
-      {/* D5 — carte valeur nette de la part du membre, visible UNIQUEMENT quand un membre
-          est filtré (style accentué identique à la vue membre). Fallback « — » si null. */}
-      {selectedMember && (
-        <div className="rounded-[10px] border-2 border-accent bg-card p-4 sm:p-5 shadow-[var(--sh-card)]">
-          <p className="font-display font-bold text-[14px] tracking-[-0.01em] text-text">
-            {t('cotisations.kpi.netMarketValue')}
-          </p>
-          <p className="mt-2 font-display font-[800] text-[26px] sm:text-[32px] leading-none tracking-[-0.02em] text-text [font-feature-settings:'tnum','lnum']">
-            {selectedMember.netMarketValue != null
-              ? formatCurrency(selectedMember.netMarketValue, currency)
-              : '—'}
-          </p>
-        </div>
-      )}
-
-      <div
-        className={`grid grid-cols-1 gap-4 sm:grid-cols-3 transition-opacity${
-          isFetching ? ' opacity-50' : ''
-        }`}
-      >
-        <KPICard title={t('cotisations.kpi.total')} value={stats.total} format="eur" />
-        <KPICard title={t('cotisations.kpi.count')} value={stats.count} format="raw" />
-        <KPICard title={t('cotisations.kpi.average')} value={stats.average} format="eur" />
+      {/* ── Contenu principal (club ou membre) ── */}
+      <div className={isFetching ? 'opacity-50 transition-opacity' : undefined}>
+        {membershipId == null ? (
+          <ClubCotisationsPanel
+            clubStats={payload.clubStats}
+            regulariserList={payload.regulariserList}
+            currency={currency}
+            onMemberSelect={(id) => void setMembre(id)}
+            onRelancer={handleClubRelancer}
+          />
+        ) : payload.member != null ? (
+          <MemberCotisationsPanel
+            member={payload.member}
+            currency={currency}
+            onRelancer={handleMemberRelancer}
+            membershipId={membershipId}
+          />
+        ) : (
+          <EmptyState
+            icon="Calendar"
+            title={t('cotisations.empty.title')}
+            description={t('cotisations.empty.description')}
+          />
+        )}
       </div>
 
-      {payload.years.length === 0 ? (
-        <EmptyState
-          icon="Calendar"
-          title={t('cotisations.empty.title')}
-          description={t('cotisations.empty.description')}
-        />
-      ) : (
-        <ContributionsTimeline years={payload.years} />
-      )}
+      {/* ── Modale de relance ── */}
+      <RelanceModal
+        open={relanceOpen}
+        onClose={closeRelance}
+        memberName={relanceMemberName}
+        membershipId={relanceMemberId}
+        lateMonths={relanceLateMonths}
+        amountDue={relanceAmountDue}
+        currency={currency}
+        memberEmail={null}
+        clubId={initialData.clubId}
+      />
     </div>
   )
 }
