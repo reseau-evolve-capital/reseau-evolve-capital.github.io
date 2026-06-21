@@ -23,6 +23,7 @@ export interface RelanceModalProps {
   membershipId: string
   lateMonths: LateMonth[]
   amountDue: number
+  clubId: string
   currency?: string
   memberEmail?: string | null
 }
@@ -67,6 +68,7 @@ export function RelanceModal({
   membershipId,
   lateMonths,
   amountDue,
+  clubId,
   currency = 'EUR',
   memberEmail,
 }: RelanceModalProps) {
@@ -91,14 +93,6 @@ export function RelanceModal({
 
   const hasEmail = typeof memberEmail === 'string' && memberEmail.trim() !== ''
 
-  // Le clubId vient du contexte admin — on le lit depuis l'URL plutôt que de le passer en prop
-  // (évite de coupler la modale au layout). La Server Action le résout côté serveur via le cookie.
-  // Mais pour la V1, on récupère le clubId depuis les params de la route (passé implicitement).
-  // Hack pragmatique V1 : la Server Action lit le club actif du cookie si clubId = ''.
-  // Le guard dans actions.ts vérifie toujours via resolveAdminContext.
-  //
-  // Pour une intégration propre, le parent peut passer clubId en prop supplémentaire.
-  // Pour la V1, on ne passe pas clubId depuis ici — la Server Action résout via cookie.
   const handleSend = async () => {
     if (!hasEmail || !memberEmail) return
     if (isPending) return
@@ -107,16 +101,12 @@ export function RelanceModal({
     setError(null)
 
     try {
-      // Résolution du clubId côté serveur via le cookie evolve_active_club.
-      // La Server Action vérifie toujours via resolveAdminContext(clubId).
-      // On passe un clubId vide ici — le guard côté action lira le cookie.
-      // Remarque : pour une sécurité maximale, passer le clubId en prop depuis le parent.
       const result = await sendRelanceEmail({
         membershipId,
         memberEmail,
         memberName,
         message,
-        clubId: '', // résolu côté serveur via cookie evolve_active_club
+        clubId,
       })
 
       if (result.success) {
@@ -250,6 +240,8 @@ function mapErrorMessage(code: string | undefined): string {
       return "L'adresse email du membre est manquante."
     case 'missing_message':
       return 'Le message ne peut pas être vide.'
+    case 'send_failed':
+      return "L'envoi de l'email a échoué. Veuillez réessayer."
     default:
       return code ?? 'Une erreur est survenue. Veuillez réessayer.'
   }
