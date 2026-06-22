@@ -45,6 +45,7 @@ function completeInput(): AttestationInput {
       { quantity: 10, marketValue: 1500, livePrice: 160 }, // live → 1600
       { quantity: 5, marketValue: 800, livePrice: null }, // snapshot → 800
     ],
+    portfolioTotalValue: null, // pas d'agrégat → fallback Σ positions (2400)
     months: [
       { year: 2026, month: 1, amount: 100, status: 'paid' },
       { year: 2026, month: 2, amount: 100, status: 'paid' },
@@ -73,6 +74,18 @@ describe('mapAttestation — structure et formatage', () => {
     expect(data.monthClubEffort.value).toBe(100)
   })
 
+  it('valorisation portefeuille = total agrégat « Portefeuille » (espèces incluses), pas Σ positions', () => {
+    // Cas réel du bug : la somme des positions (2400) EXCLUT les espèces ; le total agrégat
+    // « Portefeuille » (3200 = 2400 titres + 800 espèces) est le montant affiché sur /portfolio.
+    const data = mapAttestation({ ...completeInput(), portfolioTotalValue: 3200 })
+    expect(data.portfolioValue.value).toBe(3200) // = page /portfolio, PAS 2400 (Σ positions)
+  })
+
+  it('valorisation portefeuille : fallback Σ positions si l’agrégat « Portefeuille » est absent', () => {
+    const data = mapAttestation({ ...completeInput(), portfolioTotalValue: null })
+    expect(data.portfolioValue.value).toBe(2400) // 1600 (live) + 800 (snapshot)
+  })
+
   it('produit un n° de référence + une URL de vérification', () => {
     const data = mapAttestation(completeInput())
     expect(data.reference).toMatch(/^REC-202606-[0-9A-Z]{4}$/)
@@ -99,6 +112,7 @@ describe('mapAttestation — structure et formatage', () => {
       },
       contribution: null,
       positions: [],
+      portfolioTotalValue: null,
       months: [],
       period: 'invalide',
       generatedAt: GENERATED_AT,

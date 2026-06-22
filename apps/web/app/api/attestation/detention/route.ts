@@ -27,6 +27,9 @@ import {
 } from '@evolve/data/pdf'
 
 import { checkRateLimit, rateLimitedResponse } from '@/lib/rate-limit'
+// Source de vérité UNIQUE du total portefeuille (= page /portfolio) : agrégat « Portefeuille »
+// (espèces + soldes inclus). Réutilisé ici pour que l'attestation affiche le MÊME montant.
+import { totalFromAggregates, type PortfolioAggregate } from '@/lib/data/portfolio'
 
 export const runtime = 'nodejs'
 
@@ -112,6 +115,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       { data: contributionRow },
       { data: positionRows },
       { data: monthRows },
+      { data: aggregateRows },
     ] = await Promise.all([
       supabase
         .from('users')
@@ -155,6 +159,14 @@ export async function GET(request: Request): Promise<NextResponse> {
         .select('year, month, amount, status')
         .eq('membership_id', membershipId)
         .returns<{ year: number; month: number; amount: number | null; status: string | null }[]>(),
+      // Agrégats du portefeuille (même requête que /portfolio) → total « Portefeuille »
+      // (espèces + soldes inclus) pour aligner la valorisation de l'attestation sur la page.
+      supabase
+        .from('portfolio_aggregates')
+        .select('label, market_value, book_value, allocation_pct')
+        .eq('club_id', clubId)
+        .eq('is_active', true)
+        .returns<PortfolioAggregate[]>(),
     ])
 
     // Pas de valo live serveur (la valo intraday est frontend, cf. CLAUDE.md) → on s'appuie sur
@@ -200,6 +212,9 @@ export async function GET(request: Request): Promise<NextResponse> {
           }
         : null,
       positions,
+      // Total portefeuille IDENTIQUE à /portfolio (agrégat « Portefeuille », espèces incluses) ;
+      // null si l'agrégat est absent → le mapper retombe sur la somme des positions.
+      portfolioTotalValue: totalFromAggregates(aggregateRows ?? []),
       months,
       period,
       generatedAt: new Date(),
