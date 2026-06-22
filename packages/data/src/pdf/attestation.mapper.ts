@@ -60,6 +60,14 @@ export interface AttestationInput {
   identity: AttestationIdentityInput
   contribution: AttestationContributionInput | null
   positions: AttestationPositionInput[]
+  /**
+   * Valorisation TOTALE du portefeuille du club = `market_value` de la ligne d'agrégat
+   * « Portefeuille » (col G de la matrice, `portfolio_aggregates`), qui inclut les ESPÈCES
+   * et les soldes — EXACTEMENT le total affiché sur la page /portfolio. `null` si l'agrégat
+   * est absent → le mapper retombe sur la somme des positions (`sumPortfolioValue`).
+   * Source de vérité unique : `apps/web/lib/data/portfolio.ts#totalFromAggregates`.
+   */
+  portfolioTotalValue: number | null
   months: AttestationMonthInput[]
   /** Période demandée « YYYY-MM » (pilote « investissement année courante » + « effort du mois »). */
   period: string
@@ -97,7 +105,7 @@ export interface AttestationData {
   detentionPct: AttestationMetric
   totalContributed: AttestationMetric
   quotePartValue: AttestationMetric // net_market_value
-  portfolioValue: AttestationMetric // Σ positions (live/snapshot)
+  portfolioValue: AttestationMetric // total agrégat « Portefeuille » (espèces incluses) — fallback Σ positions
 
   // 3 compléments (⚠ dérivés ou `—`)
   yearInvested: AttestationMetric // investissement cumulé année en cours (dérivé)
@@ -227,7 +235,12 @@ export function mapAttestation(input: AttestationInput): AttestationData {
     detentionPct: { value: num(c?.detentionPct ?? null), format: 'pct' },
     totalContributed: { value: num(c?.totalContributed ?? null), format: 'eur' },
     quotePartValue: { value: num(c?.netMarketValue ?? null), format: 'eur' },
-    portfolioValue: { value: sumPortfolioValue(input.positions), format: 'eur' },
+    // Valorisation portefeuille = total agrégat « Portefeuille » (espèces + soldes inclus),
+    // pour COÏNCIDER avec la page /portfolio. Fallback Σ positions si l'agrégat est absent.
+    portfolioValue: {
+      value: num(input.portfolioTotalValue) ?? sumPortfolioValue(input.positions),
+      format: 'eur',
+    },
 
     yearInvested: { value: yearInvested, format: 'eur' },
     // Capacité restante = plafond annuel − investissement cumulé de l'année.
