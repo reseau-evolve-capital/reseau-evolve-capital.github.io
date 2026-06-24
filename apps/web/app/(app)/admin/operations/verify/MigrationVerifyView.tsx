@@ -6,7 +6,7 @@
 // sont calculés côté serveur (page.tsx → lib/data/migrationVerify.ts).
 
 import { useTranslations } from 'next-intl'
-import { MigrationVerifyTable, type ClubVerifyData } from '@evolve/ui'
+import { Heading, MigrationVerifyTable, type ClubVerifyData } from '@evolve/ui'
 
 export function MigrationVerifyView({
   clubs,
@@ -20,7 +20,9 @@ export function MigrationVerifyView({
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1">
-        <h2 className="font-display text-[20px] font-bold text-text">{t('title')}</h2>
+        <Heading level="h1" className="text-[20px]">
+          {t('title')}
+        </Heading>
         <p className="text-[14px] text-text-sec">{t('subtitle')}</p>
       </header>
 
