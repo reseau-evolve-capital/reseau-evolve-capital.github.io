@@ -9,6 +9,7 @@
     "./supabase/server": "./src/supabase/server.ts",
     "./prices": "./src/prices/index.ts",
     "./polls": "./src/polls/index.ts",
+    "./operations": "./src/operations/index.ts",
     "./notifications": "./src/notifications/index.ts",
     "./emails": "./src/emails/index.ts",
     "./pdf": "./src/pdf/index.ts",
