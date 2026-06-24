@@ -748,7 +748,8 @@
       "cotisationsTitle": "Cotisations — Admin Evolve Capital",
       "membersTitle": "Membres — Admin Evolve Capital",
       "invitationsTitle": "Invitations — Admin Evolve Capital",
-      "settingsTitle": "Paramètres du club — Admin Evolve Capital"
+      "settingsTitle": "Paramètres du club — Admin Evolve Capital",
+      "verificationTitle": "Vérification migration — Admin Evolve Capital"
     },
     "tabs": {
       "dashboard": "Tableau de bord",
@@ -758,7 +759,8 @@
       "invitations": "Invitations",
       "navLabel": "Navigation espace trésorier",
       "settings": "Paramètres",
-      "votes": "Votes"
+      "votes": "Votes",
+      "operations": "Opérations"
     },
     "retours": {
       "meta": {
@@ -861,6 +863,41 @@
         "errorMessage": "Impossible d’enregistrer les paramètres. Réessayez.",
         "forbiddenTitle": "Accès refusé",
         "forbiddenMessage": "Vous n’avez pas les droits pour modifier ces paramètres."
+      }
+    },
+    "operations": {
+      "verification": {
+        "title": "Vérification de la migration",
+        "subtitle": "Compare les données historiques (legacy) avec la nouvelle table des opérations. Un écart (delta ≠ 0) signale une donnée à investiguer.",
+        "thisClub": "Ce club",
+        "metrics": {
+          "cash": "Solde espèces",
+          "contributions": "Cotisations",
+          "transactions": "Transactions"
+        },
+        "columns": {
+          "metric": "Métrique",
+          "legacy": "Legacy",
+          "operations": "Opérations",
+          "delta": "Delta",
+          "status": "Statut"
+        },
+        "status": {
+          "ok": "Cohérent",
+          "mismatch": "Écart détecté"
+        },
+        "summary": {
+          "ok": "Toutes les métriques sont cohérentes.",
+          "mismatch": "{count, plural, one {# écart détecté à investiguer.} other {# écarts détectés à investiguer.}}"
+        },
+        "empty": {
+          "title": "Aucune donnée à comparer",
+          "description": "Ce club n'a ni données legacy ni opérations migrées pour le moment."
+        },
+        "error": {
+          "title": "Vérification indisponible",
+          "description": "Impossible de charger les données de comparaison. Réessaie plus tard."
+        }
       }
     }
   },

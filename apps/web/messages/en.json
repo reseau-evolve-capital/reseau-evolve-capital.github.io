@@ -748,7 +748,8 @@
       "cotisationsTitle": "Contributions — Admin Evolve Capital",
       "membersTitle": "Members — Admin Evolve Capital",
       "invitationsTitle": "Invitations — Evolve Capital Admin",
-      "settingsTitle": "Club settings — Evolve Capital Admin"
+      "settingsTitle": "Club settings — Evolve Capital Admin",
+      "verificationTitle": "Migration verification — Evolve Capital Admin"
     },
     "tabs": {
       "dashboard": "Dashboard",
@@ -758,7 +759,8 @@
       "invitations": "Invitations",
       "navLabel": "Treasurer area navigation",
       "settings": "Settings",
-      "votes": "Polls"
+      "votes": "Polls",
+      "operations": "Operations"
     },
     "retours": {
       "meta": {
@@ -861,6 +863,41 @@
         "errorMessage": "Could not save the settings. Please try again.",
         "forbiddenTitle": "Access denied",
         "forbiddenMessage": "You don't have permission to edit these settings."
+      }
+    },
+    "operations": {
+      "verification": {
+        "title": "Migration verification",
+        "subtitle": "Compare legacy data with the new operations table. A mismatch (delta ≠ 0) flags a data point to investigate.",
+        "thisClub": "This club",
+        "metrics": {
+          "cash": "Cash balance",
+          "contributions": "Contributions",
+          "transactions": "Transactions"
+        },
+        "columns": {
+          "metric": "Metric",
+          "legacy": "Legacy",
+          "operations": "Operations",
+          "delta": "Delta",
+          "status": "Status"
+        },
+        "status": {
+          "ok": "Consistent",
+          "mismatch": "Mismatch"
+        },
+        "summary": {
+          "ok": "All metrics are consistent.",
+          "mismatch": "{count, plural, one {# mismatch to investigate.} other {# mismatches to investigate.}}"
+        },
+        "empty": {
+          "title": "No data to compare",
+          "description": "This club has no legacy data nor migrated operations yet."
+        },
+        "error": {
+          "title": "Verification unavailable",
+          "description": "Unable to load comparison data. Please try again later."
+        }
       }
     }
   },

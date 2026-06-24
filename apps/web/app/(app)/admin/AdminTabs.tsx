@@ -11,7 +11,15 @@ import { useTranslations } from 'next-intl'
 import { Icon, type IconName } from '@evolve/ui'
 
 interface Tab {
-  key: 'dashboard' | 'members' | 'cotisations' | 'votes' | 'retours' | 'invitations' | 'settings'
+  key:
+    | 'dashboard'
+    | 'members'
+    | 'cotisations'
+    | 'operations'
+    | 'votes'
+    | 'retours'
+    | 'invitations'
+    | 'settings'
   href: string
   icon: IconName
 }
@@ -20,6 +28,8 @@ const TABS: Tab[] = [
   { key: 'dashboard', href: '/admin', icon: 'LayoutDashboard' },
   { key: 'members', href: '/admin/members', icon: 'Users' },
   { key: 'cotisations', href: '/admin/cotisations', icon: 'Calendar' },
+  // OPS-106 — écran utilitaire « Vérification migration » (legacy vs operations).
+  { key: 'operations', href: '/admin/operations/verify', icon: 'ArrowLeftRight' },
   { key: 'votes', href: '/admin/votes', icon: 'Vote' },
   { key: 'retours', href: '/admin/retours', icon: 'MessageSquare' },
   { key: 'invitations', href: '/admin/invitations', icon: 'Mail' },
