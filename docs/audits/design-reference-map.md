@@ -419,3 +419,26 @@ Migrations attribuées : **050** `clubs.is_active` (NET-018) · **051** `feedbac
 | Skeleton de boot `(app)/loading.tsx`        | PWA-002 | —                     | ✅ (token dark corrigé) |
 
 **Arbitrages LEAD loggés** : (1) NET-018 = colonne `clubs.is_active` qui gate `get_user_club_ids()` (vs statut par-membre) — owner ✅. (2) RLS feedback resserrée (staff = son club, ≠ ancienne policy globale) — owner ✅. (3) NET-020 construit l'écran Bureau (teaser → actif). (4) `ComingSoonCard` pour la Synthèse IA (digest → NET-017). Détails et preuves : `docs/qa/QA_REPORT_2026-06-21-net-b-vague.md`.
+
+---
+
+## E-OPS-1 — Fondation DB & Migration NEO (sprint en cours, démarré 2026-06-24)
+
+**Décisions owner (Phase 0)** :
+
+- **DEC-001** : clubs migrés = sélection `clubs.is_active = true AND sheet_id IS NOT NULL` (≈ 4 clubs actifs, cahier §10.1) ; tolérance gate solde espèces = **±1 €**.
+- **DEC-003** : garde RPC d'écriture = `is_club_staff(club_id)` seule (treasurer+president+network_admin), **pas** de double validation (cahier §10.3).
+- **Convergence (arbitrage owner)** : OPS-105 **mesure et documente** le delta ; **n'injecte pas** d'opération de calage. Si un solde d'ouverture Matrice absent du legacy fait dépasser ±1 €, c'est documenté (cause attribuée) et rediscuté sur chiffres réels avant Sprint 2 — ce n'est pas un échec de build.
+
+**Arbitrages LEAD (conformité conventions repo, corrections au cahier)** :
+
+- **LD-1** : `056_health_status_club_name.sql` déjà sur disque → fenêtre NEO décalée. Numéros assignés : `057_operations.sql` (OPS-101), `058_memberships_parts.sql` (OPS-102), `059_get_club_cash_balance.sql` (OPS-103).
+- Audit via `log_audit_event(...)` (053), **jamais** `INSERT INTO audit_log` (le pseudo-SQL du cahier est corrigé).
+- `get_club_cash_balance` : ajout d'une **garde lecture** `p_club_id = ANY(get_user_club_ids())` fail-closed (le cahier l'omet — SECURITY DEFINER bypasse la RLS).
+- **LD-2** : clé d'idempotence de `migrate-to-operations` = **tuple naturel** `(club_id, type, operation_date, symbol, quantity, total)`, jamais `transactions.id` (sync = delete+insert → ids volatils, `sync/index.ts:811-857`).
+- **LD-6** : le sync n'écrit jamais `operations` (grep négatif) ; `source='matrice_sync'` reste réservé à un usage futur, non utilisé en V1.
+- Ressource partagée **DB locale** sérialisée : un seul agent possède `make db-reset` + `make db-types` (lane DB). `make db-migrate` (= PROD) interdit sans accord owner.
+
+**Écran livré** : `/admin/operations/verify` (OPS-106) — onglet AdminTabs `operations` (icône `ArrowLeftRight`). Composant présentationnel `MigrationVerifyTable` (`@evolve/ui`, organism, 0 dép `@evolve/data`). Tableau 3 métriques (solde espèces / nb cotisations / nb transactions) legacy vs operations + delta ✓/✗ ; delta non-nul en token `data-negative` (jamais `#E93E3A`). i18n `admin.operations.verification.*` (fr+en, parité OK). Scoping : trésorier = son club, network admin = clubs `is_active AND sheet_id NOT NULL` via `network_list_clubs()`. Pas de réf Claude Design (utilitaire fonctionnel). **Reste runtime owner** : vérif light/dark + RLS trésorier/network-admin/membre après migrations 057-059 appliquées + seed.
+
+**Clôture vague E-OPS-1** (2026-06-25) : 9 commits sur `feat/e-ops-1-operations-foundation` (OPS-101→107 + fix a11y). QA → PASS après 1 correctif (titre `<h2>`→`<Heading h1>`, RGAA 9.1). Détails : `docs/qa/QA_REPORT_2026-06-25.md`. Mécanisme de migration prouvé local (idempotence runtime + delta=0 sur fixture convergente, delta=−5000 € documenté sur fixture « solde d'ouverture ») ; convergence €-réelle = action owner prod (rapport `docs/audits/migration-operations-2026-06-25.md`).
