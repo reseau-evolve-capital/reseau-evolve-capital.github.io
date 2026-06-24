@@ -520,6 +520,7 @@ export type Database = {
           locked_at: string | null
           locked_by: string | null
           locked_reason: string | null
+          parts: number | null
           role: Database['public']['Enums']['member_role']
           role_source: string
           status: Database['public']['Enums']['member_status']
@@ -538,6 +539,7 @@ export type Database = {
           locked_at?: string | null
           locked_by?: string | null
           locked_reason?: string | null
+          parts?: number | null
           role?: Database['public']['Enums']['member_role']
           role_source?: string
           status?: Database['public']['Enums']['member_status']
@@ -556,6 +558,7 @@ export type Database = {
           locked_at?: string | null
           locked_by?: string | null
           locked_reason?: string | null
+          parts?: number | null
           role?: Database['public']['Enums']['member_role']
           role_source?: string
           status?: Database['public']['Enums']['member_status']
@@ -652,6 +655,138 @@ export type Database = {
             columns: ['user_id']
             isOneToOne: true
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      operations: {
+        Row: {
+          asset_name: string | null
+          broker_reference: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cash_delta: number
+          club_id: string
+          corrects_operation_id: string | null
+          created_at: string
+          currency: string | null
+          fx_rate: number | null
+          id: string
+          is_cancelled: boolean
+          membership_id: string | null
+          metadata: Json
+          notes: string | null
+          operation_date: string
+          part_price_at_settlement: number | null
+          parts_allocated: number | null
+          quantity: number | null
+          recorded_at: string
+          recorded_by: string | null
+          settlement_date: string | null
+          source: string
+          status: string
+          symbol: string | null
+          type: string
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          asset_name?: string | null
+          broker_reference?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cash_delta?: number
+          club_id: string
+          corrects_operation_id?: string | null
+          created_at?: string
+          currency?: string | null
+          fx_rate?: number | null
+          id?: string
+          is_cancelled?: boolean
+          membership_id?: string | null
+          metadata?: Json
+          notes?: string | null
+          operation_date: string
+          part_price_at_settlement?: number | null
+          parts_allocated?: number | null
+          quantity?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          settlement_date?: string | null
+          source?: string
+          status?: string
+          symbol?: string | null
+          type: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          asset_name?: string | null
+          broker_reference?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cash_delta?: number
+          club_id?: string
+          corrects_operation_id?: string | null
+          created_at?: string
+          currency?: string | null
+          fx_rate?: number | null
+          id?: string
+          is_cancelled?: boolean
+          membership_id?: string | null
+          metadata?: Json
+          notes?: string | null
+          operation_date?: string
+          part_price_at_settlement?: number | null
+          parts_allocated?: number | null
+          quantity?: number | null
+          recorded_at?: string
+          recorded_by?: string | null
+          settlement_date?: string | null
+          source?: string
+          status?: string
+          symbol?: string | null
+          type?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'operations_cancelled_by_fkey'
+            columns: ['cancelled_by']
+            isOneToOne: false
+            referencedRelation: 'memberships'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'operations_club_id_fkey'
+            columns: ['club_id']
+            isOneToOne: false
+            referencedRelation: 'clubs'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'operations_corrects_operation_id_fkey'
+            columns: ['corrects_operation_id']
+            isOneToOne: false
+            referencedRelation: 'operations'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'operations_membership_id_fkey'
+            columns: ['membership_id']
+            isOneToOne: false
+            referencedRelation: 'memberships'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'operations_recorded_by_fkey'
+            columns: ['recorded_by']
+            isOneToOne: false
+            referencedRelation: 'memberships'
             referencedColumns: ['id']
           },
         ]
@@ -1284,6 +1419,7 @@ export type Database = {
       }
       current_user_access_blocked: { Args: never; Returns: boolean }
       email_is_invited: { Args: { p_email: string }; Returns: boolean }
+      get_club_cash_balance: { Args: { p_club_id: string }; Returns: number }
       get_poll_results: { Args: { p_poll_id: string }; Returns: Json }
       get_user_club_ids: { Args: never; Returns: string[] }
       get_user_role_in_club: {
