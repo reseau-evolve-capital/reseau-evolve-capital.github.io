@@ -498,6 +498,12 @@ verify_jwt = false
 # Cible du cron horaire (Vault poll_closed_push_url) — push post-clôture.
 verify_jwt = false
 
+[functions.migrate-to-operations]
+# Migration legacy (cotisations + transactions) → operations. Déclencheur MANUEL network admin
+# avec le Bearer service-role ; la fonction vérifie elle-même la clé (verify_jwt=false car la
+# clé service-role est non-JWT et le gateway la rejetterait sinon — cf. dispatch-push).
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
