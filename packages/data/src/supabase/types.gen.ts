@@ -1410,6 +1410,10 @@ export type Database = {
         Args: { p_locked: boolean; p_membership_id: string; p_reason?: string }
         Returns: undefined
       }
+      cancel_operation: {
+        Args: { p_operation_id: string; p_reason: string }
+        Returns: undefined
+      }
       close_due_polls: {
         Args: never
         Returns: {
@@ -1420,6 +1424,17 @@ export type Database = {
       current_user_access_blocked: { Args: never; Returns: boolean }
       email_is_invited: { Args: { p_email: string }; Returns: boolean }
       get_club_cash_balance: { Args: { p_club_id: string }; Returns: number }
+      get_club_positions_from_ops: {
+        Args: { p_club_id: string }
+        Returns: {
+          asset_name: string
+          cash_invested: number
+          currency: string
+          last_unit_price: number
+          symbol: string
+          total_quantity: number
+        }[]
+      }
       get_poll_results: { Args: { p_poll_id: string }; Returns: Json }
       get_user_club_ids: { Args: never; Returns: string[] }
       get_user_role_in_club: {
@@ -1564,6 +1579,25 @@ export type Database = {
       record_attestation_ref: {
         Args: { p_membership_id: string; p_period: string; p_reference: string }
         Returns: undefined
+      }
+      record_operation: {
+        Args: {
+          p_asset_name?: string
+          p_broker_ref?: string
+          p_cash_delta: number
+          p_club_id: string
+          p_currency?: string
+          p_fx_rate?: number
+          p_membership_id?: string
+          p_metadata?: Json
+          p_notes?: string
+          p_operation_date: string
+          p_quantity?: number
+          p_symbol?: string
+          p_type: string
+          p_unit_price?: number
+        }
+        Returns: string
       }
       refresh_member_quote_part: { Args: never; Returns: undefined }
       submit_vote: {
