@@ -78,7 +78,15 @@ export function StepHeader({
 
       <span className="font-display text-[15px] font-bold text-text">{title}</span>
 
-      <div className="ml-auto flex items-center gap-3">
+      <div
+        role="progressbar"
+        aria-label={stepLabel}
+        aria-valuenow={safeStep}
+        aria-valuemin={1}
+        aria-valuemax={safeTotal}
+        aria-valuetext={stepLabel}
+        className="ml-auto flex items-center gap-3"
+      >
         <ol aria-label={stepLabel} className="flex items-center gap-1.5">
           {Array.from({ length: safeTotal }, (_, i) => {
             const n = i + 1

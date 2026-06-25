@@ -128,7 +128,7 @@ export function OperationCancelModal({
               aria-required="true"
               className={cn(
                 'mt-2 w-full resize-y rounded-md border border-border-strong bg-card px-[15px] py-[13px]',
-                'text-[14px] text-text placeholder:text-text-ter',
+                'text-[16px] md:text-[14px] text-text placeholder:text-text-ter',
                 'focus:border-brand-yellow focus:shadow-glow focus:outline-none'
               )}
             />

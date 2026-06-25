@@ -218,9 +218,7 @@ function BrokerBadge({ consistent, brokerName, onOpen }: BrokerReconciliation) {
     )
   }
 
-  return (
-    <div className={baseClass} aria-label={ariaLabel}>
-      {content}
-    </div>
-  )
+  // Non-interactif : pas d'aria-label sur le <div> (role implicite generic l'ignore,
+  // WCAG 4.1.2). Le texte visible (title + sub) porte déjà toute l'information.
+  return <div className={baseClass}>{content}</div>
 }

@@ -21,7 +21,7 @@ export function FilterChip({ label, value, onClick, className }: FilterChipProps
       type="button"
       onClick={onClick}
       className={cn(
-        'inline-flex min-h-10 items-center gap-1.5 rounded-pill border border-border-strong bg-card px-3.5',
+        'inline-flex min-h-11 items-center gap-1.5 rounded-pill border border-border-strong bg-card px-3.5',
         'text-text transition-colors duration-150 hover:border-text-ter',
         'focus-visible:outline-none focus-visible:shadow-glow',
         className

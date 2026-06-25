@@ -46,6 +46,8 @@ export interface OperationDetail {
 
 export interface OperationDetailLabels {
   close?: string
+  /** Description accessible (sr-only) du panneau (Radix aria-describedby). */
+  description?: string
   impactCaption?: string
   cancelledImpactNote?: string
   rowDate?: string
@@ -74,6 +76,7 @@ export interface OperationDetailDrawerProps {
 
 const DEFAULTS: Required<OperationDetailLabels> = {
   close: 'Fermer',
+  description: "Détail et options de l'opération sélectionnée.",
   impactCaption: 'Impact sur le solde',
   cancelledImpactNote: 'Ne compte plus dans le solde du club.',
   rowDate: 'Date',
@@ -108,6 +111,7 @@ export function OperationDetailDrawer({
 }: OperationDetailDrawerProps) {
   const t = { ...DEFAULTS, ...labels }
   const titleId = React.useId()
+  const descId = React.useId()
 
   if (!operation) return null
 
@@ -122,12 +126,16 @@ export function OperationDetailDrawer({
         <Dialog.Overlay className="fixed inset-0 z-[70] bg-[var(--overlay)] motion-safe:animate-in motion-safe:fade-in" />
         <Dialog.Content
           aria-labelledby={titleId}
+          aria-describedby={descId}
           className={cn(
             'fixed right-0 top-0 z-[70] flex h-full w-[440px] max-w-[calc(100vw-1rem)] flex-col',
             'border-l border-border bg-card shadow-modal focus:outline-none',
             'motion-safe:animate-in motion-safe:slide-in-from-right'
           )}
         >
+          <Dialog.Description id={descId} className="sr-only">
+            {t.description}
+          </Dialog.Description>
           {/* En-tête */}
           <div className="flex items-center gap-3 border-b border-border px-6 py-5">
             <OpChip type={operation.type} size={44} cancelled={isCancelled} />
