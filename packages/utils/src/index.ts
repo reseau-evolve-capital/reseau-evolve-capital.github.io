@@ -2,6 +2,8 @@ export {
   formatCurrency,
   currencySymbol,
   formatEUR,
+  formatEURWhole,
+  signedEURWhole,
   formatPct,
   formatDate,
   formatDateLong,

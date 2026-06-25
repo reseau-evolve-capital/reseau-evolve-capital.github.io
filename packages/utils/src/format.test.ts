@@ -3,6 +3,8 @@ import {
   formatCurrency,
   currencySymbol,
   formatEUR,
+  formatEURWhole,
+  signedEURWhole,
   formatPct,
   formatDate,
   formatDateLong,
@@ -113,6 +115,43 @@ describe('currencySymbol', () => {
   })
   it('devise inconnue : retourne le code tel quel', () => {
     expect(currencySymbol('ZZZ')).toBe('ZZZ')
+  })
+})
+
+describe('formatEURWhole', () => {
+  it('arrondit à 0 décimale et ne montre pas de centimes', () => {
+    const r = formatEURWhole(86260)
+    expect(r).toContain('86')
+    expect(r).toContain('260')
+    expect(r).toContain('€')
+    expect(r).not.toContain(',')
+  })
+  it('null / NaN / Infinity → "—"', () => {
+    expect(formatEURWhole(null)).toBe('—')
+    expect(formatEURWhole(undefined)).toBe('—')
+    expect(formatEURWhole(NaN)).toBe('—')
+    expect(formatEURWhole(Infinity)).toBe('—')
+  })
+})
+
+describe('signedEURWhole', () => {
+  it('positif → préfixe "+"', () => {
+    expect(signedEURWhole(300).startsWith('+')).toBe(true)
+    expect(signedEURWhole(300)).toContain('300')
+  })
+  it('négatif → préfixe MINUS U+2212 (jamais U+002D)', () => {
+    const r = signedEURWhole(-24800)
+    expect(r.startsWith('−')).toBe(true)
+    expect(r.startsWith('-')).toBe(false)
+    expect(r).toContain('24')
+    expect(r).toContain('800')
+  })
+  it('zéro → "+" neutre', () => {
+    expect(signedEURWhole(0).startsWith('+')).toBe(true)
+  })
+  it('null / NaN → "—"', () => {
+    expect(signedEURWhole(null)).toBe('—')
+    expect(signedEURWhole(NaN)).toBe('—')
   })
 })
 

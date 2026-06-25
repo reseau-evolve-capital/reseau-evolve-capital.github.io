@@ -73,6 +73,45 @@ export function formatEUR(
   return formatCurrency(value, 'EUR', locale)
 }
 
+/** 86260 → "86 260 €" (FR) · "€86,260" (en-US). Montant EUR ARRONDI, 0 décimale.
+ *  Réservé aux montants « gros chiffres » (solde espèces, deltas cash du module
+ *  Opérations) où les centimes sont du bruit. null / NaN / Infinity → "—". */
+export function formatEURWhole(
+  value: number | null | undefined,
+  locale: string = DEFAULT_LOCALE
+): string {
+  if (value == null || !isValid(value)) return FALLBACK
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value)
+  } catch {
+    return (
+      new Intl.NumberFormat(locale, { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(
+        value
+      ) + ' EUR'
+    )
+  }
+}
+
+/** 300 → "+300 €", -24800 → "−24 800 €", 0 → "+0 €". Montant EUR SIGNÉ, 0 décimale.
+ *  Signe explicite (MINUS U+2212 pour le négatif, NBSP géré par formatEURWhole).
+ *  0 reçoit le signe "+" par défaut (neutre côté couleur, cf. CashDeltaBadge).
+ *  Le `+` est posé manuellement (Intl ne préfixe pas en style currency). null/NaN → "—". */
+export function signedEURWhole(
+  value: number | null | undefined,
+  locale: string = DEFAULT_LOCALE
+): string {
+  if (value == null || !isValid(value)) return FALLBACK
+  const body = formatEURWhole(Math.abs(value), locale)
+  if (body === FALLBACK) return FALLBACK
+  const sign = value < 0 ? '−' : '+'
+  return `${sign}${body}`
+}
+
 /** 0.0123 → "+1,23 %" (FR) · "+1.23%" (en-US). Signe par défaut. */
 export function formatPct(value: number, opts?: { showSign?: boolean; locale?: string }): string {
   if (!isValid(value)) return FALLBACK

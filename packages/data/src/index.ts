@@ -33,11 +33,21 @@ export type {
   DispatchResult,
 } from './notifications/index.ts'
 // Opérations (migration 057, OPS-107) — helpers de lecture RLS + DTO strict
-export { getClubCashBalance, listRecentOperations, mapOperationRow } from './operations/index.ts'
+export {
+  getClubCashBalance,
+  listRecentOperations,
+  listOperations,
+  getClubPositionsFromOps,
+  mapOperationRow,
+  mapOperationPositionRow,
+} from './operations/index.ts'
 export type {
   Operation,
   OperationRow,
   OperationType,
   OperationStatus,
   OperationSource,
+  OperationPosition,
+  OperationPositionRow,
+  ListOperationsOptions,
 } from './operations/index.ts'

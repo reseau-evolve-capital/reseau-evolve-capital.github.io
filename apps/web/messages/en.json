@@ -749,7 +749,10 @@
       "membersTitle": "Members — Admin Evolve Capital",
       "invitationsTitle": "Invitations — Evolve Capital Admin",
       "settingsTitle": "Club settings — Evolve Capital Admin",
-      "verificationTitle": "Migration verification — Evolve Capital Admin"
+      "verificationTitle": "Migration verification — Evolve Capital Admin",
+      "operationsTitle": "Operations — Evolve Capital Admin",
+      "operationsAllTitle": "All operations — Evolve Capital Admin",
+      "newOperationTitle": "New operation — Evolve Capital Admin"
     },
     "tabs": {
       "dashboard": "Dashboard",
@@ -898,6 +901,156 @@
           "title": "Verification unavailable",
           "description": "Unable to load comparison data. Please try again later."
         }
+      },
+      "dashboard": {
+        "caption": "Evolve Capital · Treasury",
+        "title": "Operations",
+        "cash": {
+          "caption": "Cash balance",
+          "info": "Cash available on the club account, excluding held securities.",
+          "infoLabel": "What is the cash balance?",
+          "emptyHint": "Record a first operation to compute the club's cash balance.",
+          "computedAt": "Up to date"
+        },
+        "quickActions": {
+          "caption": "Quick actions",
+          "contribution": "Contribution",
+          "buy": "Buy",
+          "sell": "Sell",
+          "dividend": "Dividend"
+        },
+        "settlement": {
+          "title": "Contributions to settle",
+          "subtitle": "Distribute shares from collected contributions to the portfolio.",
+          "cta": "Process now"
+        },
+        "recent": {
+          "title": "Latest operations",
+          "viewAll": "view all",
+          "emptyTitle": "No operations yet",
+          "emptyText": "Deposits, buys, sells and other movements will appear here after the first entry.",
+          "emptyCta": "Record the first one"
+        }
+      },
+      "form": {
+        "back": "Operations",
+        "title": "New operation",
+        "step1": {
+          "caption": "Step 1 · Operation type",
+          "title": "Which operation do you want to record?",
+          "intro": "Pick the type to adapt the fields. You'll see the impact on the cash balance before confirming."
+        },
+        "step2": {
+          "caption": "Step 2 · Operation details",
+          "changeType": "Change type"
+        },
+        "fields": {
+          "member": "Member",
+          "amount": "Amount",
+          "date": "Date",
+          "transferRef": "Transfer reference",
+          "notes": "Notes",
+          "symbol": "Security",
+          "assetName": "Security name",
+          "quantity": "Quantity",
+          "unitPrice": "Unit price",
+          "currency": "Currency",
+          "brokerRef": "Broker reference",
+          "optional": "Optional",
+          "memberPlaceholder": "Select a member"
+        },
+        "submit": "Record operation",
+        "cashCaption": "Impact on cash balance",
+        "step3": {
+          "successTitle": "Operation recorded",
+          "newBalanceCaption": "New cash balance",
+          "viewOperations": "View operations",
+          "newOperation": "New operation"
+        },
+        "toast": {
+          "successTitle": "Operation recorded",
+          "successMessage": "It now appears in the operations list."
+        }
+      },
+      "list": {
+        "caption": "Evolve Capital · Treasury · Operations",
+        "title": "All operations",
+        "newOperation": "+ New operation",
+        "sortLabel": "Sorted by date",
+        "loadMore": "Load more",
+        "filters": {
+          "type": "Type",
+          "allTypes": "All",
+          "member": "Member",
+          "allMembers": "All",
+          "period": "Period"
+        },
+        "periods": {
+          "6m": "Last 6 months",
+          "3m": "Last 3 months",
+          "12m": "Last 12 months",
+          "all": "All time"
+        },
+        "empty": {
+          "title": "No operations recorded",
+          "text": "Deposits, buys, sells and other cash movements will appear here after the first entry.",
+          "cta": "+ Record the first one"
+        },
+        "detail": {
+          "close": "Close",
+          "description": "Details and options for the selected operation.",
+          "impactCaption": "Impact on balance",
+          "cancelledImpactNote": "No longer counts in the club balance.",
+          "rowDate": "Date",
+          "rowType": "Type",
+          "rowRef": "Reference",
+          "rowSource": "Source",
+          "rowDetail": "Detail",
+          "sourceManual": "Manual entry",
+          "sourceMigrated": "Migrated (matrix)",
+          "cancelReasonCaption": "Cancellation reason",
+          "cancelButton": "Cancel operation",
+          "settledWarning": "Settled operation (shares distributed) — use a correction, not a cancellation.",
+          "cancelledFooter": "Operation cancelled — kept for the record."
+        },
+        "cancel": {
+          "title": "Cancel this operation?",
+          "summary": "Operation {label} · {amount} will no longer count in the balance. It stays visible in history, struck through, with its reason.",
+          "reasonLabel": "Cancellation reason",
+          "reasonPlaceholder": "e.g. Duplicate entry, wrong amount…",
+          "reasonHint": "Required — kept in the operation's trace.",
+          "keepButton": "Keep operation",
+          "confirmButton": "Confirm cancellation",
+          "close": "Close",
+          "toastTitle": "Operation cancelled",
+          "toastMessage": "It stays visible in history, struck through."
+        }
+      },
+      "types": {
+        "contribution": "Contribution",
+        "buy": "Buy",
+        "sell": "Sell",
+        "dividend_cash": "Dividend",
+        "fee": "Fee",
+        "penalty": "Penalty",
+        "member_exit": "Member exit",
+        "dividend_stock": "Stock dividend",
+        "capital_call": "Capital call",
+        "distribution": "Distribution",
+        "valuation": "Valuation",
+        "correction": "Correction"
+      },
+      "errors": {
+        "recordTitle": "Could not record",
+        "cancelTitle": "Could not cancel",
+        "forbidden": "You don't have permission for this action.",
+        "invalid": "Invalid data. Check the fields.",
+        "unauthorized": "Session expired. Please sign in again.",
+        "unknown": "Something went wrong. Try again in a moment."
+      },
+      "settlement": {
+        "comingSoonTitle": "Contribution settlement — coming soon",
+        "comingSoonText": "Distributing shares from collected contributions is coming in a future update."
       }
     }
   },

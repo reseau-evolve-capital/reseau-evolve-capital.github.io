@@ -442,3 +442,34 @@ Migrations attribuées : **050** `clubs.is_active` (NET-018) · **051** `feedbac
 **Écran livré** : `/admin/operations/verify` (OPS-106) — onglet AdminTabs `operations` (icône `ArrowLeftRight`). Composant présentationnel `MigrationVerifyTable` (`@evolve/ui`, organism, 0 dép `@evolve/data`). Tableau 3 métriques (solde espèces / nb cotisations / nb transactions) legacy vs operations + delta ✓/✗ ; delta non-nul en token `data-negative` (jamais `#E93E3A`). i18n `admin.operations.verification.*` (fr+en, parité OK). Scoping : trésorier = son club, network admin = clubs `is_active AND sheet_id NOT NULL` via `network_list_clubs()`. Pas de réf Claude Design (utilitaire fonctionnel). **Reste runtime owner** : vérif light/dark + RLS trésorier/network-admin/membre après migrations 057-059 appliquées + seed.
 
 **Clôture vague E-OPS-1** (2026-06-25) : 9 commits sur `feat/e-ops-1-operations-foundation` (OPS-101→107 + fix a11y). QA → PASS après 1 correctif (titre `<h2>`→`<Heading h1>`, RGAA 9.1). Détails : `docs/qa/QA_REPORT_2026-06-25.md`. Mécanisme de migration prouvé local (idempotence runtime + delta=0 sur fixture convergente, delta=−5000 € documenté sur fixture « solde d'ouverture ») ; convergence €-réelle = action owner prod (rapport `docs/audits/migration-operations-2026-06-25.md`).
+
+---
+
+## E-OPS-2 — Saisie & annulation trésorier (LIVRÉ 2026-06-26, branche `feat/e-ops-2-saisie-tresorier`)
+
+**Décisions owner (Phase 0)** :
+
+- **Cotisation < `clubs.min_contribution`** : **WARN, pas reject**. `record_operation` accepte (validation min_contribution volontairement absente de la RPC) ; l'UI affiche un hint d'avertissement NON bloquant sous le champ Montant.
+- **Designs « Quotes-parts & Réglages » et « Cotisations - Settlement » (trésorier)** = **référence E-OPS-4** (hors périmètre cette vague). La carte « Traiter maintenant » du dashboard pointe vers un placeholder `ComingSoon`. L'existant cotisations n'est pas touché (additif uniquement, conformément à la consigne owner).
+
+**Arbitrages LEAD (conventions repo / convergence)** :
+
+- **Migration 060** `060_operations_rpc_write.sql` : `record_operation` (VOLATILE), `cancel_operation`, `get_club_positions_from_ops`. Toutes SECURITY DEFINER + `REVOKE ALL FROM public` + `GRANT EXECUTE TO authenticated, service_role` + garde `is_club_staff` (record/cancel) ou lecture fail-closed `get_user_club_ids()` (positions).
+- **Audit double trace** (assumé) : la RPC journalise l'audit canonique DB via `log_audit_event('record_operation'|'cancel_operation', …)` ; les Server Actions ajoutent en plus la trace app-layer `withAudit('operation.record'|'operation.cancel')` (convention repo). Noms d'action distincts → non confondus.
+- **cancel_operation** : refus si `parts_allocated IS NOT NULL` (op settlée → passer par une correction), refus si déjà annulée, **motif obligatoire**. UI : bouton « Annuler » désactivé pour une op settlée.
+- **get_club_positions_from_ops** : qty agrégée (buy + dividend_stock − sell), `HAVING > 0` (exclut positions soldées), dernier prix via `buy/sell/valuation` la plus récente hors annulées.
+- **Statut « settled »** dérivé de `parts_allocated > 0` (heuristique V0, `apps/web/lib/data/operations.ts`) — à valider sur données migrées réelles.
+- **Filtres OPS-205** : Type + **Membre** (membres actifs) + **Période** (presets 6m défaut / 3m / 12m / tout → `from`/`to`) câblés. Date-picker complet reporté (presets suffisent à la convergence ; `listOperations` supporte déjà `from/to/membershipId`).
+- Tests RPC SQL `supabase/tests/operations_rpc.sql` (11 assertions, jouées via psql — le gate `make test` ne joue NI Deno NI SQL NI e2e). 2 bugs de FIXTURE corrigés (UPDATE `parts_allocated` bloqué par RLS sous role authenticated → pré-setup privilégié ; lecture `audit_log` RLS-réservée réseau → caller rattaché au réseau le temps de la transaction ROLLBACK). Les RPC elles-mêmes étaient correctes.
+
+| Écran / route                        | Ticket  | Réf maquette                            | Conformité light/dark |
+| ------------------------------------ | ------- | --------------------------------------- | --------------------- |
+| `/admin/operations` (dashboard P0-a) | OPS-206 | Operations - Saisie (P0-a)              | ✅ ~97 %              |
+| `/admin/operations/nouvelle` (P0-b)  | OPS-204 | Operations - Saisie (P0-b, 3 étapes)    | ✅ ~97 %              |
+| `/admin/operations/toutes` (liste)   | OPS-205 | Operations - Liste & annulation         | ✅ ~97 %              |
+| Drawer détail + modale annulation    | OPS-205 | Operations - Liste & annulation (205-b) | ✅ ~97 %              |
+| `/admin/operations/settlement`       | —       | (placeholder ComingSoon, E-OPS-4)       | n/a                   |
+
+**QA** (`docs/qa/QA_REPORT_2026-06-26_E-OPS-2.md`) : FAIL initial (1 bloquant a11y textarea iOS + 2 majeurs + convergence 96 %) → **PASS après correctifs** (textarea `text-[16px] md:text-[14px]`, FilterChip 44px, aria CashBalanceCard, Dialog.Description, StepHeader `progressbar`, props horodatage + filtres Membre/Période) → convergence ≥97 %. E2E 7/7 (saisie 3 ops→solde, non-staff→403, isolation cross-club, annulation→ligne barrée, op settlée non annulable). Sécurité : aucune fuite cross-club, jamais de service-role dans apps/web.
+
+**Reste owner** : appliquer migration **060** en prod (`db-migrate`) ; vérif runtime light/dark sur vrai device ; merge PR.

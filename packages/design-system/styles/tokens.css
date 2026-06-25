@@ -49,6 +49,13 @@
      Réservé au TEXTE (ex. Badge warning) ; l'ambre vif --data-warning reste pour icônes/bordures. */
   --data-warning-strong: #92400E;
 
+  /* Dividende (module Opérations) — tint jaune de marque, invariant light/dark.
+     Le TEXTE/icône change de couleur entre light/dark (cf. --data-dividend-fg) :
+     reproduit le comportement de la classe `.op-chip-div` du standalone E-OPS-2. */
+  --data-dividend-50: color-mix(in srgb, var(--brand-yellow) 14%, transparent);
+  --data-dividend-tag-50: color-mix(in srgb, var(--brand-yellow) 16%, transparent);
+  --data-dividend-fg: var(--accent-ink);
+
   /* Semantic — light mode */
   --bg: var(--n-50);
   --bg-page: var(--n-100);
@@ -120,4 +127,8 @@
   /* En sombre, le texte rouge dataviz doit être CLAIR (lisible sur fond foncé) :
      #FCA5A5 sur --card (#1A1718) ≈ 7.2:1 (AAA). */
   --data-negative-strong: #FCA5A5;
+
+  /* Dividende : en sombre le texte/icône passe au jaune de marque (lisible sur fond
+     foncé), au lieu de --accent-ink (sombre). Piège `.op-chip-div` du standalone. */
+  --data-dividend-fg: var(--brand-yellow);
 }
