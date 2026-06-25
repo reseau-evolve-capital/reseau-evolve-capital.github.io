@@ -18,6 +18,7 @@ import {
   type OperationFilter,
 } from '@evolve/ui'
 import type { OperationType } from '@evolve/data'
+import type { ActiveMemberOption } from '@/lib/data/operations'
 import { cancelOperationAction } from '../actions'
 import { errorMessageKey } from '../errorKeys'
 
@@ -32,21 +33,44 @@ const TYPE_CYCLE: ReadonlyArray<OperationType | null> = [
   'penalty',
 ]
 
+/**
+ * Presets de période → nombre de mois en arrière (`null` = tout l'historique).
+ * Le calcul de la borne `from` se fait côté serveur (page.tsx) à partir de cette clé.
+ */
+export const PERIOD_PRESETS = {
+  '6m': 6,
+  '3m': 3,
+  '12m': 12,
+  all: null,
+} as const
+
+export type PeriodKey = keyof typeof PERIOD_PRESETS
+
+/** Cycle de filtre Période : 6 mois → 3 mois → 12 mois → tout → 6 mois. */
+const PERIOD_CYCLE: ReadonlyArray<PeriodKey> = ['6m', '3m', '12m', 'all']
+
 export function OperationsListView({
   operations,
   details,
   hasMore,
   page,
   activeType,
+  members,
+  activeMembershipId,
+  activePeriod,
 }: {
   operations: OperationListItemData[]
   details: OperationDetail[]
   hasMore: boolean
   page: number
   activeType: OperationType | null
+  members: ActiveMemberOption[]
+  activeMembershipId: string | null
+  activePeriod: PeriodKey
 }) {
   const t = useTranslations('admin.operations.list')
   const tType = useTranslations('admin.operations.types')
+  const tPeriod = useTranslations('admin.operations.list.periods')
   const tErr = useTranslations('admin.operations.errors')
   const toast = useToast()
   const router = useRouter()
@@ -59,9 +83,12 @@ export function OperationsListView({
   const selected = details.find((d) => d.id === selectedId) ?? null
 
   // Navigation pilotée par l'URL (le RSC relit avec les nouveaux filtres / la nouvelle page).
+  // On repart des filtres actifs courants pour que chaque chip soit indépendant.
   const pushParams = (mutate: (p: URLSearchParams) => void) => {
     const params = new URLSearchParams()
     if (activeType) params.set('type', activeType)
+    if (activeMembershipId) params.set('membre', activeMembershipId)
+    if (activePeriod !== '6m') params.set('periode', activePeriod)
     mutate(params)
     const qs = params.toString()
     startTransition(() =>
@@ -79,11 +106,46 @@ export function OperationsListView({
     })
   }
 
+  // Cycle membre : tous → membre 1 → … → dernier → tous (l'appelant n'a qu'un chip déclaratif).
+  const cycleMember = () => {
+    if (members.length === 0) return
+    const idx = members.findIndex((m) => m.id === activeMembershipId)
+    const next = idx + 1 >= members.length ? null : members[idx + 1]
+    pushParams((p) => {
+      p.delete('page')
+      if (next) p.set('membre', next.id)
+      else p.delete('membre')
+    })
+  }
+
+  const cyclePeriod = () => {
+    const idx = PERIOD_CYCLE.indexOf(activePeriod)
+    const next = PERIOD_CYCLE[(idx + 1) % PERIOD_CYCLE.length] ?? '6m'
+    pushParams((p) => {
+      p.delete('page')
+      if (next !== '6m') p.set('periode', next)
+      else p.delete('periode')
+    })
+  }
+
+  const activeMemberLabel =
+    members.find((m) => m.id === activeMembershipId)?.label ?? t('filters.allMembers')
+
   const filters: OperationFilter[] = [
     {
       key: 'type',
       label: t('filters.type'),
       value: activeType ? tType(activeType) : t('filters.allTypes'),
+    },
+    {
+      key: 'member',
+      label: t('filters.member'),
+      value: activeMemberLabel,
+    },
+    {
+      key: 'period',
+      label: t('filters.period'),
+      value: tPeriod(activePeriod),
     },
   ]
 
@@ -114,6 +176,8 @@ export function OperationsListView({
         onNewOperation={() => router.push('/admin/operations/nouvelle')}
         onFilterClick={(key) => {
           if (key === 'type') cycleType()
+          else if (key === 'member') cycleMember()
+          else if (key === 'period') cyclePeriod()
         }}
         hasMore={hasMore}
         onLoadMore={() => pushParams((p) => p.set('page', String(page + 1)))}
@@ -139,6 +203,7 @@ export function OperationsListView({
         onCancelRequest={() => setCancelOpen(true)}
         labels={{
           close: t('detail.close'),
+          description: t('detail.description'),
           impactCaption: t('detail.impactCaption'),
           cancelledImpactNote: t('detail.cancelledImpactNote'),
           rowDate: t('detail.rowDate'),

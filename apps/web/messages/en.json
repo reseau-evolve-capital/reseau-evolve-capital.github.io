@@ -909,7 +909,8 @@
           "caption": "Cash balance",
           "info": "Cash available on the club account, excluding held securities.",
           "infoLabel": "What is the cash balance?",
-          "emptyHint": "Record a first operation to compute the club's cash balance."
+          "emptyHint": "Record a first operation to compute the club's cash balance.",
+          "computedAt": "Up to date"
         },
         "quickActions": {
           "caption": "Quick actions",
@@ -979,7 +980,16 @@
         "loadMore": "Load more",
         "filters": {
           "type": "Type",
-          "allTypes": "All"
+          "allTypes": "All",
+          "member": "Member",
+          "allMembers": "All",
+          "period": "Period"
+        },
+        "periods": {
+          "6m": "Last 6 months",
+          "3m": "Last 3 months",
+          "12m": "Last 12 months",
+          "all": "All time"
         },
         "empty": {
           "title": "No operations recorded",
@@ -988,6 +998,7 @@
         },
         "detail": {
           "close": "Close",
+          "description": "Details and options for the selected operation.",
           "impactCaption": "Impact on balance",
           "cancelledImpactNote": "No longer counts in the club balance.",
           "rowDate": "Date",

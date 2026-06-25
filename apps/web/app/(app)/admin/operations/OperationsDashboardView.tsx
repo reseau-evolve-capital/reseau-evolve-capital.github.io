@@ -63,6 +63,7 @@ export function OperationsDashboardView({
         infoText={t('cash.info')}
         infoLabel={t('cash.infoLabel')}
         emptyHint={t('cash.emptyHint')}
+        computedAtLabel={isEmpty ? undefined : t('cash.computedAt')}
       />
 
       {/* Actions rapides */}

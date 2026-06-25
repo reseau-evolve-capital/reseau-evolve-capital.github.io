@@ -909,7 +909,8 @@
           "caption": "Solde espèces",
           "info": "Argent disponible sur le compte du club, hors titres détenus.",
           "infoLabel": "Qu'est-ce que le solde espèces ?",
-          "emptyHint": "Enregistre une première opération pour calculer le solde espèces du club."
+          "emptyHint": "Enregistre une première opération pour calculer le solde espèces du club.",
+          "computedAt": "À jour"
         },
         "quickActions": {
           "caption": "Actions rapides",
@@ -979,7 +980,16 @@
         "loadMore": "Voir plus",
         "filters": {
           "type": "Type",
-          "allTypes": "Tous"
+          "allTypes": "Tous",
+          "member": "Membre",
+          "allMembers": "Tous",
+          "period": "Période"
+        },
+        "periods": {
+          "6m": "6 derniers mois",
+          "3m": "3 derniers mois",
+          "12m": "12 derniers mois",
+          "all": "Tout l'historique"
         },
         "empty": {
           "title": "Aucune opération enregistrée",
@@ -988,6 +998,7 @@
         },
         "detail": {
           "close": "Fermer",
+          "description": "Détail et options de l'opération sélectionnée.",
           "impactCaption": "Impact sur le solde",
           "cancelledImpactNote": "Ne compte plus dans le solde du club.",
           "rowDate": "Date",
