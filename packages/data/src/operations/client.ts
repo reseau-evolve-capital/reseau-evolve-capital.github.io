@@ -1,7 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '../supabase/types.gen.ts'
 import { mapOperationRow } from './mappers/operation.mapper.ts'
-import type { Operation } from './types.ts'
+import { mapOperationPositionRow } from './mappers/position.mapper.ts'
+import type { Operation, OperationPosition, OperationType } from './types.ts'
 
 /**
  * Client Opérations (OPS-107) — fines enveloppes de lecture typées autour de la table
@@ -46,4 +47,66 @@ export async function listRecentOperations(
     .limit(limit)
   if (error || data == null) return []
   return data.map(mapOperationRow)
+}
+
+/** Filtres et pagination de `listOperations`. */
+export interface ListOperationsOptions {
+  /** Restreint aux types donnés (CHECK operations.type). Vide/absent = tous. */
+  types?: OperationType[]
+  /** Restreint à un membre (membership_id). `null` ou absent = tous membres. */
+  membershipId?: string | null
+  /** Borne basse incluse sur operation_date (date ISO `YYYY-MM-DD`). */
+  from?: string
+  /** Borne haute incluse sur operation_date (date ISO `YYYY-MM-DD`). */
+  to?: string
+  /** Taille de page (défaut 50). */
+  limit?: number
+  /** Décalage de pagination (défaut 0). */
+  offset?: number
+}
+
+/**
+ * Liste filtrée et paginée des opérations d'un club (OPS-205).
+ *
+ * Filtre par club_id, puis applique les filtres optionnels (type IN, membership_id,
+ * borne basse/haute sur operation_date). Tri operation_date DESC puis recorded_at DESC.
+ * Pagination via `.range(offset, offset + limit - 1)`. Chaque ligne est normalisée via
+ * `mapOperationRow`. Renvoie `[]` en cas d'erreur (fail-closed, cf. listRecentOperations).
+ */
+export async function listOperations(
+  supabase: SupabaseClient<Db>,
+  clubId: string,
+  opts: ListOperationsOptions = {}
+): Promise<Operation[]> {
+  const limit = opts.limit ?? 50
+  const offset = opts.offset ?? 0
+
+  let query = supabase.from('operations').select('*').eq('club_id', clubId)
+
+  if (opts.types && opts.types.length > 0) query = query.in('type', opts.types)
+  if (opts.membershipId != null) query = query.eq('membership_id', opts.membershipId)
+  if (opts.from) query = query.gte('operation_date', opts.from)
+  if (opts.to) query = query.lte('operation_date', opts.to)
+
+  const { data, error } = await query
+    .order('operation_date', { ascending: false })
+    .order('recorded_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error || data == null) return []
+  return data.map(mapOperationRow)
+}
+
+/**
+ * Positions agrégées du club dérivées des opérations buy/sell via la RPC
+ * `get_club_positions_from_ops` (migration 060). Chaque ligne est normalisée via
+ * `mapOperationPositionRow` (défensif, jamais NaN/undefined). Renvoie `[]` si erreur.
+ */
+export async function getClubPositionsFromOps(
+  supabase: SupabaseClient<Db>,
+  clubId: string
+): Promise<OperationPosition[]> {
+  const { data, error } = await supabase.rpc('get_club_positions_from_ops', { p_club_id: clubId })
+  if (error || data == null) return []
+  return data.map(mapOperationPositionRow)
 }

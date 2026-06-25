@@ -83,3 +83,25 @@ export interface Operation {
   correctsOperationId: string | null
   metadata: Record<string, unknown>
 }
+
+/** Ligne brute de la RPC `get_club_positions_from_ops` (positions agrégées depuis les ops). */
+export type OperationPositionRow =
+  Database['public']['Functions']['get_club_positions_from_ops']['Returns'][number]
+
+/**
+ * Position agrégée d'un titre, dérivée des opérations buy/sell (RPC
+ * `get_club_positions_from_ops`, migration 060). Sortie du mapper : camelCase, défensif.
+ *
+ * Conventions (CLAUDE.md « jamais de NaN/undefined à l'écran ») :
+ *   - `totalQuantity` / `cashInvested` : toujours un `number` fini (fallback 0) ;
+ *   - `lastUnitPrice` : `number` fini ou `null` si absent/non numérique ;
+ *   - `assetName` : `null` propre si absent ; `symbol` / `currency` : `string` (fallback '').
+ */
+export interface OperationPosition {
+  symbol: string
+  assetName: string | null
+  currency: string
+  totalQuantity: number
+  lastUnitPrice: number | null
+  cashInvested: number
+}

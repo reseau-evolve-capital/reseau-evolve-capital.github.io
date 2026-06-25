@@ -3,12 +3,21 @@
 // Expose les helpers de lecture RLS (solde de trésorerie + opérations récentes),
 // le mapper row → DTO, et les types métier.
 
-export { getClubCashBalance, listRecentOperations } from './client.ts'
+export {
+  getClubCashBalance,
+  listRecentOperations,
+  listOperations,
+  getClubPositionsFromOps,
+} from './client.ts'
+export type { ListOperationsOptions } from './client.ts'
 export { mapOperationRow } from './mappers/operation.mapper.ts'
+export { mapOperationPositionRow } from './mappers/position.mapper.ts'
 export type {
   Operation,
   OperationRow,
   OperationType,
   OperationStatus,
   OperationSource,
+  OperationPosition,
+  OperationPositionRow,
 } from './types.ts'
