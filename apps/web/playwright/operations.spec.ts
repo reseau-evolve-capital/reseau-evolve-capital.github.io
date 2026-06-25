@@ -21,6 +21,10 @@
  *     (postgres direct, bypass RLS) pour le seeding des fixtures de test.
  *   - parts_allocated NULL → opération annulable ; IS NOT NULL → non annulable.
  *   - Le membre de seed est identifié par EMAIL (robuste au re-key GoTrue handle_new_user).
+ *   - FLOW-A : user_is_staff() vérifie ANY club. Une contamination cross-spec (ex. votes.spec
+ *     élève le seed en president dans Club Votes E2E) peut rendre user_is_staff()=true même si
+ *     SEED_CLUB_ID est 'member'. On utilise downgradeAllSeedMemberships() pour couvrir tous les
+ *     clubs le temps du test, puis restoreSeedMembershipRoles() pour restituer.
  *
  * Réf : E-OPS-2, actions.ts (mapPgError : 42501→forbidden), migrations 057/060.
  */
@@ -67,6 +71,52 @@ async function setSeedRole(role: 'member' | 'treasurer'): Promise<void> {
        WHERE club_id = ${SEED_CLUB_ID}::uuid
          AND user_id IN (SELECT id FROM users WHERE email = ${SEED_EMAIL})
     `
+  })
+}
+
+/**
+ * Downgrade TOUS les memberships staff du seed en 'member' sur l'ensemble des clubs.
+ * Retourne un snapshot [{club_id, role}] pour restauration dans le finally.
+ *
+ * Nécessaire pour FLOW-A : user_is_staff() vérifie ANY club (pas seulement SEED_CLUB_ID).
+ * Sans ce downgrade global, un membership résiduel 'president' dans un autre club (ex. Club
+ * Votes E2E laissé par votes.spec) rend user_is_staff()=true et la redirection échoue.
+ */
+async function downgradeAllSeedMemberships(): Promise<Array<{ club_id: string; role: string }>> {
+  return await withDb(async (sql) => {
+    const rows = await sql<{ club_id: string; role: string }>`
+      SELECT m.club_id::text, m.role::text
+        FROM memberships m
+        JOIN users u ON u.id = m.user_id
+       WHERE lower(u.email) = ${SEED_EMAIL.toLowerCase()}
+         AND m.role IN ('treasurer', 'president', 'network_admin')
+    `
+    if (rows.length > 0) {
+      await sql`
+        UPDATE memberships
+           SET role = 'member'::member_role
+         WHERE user_id IN (SELECT id FROM users WHERE lower(email) = ${SEED_EMAIL.toLowerCase()})
+           AND role IN ('treasurer', 'president', 'network_admin')
+      `
+    }
+    return rows
+  })
+}
+
+/** Restaure les rôles d'un snapshot produit par downgradeAllSeedMemberships(). */
+async function restoreSeedMembershipRoles(
+  snapshot: Array<{ club_id: string; role: string }>
+): Promise<void> {
+  if (snapshot.length === 0) return
+  await withDb(async (sql) => {
+    for (const { club_id, role } of snapshot) {
+      await sql`
+        UPDATE memberships
+           SET role = ${role}::member_role
+         WHERE club_id = ${club_id}::uuid
+           AND user_id IN (SELECT id FROM users WHERE lower(email) = ${SEED_EMAIL.toLowerCase()})
+      `
+    }
   })
 }
 
@@ -172,7 +222,9 @@ test.afterAll(async () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 test('FLOW-A : membre non-staff → /admin/operations redirigé /dashboard', async ({ page }) => {
-  await setSeedRole('member')
+  // Downgrade TOUS les memberships du seed (tous clubs) en 'member' pour que
+  // user_is_staff() retourne false, quelle que soit la contamination cross-spec.
+  const snapshot = await downgradeAllSeedMemberships()
   try {
     await loginAsSeedMember(page)
 
@@ -185,6 +237,9 @@ test('FLOW-A : membre non-staff → /admin/operations redirigé /dashboard', asy
       await expect(page).toHaveURL(/\/dashboard/, { timeout: 15_000 })
     }
   } finally {
+    // Restitue les rôles d'origine (treasurer sur SEED_CLUB_ID, etc.).
+    await restoreSeedMembershipRoles(snapshot)
+    // setSeedRole garantit que SEED_CLUB_ID est bien treasurer pour les tests suivants.
     await setSeedRole('treasurer')
   }
 })
