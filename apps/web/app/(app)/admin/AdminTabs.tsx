@@ -28,8 +28,8 @@ const TABS: Tab[] = [
   { key: 'dashboard', href: '/admin', icon: 'LayoutDashboard' },
   { key: 'members', href: '/admin/members', icon: 'Users' },
   { key: 'cotisations', href: '/admin/cotisations', icon: 'Calendar' },
-  // OPS-106 — écran utilitaire « Vérification migration » (legacy vs operations).
-  { key: 'operations', href: '/admin/operations/verify', icon: 'ArrowLeftRight' },
+  // E-OPS-2 — tableau de bord Opérations (la vérification migration OPS-106 reste à /verify).
+  { key: 'operations', href: '/admin/operations', icon: 'ArrowLeftRight' },
   { key: 'votes', href: '/admin/votes', icon: 'Vote' },
   { key: 'retours', href: '/admin/retours', icon: 'MessageSquare' },
   { key: 'invitations', href: '/admin/invitations', icon: 'Mail' },

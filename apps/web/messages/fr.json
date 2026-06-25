@@ -749,7 +749,10 @@
       "membersTitle": "Membres — Admin Evolve Capital",
       "invitationsTitle": "Invitations — Admin Evolve Capital",
       "settingsTitle": "Paramètres du club — Admin Evolve Capital",
-      "verificationTitle": "Vérification migration — Admin Evolve Capital"
+      "verificationTitle": "Vérification migration — Admin Evolve Capital",
+      "operationsTitle": "Opérations — Admin Evolve Capital",
+      "operationsAllTitle": "Toutes les opérations — Admin Evolve Capital",
+      "newOperationTitle": "Nouvelle opération — Admin Evolve Capital"
     },
     "tabs": {
       "dashboard": "Tableau de bord",
@@ -898,6 +901,145 @@
           "title": "Vérification indisponible",
           "description": "Impossible de charger les données de comparaison. Réessaie plus tard."
         }
+      },
+      "dashboard": {
+        "caption": "Evolve Capital · Trésorerie",
+        "title": "Opérations",
+        "cash": {
+          "caption": "Solde espèces",
+          "info": "Argent disponible sur le compte du club, hors titres détenus.",
+          "infoLabel": "Qu'est-ce que le solde espèces ?",
+          "emptyHint": "Enregistre une première opération pour calculer le solde espèces du club."
+        },
+        "quickActions": {
+          "caption": "Actions rapides",
+          "contribution": "Cotisation",
+          "buy": "Achat",
+          "sell": "Vente",
+          "dividend": "Dividende"
+        },
+        "settlement": {
+          "title": "Cotisations à intégrer",
+          "subtitle": "Distribue les parts des cotisations encaissées au portefeuille.",
+          "cta": "Traiter maintenant"
+        },
+        "recent": {
+          "title": "Dernières opérations",
+          "viewAll": "tout voir",
+          "emptyTitle": "Aucune opération pour l'instant",
+          "emptyText": "Les versements, achats, ventes et autres mouvements apparaîtront ici dès la première saisie.",
+          "emptyCta": "Enregistrer la première"
+        }
+      },
+      "form": {
+        "back": "Opérations",
+        "title": "Nouvelle opération",
+        "step1": {
+          "caption": "Étape 1 · Type d'opération",
+          "title": "Quelle opération veux-tu enregistrer ?",
+          "intro": "Choisis le type pour adapter les champs. Tu verras l'impact sur le solde espèces avant de valider."
+        },
+        "step2": {
+          "caption": "Étape 2 · Détails de l'opération",
+          "changeType": "Changer de type"
+        },
+        "fields": {
+          "member": "Membre",
+          "amount": "Montant",
+          "date": "Date",
+          "transferRef": "Référence virement",
+          "notes": "Notes",
+          "symbol": "Titre",
+          "assetName": "Nom du titre",
+          "quantity": "Quantité",
+          "unitPrice": "Prix unitaire",
+          "currency": "Devise",
+          "brokerRef": "Référence courtier",
+          "optional": "Optionnel",
+          "memberPlaceholder": "Sélectionner un membre"
+        },
+        "submit": "Enregistrer l'opération",
+        "cashCaption": "Impact sur le solde espèces",
+        "step3": {
+          "successTitle": "Opération enregistrée",
+          "newBalanceCaption": "Nouveau solde espèces",
+          "viewOperations": "Voir les opérations",
+          "newOperation": "Nouvelle opération"
+        },
+        "toast": {
+          "successTitle": "Opération enregistrée",
+          "successMessage": "Elle apparaît désormais dans la liste des opérations."
+        }
+      },
+      "list": {
+        "caption": "Evolve Capital · Trésorerie · Opérations",
+        "title": "Toutes les opérations",
+        "newOperation": "+ Nouvelle opération",
+        "sortLabel": "Trié par date",
+        "loadMore": "Voir plus",
+        "filters": {
+          "type": "Type",
+          "allTypes": "Tous"
+        },
+        "empty": {
+          "title": "Aucune opération enregistrée",
+          "text": "Les versements, achats, ventes et autres mouvements de trésorerie apparaîtront ici dès la première saisie.",
+          "cta": "+ Enregistrer la première"
+        },
+        "detail": {
+          "close": "Fermer",
+          "impactCaption": "Impact sur le solde",
+          "cancelledImpactNote": "Ne compte plus dans le solde du club.",
+          "rowDate": "Date",
+          "rowType": "Type",
+          "rowRef": "Référence",
+          "rowSource": "Source",
+          "rowDetail": "Détail",
+          "sourceManual": "Saisie manuelle",
+          "sourceMigrated": "Migré (matrice)",
+          "cancelReasonCaption": "Motif d'annulation",
+          "cancelButton": "Annuler l'opération",
+          "settledWarning": "Opération settlée (parts distribuées) — passe par une correction, pas une annulation.",
+          "cancelledFooter": "Opération annulée — conservée pour l'historique."
+        },
+        "cancel": {
+          "title": "Annuler cette opération ?",
+          "summary": "L'opération {label} · {amount} ne comptera plus dans le solde. Elle reste visible dans l'historique, barrée, avec son motif.",
+          "reasonLabel": "Motif de l'annulation",
+          "reasonPlaceholder": "ex. Doublon de saisie, montant erroné…",
+          "reasonHint": "Obligatoire — conservé dans la trace de l'opération.",
+          "keepButton": "Garder l'opération",
+          "confirmButton": "Confirmer l'annulation",
+          "close": "Fermer",
+          "toastTitle": "Opération annulée",
+          "toastMessage": "Elle reste visible dans l'historique, barrée."
+        }
+      },
+      "types": {
+        "contribution": "Cotisation",
+        "buy": "Achat",
+        "sell": "Vente",
+        "dividend_cash": "Dividende",
+        "fee": "Frais",
+        "penalty": "Pénalité",
+        "member_exit": "Sortie de membre",
+        "dividend_stock": "Dividende en titres",
+        "capital_call": "Appel de fonds",
+        "distribution": "Distribution",
+        "valuation": "Valorisation",
+        "correction": "Correction"
+      },
+      "errors": {
+        "recordTitle": "Enregistrement impossible",
+        "cancelTitle": "Annulation impossible",
+        "forbidden": "Tu n'as pas les droits pour cette action.",
+        "invalid": "Données invalides. Vérifie les champs.",
+        "unauthorized": "Session expirée. Reconnecte-toi.",
+        "unknown": "Une erreur est survenue. Réessaie dans un instant."
+      },
+      "settlement": {
+        "comingSoonTitle": "Traitement des cotisations — bientôt disponible",
+        "comingSoonText": "La distribution des parts des cotisations encaissées arrive dans une prochaine mise à jour."
       }
     }
   },
