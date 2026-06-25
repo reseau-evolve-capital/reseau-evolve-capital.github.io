@@ -37,6 +37,9 @@
   --color-data-warning: var(--data-warning);
   --color-data-warning-50: var(--data-warning-50);
   --color-data-warning-strong: var(--data-warning-strong);
+  --color-data-dividend-50: var(--data-dividend-50);
+  --color-data-dividend-tag-50: var(--data-dividend-tag-50);
+  --color-data-dividend-fg: var(--data-dividend-fg);
 
   /* Semantic */
   --color-bg: var(--bg);
