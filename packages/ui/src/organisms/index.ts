@@ -32,3 +32,8 @@ export * from './PollResultsView'
 export * from './PollCreateForm'
 // Cotisations admin V2
 export * from './RegulariserList'
+// Module Opérations (E-OPS-2)
+export * from './OperationForm'
+export * from './OperationsTable'
+export * from './OperationDetailDrawer'
+export * from './OperationCancelModal'

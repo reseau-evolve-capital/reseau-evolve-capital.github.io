@@ -34,8 +34,15 @@ export * from './atoms/OpChip'
 export * from './atoms/CashDeltaBadge'
 export * from './atoms/OperationStatusTag'
 export * from './atoms/OperationSourceTag'
-// Molecules
+// Molecules module Opérations (E-OPS-2)
 export * from './molecules/CashBalanceCard'
+export * from './molecules/StepHeader'
+export * from './molecules/OperationField'
+export * from './molecules/CashImpactPanel'
+export * from './molecules/OperationTypeSelector'
+export * from './molecules/OperationListItem'
+export * from './molecules/OperationFilterBar'
+// Molecules
 export * from './molecules/EmptyState'
 export * from './molecules/SparklineMini'
 export * from './molecules/AllocationDonut'
