@@ -2,6 +2,49 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Approach
+
+- Read existing files before writing. Don't re-read unless changed.
+- Thorough in reasoning, concise in output.
+- No sycophantic openers or closing fluff.
+- No emojis or em-dashes.
+- Do not guess APIs, versions, flags, commit SHAs, or package names. Verify by reading code or docs before asserting.
+
+## Output
+
+- Return code first. Explanation after, only if non-obvious.
+- No inline prose. Use comments sparingly - only where logic is unclear.
+- No boilerplate unless explicitly requested.
+
+## Code Rules
+
+- Simplest working solution. No over-engineering.
+- No abstractions for single-use operations.
+- No speculative features or "you might also want..."
+- Read the file before modifying it. Never edit blind.
+- No docstrings or type annotations on code not being changed.
+- No error handling for scenarios that cannot happen.
+- Three similar lines is better than a premature abstraction.
+
+## Review Rules
+
+- State the bug. Show the fix. Stop.
+- No suggestions beyond the scope of the review.
+- No compliments on the code before or after the review.
+
+## Debugging Rules
+
+- Never speculate about a bug without reading the relevant code first.
+- State what you found, where, and the fix. One pass.
+- If cause is unclear: say so. Do not guess.
+
+## Simple Formatting
+
+- No em dashes, smart quotes, or decorative Unicode symbols.
+- Plain hyphens and straight quotes only.
+- Natural language characters (accented letters, CJK, etc.) are fine when the content requires them.
+- Code output must be copy-paste safe.
+
 ## Working language
 
 **Français par défaut.** La doc archi, les tickets, les messages de commit, les commentaires de code et le copy UI sont en français ; les PRD et tokens design utilisent du copy FR.
@@ -11,6 +54,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Light / Dark & source de vérité visuelle
 
 La source de vérité visuelle vit dans `REC/standalone-exports/*.html` (auto-suffisants, servir via `python3 -m http.server 8770`). **La plupart de ces fichiers ont un toggle LIGHT/DARK** (en haut de page et/ou intégré à chaque écran de connexion — ils pilotent le même état). Lors de tout **audit ou contrôle visuel** « rendu vs réf », **penser à basculer light ET dark** avant de conclure (sinon faux positifs : un écran capturé par défaut peut être dans l'autre thème). Le détail des écrans ↔ routes vit dans `docs/audits/design-reference-map.md` (artefact persistant).
+
+## Mandatory quality gate — `/codebase-quality-auditor` (HARD)
+
+**Trigger:** any feature creation or update, or any meaningful dev work that adds or changes at least
+one component, function, method, constant, hook, or route handler.
+
+**Before declaring work done — non-negotiable:**
+
+1. Run `/codebase-quality-auditor`.
+2. Fix every finding **linked to your work** (files you touched, patterns you introduced).
+3. Re-run the audit. **Loop** until zero findings remain that are attributable to your work.
+4. Do **not** report completion until this loop passes. Green tests + webpack smoke are necessary but
+   **not sufficient**.
+
+Out-of-scope pre-existing findings may be noted but do not block completion. Findings caused by your
+diff always block.
 
 ## Repository state — read this first
 
@@ -69,11 +128,27 @@ make db-start                             # supabase start
 make db-migrate                           # supabase db push
 make db-reset                             # ⚠ destructif — wipe DB locale
 make db-types                             # regénère packages/data/src/supabase/types.gen.ts
-make db-sync                              # sync manuel Sheets → Postgres
+make db-functions-serve                   # sert les Edge Functions (lit .env.local si présent, sinon .env)
+make db-sync CLUB_ID=<uuid>               # sync manuel Sheets → Postgres (Edge servie requise)
 
 # E2E
 pnpm --filter @evolve/web playwright test
 ```
+
+### Données de test locales (matrice DEMO)
+
+**Pour tester une feature en local, si la DB n'a pas de données suffisantes** (le seed `supabase/seed.sql` est minimal — un seul Club E2E vide), **pomper la matrice DEMO** via le vrai pipeline de sync : c'est ce qui donne des données prod-like ET révèle les divergences réelles (cotisations `paid` sans `paid_at`, transactions à date NULL, solde d'ouverture absent du legacy…).
+
+```bash
+make db-functions-serve                   # terminal séparé — sert l'Edge sync avec la SA DEMO
+make db-reset                             # ⚠ wipe local
+SRK="$(supabase status -o env | grep '^SERVICE_ROLE_KEY' | cut -d= -f2 | tr -d '\"')"
+SUPABASE_SERVICE_ROLE_KEY="$SRK" make db-set-sheet CLUB_ID=aaaaaaaa-0000-0000-0000-000000000001
+SUPABASE_SERVICE_ROLE_KEY="$SRK" make db-sync       CLUB_ID=aaaaaaaa-0000-0000-0000-000000000001
+```
+
+- **Convention `.env.local`** : la matrice DEMO (SA `rec-poc@rec-poc-497900…`, `SHEET_ID`, `GOOGLE_SA_KEY_BASE64`) vit dans `supabase/functions/.env.local` (gitignored), qui **prime sur `.env`**. La CLI Supabase n'a PAS la convention `.env.local` de Next.js → c'est `make db-functions-serve` qui sélectionne le bon `--env-file`, et `scripts/set-sheet-id.mjs` lit aussi `.env.local`. Sheet id DEMO : `1aP_7MihrpZpYlfhaJ7RcAqpnNAtB9eanhibSiQEldlI`.
+- **Emails de la DEMO anonymisés** (aucun risque de contacter un vrai membre). Mais le repo est **PUBLIC** : ne jamais committer un dump de ces données (noms/montants = PII) — `.gitignore` interdit déjà `*.dump`/`*.sql.gz`. Les données restent en DB locale.
 
 `docker-compose.yml` ne doit contenir **que le service `web`** — la stack Supabase locale tourne via la CLI Supabase, pas via un container `postgres:15` brut. Correction explicite du `TECH_REVIEW.md` §3.1.
 

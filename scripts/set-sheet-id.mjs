@@ -50,10 +50,13 @@ function loadEnvFile(path) {
   return out
 }
 
-// SHEET_ID peut vivre côté Edge (supabase/functions/.env) ou app (apps/web/.env.local).
+// SHEET_ID peut vivre côté Edge (supabase/functions/.env[.local]) ou app (apps/web/.env.local).
+// `.env.local` (côté functions) prime sur `.env` : c'est la convention pour pointer la matrice
+// DEMO de test en local sans toucher la config partagée (cf. CLAUDE.md § Données de test locales).
 const env = {
   ...loadEnvFile(resolve(ROOT, 'apps/web/.env.local')),
   ...loadEnvFile(resolve(ROOT, 'supabase/functions/.env')),
+  ...loadEnvFile(resolve(ROOT, 'supabase/functions/.env.local')),
   ...process.env,
 }
 

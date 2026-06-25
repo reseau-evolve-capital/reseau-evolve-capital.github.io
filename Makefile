@@ -1,5 +1,5 @@
 .PHONY: dev dev-web dev-vitrine build lint typecheck test test-e2e storybook \
-        db-start db-stop db-migrate db-reset db-types db-set-sheet db-sync db-set-sheet-prod db-sync-prod \
+        db-start db-stop db-migrate db-reset db-types db-set-sheet db-sync db-functions-serve db-set-sheet-prod db-sync-prod \
         supabase-deploy-prod supabase-check-prod-auth \
         docker-build docker-up docker-down \
         vitrine-export vitrine-deploy strapi-dev strapi-seed strapi-env strapi-build strapi-up strapi-down strapi-logs strapi-restart strapi-admin strapi-init strapi-clean \
@@ -58,6 +58,14 @@ db-set-sheet:
 
 db-sync:
 	node scripts/sync-sheets.mjs $(CLUB_ID)
+
+# Sert les Edge Functions en local pour db-sync. Lit `supabase/functions/.env.local` s'il existe
+# (SA + SHEET_ID de la matrice DEMO de test), sinon `.env`. La CLI Supabase n'a PAS la convention
+# `.env.local` de Next.js — d'où ce choix explicite. Lancer dans un terminal séparé avant db-sync.
+# Cf. CLAUDE.md § Données de test locales.
+db-functions-serve:
+	supabase functions serve --no-verify-jwt \
+	  --env-file $$( [ -f supabase/functions/.env.local ] && echo supabase/functions/.env.local || echo supabase/functions/.env )
 
 # Variantes PROD : pointent les scripts sur le projet distant via apps/web/.env.prod
 # (gitignored : NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY prod). SHEET_ID
