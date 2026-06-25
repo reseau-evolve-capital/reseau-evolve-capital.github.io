@@ -57,6 +57,7 @@ function matchesKey(op: OperationInsert, key: NaturalKey): boolean {
     op.club_id === key.club_id &&
     op.type === key.type &&
     op.operation_date === key.operation_date &&
+    op.membership_id === key.membership_id &&
     op.cash_delta === key.cash_delta &&
     op.symbol === key.symbol &&
     op.quantity === key.quantity
@@ -87,7 +88,15 @@ const CLUB = 'club-a'
 Deno.test('cotisation payée → contribution, cash_delta positif', async () => {
   const store = makeStore({
     contributions: [
-      { id: 'cm-1', membership_id: 'm-1', amount: 50, paid_at: '2024-01-15', year: 2024, month: 1 },
+      {
+        id: 'cm-1',
+        membership_id: 'm-1',
+        amount: 50,
+        paid_at: '2024-01-15',
+        due_date: null,
+        year: 2024,
+        month: 1,
+      },
     ],
   })
   const r = await migrateToOperations(depsFor(store), CLUB)
@@ -213,13 +222,122 @@ Deno.test('other → fee, cash_delta = total ?? 0', async () => {
 })
 
 // ────────────────────────────────────────────────────────────────────────────
+// 1bis. Cotisation `paid` sans paid_at — repli de date + clé par membre
+// ────────────────────────────────────────────────────────────────────────────
+
+Deno.test('cotisation paid sans paid_at → operation_date = due_date (repli #1)', async () => {
+  const store = makeStore({
+    contributions: [
+      {
+        id: 'cm-due',
+        membership_id: 'm-1',
+        amount: 100,
+        paid_at: null,
+        due_date: '2023-05-23',
+        year: 2023,
+        month: 5,
+      },
+    ],
+  })
+  const r = await migrateToOperations(depsFor(store), CLUB)
+  assertEquals(r.inserted, 1)
+  assertEquals(store.operations[0].operation_date, '2023-05-23')
+  assertEquals(store.operations[0].metadata.operation_date_source, 'due_date')
+})
+
+Deno.test(
+  'cotisation paid sans paid_at ni due_date → operation_date = year-month-01 (repli #2)',
+  async () => {
+    const store = makeStore({
+      contributions: [
+        {
+          id: 'cm-ym',
+          membership_id: 'm-1',
+          amount: 100,
+          paid_at: null,
+          due_date: null,
+          year: 2023,
+          month: 7,
+        },
+      ],
+    })
+    const r = await migrateToOperations(depsFor(store), CLUB)
+    assertEquals(r.inserted, 1)
+    assertEquals(store.operations[0].operation_date, '2023-07-01')
+    assertEquals(store.operations[0].metadata.operation_date_source, 'year_month')
+  }
+)
+
+Deno.test(
+  'deux membres, même montant + même mois, paid_at NULL → 2 ops (membership_id dans la clé)',
+  async () => {
+    const store = makeStore({
+      contributions: [
+        {
+          id: 'cm-a',
+          membership_id: 'm-1',
+          amount: 100,
+          paid_at: null,
+          due_date: null,
+          year: 2023,
+          month: 5,
+        },
+        {
+          id: 'cm-b',
+          membership_id: 'm-2',
+          amount: 100,
+          paid_at: null,
+          due_date: null,
+          year: 2023,
+          month: 5,
+        },
+      ],
+    })
+    const r = await migrateToOperations(depsFor(store), CLUB)
+    // Sans membership_id dans la clé, ces 2 cotisations (même date dérivée, même cash_delta)
+    // auraient fusionné en 1. La régression à éviter.
+    assertEquals(r.inserted, 2)
+    assertEquals(store.operations.length, 2)
+  }
+)
+
+Deno.test('cotisation sans paid_at/due_date et month invalide → skipped_invalid', async () => {
+  const store = makeStore({
+    contributions: [
+      {
+        id: 'cm-nodate',
+        membership_id: 'm-1',
+        amount: 100,
+        paid_at: null,
+        due_date: null,
+        year: 0,
+        month: 0,
+      },
+    ],
+  })
+  const r = await migrateToOperations(depsFor(store), CLUB)
+  assertEquals(r.inserted, 0)
+  assertEquals(store.operations.length, 0)
+  assertEquals(r.skipped_invalid!.length, 1)
+  assert(r.skipped_invalid![0].reason.includes('operation_date'))
+})
+
+// ────────────────────────────────────────────────────────────────────────────
 // 2. Idempotence — 2e run = 0 insert
 // ────────────────────────────────────────────────────────────────────────────
 
 Deno.test('2e run sur le même store → inserted=0, skipped=N (idempotence)', async () => {
   const store = makeStore({
     contributions: [
-      { id: 'cm-1', membership_id: 'm-1', amount: 50, paid_at: '2024-01-15', year: 2024, month: 1 },
+      {
+        id: 'cm-1',
+        membership_id: 'm-1',
+        amount: 50,
+        paid_at: '2024-01-15',
+        due_date: null,
+        year: 2024,
+        month: 1,
+      },
     ],
     transactions: [
       {
@@ -443,6 +561,7 @@ Deno.test(
           membership_id: 'm-1',
           amount: 50,
           paid_at: '2024-01-15',
+          due_date: null,
           year: 2024,
           month: 1,
         },

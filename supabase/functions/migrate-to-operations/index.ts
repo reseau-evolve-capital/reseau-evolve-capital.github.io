@@ -46,36 +46,77 @@ function bearer(req: Request): string | null {
   return m ? m[1].trim() : null
 }
 
+/** Taille de page PostgREST (la Data API plafonne une requête non paginée à 1000 lignes). */
+const PAGE_SIZE = 1000
+
+/**
+ * Lit TOUTES les lignes d'une requête PostgREST en paginant par `.range()` (ordre stable requis).
+ * Sans ça, un club avec > 1000 cotisations/transactions verrait son legacy tronqué à 1000 →
+ * cotisations perdues à la migration (divergence de solde).
+ */
+async function fetchAllPages<T>(
+  page: (
+    from: number,
+    to: number
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  label: string
+): Promise<T[]> {
+  const rows: T[] = []
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await page(from, from + PAGE_SIZE - 1)
+    if (error) throw new Error(`Lecture ${label} échouée: ${error.message}`)
+    const batch = data ?? []
+    rows.push(...batch)
+    if (batch.length < PAGE_SIZE) break
+  }
+  return rows
+}
+
 /** Câble les vraies deps sur un client service-role. */
 function buildDeps(supabase: SupabaseClient): MigrateDeps {
   return {
     listPaidContributions: async (clubId: string): Promise<ContributionRow[]> => {
       // Cotisations PAYÉES du club, jointes à memberships pour le club-scoping (cahier §6.1).
-      const { data, error } = await supabase
-        .from('contribution_months')
-        .select('id, membership_id, amount, paid_at, year, month, memberships!inner(club_id)')
-        .eq('memberships.club_id', clubId)
-        .eq('status', 'paid')
-        .not('paid_at', 'is', null)
-      if (error) throw new Error(`Lecture contribution_months échouée: ${error.message}`)
-      return (data ?? []).map((r) => ({
+      // On NE filtre PAS sur paid_at IS NOT NULL : la Matrice marque souvent paid sans paid_at ;
+      // le handler dérive operation_date (paid_at → due_date → year-month) pour ne pas perdre
+      // l'intégralité du flux d'entrées de cash (cf. resolveContributionDate). Paginé (> 1000 lignes).
+      const rows = await fetchAllPages<Record<string, unknown>>(
+        (from, to) =>
+          supabase
+            .from('contribution_months')
+            .select(
+              'id, membership_id, amount, paid_at, due_date, year, month, memberships!inner(club_id)'
+            )
+            .eq('memberships.club_id', clubId)
+            .eq('status', 'paid')
+            .order('id', { ascending: true })
+            .range(from, to),
+        'contribution_months'
+      )
+      return rows.map((r) => ({
         id: r.id as string,
         membership_id: r.membership_id as string,
         amount: Number(r.amount ?? 0),
-        paid_at: r.paid_at as string,
+        paid_at: (r.paid_at as string | null) ?? null,
+        due_date: (r.due_date as string | null) ?? null,
         year: Number(r.year ?? 0),
         month: Number(r.month ?? 0),
       }))
     },
 
     listTransactions: async (clubId: string): Promise<TransactionRow[]> => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('id, type, symbol, name, quantity, price, total, transaction_date')
-        .eq('club_id', clubId)
-        .not('transaction_date', 'is', null)
-      if (error) throw new Error(`Lecture transactions échouée: ${error.message}`)
-      return (data ?? []).map((r) => ({
+      const rows = await fetchAllPages<Record<string, unknown>>(
+        (from, to) =>
+          supabase
+            .from('transactions')
+            .select('id, type, symbol, name, quantity, price, total, transaction_date')
+            .eq('club_id', clubId)
+            .not('transaction_date', 'is', null)
+            .order('id', { ascending: true })
+            .range(from, to),
+        'transactions'
+      )
+      return rows.map((r) => ({
         id: r.id as string,
         type: r.type as string,
         symbol: (r.symbol as string | null) ?? null,
@@ -98,6 +139,10 @@ function buildDeps(supabase: SupabaseClient): MigrateDeps {
         .eq('source', 'matrice_migration')
         .eq('operation_date', key.operation_date)
         .eq('cash_delta', key.cash_delta)
+      q =
+        key.membership_id == null
+          ? q.is('membership_id', null)
+          : q.eq('membership_id', key.membership_id)
       q = key.symbol == null ? q.is('symbol', null) : q.eq('symbol', key.symbol)
       q = key.quantity == null ? q.is('quantity', null) : q.eq('quantity', key.quantity)
       const { count, error } = await q

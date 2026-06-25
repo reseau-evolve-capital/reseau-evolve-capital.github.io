@@ -30,8 +30,14 @@ export interface ContributionRow {
   membership_id: string
   /** + amount (la cotisation augmente les espèces du club). */
   amount: number
-  /** Date du versement effectif (filtré IS NOT NULL en amont). */
-  paid_at: string
+  /**
+   * Date du versement effectif. PEUT ÊTRE NULL : la Matrice marque souvent une cotisation
+   * `status='paid'` sans renseigner `paid_at`. On dérive alors operation_date depuis due_date,
+   * puis depuis year/month (cf. resolveContributionDate).
+   */
+  paid_at: string | null
+  /** Échéance théorique (repli #1 quand paid_at est NULL). */
+  due_date: string | null
   year: number
   month: number
 }
@@ -84,6 +90,12 @@ export interface NaturalKey {
   club_id: string
   type: OperationType
   operation_date: string
+  /**
+   * Membre concerné, null pour les ops du club (buy/sell/dividend/fee). INDISPENSABLE dans la clé :
+   * deux membres cotisant le même montant le même mois (date dérivée de year/month, donc identique)
+   * produiraient sinon le même tuple et seraient dédoublonnés à tort.
+   */
+  membership_id: string | null
   /** null si l'op ne porte pas de titre (cotisation, pénalité…). */
   symbol: string | null
   /** null si l'op ne porte pas de quantité. */
@@ -111,7 +123,7 @@ export interface MigrateResult {
 // ---- Seams injectables ----
 
 export interface MigrateDeps {
-  /** Cotisations PAYÉES (status='paid', paid_at IS NOT NULL) du club. Lecture seule. */
+  /** Cotisations PAYÉES (status='paid') du club ; paid_at peut être NULL. Lecture seule. */
   listPaidContributions: (clubId: string) => Promise<ContributionRow[]>
   /** Transactions (transaction_date IS NOT NULL) du club. Lecture seule. */
   listTransactions: (clubId: string) => Promise<TransactionRow[]>
@@ -140,6 +152,32 @@ const TYPES_REQUIRING_MEMBERSHIP = new Set<OperationType>([
 /** Arrondi à 4 décimales (précision de cash_delta NUMERIC(18,4)) pour matcher la clé naturelle. */
 function round4(n: number): number {
   return Math.round((n + Number.EPSILON) * 1e4) / 1e4
+}
+
+type ContributionDateSource = 'paid_at' | 'due_date' | 'year_month'
+
+/**
+ * operation_date d'une cotisation, avec repli quand `paid_at` est NULL (cas fréquent en Matrice) :
+ *   1. paid_at        (versement effectif)
+ *   2. due_date       (échéance théorique)
+ *   3. year-month-01  (dérivé du mois de cotisation)
+ * Retourne null si aucune source exploitable (year/month invalides) → la ligne sera isolée.
+ */
+function resolveContributionDate(
+  c: ContributionRow
+): { date: string; source: ContributionDateSource } | null {
+  if (c.paid_at != null && c.paid_at !== '') return { date: c.paid_at, source: 'paid_at' }
+  if (c.due_date != null && c.due_date !== '') return { date: c.due_date, source: 'due_date' }
+  if (
+    Number.isInteger(c.year) &&
+    c.year > 0 &&
+    Number.isInteger(c.month) &&
+    c.month >= 1 &&
+    c.month <= 12
+  ) {
+    return { date: `${c.year}-${String(c.month).padStart(2, '0')}-01`, source: 'year_month' }
+  }
+  return null
 }
 
 /** Mapping type legacy `transactions` → type `operations`. `other` → `fee` (cahier §6.1). */
@@ -189,6 +227,7 @@ function naturalKeyOf(op: OperationInsert): NaturalKey {
     club_id: op.club_id,
     type: op.type,
     operation_date: op.operation_date,
+    membership_id: op.membership_id,
     symbol: op.symbol,
     quantity: op.quantity,
     cash_delta: op.cash_delta,
@@ -220,6 +259,17 @@ export async function migrateToOperations(
   // ── 1. Cotisations payées → contribution ──
   const contributions = await deps.listPaidContributions(clubId)
   for (const c of contributions) {
+    const resolved = resolveContributionDate(c)
+    if (resolved === null) {
+      result.skipped_invalid!.push({
+        reason:
+          'operation_date indéterminable (paid_at, due_date et year/month absents ou invalides)',
+        legacy_table: 'contribution_months',
+        original_id: c.id,
+      })
+      log('warn', 'Cotisation sans date exploitable — skip', { originalId: c.id })
+      continue
+    }
     const op: OperationInsert = {
       club_id: clubId,
       type: 'contribution',
@@ -230,13 +280,15 @@ export async function migrateToOperations(
       asset_name: null,
       quantity: null,
       unit_price: null,
-      operation_date: c.paid_at,
+      operation_date: resolved.date,
       source: 'matrice_migration',
       metadata: {
         legacy_table: 'contribution_months',
         original_id: c.id,
         legacy_year: c.year,
         legacy_month: c.month,
+        // Traçabilité : d'où vient operation_date (paid_at réel vs repli due_date / year-month).
+        operation_date_source: resolved.source,
       },
     }
     await processOperation(deps, op, 'contribution_months', c.id, result, log)
