@@ -31,6 +31,10 @@ make deploy
 
 **GitHub Pages** : source = **GitHub Actions** (`deploy-vitrine.yml`). Le deploy manuel `gh-pages` reste en secours.
 
+## Performance Guardian
+
+Config routine Claude : **`.claude/perf-guardian.config.json`** (seuils Lighthouse, chemins autorisés, build Strapi distant). Plugin `performance-guardian@omniventus-workshop` dans les settings Claude du repo.
+
 ## Variables d'environnement
 
 Voir `.env.example`. Secrets CI : `NEXT_PUBLIC_APP_SCRIPT_URL`, `NEXT_PUBLIC_CONTACT_FORM_URL`.

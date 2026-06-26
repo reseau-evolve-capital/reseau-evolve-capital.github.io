@@ -1,0 +1,69 @@
+{
+  "_comment": "Copier vers .claude/perf-guardian.config.json et adapter.",
+  "$schema": "./skills/performance-guardian/config.schema.json",
+  "project_name": "Réseau Evolve Capital — Vitrine",
+  "url": "https://reseauevolvecapital.com",
+  "strategies": ["mobile", "desktop"],
+  "categories": ["performance", "accessibility", "best-practices", "seo"],
+  "locale": "fr",
+  "thresholds": {
+    "performance_mobile": 90,
+    "performance_desktop": 95,
+    "lcp_mobile_seconds": 2.5,
+    "cls_mobile": 0.1,
+    "accessibility": 90,
+    "best_practices": 90,
+    "seo": 95,
+    "unused_js_kb": 30,
+    "largest_image_kb": 200
+  },
+  "open_graph": {
+    "enabled": true,
+    "audit_urls": ["/fr/", "/en/", "/fr/blog/"],
+    "min_score": 80,
+    "required_tags": ["og:title", "og:description", "og:image", "og:url", "og:type"],
+    "recommended_tags": ["og:locale", "og:site_name", "og:image:width", "og:image:height"],
+    "image_min_width": 1200,
+    "image_min_height": 630,
+    "include_twitter_card": true
+  },
+  "repo": {
+    "base_branch": "main",
+    "branch_prefix": "fix/perf",
+    "worktree_dir": ".claude/worktrees",
+    "commit_scope": "vitrine",
+    "pr_labels": ["perf", "automated"],
+    "stale_pr_days": 2
+  },
+  "allowed_paths": ["public/", "src/", "next.config.ts", "package.json"],
+  "forbidden_paths": [
+    ".github/workflows/deploy-vitrine.yml",
+    "scripts/check-og-images.mjs",
+    "Code.gs",
+    "contact.js",
+    "newsletter.js"
+  ],
+  "build_command": "NEXT_PUBLIC_STRAPI_API_URL=https://strapi.reseauevolvecapital.com/api NEXT_PUBLIC_STRAPI_URL=https://strapi.reseauevolvecapital.com pnpm build",
+  "fix_priority": [
+    {
+      "id": "hero-image-lcp",
+      "match": ["largest-contentful-paint", "image", "webp", "hero"],
+      "branch_suffix": "images-lcp"
+    },
+    {
+      "id": "open-graph",
+      "match": ["open-graph", "og:", "twitter:card", "og:image"],
+      "branch_suffix": "open-graph"
+    }
+  ],
+  "notifications": {
+    "enabled": true,
+    "channel": "discord",
+    "discord": {
+      "webhook_url_env": "PERF_GUARDIAN_DISCORD_WEBHOOK",
+      "username": "Performance Guardian",
+      "mention_on_action_required": false,
+      "mention_user_id": null
+    }
+  }
+}

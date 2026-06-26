@@ -20,3 +20,6 @@ out/
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Performance Guardian — worktrees jetables (fixes perf isolés)
+.claude/worktrees/
