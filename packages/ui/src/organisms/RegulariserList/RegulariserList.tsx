@@ -21,7 +21,11 @@ export interface RegulariserListLabels {
 
 export interface RegulariserListProps {
   items: RegulariserListItem[]
-  onRelancer: (membershipId: string) => void
+  /**
+   * Callback « Relancer » (mutation). Optionnel : si omis, le bouton « Relancer » n'est pas rendu
+   * (lecture seule — ex. rôle secrétaire). La ligne reste cliquable (onMemberClick) pour consulter.
+   */
+  onRelancer?: (membershipId: string) => void
   onMemberClick: (membershipId: string) => void
   labels: RegulariserListLabels
   /** Format a currency amount for display. Parent provides this to avoid i18n dep in packages/ui */
@@ -91,26 +95,28 @@ export function RegulariserList({
               >
                 {formatAmount(item.amountDue)}
               </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onRelancer(item.membershipId)
-                }}
-                onKeyDown={(e) => e.stopPropagation()}
-                aria-label={`${labels.relancer} – ${item.fullName}`}
-                className={cn(
-                  'min-w-[44px] min-h-[44px] px-3',
-                  'inline-flex items-center justify-center',
-                  'rounded-md text-[13px] font-semibold',
-                  'bg-accent text-accent-ink',
-                  'hover:opacity-90 active:opacity-80',
-                  'transition-opacity duration-[150ms]',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2'
-                )}
-              >
-                {labels.relancer}
-              </button>
+              {onRelancer && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onRelancer(item.membershipId)
+                  }}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  aria-label={`${labels.relancer} – ${item.fullName}`}
+                  className={cn(
+                    'min-w-[44px] min-h-[44px] px-3',
+                    'inline-flex items-center justify-center',
+                    'rounded-md text-[13px] font-semibold',
+                    'bg-accent text-accent-ink',
+                    'hover:opacity-90 active:opacity-80',
+                    'transition-opacity duration-[150ms]',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2'
+                  )}
+                >
+                  {labels.relancer}
+                </button>
+              )}
             </div>
           </li>
         ))}
