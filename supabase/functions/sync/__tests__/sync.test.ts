@@ -97,6 +97,28 @@ Deno.test('parseParametrages : courtier/plafond absents → null', () => {
   assertEquals(rows[0].brokerName, null)
 })
 
+Deno.test('parseParametrages : capte le secrétaire (matching robuste accents/casse)', () => {
+  const raw: string[][] = [
+    ['Paramètre', 'Valeur'],
+    ['Nom du club', 'Évolve Capital'],
+    ['Cotisation min', '100'],
+    // Libellé volontairement « sale » (accents/casse) pour valider la normalisation.
+    ['SECRÉTAIRE', 'DOSSOU Marie'],
+  ]
+  const rows = parseParametrages(raw)
+  assertEquals(rows[0].secretaryName, 'DOSSOU Marie')
+})
+
+Deno.test('parseParametrages : secrétaire absent → null', () => {
+  const raw: string[][] = [
+    ['Paramètre', 'Valeur'],
+    ['Nom du club', 'Club'],
+    ['Cotisation min', '0'],
+  ]
+  const rows = parseParametrages(raw)
+  assertEquals(rows[0].secretaryName, null)
+})
+
 Deno.test('parseBase : colonnes A..J → BaseRowDTO (lignes vides filtrées)', () => {
   const raw: string[][] = [
     ['Nom', 'Email', 'Entrée', 'Sortie', 'Statut', 'Demande', 'Docs', 'Tel', 'Adresse', 'Montant'],
@@ -1218,6 +1240,50 @@ Deno.test('handler : ex-dirigeant retiré de PARAMETRAGES redevient member', asy
   await handler2(syncRequest(CLUB_ID))
   assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
   assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'member')
+})
+
+// PARAMETRAGES enrichi des trois dirigeants (dont le secrétaire) — libellés « sales ».
+const PARAMS_WITH_SECRETARY: string[][] = [
+  ['Paramètre', 'Valeur'],
+  ['Nom du club', 'Évolve Capital'],
+  ['Cotisation min', '100'],
+  ['Président(e)', 'AGBEHONOU Edem'],
+  ['Trésorier(e)', 'HOUESSOU Valentino'],
+  ['SECRÉTAIRE', 'LASKARI Fabien'],
+]
+
+// Test B1 c-bis — le secrétaire est promu depuis PARAMETRAGES (rôle club `secretary`).
+Deno.test('handler : secrétaire dérivé de PARAMETRAGES (promu)', async () => {
+  const store = emptyStore(true)
+  const handler = buildHandler(store, {
+    overrides: { PARAMETRAGES: PARAMS_WITH_SECRETARY, Base: BASE_WITH_OFFICERS },
+  })
+  const res = await handler(syncRequest(CLUB_ID))
+  assertEquals(res.status, 200)
+  const body = (await res.json()) as SyncResponseBody
+  assertEquals(body.success, true)
+  assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+  assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'treasurer')
+  assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'secretary')
+})
+
+// Test B1 c-ter — un ex-secrétaire disparu de PARAMETRAGES redevient 'member'.
+Deno.test('handler : ex-secrétaire retiré de PARAMETRAGES redevient member', async () => {
+  const store = emptyStore(true)
+  // 1er sync : Fabien est secrétaire.
+  const handler1 = buildHandler(store, {
+    overrides: { PARAMETRAGES: PARAMS_WITH_SECRETARY, Base: BASE_WITH_OFFICERS },
+  })
+  await handler1(syncRequest(CLUB_ID))
+  assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'secretary')
+  // 2e sync : plus de secrétaire dans PARAMETRAGES → Fabien doit retomber 'member'.
+  const handler2 = buildHandler(store, {
+    overrides: { PARAMETRAGES: PARAMS_WITH_OFFICERS, Base: BASE_WITH_OFFICERS },
+  })
+  await handler2(syncRequest(CLUB_ID))
+  assertEquals(roleByFullName(store, 'AGBEHONOU Edem'), 'president')
+  assertEquals(roleByFullName(store, 'HOUESSOU Valentino'), 'treasurer')
+  assertEquals(roleByFullName(store, 'LASKARI Fabien'), 'member')
 })
 
 // Test B1 d — network_admin (hors feuille Base) JAMAIS écrasé par la réconciliation.

@@ -241,7 +241,7 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     // Dirigeants extraits de PARAMETRAGES (capturés à l'étape 1) — consommés APRÈS l'import
     // Base par la réconciliation des rôles. Vide par défaut : si PARAMETRAGES échoue, la
     // réconciliation ne touche aucun rôle (les memberships restent tous 'member').
-    let officers: ClubOfficers = { presidentName: null, treasurerName: null }
+    let officers: ClubOfficers = { presidentName: null, treasurerName: null, secretaryName: null }
     const snapshots: Record<
       string,
       { status: SnapshotStatus; checksum: string; row_count: number }
@@ -436,7 +436,7 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
       )
     })
 
-    // 2bis) RÉCONCILIATION DES RÔLES — dérive president/treasurer depuis PARAMETRAGES.
+    // 2bis) RÉCONCILIATION DES RÔLES — dérive president/treasurer/secretary depuis PARAMETRAGES.
     // ---------------------------------------------------------------------------
     // POURQUOI ICI : l'import Base (étape 2) vient d'upserter TOUS les memberships avec
     // role='member' (cf. base.mapper). PARAMETRAGES (étape 1) liste les dirigeants par nom.
@@ -445,8 +445,8 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
     //
     // IDEMPOTENCE : l'upsert Base ne touche PLUS le rôle (préservé sur update). C'est ici la
     // seule autorité de gouvernance : SI au moins un dirigeant est résolu depuis PARAMETRAGES,
-    // on réinitialise tout president/treasurer du club à 'member' puis on re-promeut les
-    // dirigeants courants. Un ex-dirigeant disparu de PARAMETRAGES redevient donc 'member',
+    // on réinitialise tout president/treasurer/secretary du club à 'member' puis on re-promeut
+    // les dirigeants courants. Un ex-dirigeant disparu de PARAMETRAGES redevient donc 'member',
     // un membre normal reste 'member'. Re-sync = mêmes rôles.
     //
     // FAIL-SAFE : si AUCUN dirigeant n'est résolu (PARAMETRAGES vide/malformée), on ne réinitialise
@@ -474,14 +474,16 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         }
 
         // Cibles depuis PARAMETRAGES (source de vérité gouvernance).
-        const targets: Array<{ role: 'president' | 'treasurer'; name: string }> = []
+        const targets: Array<{ role: 'president' | 'treasurer' | 'secretary'; name: string }> = []
         if (officers.presidentName)
           targets.push({ role: 'president', name: officers.presidentName })
         if (officers.treasurerName)
           targets.push({ role: 'treasurer', name: officers.treasurerName })
+        if (officers.secretaryName)
+          targets.push({ role: 'secretary', name: officers.secretaryName })
 
         // Résolution nom → membership. Introuvables/ambigus → warning (best-effort, jamais bloquant).
-        const matched: Array<{ id: string; role: 'president' | 'treasurer' }> = []
+        const matched: Array<{ id: string; role: 'president' | 'treasurer' | 'secretary' }> = []
         for (const t of targets) {
           const key = normalizeName(t.name)
           const membershipId = byName.get(key)
@@ -502,7 +504,7 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
         // RÉTROGRADATION fail-safe : on ne réinitialise les rôles dirigeants QUE si au moins un
         // dirigeant courant a été identifié (PARAMETRAGES exploitable). Si AUCUN n'est résolu
         // (feuille vide/malformée), on NE TOUCHE À RIEN — jamais de wipe du staff sur source
-        // absente. On ne rétrograde QUE president/treasurer ; network_admin et member intacts.
+        // absente. On ne rétrograde QUE president/treasurer/secretary ; network_admin et member intacts.
         // ANTI-ÉCRASEMENT (ADM-008) : un rôle défini EN APP (role_source='manual') n'est JAMAIS
         // réécrit par la sync — ni rétrogradé au reset, ni promu. Les gardes `.neq('role_source',
         // 'manual')` ci-dessous laissent ces memberships intactes. PostgREST traite NULL (colonne
@@ -513,7 +515,7 @@ export function createSyncHandler(deps: SyncDeps): (req: Request) => Promise<Res
             .from('memberships')
             .update({ role: 'member' })
             .eq('club_id', clubId)
-            .in('role', ['president', 'treasurer'])
+            .in('role', ['president', 'treasurer', 'secretary'])
             .neq('role_source', 'manual')
           if (resetErr) {
             warnings.push(`Rôles: échec réinitialisation des dirigeants: ${resetErr.message}`)

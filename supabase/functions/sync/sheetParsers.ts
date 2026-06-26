@@ -84,11 +84,12 @@ export function parseParametrages(rows: string[][]): ParametragesRowDTO[] {
       ),
       brokerName: get('nom du courtier', 'courtier') || null,
       // Dirigeants : noms BRUTS (le matching vers users.full_name se fait côté sync, normalisé).
-      // Les libellés source varient (« Président(e) », « President », « Trésorier(e) »…) :
+      // Les libellés source varient (« Président(e) », « President », « Trésorier(e) », « Secrétaire »…) :
       // le `get` ci-dessus matche déjà sur la forme normalisée (trim + minuscule + sans accent).
-      // NB : le Secrétaire n'est PAS extrait (pas de valeur 'secretary' dans l'enum member_role).
+      // Le Secrétaire alimente le rôle club `secretary` (lecture seule, migrations 061/062).
       presidentName: get('president(e)', 'president', 'presidente', 'presidence') || null,
       treasurerName: get('tresorier(e)', 'tresorier', 'tresoriere', 'tresorerie') || null,
+      secretaryName: get('secretaire(e)', 'secretaire', 'secretary', 'secretariat') || null,
     },
   ]
 }
