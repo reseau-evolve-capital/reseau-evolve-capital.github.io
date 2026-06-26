@@ -118,10 +118,14 @@ export function ContributionsTimeline({
         {[0, 1].map((y) => (
           <div key={y} className="flex flex-col gap-2">
             <Skeleton height={16} width="64px" radius="6px" />
-            <div className="grid grid-cols-12 gap-1">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <Skeleton key={i} height={24} width="100%" radius="4px" />
-              ))}
+            {/* Même confinement que la frise réelle : sur mobile la rangée 12 mois peut
+                dépasser → scroll INTERNE (overflow-x-auto + min-w-0), jamais la PAGE. */}
+            <div className="min-w-0 max-w-full overflow-x-auto">
+              <div className="grid min-w-[20rem] grid-cols-12 gap-1">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <Skeleton key={i} height={24} width="100%" radius="4px" />
+                ))}
+              </div>
             </div>
           </div>
         ))}
@@ -165,29 +169,35 @@ export function ContributionsTimeline({
             </h3>
             {/* 12 colonnes fixes : tous les mois d'une année tiennent sur UNE seule ligne.
                 Les touch-areas (p-2.5 mobile) des cellules adjacentes se chevauchent légèrement
-                dans le gap=0 — comportement accepté (même pattern que les claviers mobiles). */}
-            <div className="grid grid-cols-12">
-              {/* Ordre d'affichage ASCENDANT (janvier → décembre), quel que soit l'ordre
-                  d'entrée. On trie une COPIE (pas de mutation de la prop). Le mapping
-                  mois→statut/tooltip/aria-label suit chaque cellule par sa clé `month`. */}
-              {[...group.months]
-                .sort((a, b) => a.month - b.month)
-                .map((m) => (
-                  <div
-                    key={`${group.year}-${m.month}`}
-                    className="flex flex-col items-center gap-0.5"
-                  >
-                    <CotisationMonth
-                      variant={m.variant}
-                      tooltip={m.tooltip}
-                      aria-label={m.ariaLabel}
-                      size="md"
-                    />
-                    <span aria-hidden="true" className="text-[9px] leading-none text-text-ter">
-                      {monthInitials[m.month - 1]}
-                    </span>
-                  </div>
-                ))}
+                dans le gap=0 — comportement accepté (même pattern que les claviers mobiles).
+                Sur mobile (< 375px) la rangée des 12 cibles tactiles dépasse le conteneur :
+                on la confine dans un scroll INTERNE (overflow-x-auto + min-w-0) pour que la
+                PAGE ne déborde jamais. Le `min-w-[20rem]` garde une largeur lisible ; sur ≥ sm
+                (pastilles 24px sans padding) la rangée tient et aucune scrollbar n'apparaît. */}
+            <div className="min-w-0 max-w-full overflow-x-auto">
+              <div className="grid min-w-[20rem] grid-cols-12">
+                {/* Ordre d'affichage ASCENDANT (janvier → décembre), quel que soit l'ordre
+                    d'entrée. On trie une COPIE (pas de mutation de la prop). Le mapping
+                    mois→statut/tooltip/aria-label suit chaque cellule par sa clé `month`. */}
+                {[...group.months]
+                  .sort((a, b) => a.month - b.month)
+                  .map((m) => (
+                    <div
+                      key={`${group.year}-${m.month}`}
+                      className="flex flex-col items-center gap-0.5"
+                    >
+                      <CotisationMonth
+                        variant={m.variant}
+                        tooltip={m.tooltip}
+                        aria-label={m.ariaLabel}
+                        size="md"
+                      />
+                      <span aria-hidden="true" className="text-[9px] leading-none text-text-ter">
+                        {monthInitials[m.month - 1]}
+                      </span>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         ))}

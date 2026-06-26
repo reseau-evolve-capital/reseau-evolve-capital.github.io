@@ -116,6 +116,9 @@ export function CotisationMonth({
       <Popover.Portal>
         <Popover.Content
           sideOffset={4}
+          // `collisionPadding` : pour une cellule en fin de rangée (décembre), le popover se
+          // recale dans le viewport au lieu de le pousser → pas de débordement de la PAGE.
+          collisionPadding={12}
           className="z-50 bg-card border border-border rounded-[10px] shadow-[var(--sh-pop)] px-3 py-2 text-[12px] text-text max-w-[200px]"
         >
           {tooltip}

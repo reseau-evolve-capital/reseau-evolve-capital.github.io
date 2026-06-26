@@ -208,7 +208,9 @@ export function PortfolioTable({
   const total = totalCount ?? positions.length
 
   return (
-    <div className="w-full overflow-x-auto">
+    // `[contain:layout]` : confine la largeur min-content de la <table> au wrapper (anti scroll
+    // horizontal de PAGE sur mobile malgré overflow-x-auto ; cf. MembersList).
+    <div className="w-full min-w-0 max-w-full overflow-x-auto [contain:layout]">
       <table className="w-full border-collapse" aria-label={tableLabel}>
         <thead>
           {table.getHeaderGroups().map((hg) => (
