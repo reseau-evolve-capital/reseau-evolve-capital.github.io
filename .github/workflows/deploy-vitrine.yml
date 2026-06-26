@@ -1,0 +1,91 @@
+name: Deploy Vitrine (GitHub Pages)
+
+# Repo vitrine standalone — build SSG depuis l'API Strapi distante
+# (strapi.reseauevolvecapital.com). Garde anti-blog-vide : échec du job si Strapi
+# est injoignable ou ne renvoie aucun article → le site live n'est jamais écrasé.
+#
+# Déclencheurs : push main, repository_dispatch « strapi-content-update », manuel.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+  repository_dispatch:
+    types: [strapi-content-update]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vitrine-pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Vérifier que Strapi répond (garde anti-blog-vide)
+        env:
+          STRAPI_API_URL: ${{ vars.NEXT_PUBLIC_STRAPI_API_URL || 'https://strapi.reseauevolvecapital.com/api' }}
+        run: |
+          set -euo pipefail
+          echo "Vérification de ${STRAPI_API_URL}/articles…"
+          count=$(curl -fsS -g --max-time 30 "${STRAPI_API_URL}/articles?pagination[pageSize]=1" | jq '.data | length')
+          if [ "${count:-0}" -lt 1 ]; then
+            echo "::error::Strapi ne renvoie aucun article (ou est injoignable) — déploiement annulé."
+            exit 1
+          fi
+          echo "OK — Strapi accessible, ${count} article(s) visible(s)."
+
+      - name: Build vitrine
+        env:
+          NEXT_PUBLIC_STRAPI_API_URL: ${{ vars.NEXT_PUBLIC_STRAPI_API_URL || 'https://strapi.reseauevolvecapital.com/api' }}
+          NEXT_PUBLIC_STRAPI_URL: ${{ vars.NEXT_PUBLIC_STRAPI_URL || 'https://strapi.reseauevolvecapital.com' }}
+          NEXT_PUBLIC_GA_ID_VITRINE: ${{ vars.NEXT_PUBLIC_GA_ID_VITRINE || 'G-LP0PW78BQ5' }}
+          NEXT_PUBLIC_CONSENT_BANNER_VARIANT: ${{ vars.NEXT_PUBLIC_CONSENT_BANNER_VARIANT || 'compact' }}
+          NEXT_PUBLIC_CONSENT_BANNER_SIDE: ${{ vars.NEXT_PUBLIC_CONSENT_BANNER_SIDE || 'gauche' }}
+          NEXT_PUBLIC_APP_SCRIPT_URL: ${{ secrets.NEXT_PUBLIC_APP_SCRIPT_URL }}
+          NEXT_PUBLIC_CONTACT_FORM_URL: ${{ secrets.NEXT_PUBLIC_CONTACT_FORM_URL }}
+        run: pnpm build
+
+      - name: Ensure CNAME in out/
+        run: |
+          if [ ! -f out/CNAME ]; then
+            echo "reseauevolvecapital.com" > out/CNAME
+          fi
+          touch out/.nojekyll
+
+      - name: Vérifier les og:image (budget WhatsApp)
+        run: node scripts/check-og-images.mjs
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: out
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

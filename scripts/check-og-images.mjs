@@ -3,23 +3,23 @@
 //
 // Pourquoi : WhatsApp (crawler strict) rejette une og:image > ~300 KB ou sans
 // balises de dimensions → aucune preview. Ce script garde-fou s'exécute APRÈS
-// le build statique (`make vitrine-export` → `apps/vitrine/out/`) et échoue
+// le build statique (`make export` → `out/`) et échoue
 // (exit 1) si un article émet une og:image hors budget. Il lit le HTML
 // réellement généré (= ce que voit le crawler), pas le code source.
 //
 // Usage :
-//   node apps/vitrine/scripts/check-og-images.mjs            # crawl out/
-//   OG_DIR=apps/vitrine/out node .../check-og-images.mjs     # dossier custom
+//   node scripts/check-og-images.mjs            # crawl out/
+//   OG_DIR=out node scripts/check-og-images.mjs # dossier custom
 //   OG_MAX_BYTES=300000 OG_MAX_WIDTH=1600 node ...           # budgets custom
 //   OG_SKIP_HEAD=1 node ...                                  # sans requête réseau (dimensions/type seulement)
 //
 // À câbler dans le flux de deploy vitrine (manuel ou `deploy-vitrine.yml`) :
-//   make vitrine-export && node apps/vitrine/scripts/check-og-images.mjs && make vitrine-deploy
+//   make export && node scripts/check-og-images.mjs && pnpm run deploy
 
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 
-const OG_DIR = resolve(process.env.OG_DIR ?? 'apps/vitrine/out')
+const OG_DIR = resolve(process.env.OG_DIR ?? 'out')
 const MAX_BYTES = Number(process.env.OG_MAX_BYTES ?? 300_000)
 const MAX_WIDTH = Number(process.env.OG_MAX_WIDTH ?? 1600)
 const SKIP_HEAD = process.env.OG_SKIP_HEAD === '1'
@@ -117,7 +117,7 @@ async function checkOne(file) {
 
 const files = await findBlogHtml(OG_DIR)
 if (files.length === 0) {
-  console.error(`❌ Aucun index.html sous "${OG_DIR}". Lance d'abord \`make vitrine-export\` (Strapi up).`)
+  console.error(`❌ Aucun index.html sous "${OG_DIR}". Lance d'abord \`make export\` (Strapi up).`)
   process.exit(1)
 }
 
