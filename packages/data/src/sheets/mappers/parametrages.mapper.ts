@@ -57,6 +57,8 @@ export interface ClubOfficers {
   presidentName: string | null
   /** Nom complet du Trésorier(e), ou null si absent de la feuille. */
   treasurerName: string | null
+  /** Nom complet du Secrétaire, ou null si absent de la feuille. */
+  secretaryName: string | null
 }
 
 /**
@@ -68,12 +70,13 @@ export interface ClubOfficers {
  * le matching vit dans `normalizeName`, appliquée au moment du rapprochement.
  *
  * Feuille vide → dirigeants null (pas d'exception : l'absence de dirigeant n'est pas
- * une erreur dure ; le sync logge alors un warning et continue). Le Secrétaire n'est
- * PAS extrait (décision : pas de valeur 'secretary' dans l'enum member_role).
+ * une erreur dure ; le sync logge alors un warning et continue). Le Secrétaire est
+ * extrait au même titre que le Président et le Trésorier (rôle club `secretary`,
+ * lecture seule — migrations 061/062).
  */
 export function mapParametragesToOfficers(rows: ParametragesRowDTO[]): ClubOfficers {
   const first = rows[0]
-  if (!first) return { presidentName: null, treasurerName: null }
+  if (!first) return { presidentName: null, treasurerName: null, secretaryName: null }
   const clean = (s: string | null | undefined): string | null => {
     const v = (s ?? '').trim()
     return v === '' ? null : v
@@ -81,5 +84,6 @@ export function mapParametragesToOfficers(rows: ParametragesRowDTO[]): ClubOffic
   return {
     presidentName: clean(first.presidentName),
     treasurerName: clean(first.treasurerName),
+    secretaryName: clean(first.secretaryName),
   }
 }

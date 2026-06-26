@@ -1469,7 +1469,7 @@ export type Database = {
       contribution_status: 'ok' | 'pending' | 'late' | 'exempt'
       invitation_status: 'pending' | 'accepted' | 'expired' | 'revoked'
       member_access_status: 'active' | 'locked'
-      member_role: 'member' | 'treasurer' | 'president' | 'network_admin'
+      member_role: 'member' | 'treasurer' | 'president' | 'network_admin' | 'secretary'
       member_status: 'active' | 'left'
       month_status: 'paid' | 'due' | 'late' | 'exempt'
       network_role: 'network_admin' | 'network_board'
@@ -1608,7 +1608,7 @@ export const Constants = {
       contribution_status: ['ok', 'pending', 'late', 'exempt'],
       invitation_status: ['pending', 'accepted', 'expired', 'revoked'],
       member_access_status: ['active', 'locked'],
-      member_role: ['member', 'treasurer', 'president', 'network_admin'],
+      member_role: ['member', 'treasurer', 'president', 'network_admin', 'secretary'],
       member_status: ['active', 'left'],
       month_status: ['paid', 'due', 'late', 'exempt'],
       network_role: ['network_admin', 'network_board'],

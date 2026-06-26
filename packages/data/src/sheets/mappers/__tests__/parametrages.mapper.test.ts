@@ -98,18 +98,20 @@ describe('stripEmptyClubMeta (anti-écrasement ville/pays au sync)', () => {
 })
 
 describe('mapParametragesToOfficers', () => {
-  it('extrait les noms BRUTS du président et du trésorier', () => {
+  it('extrait les noms BRUTS du président, du trésorier et du secrétaire', () => {
     const officers = mapParametragesToOfficers([
       {
         clubName: 'Evolve Capital',
         minContribution: 100,
         presidentName: 'AGBEHONOU Edem',
         treasurerName: 'HOUESSOU Valentino',
+        secretaryName: 'DOSSOU Marie',
       },
     ])
     // Noms renvoyés tels quels (la normalisation pour matching vit ailleurs).
     expect(officers.presidentName).toBe('AGBEHONOU Edem')
     expect(officers.treasurerName).toBe('HOUESSOU Valentino')
+    expect(officers.secretaryName).toBe('DOSSOU Marie')
   })
 
   it('trim les noms et mappe la chaîne vide → null', () => {
@@ -119,21 +121,39 @@ describe('mapParametragesToOfficers', () => {
         minContribution: 0,
         presidentName: '  AGBEHONOU Edem  ',
         treasurerName: '   ',
+        secretaryName: '  DOSSOU Marie  ',
       },
     ])
     expect(officers.presidentName).toBe('AGBEHONOU Edem')
     expect(officers.treasurerName).toBeNull()
+    expect(officers.secretaryName).toBe('DOSSOU Marie')
+  })
+
+  it('secrétaire absent → null sans affecter les autres dirigeants', () => {
+    const officers = mapParametragesToOfficers([
+      {
+        clubName: 'Club',
+        minContribution: 0,
+        presidentName: 'AGBEHONOU Edem',
+        treasurerName: 'HOUESSOU Valentino',
+      },
+    ])
+    expect(officers.presidentName).toBe('AGBEHONOU Edem')
+    expect(officers.treasurerName).toBe('HOUESSOU Valentino')
+    expect(officers.secretaryName).toBeNull()
   })
 
   it('dirigeants absents → null (pas de crash)', () => {
     const officers = mapParametragesToOfficers([{ clubName: 'Club', minContribution: 0 }])
     expect(officers.presidentName).toBeNull()
     expect(officers.treasurerName).toBeNull()
+    expect(officers.secretaryName).toBeNull()
   })
 
   it('feuille vide → dirigeants null (pas d exception)', () => {
     const officers = mapParametragesToOfficers([])
     expect(officers.presidentName).toBeNull()
     expect(officers.treasurerName).toBeNull()
+    expect(officers.secretaryName).toBeNull()
   })
 })

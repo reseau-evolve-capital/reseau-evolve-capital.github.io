@@ -37,6 +37,11 @@ export interface ParametragesRowDTO {
    * Même usage que `presidentName` (réconciliation des rôles). null si absent.
    */
   treasurerName?: string | null
+  /**
+   * Nom complet du Secrétaire tel qu'écrit dans PARAMETRAGES (brut, non normalisé).
+   * Même usage que `presidentName` (réconciliation du rôle `secretary`). null si absent.
+   */
+  secretaryName?: string | null
 }
 export interface PortefeuilleRowDTO {
   name: string
