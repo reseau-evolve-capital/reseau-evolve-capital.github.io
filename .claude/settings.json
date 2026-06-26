@@ -1,0 +1,14 @@
+{
+  "extraKnownMarketplaces": {
+    "omniventus-workshop": {
+      "source": {
+        "source": "github",
+        "repo": "OMNIVENTUS/ai-workshop"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "performance-guardian@omniventus-workshop": true
+  }
+}
