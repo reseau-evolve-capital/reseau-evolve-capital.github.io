@@ -15,6 +15,7 @@ import type { TimelineYear } from '@evolve/ui'
 import { formatCurrency } from '@evolve/utils'
 import { buildTimelineYears, type MonthInput } from './contributions'
 import { deriveContributionStatus, deriveAmountDue, joinedAtToYM } from './contributionStatus'
+import { STAFF_ROLES, isStaffRole, VIEW_ADMIN_ROLES, canViewClubAdmin } from './roles'
 
 type ServerClient = ReturnType<typeof createServerClient>
 type MembershipRow = Database['public']['Tables']['memberships']['Row']
@@ -38,10 +39,10 @@ export interface AccessEvent {
   createdAt: string
 }
 
-const STAFF_ROLES: readonly MemberRole[] = ['treasurer', 'president', 'network_admin']
-export function isStaffRole(role: unknown): role is MemberRole {
-  return typeof role === 'string' && (STAFF_ROLES as readonly string[]).includes(role)
-}
+// Paliers de rôle (ÉCRITURE `STAFF_ROLES`/`isStaffRole` vs LECTURE `VIEW_ADMIN_ROLES`/
+// `canViewClubAdmin`) : source UNIQUE dans `./roles` (importable aussi par le middleware sans
+// tirer ce module). Re-exportés ici pour les imports existants depuis '@/lib/data/admin'.
+export { STAFF_ROLES, isStaffRole, VIEW_ADMIN_ROLES, canViewClubAdmin }
 
 /** Membre du club consolidé (vue trésorier). Aligné sur MemberRow de MembersList (@evolve/ui). */
 export interface ClubMember {
@@ -89,6 +90,8 @@ export interface AdminContext {
   userId: string
   clubId: string
   role: MemberRole
+  /** true = staff (palier ÉCRITURE) ; false = secrétaire (LECTURE SEULE). Gate les CTA mutateurs. */
+  canManage: boolean
 }
 
 export interface ContribStats {
@@ -357,6 +360,10 @@ export async function resolveAdminContext(
   userId: string,
   activeClubId?: string | null
 ): Promise<AdminContext | null> {
+  // Filtre STAFF_ROLES (palier ÉCRITURE) volontaire : resolveAdminContext n'est consommé que
+  // par des Server Actions de MUTATION (créer/révoquer une invitation, modifier les paramètres
+  // du club). Un secrétaire ne doit jamais en obtenir un contexte → fallback `forbidden` en amont
+  // de l'appel RPC. La garde DB (is_club_staff) reste la source de vérité ; ceci est la défense app.
   let query = supabase
     .from('memberships')
     .select('club_id, role')
@@ -371,7 +378,8 @@ export async function resolveAdminContext(
     .limit(1)
     .maybeSingle<Pick<MembershipRow, 'club_id' | 'role'>>()
   if (!m) return null
-  return { userId, clubId: m.club_id, role: m.role }
+  // Filtré sur STAFF_ROLES en amont → un contexte renvoyé ici implique toujours canManage=true.
+  return { userId, clubId: m.club_id, role: m.role, canManage: true }
 }
 
 /** KPIs consolidés du club. Toutes les lectures passent par la RLS treasurer. */

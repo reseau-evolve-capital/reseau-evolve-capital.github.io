@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
-import { getClubMembers, isStaffRole, type ClubMember } from '@/lib/data/admin'
+import { getClubMembers, canViewClubAdmin, type ClubMember } from '@/lib/data/admin'
 import { captureRouteError } from '@/lib/monitoring/sentry'
 
 export const runtime = 'nodejs'
@@ -24,7 +24,9 @@ export async function GET(request: Request): Promise<NextResponse> {
     p_club_id: clubId,
   })
   if (roleError) return NextResponse.json({ error: 'Erreur de rôle.' }, { status: 500 })
-  if (!isStaffRole(role)) return NextResponse.json({ error: 'Rôle insuffisant.' }, { status: 403 })
+  // GET = LECTURE → secrétaire admis (palier lecture). La RLS treasurer/secretary garde le data.
+  if (!canViewClubAdmin(role))
+    return NextResponse.json({ error: 'Rôle insuffisant.' }, { status: 403 })
 
   let members: ClubMember[]
   try {

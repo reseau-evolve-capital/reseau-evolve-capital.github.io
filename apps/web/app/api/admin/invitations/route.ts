@@ -1,11 +1,13 @@
-// GET /api/admin/invitations — invitations du club (vue trésorier, ADM-007).
-// Garde-fous identiques à /api/admin/members : auth → club_id → rôle staff. RLS en défense.
+// GET /api/admin/invitations — invitations du club (vue admin, ADM-007).
+// Ce fichier n'expose QUE le GET (LECTURE) → secrétaire admis (palier lecture). La création et la
+// révocation d'invitation (ÉCRITURE) passent par des Server Actions (actions.ts) gardées par
+// resolveAdminContext = STAFF_ROLES — le secrétaire y est refusé (forbidden). RLS en défense.
 // Pas de service-role (la lecture passe par la RLS « invitations: staff read »).
 
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@evolve/data'
-import { isStaffRole } from '@/lib/data/admin'
+import { canViewClubAdmin } from '@/lib/data/admin'
 import { listClubInvitations, type Invitation } from '@/lib/data/invitations'
 import { captureRouteError } from '@/lib/monitoring/sentry'
 
@@ -26,7 +28,8 @@ export async function GET(request: Request): Promise<NextResponse> {
     p_club_id: clubId,
   })
   if (roleError) return NextResponse.json({ error: 'Erreur de rôle.' }, { status: 500 })
-  if (!isStaffRole(role)) return NextResponse.json({ error: 'Rôle insuffisant.' }, { status: 403 })
+  if (!canViewClubAdmin(role))
+    return NextResponse.json({ error: 'Rôle insuffisant.' }, { status: 403 })
 
   let invitations: Invitation[]
   try {

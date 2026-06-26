@@ -33,7 +33,14 @@ function toRow(inv: Invitation): InvitationRow {
   }
 }
 
-export function InvitationsView({ initialData }: { initialData: ClubInvitationsPayload }) {
+export function InvitationsView({
+  initialData,
+  canManage,
+}: {
+  initialData: ClubInvitationsPayload
+  /** false = secrétaire (LECTURE SEULE) → formulaire d'invitation + actions Renvoyer/Révoquer masqués. */
+  canManage: boolean
+}) {
   const t = useTranslations('admin.invitations')
   const tAdmin = useTranslations('admin')
   const queryClient = useQueryClient()
@@ -109,19 +116,22 @@ export function InvitationsView({ initialData }: { initialData: ClubInvitationsP
         <Text className="text-[14px] text-text-sec">{t('subtitle')}</Text>
       </div>
 
-      <InviteForm
-        onSubmit={handleInvite}
-        isPending={isPending}
-        error={formError}
-        labels={{
-          placeholder: t('form.placeholder'),
-          submit: t('form.submit'),
-          note: t('form.note'),
-          invalidEmail: t('form.errorInvalid'),
-        }}
-      />
+      {/* Création d'invitation = ÉCRITURE → masquée pour le secrétaire (lecture seule). */}
+      {canManage && (
+        <InviteForm
+          onSubmit={handleInvite}
+          isPending={isPending}
+          error={formError}
+          labels={{
+            placeholder: t('form.placeholder'),
+            submit: t('form.submit'),
+            note: t('form.note'),
+            invalidEmail: t('form.errorInvalid'),
+          }}
+        />
+      )}
 
-      {link && (
+      {canManage && link && (
         <div
           role="status"
           className="flex flex-col gap-2 rounded-[10px] border border-border bg-card p-4"
@@ -161,6 +171,7 @@ export function InvitationsView({ initialData }: { initialData: ClubInvitationsP
         invitations={data.invitations.map(toRow)}
         onResend={handleResend}
         onRevoke={handleRevoke}
+        showActions={canManage}
         labels={{
           columns: {
             email: t('columns.email'),

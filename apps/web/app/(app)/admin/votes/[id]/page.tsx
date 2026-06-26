@@ -52,5 +52,5 @@ export default async function AdminVoteDetailPage({ params }: { params: Promise<
     results,
   }
 
-  return <AdminPollDetailView data={data} />
+  return <AdminPollDetailView data={data} canManage={ctx.canManage} />
 }

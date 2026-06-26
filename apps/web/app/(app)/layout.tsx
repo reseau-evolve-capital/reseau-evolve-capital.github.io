@@ -21,7 +21,7 @@ import {
   getNetworkContext,
   type ClubMembershipSummary,
 } from '@/lib/data/request'
-import { isStaffRole } from '@/lib/data/admin'
+import { isStaffRole, canViewClubAdmin } from '@/lib/data/admin'
 import { getOpenPolls, hasPollActivity as checkPollActivity } from '@/lib/data/polls'
 
 // Les pages app/* nécessitent l'auth Supabase — pas de prérendu statique
@@ -43,6 +43,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const authUser = await getSessionUser()
 
   let profile: { full_name: string | null; avatar_url: string | null } | null = null
+  // Deux paliers : `canViewAdmin` (LECTURE — secrétaire inclus) pilote la VISIBILITÉ de l'entrée
+  // « Espace trésorier » ; `isStaff` (ÉCRITURE) reste l'info analytics « staff vs member ».
+  let canViewAdmin = false
   let isStaff = false
   // Membre de l'équipe RÉSEAU (NET-002) : pilote l'item « Réseau » role-aware (nav).
   let isNetworkMember = false
@@ -83,9 +86,12 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       ])
     clubCount = count ?? 0
     profile = profileData
-    // isStaff suit le CLUB ACTIF (pas un rôle global) : trésorier/président/network_admin DANS
-    // le club sélectionné. Sur un club où l'user est simple membre → false → pas d'entrée Admin.
-    isStaff = isStaffRole(membership?.role ?? null)
+    // Visibilité de l'entrée admin : suit le CLUB ACTIF. Secrétaire OU staff → l'entrée
+    // « Espace trésorier » est visible (le secrétaire y entre en lecture seule). isStaff reste
+    // le palier ÉCRITURE (analytics + dérivés), false pour le secrétaire.
+    const activeRole = membership?.role ?? null
+    canViewAdmin = canViewClubAdmin(activeRole)
+    isStaff = isStaffRole(activeRole)
     // Accès RÉSEAU = appartenance à l'équipe réseau (org-level, indépendant du club actif).
     isNetworkMember = networkCtx !== null
     allClubMemberships = allMemberships
@@ -140,7 +146,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
         <ToastProvider>
           <div className="md:flex md:min-h-screen">
             <AppChromeSidebar
-              isStaff={isStaff}
+              isStaff={canViewAdmin}
               isNetworkMember={isNetworkMember}
               clubActif={clubActif}
               allClubs={allClubMemberships}
@@ -149,7 +155,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             <div className="flex min-w-0 flex-1 flex-col">
               <AppChromeTopbar
                 user={user}
-                isStaff={isStaff}
+                isStaff={canViewAdmin}
                 syncLabel={syncLabel}
                 dateLabel={dateLabel}
                 clubActif={clubActif}
@@ -159,7 +165,9 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
                 pollsToVote={pollsToVote}
               />
               <main className="flex-1 px-4 pb-24 pt-6 md:px-8 md:pb-10 md:pt-8">
-                <div className="mx-auto w-full max-w-[1280px]">{children}</div>
+                {/* `min-w-0` : un enfant large (table, frise) confine son scroll en interne et
+                    ne force jamais la largeur de la PAGE (pas d'overflow-x:hidden global). */}
+                <div className="mx-auto w-full min-w-0 max-w-[1280px]">{children}</div>
               </main>
             </div>
           </div>

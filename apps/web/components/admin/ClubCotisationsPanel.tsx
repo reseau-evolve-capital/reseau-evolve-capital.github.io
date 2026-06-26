@@ -14,6 +14,8 @@ interface ClubCotisationsPanelProps {
   currency?: string
   onMemberSelect: (membershipId: string) => void
   onRelancer: (membershipId: string) => void
+  /** false = secrétaire (LECTURE SEULE) → le bouton « Relancer » est masqué. Défaut true. */
+  canManage?: boolean
 }
 
 export function ClubCotisationsPanel({
@@ -21,6 +23,7 @@ export function ClubCotisationsPanel({
   regulariserList,
   onMemberSelect,
   onRelancer,
+  canManage = true,
 }: ClubCotisationsPanelProps) {
   const t = useTranslations('admin.cotisations')
 
@@ -88,7 +91,7 @@ export function ClubCotisationsPanel({
       {/* ── Liste À régulariser ── */}
       <RegulariserList
         items={regulariserList}
-        onRelancer={onRelancer}
+        {...(canManage ? { onRelancer } : {})}
         onMemberClick={onMemberSelect}
         labels={{
           title: t('regulariser.title'),

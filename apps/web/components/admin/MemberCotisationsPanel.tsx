@@ -11,6 +11,8 @@ interface MemberCotisationsPanelProps {
   currency?: string
   onRelancer: (membershipId: string) => void
   membershipId: string
+  /** false = secrétaire (LECTURE SEULE) → le bouton « Relancer » est masqué. Défaut true. */
+  canManage?: boolean
 }
 
 /** Classe Tailwind pour le texte du badge selon le statut. */
@@ -38,6 +40,7 @@ export function MemberCotisationsPanel({
   member,
   onRelancer,
   membershipId,
+  canManage = true,
 }: MemberCotisationsPanelProps) {
   const t = useTranslations('admin.cotisations')
 
@@ -123,13 +126,15 @@ export function MemberCotisationsPanel({
             })}
           </ul>
 
-          <button
-            type="button"
-            onClick={() => onRelancer(membershipId)}
-            className="self-start min-h-[44px] px-4 py-2.5 rounded-[8px] bg-data-negative text-neutral-0 text-[14px] font-semibold transition-opacity duration-[150ms] hover:opacity-90 active:opacity-80"
-          >
-            {t('member.relancer')}
-          </button>
+          {canManage && (
+            <button
+              type="button"
+              onClick={() => onRelancer(membershipId)}
+              className="self-start min-h-[44px] px-4 py-2.5 rounded-[8px] bg-data-negative text-neutral-0 text-[14px] font-semibold transition-opacity duration-[150ms] hover:opacity-90 active:opacity-80"
+            >
+              {t('member.relancer')}
+            </button>
+          )}
         </section>
       )}
 

@@ -18,9 +18,15 @@ import { newInviteToken, hashInviteToken, inviteUrl } from '@/lib/invitations/to
 import { captureActionError } from '@/lib/monitoring/sentry'
 import { withAudit } from '@/lib/actions/withAudit'
 
-/** Rôles club attribuables depuis l'éditeur (network_admin = scope réseau, exclu). */
-export type EditableMemberRole = 'member' | 'treasurer' | 'president'
-const EDITABLE_ROLES: readonly EditableMemberRole[] = ['member', 'treasurer', 'president']
+/** Rôles club attribuables depuis l'éditeur (network_admin = scope réseau, exclu).
+ *  `secretary` = accès LECTURE SEULE (la RPC admin_change_member_role l'accepte, migration 062). */
+export type EditableMemberRole = 'member' | 'secretary' | 'treasurer' | 'president'
+const EDITABLE_ROLES: readonly EditableMemberRole[] = [
+  'member',
+  'secretary',
+  'treasurer',
+  'president',
+]
 
 /** Résultat sans payload (lock/unlock/revoke). */
 export type ActionResult = { ok: true } | { ok: false; error: string }

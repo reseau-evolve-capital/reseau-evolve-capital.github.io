@@ -39,7 +39,14 @@ const PRIMARY_LINK =
 const SECONDARY_LINK =
   'inline-flex min-h-[44px] items-center justify-center rounded-md border border-border bg-card px-3 text-[13px] font-semibold text-text outline-none transition-colors hover:bg-card-sub focus-visible:shadow-[var(--sh-glow)]'
 
-export function AdminPollsView({ items }: { items: AdminPollItem[] }) {
+export function AdminPollsView({
+  items,
+  canManage,
+}: {
+  items: AdminPollItem[]
+  /** false = secrétaire (LECTURE SEULE) → « Nouveau vote » et « Clôturer » masqués. */
+  canManage: boolean
+}) {
   const t = useTranslations('votes.admin')
   const tType = useTranslations('votes.questionType')
   const tDeadline = useTranslations('votes.deadline')
@@ -88,12 +95,21 @@ export function AdminPollsView({ items }: { items: AdminPollItem[] }) {
           </Heading>
           <p className="text-[14px] text-text-sec">{t('subtitle')}</p>
         </div>
-        <Link href="/admin/votes/nouveau" className={PRIMARY_LINK}>
-          <Icon name="Plus" size={16} aria-hidden="true" /> {t('newPoll')}
-        </Link>
+        {/* Création d'un vote = ÉCRITURE → masquée pour le secrétaire (lecture seule). */}
+        {canManage && (
+          <Link href="/admin/votes/nouveau" className={PRIMARY_LINK}>
+            <Icon name="Plus" size={16} aria-hidden="true" /> {t('newPoll')}
+          </Link>
+        )}
       </div>
 
-      <div role="tablist" aria-label={t('title')} className="flex gap-1 border-b border-border">
+      {/* Scroll INTERNE (overflow-x-auto) si les onglets dépassent sur mobile : la barre
+          d'onglets ne force jamais la largeur de la PAGE (même pattern que AdminTabs). */}
+      <div
+        role="tablist"
+        aria-label={t('title')}
+        className="flex gap-1 overflow-x-auto border-b border-border"
+      >
         {tabs.map((tb) => {
           const active = tab === tb.key
           return (
@@ -134,7 +150,7 @@ export function AdminPollsView({ items }: { items: AdminPollItem[] }) {
                     : tDeadline('noDeadline')
               }
               participationLabel={participationText(p)}
-              canClose={p.status === 'open'}
+              canClose={canManage && p.status === 'open'}
               closing={pending}
               labels={{
                 viewResults: t('row.viewResults'),
@@ -218,7 +234,9 @@ function AdminPollRow({
         </span>
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* `flex-wrap` + `min-w-0` : sur mobile (< 375px) la participation et les actions passent à
+          la ligne plutôt que de forcer la largeur de la PAGE (le bloc participation garde 120px min). */}
+      <div className="flex flex-wrap items-center gap-4">
         <div className="flex min-w-[120px] flex-col gap-1">
           <span className="text-[12px] font-medium tabular-nums text-text-sec">
             {participationLabel ?? '—'}

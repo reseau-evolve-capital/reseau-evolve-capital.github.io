@@ -53,7 +53,7 @@ vi.mock('@/lib/actions/withAudit', () => ({
 import { updateClubFeedbackStatusAction } from './actions'
 
 const USER = { id: 'staff-a', email: 'staff@a.test' }
-const CTX = { userId: 'staff-a', clubId: 'club-a', role: 'treasurer' as const }
+const CTX = { userId: 'staff-a', clubId: 'club-a', role: 'treasurer' as const, canManage: true }
 
 beforeEach(() => {
   mocks.getUser.mockReset()
@@ -84,6 +84,13 @@ describe('updateClubFeedbackStatusAction', () => {
 
   it('rejette un non-staff du club actif (pas de contexte admin) → forbidden', async () => {
     mocks.getAdminCtx.mockResolvedValue(null)
+    const res = await updateClubFeedbackStatusAction('f1', 'done')
+    expect(res).toEqual({ ok: false, error: 'forbidden' })
+    expect(mocks.updateResult).not.toHaveBeenCalled()
+  })
+
+  it('rejette un secrétaire (lecture seule, canManage=false) → forbidden', async () => {
+    mocks.getAdminCtx.mockResolvedValue({ ...CTX, role: 'secretary' as const, canManage: false })
     const res = await updateClubFeedbackStatusAction('f1', 'done')
     expect(res).toEqual({ ok: false, error: 'forbidden' })
     expect(mocks.updateResult).not.toHaveBeenCalled()

@@ -54,5 +54,5 @@ export default async function AdminVotesPage() {
     })
   )
 
-  return <AdminPollsView items={items} />
+  return <AdminPollsView items={items} canManage={ctx.canManage} />
 }

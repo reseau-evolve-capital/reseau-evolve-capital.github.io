@@ -40,7 +40,14 @@ function yesNoLabel(id: string, t: ReturnType<typeof useTranslations<'votes'>>):
   return id
 }
 
-export function AdminPollDetailView({ data }: { data: AdminPollDetailData }) {
+export function AdminPollDetailView({
+  data,
+  canManage,
+}: {
+  data: AdminPollDetailData
+  /** false = secrétaire (LECTURE SEULE) → bouton « Clôturer » masqué. Les résultats restent visibles. */
+  canManage: boolean
+}) {
   const t = useTranslations('votes')
   const tAdmin = useTranslations('votes.admin')
   const locale = useLocale()
@@ -89,7 +96,8 @@ export function AdminPollDetailView({ data }: { data: AdminPollDetailData }) {
         >
           <span aria-hidden="true">←</span> {tAdmin('detail.back')}
         </button>
-        {data.status === 'open' ? (
+        {/* Clôture = ÉCRITURE → masquée pour le secrétaire (lecture seule). */}
+        {canManage && data.status === 'open' ? (
           <Button variant="secondary" onClick={handleClose} disabled={pending}>
             {tAdmin('detail.closeManually')}
           </Button>

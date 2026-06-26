@@ -24,5 +24,7 @@ export default async function AdminInvitationsPage() {
   if (!ctx) return <Forbidden />
 
   const invitations = await listClubInvitations(supabase, ctx.clubId)
-  return <InvitationsView initialData={{ clubId: ctx.clubId, invitations }} />
+  return (
+    <InvitationsView initialData={{ clubId: ctx.clubId, invitations }} canManage={ctx.canManage} />
+  )
 }

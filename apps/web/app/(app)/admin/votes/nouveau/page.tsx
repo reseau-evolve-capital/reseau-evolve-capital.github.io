@@ -15,6 +15,8 @@ export default async function AdminVotesNewPage() {
   if (!user) return <Forbidden />
   const ctx = await getAdminContext(user.id)
   if (!ctx) return <Forbidden />
+  // Création d'un vote = ÉCRITURE : le secrétaire (LECTURE SEULE) n'y accède pas, même en lien direct.
+  if (!ctx.canManage) return <Forbidden />
 
   return <AdminPollCreateView />
 }

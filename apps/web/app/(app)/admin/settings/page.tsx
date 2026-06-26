@@ -29,5 +29,5 @@ export default async function AdminSettingsPage() {
     getActiveClubMembership(user.id),
   ])
   const currency = membership?.clubs?.currency ?? 'EUR'
-  return <SettingsView initialSettings={settings} currency={currency} />
+  return <SettingsView initialSettings={settings} currency={currency} canManage={ctx.canManage} />
 }

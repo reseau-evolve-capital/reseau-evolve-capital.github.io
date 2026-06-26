@@ -59,10 +59,13 @@ function capChanged(current: number | null, next: string): boolean {
 export function SettingsView({
   initialSettings,
   currency = 'EUR',
+  canManage = true,
 }: {
   initialSettings: ClubSettings
   /** Code ISO 4217 de la devise du club actif (ex. 'EUR', 'XOF'). Défaut 'EUR'. */
   currency?: string
+  /** false = secrétaire (LECTURE SEULE) → champs désactivés + bouton Enregistrer masqué. */
+  canManage?: boolean
 }) {
   const t = useTranslations('admin.settings')
   const tc = useTranslations('common')
@@ -74,6 +77,10 @@ export function SettingsView({
   const [form, setForm] = useState<ClubSettingsInput>(() => toFormState(initialSettings))
   const [errors, setErrors] = useState<ValidationErrorCode[]>([])
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  // LECTURE SEULE (secrétaire) : champs désactivés et bouton Enregistrer masqué. Les champs sont
+  // désactivés dès qu'on enregistre (isPending) OU si l'utilisateur n'a pas le droit de gérer.
+  const fieldsDisabled = isPending || !canManage
 
   const set = (key: keyof ClubSettingsInput) => (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({ ...prev, [key]: e.target.value }))
@@ -178,13 +185,15 @@ export function SettingsView({
           </Heading>
 
           <FormField label={t('fields.name')} required {...errorProp(fieldError('name_required'))}>
-            {(p) => <Input {...p} value={form.name} onChange={set('name')} disabled={isPending} />}
+            {(p) => (
+              <Input {...p} value={form.name} onChange={set('name')} disabled={fieldsDisabled} />
+            )}
           </FormField>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <FormField label={t('fields.city')} helpText={t('hints.city')}>
               {(p) => (
-                <Input {...p} value={form.city} onChange={set('city')} disabled={isPending} />
+                <Input {...p} value={form.city} onChange={set('city')} disabled={fieldsDisabled} />
               )}
             </FormField>
 
@@ -201,7 +210,7 @@ export function SettingsView({
                   maxLength={2}
                   placeholder="FR"
                   autoCapitalize="characters"
-                  disabled={isPending}
+                  disabled={fieldsDisabled}
                 />
               )}
             </FormField>
@@ -221,7 +230,7 @@ export function SettingsView({
                 value={form.minContribution}
                 onChange={set('minContribution')}
                 placeholder="100"
-                disabled={isPending}
+                disabled={fieldsDisabled}
               />
             )}
           </FormField>
@@ -242,7 +251,7 @@ export function SettingsView({
                 {...p}
                 value={form.brokerAccountRef}
                 onChange={set('brokerAccountRef')}
-                disabled={isPending}
+                disabled={fieldsDisabled}
               />
             )}
           </FormField>
@@ -259,7 +268,7 @@ export function SettingsView({
                 value={form.annualInvestmentCap}
                 onChange={set('annualInvestmentCap')}
                 placeholder="0"
-                disabled={isPending}
+                disabled={fieldsDisabled}
               />
             )}
           </FormField>
@@ -272,11 +281,14 @@ export function SettingsView({
           )}
         </section>
 
-        <div className="flex items-center justify-end gap-2">
-          <Button type="submit" isLoading={isPending} disabled={isPending}>
-            {tc('save')}
-          </Button>
-        </div>
+        {/* Enregistrer = ÉCRITURE → masqué pour le secrétaire (lecture seule). */}
+        {canManage && (
+          <div className="flex items-center justify-end gap-2">
+            <Button type="submit" isLoading={isPending} disabled={fieldsDisabled}>
+              {tc('save')}
+            </Button>
+          </div>
+        )}
       </form>
 
       <SensitiveConfirmModal

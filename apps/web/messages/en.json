@@ -511,6 +511,7 @@
   },
   "admin": {
     "staleData": "Couldn't refresh the data. Showing the last known values.",
+    "readOnlyBadge": "Read only",
     "sync": {
       "syncedAt": "Synced {time}",
       "refresh": "Refresh",
@@ -552,6 +553,7 @@
       },
       "roles": {
         "member": "Member",
+        "secretary": "Secretary",
         "treasurer": "Treasurer",
         "president": "President",
         "network_admin": "Network admin",
@@ -943,6 +945,7 @@
     },
     "roles": {
       "member": "Member",
+      "secretary": "Secretary",
       "treasurer": "Treasurer",
       "president": "President",
       "network_admin": "Network admin"

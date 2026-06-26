@@ -46,9 +46,11 @@ async function _updateClubFeedbackStatusAction(
   const user = await getSessionUser()
   if (!user) return { ok: false, error: 'unauthorized' }
 
-  // Contexte admin scopé au club ACTIF : null si l'utilisateur n'est pas staff de ce club.
+  // Contexte admin scopé au club ACTIF : null si l'utilisateur ne peut pas voir l'admin de ce club.
+  // canManage=false (secrétaire, LECTURE SEULE) → refus immédiat (la RLS migration 054 le bloque
+  // aussi, mais on coupe court côté app pour un message stable et zéro requête inutile).
   const ctx = await getAdminContext(user.id)
-  if (!ctx) return { ok: false, error: 'forbidden' }
+  if (!ctx || !ctx.canManage) return { ok: false, error: 'forbidden' }
 
   const supabase = createServerClient(await cookies())
 

@@ -24,7 +24,7 @@
 import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@evolve/data'
-import { isStaffRole, type AdminContext, type MemberRole } from '@/lib/data/admin'
+import { isStaffRole, canViewClubAdmin, type AdminContext, type MemberRole } from '@/lib/data/admin'
 import { resolveNetworkContext, type NetworkContext } from '@/lib/data/network'
 
 /** Nom du cookie de préférence de club actif (posé par setActiveClub, lu côté RSC + UI). */
@@ -142,14 +142,19 @@ export const getUserClubMemberships = cache(
  * Contexte admin (club + rôle staff) **scopé au club actif**, mémoïsé par requête.
  *
  * Dérivé de `getActiveClubMembership` (même club que le reste du chrome) : on renvoie un
- * contexte UNIQUEMENT si l'utilisateur est trésorier+ dans le club actuellement sélectionné.
- * Sur un club où il est simple membre → `null` → les surfaces admin disparaissent. C'est ce
- * qui faisait que les vues role-aware ne changeaient pas au switch de club (cookie ignoré).
+ * contexte UNIQUEMENT si l'utilisateur peut VOIR l'espace admin du club actif — secrétaire
+ * (LECTURE SEULE) ou staff (treasurer/president/network_admin). Sur un club où il est simple
+ * membre → `null` → les surfaces admin disparaissent. C'est ce qui faisait que les vues
+ * role-aware ne changeaient pas au switch de club (cookie ignoré).
+ *
+ * `canManage` distingue les deux paliers : il est vrai pour le staff (écriture autorisée), faux
+ * pour le secrétaire (les pages masquent alors les CTA mutateurs). Les gardes d'écriture réelles
+ * restent en DB (is_club_staff) — `canManage` ne fait que piloter l'UI.
  */
 export const getAdminContext = cache(async (userId: string): Promise<AdminContext | null> => {
   const active = await getActiveClubMembership(userId)
-  if (!active || !isStaffRole(active.role)) return null
-  return { userId, clubId: active.club_id, role: active.role }
+  if (!active || !canViewClubAdmin(active.role)) return null
+  return { userId, clubId: active.club_id, role: active.role, canManage: isStaffRole(active.role) }
 })
 
 /**

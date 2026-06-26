@@ -7,8 +7,9 @@
  * - Routes protégées (/dashboard, /portfolio, /contributions, /onboarding, /admin, /profil) :
  *   session obligatoire, sinon redirect /login. Tant que l'onboarding n'est pas terminé,
  *   ces routes (hors /onboarding/*) redirigent vers /onboarding/step-1 (guard A1).
- * - /admin uniquement : le user doit passer user_is_staff() (trésorier, président ou
- *   network_admin dans un club actif), sinon redirect /dashboard.
+ * - /admin uniquement : le user doit pouvoir VOIR l'espace admin (secrétaire en LECTURE SEULE,
+ *   ou trésorier/président/network_admin) dans au moins un club actif, sinon redirect /dashboard.
+ *   La garde fine par-club (et le palier écriture) sont posés en RSC (getAdminContext) + en DB.
  * - /reseau uniquement : le user doit passer is_network_member() (équipe RÉSEAU, scope
  *   au-dessus des clubs — migration 040), sinon redirect /dashboard.
  *
@@ -20,6 +21,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server'
 import { createMiddlewareClient } from '@/lib/supabase/middleware'
+import { VIEW_ADMIN_ROLES } from '@/lib/data/roles'
 
 const PROTECTED_PREFIXES = [
   '/dashboard',
@@ -109,12 +111,22 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // /admin uniquement : le user doit être staff (trésorier / président / network_admin).
-  // user_is_staff() est une fonction SECURITY DEFINER en DB (migration 014),
-  // appelable uniquement par les utilisateurs authentifiés.
+  // /admin uniquement : le user doit pouvoir VOIR l'espace admin (secrétaire en lecture seule
+  // OU staff) dans au moins un club actif. On NE peut PAS utiliser user_is_staff() (migration 014,
+  // staff uniquement, exclut secretary). On lit donc les memberships actifs du user (self-read
+  // autorisé par la policy « memberships: club read ») et on admet sur les rôles de visibilité
+  // (`VIEW_ADMIN_ROLES`, source unique partagée avec canViewClubAdmin — pas de liste dupliquée).
+  // La garde fine par-club + le palier ÉCRITURE sont posés en RSC (getAdminContext / canManage)
+  // et en DB (is_club_staff). Ici c'est juste un gate grossier anti-accès direct à /admin.
   if (pathname.startsWith('/admin') && user) {
-    const { data: isStaff } = await supabase.rpc('user_is_staff')
-    if (!isStaff) {
+    const { data: rows } = await supabase
+      .from('memberships')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .in('role', VIEW_ADMIN_ROLES as readonly string[])
+      .limit(1)
+    if (!rows || rows.length === 0) {
       return redirectWithCookies(new URL('/dashboard', request.url), response())
     }
   }

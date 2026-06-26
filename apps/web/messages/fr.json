@@ -511,6 +511,7 @@
   },
   "admin": {
     "staleData": "Impossible d'actualiser les données. Affichage des dernières valeurs connues.",
+    "readOnlyBadge": "Lecture seule",
     "sync": {
       "syncedAt": "Synchronisé {time}",
       "refresh": "Actualiser",
@@ -552,6 +553,7 @@
       },
       "roles": {
         "member": "Membre",
+        "secretary": "Secrétaire",
         "treasurer": "Trésorier",
         "president": "Président",
         "network_admin": "Admin réseau",
@@ -943,6 +945,7 @@
     },
     "roles": {
       "member": "Membre",
+      "secretary": "Secrétaire",
       "treasurer": "Trésorier",
       "president": "Président",
       "network_admin": "Administrateur réseau"

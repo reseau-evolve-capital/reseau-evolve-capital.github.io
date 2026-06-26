@@ -66,6 +66,7 @@ export default async function AdminCotisationsPage() {
         member: null,
       }}
       currency={currency}
+      canManage={ctx.canManage}
       members={members.map((m) => ({
         id: m.id,
         fullName: m.fullName,

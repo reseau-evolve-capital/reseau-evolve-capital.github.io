@@ -68,10 +68,13 @@ const STATE_VALUES = ['all', 'active', 'left'] as const
 export function MembersView({
   initialData,
   currentUserRole,
+  canManage,
 }: {
   initialData: ClubMembersPayload
   /** Rôle de l'utilisateur courant dans le club (anti-escalade : pilote l'option « Président »). */
   currentUserRole: MemberRole
+  /** false = secrétaire (LECTURE SEULE) → la colonne d'actions du tableau est masquée. */
+  canManage: boolean
 }) {
   const t = useTranslations('admin')
   const toast = useToast()
@@ -189,7 +192,10 @@ export function MembersView({
 
   /** Rôle courant projeté sur les rôles éditables (network_admin n'est pas éditable ici). */
   const roleModalCurrent: EditableRole =
-    roleModal && (roleModal.role === 'treasurer' || roleModal.role === 'president')
+    roleModal &&
+    (roleModal.role === 'secretary' ||
+      roleModal.role === 'treasurer' ||
+      roleModal.role === 'president')
       ? roleModal.role
       : 'member'
 
@@ -276,21 +282,28 @@ export function MembersView({
       <p role="status" className="text-[12px] text-text-ter">
         {t('members.resultsCount', { count: filtered.length })}
       </p>
+      {/* « Voir la fiche » reste disponible pour TOUS (lecture). Les actions de GESTION
+          (bloquer, débloquer, éditer email, changer le rôle) ne sont câblées qu'en écriture
+          (canManage) : sans elles, le menu d'actions ne propose plus que « Voir la fiche ». */}
       <MembersList
         members={filtered.map(toRow)}
-        onLockMember={(m) => setModal({ member: m, mode: 'lock' })}
-        onUnlockMember={(m) => setModal({ member: m, mode: 'unlock' })}
         onViewMember={(m) => router.push(`/admin/cotisations?membre=${m.id}`)}
-        onEditMemberEmail={(m) => {
-          setEmailError(null)
-          setEmailModal(m)
-        }}
-        // ADM-008 : édition du rôle club (jamais pour un network_admin = scope réseau).
-        onEditRole={(m) => {
-          if (m.role === 'network_admin') return
-          setRoleError(null)
-          setRoleModal(m)
-        }}
+        {...(canManage
+          ? {
+              onLockMember: (m: MemberRow) => setModal({ member: m, mode: 'lock' }),
+              onUnlockMember: (m: MemberRow) => setModal({ member: m, mode: 'unlock' }),
+              onEditMemberEmail: (m: MemberRow) => {
+                setEmailError(null)
+                setEmailModal(m)
+              },
+              // ADM-008 : édition du rôle club (jamais pour un network_admin = scope réseau).
+              onEditRole: (m: MemberRow) => {
+                if (m.role === 'network_admin') return
+                setRoleError(null)
+                setRoleModal(m)
+              },
+            }
+          : {})}
         labels={{
           columns: {
             fullName: t('members.columns.fullName'),
@@ -303,6 +316,7 @@ export function MembersView({
           },
           roles: {
             member: t('members.roles.member'),
+            secretary: t('members.roles.secretary'),
             treasurer: t('members.roles.treasurer'),
             president: t('members.roles.president'),
             network_admin: t('members.roles.network_admin'),
@@ -419,6 +433,7 @@ export function MembersView({
             rolePlaceholder: t('members.role.modal.rolePlaceholder'),
             roles: {
               member: t('members.roles.member'),
+              secretary: t('members.roles.secretary'),
               treasurer: t('members.roles.treasurer'),
               president: t('members.roles.president'),
             },

@@ -34,11 +34,14 @@ export function AdminCotisationsView({
   initialData,
   members,
   currency = 'EUR',
+  canManage,
 }: {
   initialData: AdminContribPayload
   members: AdminContribOption[]
   /** Code ISO 4217 de la devise du club actif (ex. 'EUR', 'XOF'). Défaut 'EUR'. */
   currency?: string
+  /** false = secrétaire (LECTURE SEULE) → boutons « Relancer » masqués. */
+  canManage: boolean
 }) {
   const t = useTranslations('admin')
   const [membre, setMembre] = useQueryState('membre')
@@ -144,6 +147,7 @@ export function AdminCotisationsView({
             currency={currency}
             onMemberSelect={(id) => void setMembre(id)}
             onRelancer={handleClubRelancer}
+            canManage={canManage}
           />
         ) : payload.member != null ? (
           <MemberCotisationsPanel
@@ -151,6 +155,7 @@ export function AdminCotisationsView({
             currency={currency}
             onRelancer={handleMemberRelancer}
             membershipId={membershipId}
+            canManage={canManage}
           />
         ) : (
           <EmptyState

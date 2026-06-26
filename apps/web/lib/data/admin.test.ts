@@ -201,7 +201,7 @@ describe('resolveAdminContext (scope club actif)', () => {
   it('scope la résolution au club actif et renvoie le contexte si l’user y est staff', async () => {
     const { client, calls } = makeSupabase({ club_id: 'club-B', role: 'president' })
     const ctx = await resolveAdminContext(client, 'u1', 'club-B')
-    expect(ctx).toEqual({ userId: 'u1', clubId: 'club-B', role: 'president' })
+    expect(ctx).toEqual({ userId: 'u1', clubId: 'club-B', role: 'president', canManage: true })
     expect(calls.clubFilter).toBe('club-B')
   })
 
@@ -215,7 +215,7 @@ describe('resolveAdminContext (scope club actif)', () => {
   it('sans club actif (pas de cookie) : pas de filtre club, club staff le plus récent', async () => {
     const { client, calls } = makeSupabase({ club_id: 'club-A', role: 'treasurer' })
     const ctx = await resolveAdminContext(client, 'u1')
-    expect(ctx).toEqual({ userId: 'u1', clubId: 'club-A', role: 'treasurer' })
+    expect(ctx).toEqual({ userId: 'u1', clubId: 'club-A', role: 'treasurer', canManage: true })
     expect(calls.clubFilter).toBeUndefined()
   })
 })

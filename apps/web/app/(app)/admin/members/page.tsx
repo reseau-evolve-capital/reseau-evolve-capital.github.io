@@ -27,5 +27,12 @@ export default async function AdminMembersPage() {
 
   // Rôle de l'utilisateur courant dans le club : pilote l'anti-escalade côté UI (un trésorier ne
   // voit pas l'option « Président » dans l'éditeur de rôle). La règle est aussi appliquée côté RPC.
-  return <MembersView initialData={{ clubId: ctx.clubId, members }} currentUserRole={ctx.role} />
+  // canManage : false pour le secrétaire (LECTURE SEULE) → actions de gestion masquées.
+  return (
+    <MembersView
+      initialData={{ clubId: ctx.clubId, members }}
+      currentUserRole={ctx.role}
+      canManage={ctx.canManage}
+    />
+  )
 }
