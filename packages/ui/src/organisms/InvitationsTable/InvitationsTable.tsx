@@ -105,6 +105,11 @@ export interface InvitationsTableProps {
   isLoading?: boolean
   onResend: (id: string) => void
   onRevoke: (id: string) => void
+  /**
+   * Affiche la colonne d'actions (Renvoyer / Révoquer). false = LECTURE SEULE (ex. secrétaire) :
+   * la colonne entière est omise (pas de cellule vide). Défaut true.
+   */
+  showActions?: boolean
   /** Chaînes user-facing/a11y (i18n). Tout défaut est FR. */
   labels?: InvitationsTableLabels
 }
@@ -152,12 +157,15 @@ export function InvitationsTable({
   isLoading,
   onResend,
   onRevoke,
+  showActions = true,
   labels,
 }: InvitationsTableProps) {
   const columnLabels = { ...DEFAULT_COLUMN_LABELS, ...labels?.columns }
   const tableLabel = labels?.tableLabel ?? DEFAULT_TABLE_LABEL
   const resendLabel = labels?.resendLabel ?? defaultResendLabel
   const revokeLabel = labels?.revokeLabel ?? defaultRevokeLabel
+  // Nombre de colonnes (skeleton) : 4 fixes + la colonne d'actions si visible.
+  const columnCount = showActions ? 5 : 4
 
   if (!isLoading && invitations.length === 0) {
     return (
@@ -170,7 +178,9 @@ export function InvitationsTable({
   }
 
   return (
-    <div className="w-full overflow-x-auto">
+    // `[contain:layout]` : confine la largeur min-content de la <table> au wrapper (anti scroll
+    // horizontal de PAGE sur mobile malgré overflow-x-auto ; cf. MembersList).
+    <div className="w-full min-w-0 max-w-full overflow-x-auto [contain:layout]">
       <table className="w-full border-collapse" aria-label={tableLabel}>
         <thead>
           <tr className="border-b border-border">
@@ -186,16 +196,18 @@ export function InvitationsTable({
             <th scope="col" className={TH_CLASS}>
               {columnLabels.status}
             </th>
-            <th scope="col" className={cn(TH_CLASS, 'text-right')}>
-              {columnLabels.actions}
-            </th>
+            {showActions && (
+              <th scope="col" className={cn(TH_CLASS, 'text-right')}>
+                {columnLabels.actions}
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => (
                 <tr key={i} className="border-b border-border">
-                  {Array.from({ length: 5 }).map((__, j) => (
+                  {Array.from({ length: columnCount }).map((__, j) => (
                     <td key={j} className="py-3 px-3 first:pl-0">
                       <div className="h-4 rounded bg-card-sub motion-safe:animate-pulse" />
                     </td>
@@ -218,22 +230,24 @@ export function InvitationsTable({
                   <td className={TD_CLASS}>
                     <InvitationStatusBadge status={inv.status} labels={labels?.statuses} />
                   </td>
-                  <td className={cn(TD_CLASS, 'text-right')}>
-                    <div className="inline-flex items-center gap-1">
-                      <ActionButton
-                        icon="Mail"
-                        label={resendLabel(inv.email)}
-                        disabled={!CAN_RESEND[inv.status]}
-                        onClick={() => onResend(inv.id)}
-                      />
-                      <ActionButton
-                        icon="X"
-                        label={revokeLabel(inv.email)}
-                        disabled={!CAN_REVOKE[inv.status]}
-                        onClick={() => onRevoke(inv.id)}
-                      />
-                    </div>
-                  </td>
+                  {showActions && (
+                    <td className={cn(TD_CLASS, 'text-right')}>
+                      <div className="inline-flex items-center gap-1">
+                        <ActionButton
+                          icon="Mail"
+                          label={resendLabel(inv.email)}
+                          disabled={!CAN_RESEND[inv.status]}
+                          onClick={() => onResend(inv.id)}
+                        />
+                        <ActionButton
+                          icon="X"
+                          label={revokeLabel(inv.email)}
+                          disabled={!CAN_REVOKE[inv.status]}
+                          onClick={() => onRevoke(inv.id)}
+                        />
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
         </tbody>

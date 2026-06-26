@@ -20,7 +20,9 @@ import { Icon } from '../../atoms/Icon'
 import { Spinner } from '../../atoms/Spinner'
 import { Banner } from '../Banner'
 
-export type SyncRole = 'member' | 'treasurer' | 'president' | 'network_admin'
+// `secretary` (lecture seule) inclus pour l'alignement de type avec MemberRole : il n'est PAS
+// privilégié (cf. PRIVILEGED) → le bandeau de sync ne s'affiche jamais pour lui (return null).
+export type SyncRole = 'member' | 'secretary' | 'treasurer' | 'president' | 'network_admin'
 
 export interface SyncBannerProps {
   syncedAt: Date | string | null

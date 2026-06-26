@@ -17,7 +17,7 @@ import { EmptyState } from '../../molecules/EmptyState'
 import { MemberActionsMenu, type MemberActionsMenuLabels } from '../../molecules/MemberActionsMenu'
 import { cn } from '../../lib/cn'
 
-export type MemberRoleKey = 'member' | 'treasurer' | 'president' | 'network_admin'
+export type MemberRoleKey = 'member' | 'secretary' | 'treasurer' | 'president' | 'network_admin'
 export type MemberContribStatus = 'ok' | 'pending' | 'late' | 'exempt'
 /** Statut d'accès d'un membre à l'espace (ADM-007). apps/web ne passe que active|locked. */
 export type MemberAccessStatus = Extract<AccessStatus, 'active' | 'locked'>
@@ -141,12 +141,15 @@ export interface MembersListProps {
 
 const DEFAULT_ROLE_LABEL: Record<MemberRoleKey, string> = {
   member: 'Membre',
+  secretary: 'Secrétaire',
   treasurer: 'Trésorier',
   president: 'Président',
   network_admin: 'Admin réseau',
 }
 const ROLE_VARIANT: Record<MemberRoleKey, BadgeVariant> = {
   member: 'neutral',
+  // Secrétaire (lecture seule) : variante neutre — ce n'est pas un rôle de gouvernance financière.
+  secretary: 'neutral',
   treasurer: 'brand',
   president: 'warning',
   network_admin: 'error',
@@ -506,7 +509,13 @@ export function MembersList({
   }
 
   return (
-    <div className="w-full overflow-x-auto">
+    // `min-w-0` : si un parent flex/grid enveloppe la liste, ce conteneur peut rétrécir.
+    // `[contain:layout]` : isole la mise en page interne pour que la largeur intrinsèque de la
+    // table (min-content de toutes ses colonnes) NE remonte PAS jusqu'a la PAGE. Sans ca, malgre
+    // `overflow-x-auto`, Chromium propage la largeur min-content de la table aux ancetres et la
+    // PAGE deborde lateralement sur mobile (verifie e2e no-horizontal-scroll). Avec containment,
+    // le scroll reste INTERNE au wrapper. Invisible visuellement et sans effet sur desktop.
+    <div className="w-full min-w-0 max-w-full overflow-x-auto [contain:layout]">
       <table className="w-full border-collapse" aria-label={tableLabel}>
         <thead>
           {table.getHeaderGroups().map((hg) => (

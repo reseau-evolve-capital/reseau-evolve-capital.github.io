@@ -27,8 +27,9 @@ import {
 } from '../../atoms/Select'
 import { cn } from '../../lib/cn'
 
-/** Rôles club éditables depuis la modale (network_admin = scope réseau, jamais ici). */
-export type EditableRole = 'member' | 'treasurer' | 'president'
+/** Rôles club éditables depuis la modale (network_admin = scope réseau, jamais ici).
+ *  `secretary` = accès LECTURE SEULE (aucune escalade : attribuable par tout staff). */
+export type EditableRole = 'member' | 'secretary' | 'treasurer' | 'president'
 
 export interface ChangeRoleModalLabels {
   /** Gabarit du titre. Reçoit le nom du membre. */
@@ -61,6 +62,7 @@ const DEFAULT_LABELS: Required<Omit<ChangeRoleModalLabels, 'roles'>> & {
   rolePlaceholder: 'Choisir un rôle',
   roles: {
     member: 'Membre',
+    secretary: 'Secrétaire',
     treasurer: 'Trésorier',
     president: 'Président',
   },
@@ -91,7 +93,7 @@ export interface ChangeRoleModalProps {
   labels?: ChangeRoleModalLabels
 }
 
-const ROLE_KEYS: readonly EditableRole[] = ['member', 'treasurer', 'president']
+const ROLE_KEYS: readonly EditableRole[] = ['member', 'secretary', 'treasurer', 'president']
 
 /**
  * Modale « Modifier le rôle » (Radix Dialog). Select de rôle borné par l'anti-escalade,
