@@ -158,7 +158,9 @@ export function BureauView({
       {board.length === 0 ? (
         <EmptyState icon="Crown" title={t('empty.title')} description={t('empty.description')} />
       ) : (
-        <div className="overflow-x-auto rounded-[14px] border border-border bg-card">
+        // `[contain:layout]` : confine la largeur min-content (min-w-[640px]) de la <table> au wrapper
+        // (sinon scroll horizontal de PAGE sur mobile malgré overflow-x-auto ; cf. MembersList).
+        <div className="min-w-0 max-w-full overflow-x-auto rounded-[14px] border border-border bg-card [contain:layout]">
           <table className="w-full min-w-[640px] border-collapse text-left">
             <caption className="sr-only">{t('table.caption')}</caption>
             <thead>

@@ -457,7 +457,8 @@ function FeedbackTable({
     ? ['feedback', 'type', 'severity', 'club', 'member', 'date', 'status']
     : ['feedback', 'type', 'severity', 'member', 'date', 'status']
   return (
-    <div className="w-full overflow-x-auto">
+    // `[contain:layout]` : confine la largeur min-content de la <table> (anti scroll de page mobile).
+    <div className="w-full min-w-0 max-w-full overflow-x-auto [contain:layout]">
       <table className="w-full border-collapse" aria-label={t('table.tableLabel')}>
         <thead>
           <tr className="border-b border-border">

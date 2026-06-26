@@ -683,7 +683,8 @@ function MatrixSection({
         {snapshots.length === 0 ? (
           <Text className="text-[13px] text-text-ter">{t('matrix.history.empty')}</Text>
         ) : (
-          <div className="overflow-x-auto">
+          // `[contain:layout]` : confine la largeur min-content de la <table> (anti scroll de page mobile).
+          <div className="min-w-0 max-w-full overflow-x-auto [contain:layout]">
             <table className="w-full border-collapse text-left text-[13px]">
               <caption className="sr-only">{t('matrix.history.tableLabel')}</caption>
               <thead>
