@@ -76,7 +76,7 @@ const STYLES = `
 .ecb-accept:hover{opacity:.9}
 .ecb-refuse{background:transparent;color:#231F20;border:1px solid #E4E4DF}
 .ecb-refuse:hover{background:#FAFAF9}
-.ecb-link{appearance:none;background:none;border:0;cursor:pointer;font:600 13.5px/1 inherit;padding:13px 4px;color:rgba(35,31,32,.42);text-decoration:underline;text-decoration-color:rgba(35,31,32,.25);text-underline-offset:3px;transition:color .15s}
+.ecb-link{appearance:none;background:none;border:0;cursor:pointer;font:600 13.5px/1 inherit;padding:13px 4px;color:rgba(35,31,32,.70);text-decoration:underline;text-decoration-color:rgba(35,31,32,.25);text-underline-offset:3px;transition:color .15s}
 .ecb-link:hover{color:#231F20}
 .ecb-link:focus-visible{outline:none;box-shadow:0 0 0 4px rgba(253,199,12,.30);border-radius:2px}
 .ecb-cat{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;border:1px solid #E4E4DF;border-radius:10px;background:#FAFAF9;padding:12px}

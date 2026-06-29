@@ -144,6 +144,10 @@ export function ValueProposition({ locale }: ValuePropositionProps) {
                         <button
                             key={index}
                             onClick={() => setCurrentTestimonial(index)}
+                            aria-label={locale === 'fr'
+                                ? `Témoignage ${index + 1} sur ${content.testimonials.length}`
+                                : `Testimonial ${index + 1} of ${content.testimonials.length}`
+                            }
                             className={`w-3 h-3 rounded-full transition-colors ${currentTestimonial === index
                                 ? 'bg-[#F3903F]'
                                 : 'bg-neutral-300'
