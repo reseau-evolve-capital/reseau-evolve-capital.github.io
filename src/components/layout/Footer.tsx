@@ -147,20 +147,21 @@ export function Footer({ locale }: FooterProps) {
                                 </h3>
                                 <div className="flex gap-4">
                                     {[
-                                        { Icon: Linkedin, href: siteConfig.links.linkedin },
-                                        { Icon: Twitter, href: siteConfig.links.twitter },
-                                        { Icon: Facebook, href: siteConfig.links.facebook },
-                                        { Icon: Instagram, href: siteConfig.links.instagram },
-                                        { Icon: Mail, href: `/${locale}/contact` }
-                                    ].map(({ Icon, href }) => (
+                                        { Icon: Linkedin, href: siteConfig.links.linkedin, label: 'LinkedIn' },
+                                        { Icon: Twitter, href: siteConfig.links.twitter, label: 'X (Twitter)' },
+                                        { Icon: Facebook, href: siteConfig.links.facebook, label: 'Facebook' },
+                                        { Icon: Instagram, href: siteConfig.links.instagram, label: 'Instagram' },
+                                        { Icon: Mail, href: `/${locale}/contact`, label: locale === 'fr' ? 'Nous contacter' : 'Contact us' }
+                                    ].map(({ Icon, href, label }) => (
                                         <Link
                                             key={href}
                                             href={href}
+                                            aria-label={label}
                                             target={href.startsWith('/') ? undefined : "_blank"}
                                             className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F3903F] transition-colors"
                                             rel={href.startsWith('/') ? undefined : "noopener noreferrer"}
                                         >
-                                            <Icon className="w-4 h-4" />
+                                            <Icon className="w-4 h-4" aria-hidden="true" />
                                         </Link>
                                     ))}
                                 </div>
