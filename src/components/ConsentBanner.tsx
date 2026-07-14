@@ -6,7 +6,7 @@
 // (acceptable hors design-system). Mêmes mécaniques que l'app : Consent Mode v2, variantes
 // compact/bar par variable d'env, panneau granulaire. Copy {fr,en} via la locale.
 
-import { useCallback, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 
 import {
   applyAnalyticsConsent,
@@ -119,7 +119,13 @@ function useConsent() {
     setConsent(analytics)
     applyAnalyticsConsent(analytics)
   }, [])
-  return { resolved: state !== null, acceptAll, rejectAll, save }
+  return {
+    resolved: state !== null,
+    storedAnalytics: state?.analytics ?? null,
+    acceptAll,
+    rejectAll,
+    save,
+  }
 }
 
 function CookieLockIcon({ size = 18 }: { size?: number }) {
@@ -142,9 +148,16 @@ function side(): 'gauche' | 'droite' {
 export function ConsentBanner({ locale }: { locale: Locale }) {
   const c = COPY[locale] ?? COPY.fr
   const privacyHref = `/${locale}/legal/privacy-policy/`
-  const { resolved, acceptAll, rejectAll, save } = useConsent()
+  const { resolved, storedAnalytics, acceptAll, rejectAll, save } = useConsent()
   const [expanded, setExpanded] = useState(false)
   const [analytics, setAnalytics] = useState(false)
+
+  // Ré-hydratation Consent Mode v2 : le DEFAULT inline (<head>) est `denied` et l'UPDATE n'est
+  // poussé qu'au clic sur la bannière. Sur les visites de retour (choix déjà stocké, bannière
+  // masquée), GA restait `denied` toute la session. On repousse ici le choix mémorisé au montage.
+  useEffect(() => {
+    if (resolved) applyAnalyticsConsent(storedAnalytics === true)
+  }, [resolved, storedAnalytics])
 
   if (resolved) return null
 
