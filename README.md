@@ -30,6 +30,21 @@ NEXT_PUBLIC_STRAPI_URL=https://strapi.reseauevolvecapital.com \
 make deploy
 ```
 
+## Analytics (GA4)
+
+Configuration de la propriété GA4 (dimensions personnalisées + événements clés) via l'Admin API,
+idempotente et rejouable. Le plan de mesure vit dans `scripts/ga-admin-setup.mjs` (miroir de
+`src/lib/analytics.ts`).
+
+```bash
+export GA_PROPERTY_ID=540972704
+export GOOGLE_APPLICATION_CREDENTIALS=/chemin/vers/sa.json   # SA avec rôle Éditeur sur la propriété
+node scripts/ga-admin-setup.mjs --dry-run   # aperçu (aucune écriture)
+pnpm ga:setup                               # applique
+```
+
+Prérequis : Admin API activée (`analyticsadmin.googleapis.com`). Ne crée que ce qui manque.
+
 ## Règle d'or
 
 Modifications **chirurgicales** uniquement — pas de refacto large. Voir `CLAUDE.md`.
