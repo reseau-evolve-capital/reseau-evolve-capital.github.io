@@ -13,6 +13,7 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "ga:setup": "node scripts/ga-admin-setup.mjs",
     "deploy": "gh-pages -d out -t"
   },
   "dependencies": {
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@google-analytics/admin": "^9",
     "@types/leaflet": "^1.9.16",
     "@types/node": "^20",
     "@types/react": "^19",

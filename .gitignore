@@ -11,6 +11,12 @@ out/
 .env.local
 .env.*.local
 
+# Clés compte de service Google (ne jamais committer)
+sa.json
+*-sa.json
+service-account*.json
+gcp-*.json
+
 # OS / IDE
 .DS_Store
 *.log
