@@ -53,7 +53,7 @@ const BenefitItem = ({ title, description, index }: BenefitItemProps) => (
       <Check className="w-4 h-4 text-white" />
     </div>
     <div>
-      <h4 className="font-heading text-lg mb-1">{title}</h4>
+      <h3 className="font-heading text-lg mb-1">{title}</h3>
       <p className="text-neutral-600">{description}</p>
     </div>
   </motion.div>
