@@ -5,12 +5,12 @@ import { Section } from '@/components/ui/Section';
 import type { ContactInfoSection as ContactInfoSectionData } from '@/lib/content-types';
 import type { SectionProps } from '@/components/sections/components';
 import { copy } from '@/lib/copy';
-import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
+import { Mail, Phone, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
 
 export function ContactInfoSection({ ctx }: SectionProps<ContactInfoSectionData>) {
     const { global, locale } = ctx;
     const t = copy[locale];
-    const hasInfo = Boolean(global.contactEmail || global.contactPhone || global.contactAddress);
+    const hasInfo = Boolean(global.contactEmail || global.contactPhone);
     const hasSocial = Boolean(global.linkedin || global.twitter || global.facebook || global.instagram);
 
     if (!hasInfo && !hasSocial) return null;
@@ -58,12 +58,6 @@ export function ContactInfoSection({ ctx }: SectionProps<ContactInfoSectionData>
                                     <Phone className="w-6 h-6 text-[#F3903F]" />
                                     {global.contactPhone}
                                 </a>
-                            )}
-                            {global.contactAddress && (
-                                <div className="flex items-center gap-4 text-neutral-600">
-                                    <MapPin className="w-6 h-6 text-[#F3903F] flex-shrink-0" />
-                                    {global.contactAddress}
-                                </div>
                             )}
                         </motion.div>
                     )}

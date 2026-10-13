@@ -7,10 +7,11 @@ const data: ContactInfoData = { __component: 'sections.contact-info', id: 1, anc
 const ctx = (global: Partial<GlobalDoc>) => ({ locale: 'fr' as const, clubs: [], global: global as GlobalDoc, isHome: false })
 
 describe('ContactInfoSection', () => {
-  it("rend l'adresse (icone MapPin) sans crash", () => {
-    const html = renderToStaticMarkup(<ContactInfoSection data={data} ctx={ctx({ contactAddress: '32 bis rue du cotentin' })} />)
-    expect(html).toContain('32 bis rue du cotentin')
-    expect(html).not.toContain('Réseaux Sociaux')
+  it("ne rend pas l'adresse (commentee sur la vitrine actuelle)", () => {
+    expect(renderToStaticMarkup(<ContactInfoSection data={data} ctx={ctx({ contactAddress: '32 bis rue du cotentin' })} />)).toBe('')
+    const html = renderToStaticMarkup(<ContactInfoSection data={data} ctx={ctx({ contactEmail: 'a@b.fr', contactAddress: '32 bis rue du cotentin' })} />)
+    expect(html).toContain('a@b.fr')
+    expect(html).not.toContain('32 bis rue')
   })
 
   it('ne rend rien sans coordonnees ni reseaux', () => {

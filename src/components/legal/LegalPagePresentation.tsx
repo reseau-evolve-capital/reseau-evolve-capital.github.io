@@ -42,17 +42,22 @@ export function LegalPagePresentation({ data, ctx }: SectionProps<LegalSection>)
       <Section className="bg-white py-16">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-8">
-            <BlocksRenderer
-              content={data.body as unknown as BlocksContent}
-              blocks={{
-                heading: ({ children }) => (
-                  <h2 className="text-2xl font-heading mb-4 mt-12 first:mt-0 text-[#231F20] border-b border-neutral-200 pb-2">
-                    {children}
-                  </h2>
-                ),
-                paragraph: ({ children }) => <p className="text-neutral-700 mb-4">{children}</p>,
-              }}
-            />
+            {Array.isArray(data.body) && data.body.length > 0 && (
+              <BlocksRenderer
+                content={data.body as unknown as BlocksContent}
+                blocks={{
+                  heading: ({ children, level }) =>
+                    level === 2 ? (
+                      <h2 className="text-2xl font-heading mb-4 mt-12 first:mt-0 text-[#231F20] border-b border-neutral-200 pb-2">
+                        {children}
+                      </h2>
+                    ) : (
+                      <h3 className="text-xl font-heading mb-3 mt-8 text-[#231F20]">{children}</h3>
+                    ),
+                  paragraph: ({ children }) => <p className="text-neutral-700 mb-4 last:mb-0">{children}</p>,
+                }}
+              />
+            )}
           </div>
         </div>
       </Section>

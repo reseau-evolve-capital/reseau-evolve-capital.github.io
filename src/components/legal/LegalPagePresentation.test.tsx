@@ -19,7 +19,7 @@ describe('LegalPagePresentation', () => {
     expect(html).toContain('<h1')
     expect(html).toContain('Dernière mise à jour : 12/04/2025')
     expect(html).toMatch(/<h2 class="text-2xl font-heading[^"]*">Introduction<\/h2>/)
-    expect(html).toContain('<p class="text-neutral-700 mb-4"><strong>Bonjour</strong></p>')
+    expect(html).toContain('<p class="text-neutral-700 mb-4 last:mb-0"><strong>Bonjour</strong></p>')
   })
 
   it('omet la date quand elle est vide', () => {
