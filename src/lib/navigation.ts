@@ -11,5 +11,3 @@ export const homeSectionIds = {
   membership: "membership",
   partnerships: "partnerships"
 } as const;
-
-export type HomeSectionId = keyof typeof homeSectionIds; 

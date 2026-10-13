@@ -2,8 +2,6 @@
 
 import { motion } from 'framer-motion';
 import { Section } from '../ui/Section';
-//import { Button } from '../ui/Button';
-//import { useRouter } from 'next/navigation';
 import type { ValuePropositionSection } from '@/lib/content-types';
 import { imageUrl } from '@/lib/media';
 import { copy } from '@/lib/copy';
@@ -72,7 +70,6 @@ const Testimonial = ({ content, author, role, image, active }: TestimonialProps)
 );
 
 export function ValueProposition({ data: content, ctx }: SectionProps<ValuePropositionSection>) {
-    //const router = useRouter();
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
     useEffect(() => {
@@ -162,26 +159,6 @@ export function ValueProposition({ data: content, ctx }: SectionProps<ValuePropo
                     </div>
                 </div>
             )}
-
-            {/* CTA Section 
-            <div className="text-center">
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                    <Button
-                        onClick={() => router.push(`/${locale}/clubs`)}
-                        size="lg"
-                    >
-                        {content.findClubCTA[locale]}
-                    </Button>
-                    <Button
-                        onClick={() => router.push(`/${locale}/create-club`)}
-                        variant="outline"
-                        size="lg"
-                    >
-                        {content.createClubCTA[locale]}
-                    </Button>
-                </div>
-            </div>
-            */}
         </Section>
     );
 } 

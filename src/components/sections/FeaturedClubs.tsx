@@ -11,19 +11,8 @@ import type { SectionProps } from './components';
 import Image from 'next/image';
 import { useState } from 'react';
 import { MapPin } from 'lucide-react';
-//import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-//import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import DynamicMap from './DynamicMap';
-
-// import dynamic from "next/dynamic";
-
-// const DynamicMap = dynamic(() => import("@/components/sections/DynamicMap"), {
-//     ssr: true,
-//     loading: () => <p>Loading featured clubs...</p>,
-// });
-
-// Fix for default markers
 
 interface ClubCardProps {
     name: string;
@@ -89,18 +78,9 @@ const ClubCard = ({ name, description, members, location, image, clubSlug, index
 };
 
 export default function FeaturedClubs({ data: content, ctx }: SectionProps<FeaturedClubsSection>) {
-    //const router = useRouter();
     const { locale } = ctx;
     const clubs = ctx.clubs ?? [];
     const [activeClub, setActiveClub] = useState<number | null>(null);
-    // const [isMounted, setIsMounted] = useState(false);
-
-    // // Handle SSR
-    // useEffect(() => {
-    //     setIsMounted(true);
-    // }, []);
-
-    //const franceCenter = { lat: 46.603354, lng: 1.888334 }; // Center of France
 
     return (
         <Section>
@@ -160,17 +140,6 @@ export default function FeaturedClubs({ data: content, ctx }: SectionProps<Featu
                     ))}
                 </div>
             </div>
-
-            {/* CTA Section 
-            <div className="text-center">
-                <Button
-                    onClick={() => router.push(`/${locale}/clubs`)}
-                    size="lg"
-                >
-                    {content.cta[locale]}
-                </Button>
-            </div>
-            */}
         </Section>
     );
 } 
