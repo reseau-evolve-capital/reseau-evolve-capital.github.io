@@ -8,26 +8,13 @@ import { pageContent } from '@/config/site-config'
 //import { ThreeBackground } from "@/components/hero/ThreeBackground";
 import { AnimatedBackground } from '@/components/hero/AnimatedBackground'
 import { FloatingElements } from '@/components/hero/FloatingElements'
-import { Introduction } from '@/components/sections/Introduction'
-import { ValueProposition } from '@/components/sections/ValueProposition'
 //import { HowItWorks } from "@/components/sections/HowItWorks";
 //import { FeaturedClubs } from "@/components/sections/FeaturedClubs";
-import { Events } from '@/components/sections/Events'
-import { MediaResources } from '@/components/sections/MediaResources'
-import { Membership } from '@/components/sections/Membership'
-import { Partnerships } from '@/components/sections/Partnerships'
 import { Button } from '@/components/ui/Button'
 import { SectionNavigation } from '@/components/ui/SectionNavigation'
 import { analyticsEvents } from '@/lib/analytics'
-import { Suspense } from 'react'
 
-import dynamic from 'next/dynamic'
 import Link from 'next/link'
-
-const FeaturedClubsContent = dynamic(() => import('@/components/sections/FeaturedClubs'), {
-  ssr: false,
-  loading: () => <p>Loading featured clubs...</p>,
-})
 
 export const dynamicParams = false
 type HomePageProps = {
@@ -148,47 +135,6 @@ export default function HomePage({ locale }: HomePageProps) {
             </div>
           </motion.div>
         </div>
-      </section>
-
-      {/* Introduction Section */}
-      <section id="introduction">
-        <Introduction locale={locale} />
-      </section>
-
-      {/* Value Proposition Section */}
-      <section id="value-proposition">
-        <ValueProposition locale={locale} />
-      </section>
-
-      {/* How It Works Section 
-            <HowItWorks locale={locale} />
-            */}
-
-      {/* Featured Clubs Section */}
-      <section id="clubs">
-        <FeaturedClubsContent locale={locale} />
-      </section>
-
-      {/* Events Section */}
-      <section id="events">
-        <Events locale={locale} />
-      </section>
-
-      {/* Media Resources Section */}
-      <section id="resources">
-        <Suspense>
-          <MediaResources locale={locale} />
-        </Suspense>
-      </section>
-
-      {/* Membership Section */}
-      <section id="membership">
-        <Membership locale={locale} />
-      </section>
-
-      {/* Partnerships Section */}
-      <section id="partnerships">
-        <Partnerships locale={locale} />
       </section>
     </div>
   )

@@ -4,16 +4,17 @@ import { motion } from 'framer-motion';
 import { Section } from '../ui/Section';
 import { Button } from '../ui/Button';
 import { useRouter } from 'next/navigation';
-import { type Locale } from '@/config/site-config';
-import { pageContent } from '@/config/site-config';
+import type { PartnershipsSection } from '@/lib/content-types';
+import { imageUrl } from '@/lib/media';
+import type { SectionProps } from './components';
 import Image from 'next/image';
 import { useState } from 'react';
 import { Building2, Handshake, Mail } from 'lucide-react';
 
 interface PartnerLogoProps {
     name: string;
-    logo: string;
-    type: string;
+    logo: string | null;
+    type: string | null;
     index: number;
 }
 
@@ -31,17 +32,19 @@ const PartnerLogo = ({ name, logo, type, index }: PartnerLogoProps) => {
             onMouseLeave={() => setIsHovered(false)}
         >
             <div className="relative h-20 bg-white rounded-xl shadow-sm p-4 transition-all duration-300 hover:shadow-lg">
-                <Image
-                    src={logo}
-                    alt={name}
-                    fill
-                    className="object-contain p-4 transition-opacity grayscale hover:grayscale-0"
-                />
+                {logo && (
+                    <Image
+                        src={logo}
+                        alt={name}
+                        fill
+                        className="object-contain p-4 transition-opacity grayscale hover:grayscale-0"
+                    />
+                )}
             </div>
             {isHovered && (
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white rounded-lg shadow-lg p-2 whitespace-nowrap z-10">
                     <p className="text-sm font-medium">{name}</p>
-                    <p className="text-xs text-neutral-500">{type}</p>
+                    {type && <p className="text-xs text-neutral-500">{type}</p>}
                 </div>
             )}
         </motion.div>
@@ -50,7 +53,7 @@ const PartnerLogo = ({ name, logo, type, index }: PartnerLogoProps) => {
 
 interface SponsorshipTierProps {
     title: string;
-    description: string;
+    description: string | null;
     benefits: string[];
     icon: React.ReactNode;
     index: number;
@@ -68,25 +71,23 @@ const SponsorshipTier = ({ title, description, benefits, icon, index }: Sponsors
             {icon}
         </div>
         <h3 className="text-xl font-heading mb-2">{title}</h3>
-        <p className="text-neutral-600 mb-4">{description}</p>
-        <ul className="space-y-2">
-            {benefits.map((benefit, i) => (
-                <li key={i} className="flex items-center gap-2 text-sm text-neutral-600">
-                    <span className="w-1.5 h-1.5 bg-[#F3903F] rounded-full" />
-                    {benefit}
-                </li>
-            ))}
-        </ul>
+        {description && <p className="text-neutral-600 mb-4">{description}</p>}
+        {benefits.length > 0 && (
+            <ul className="space-y-2">
+                {benefits.map((benefit, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-neutral-600">
+                        <span className="w-1.5 h-1.5 bg-[#F3903F] rounded-full" />
+                        {benefit}
+                    </li>
+                ))}
+            </ul>
+        )}
     </motion.div>
 );
 
-interface PartnershipsProps {
-    locale: Locale;
-}
-
-export function Partnerships({ locale }: PartnershipsProps) {
+export function Partnerships({ data: content, ctx }: SectionProps<PartnershipsSection>) {
     const router = useRouter();
-    const content = pageContent.home.partnerships;
+    const { locale } = ctx;
     const [isHovered, setIsHovered] = useState(false);
 
     return (
@@ -98,61 +99,72 @@ export function Partnerships({ locale }: PartnershipsProps) {
                     viewport={{ once: true }}
                     className="text-3xl md:text-4xl font-heading mb-6"
                 >
-                    {content.title[locale]}
+                    {content.title}
                 </motion.h2>
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 }}
-                    className="text-lg text-neutral-600 max-w-2xl mx-auto"
-                >
-                    {content.description[locale]}
-                </motion.p>
+                {content.description && (
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
+                        className="text-lg text-neutral-600 max-w-2xl mx-auto"
+                    >
+                        {content.description}
+                    </motion.p>
+                )}
             </div>
 
             {/* Current Partners Grid */}
-            <div className="mb-20">
-                <h3 className="text-2xl font-heading text-center mb-8">
-                    {content.partnersTitle[locale]}
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {content.partners.map((partner, index) => (
-                        <PartnerLogo
-                            key={partner.name[locale]}
-                            name={partner.name[locale]}
-                            logo={partner.logo}
-                            type={partner.type[locale]}
-                            index={index}
-                        />
-                    ))}
+            {content.partners.length > 0 && (
+                <div className="mb-20">
+                    {content.partnersTitle && (
+                        <h3 className="text-2xl font-heading text-center mb-8">
+                            {content.partnersTitle}
+                        </h3>
+                    )}
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {content.partners.map((partner, index) => (
+                            <PartnerLogo
+                                key={`${partner.name}-${index}`}
+                                name={partner.name}
+                                logo={imageUrl(partner.logo)}
+                                type={partner.type}
+                                index={index}
+                            />
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Sponsorship Tiers */}
-            <div className="mb-20">
-                <h3 className="text-2xl font-heading text-center mb-8">
-                    {content.sponsorshipTitle[locale]}
-                </h3>
-                <div className="grid md:grid-cols-3 gap-8">
-                    {content.sponsorshipTiers.map((tier, index) => (
-                        <SponsorshipTier
-                            key={tier.title[locale]}
-                            title={tier.title[locale]}
-                            description={tier.description[locale]}
-                            benefits={tier.benefits.map(b => b[locale])}
-                            icon={
-                                <div className="text-white w-6 h-6">
-                                    {index === 0 ? <Building2 /> : index === 1 ? <Handshake /> : <Mail />}
-                                </div>
-                            }
-                            index={index}
-                        />
-                    ))}
+            {content.sponsorshipTiers.length > 0 && (
+                <div className="mb-20">
+                    {content.sponsorshipTitle && (
+                        <h3 className="text-2xl font-heading text-center mb-8">
+                            {content.sponsorshipTitle}
+                        </h3>
+                    )}
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {content.sponsorshipTiers.map((tier, index) => (
+                            <SponsorshipTier
+                                key={`${tier.title}-${index}`}
+                                title={tier.title}
+                                description={tier.description}
+                                benefits={tier.benefits.map(b => b.text)}
+                                icon={
+                                    <div className="text-white w-6 h-6">
+                                        {index === 0 ? <Building2 /> : index === 1 ? <Handshake /> : <Mail />}
+                                    </div>
+                                }
+                                index={index}
+                            />
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* CTA Section */}
+            {content.ctaLabel && (
             <div className="text-center">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
@@ -176,7 +188,7 @@ export function Partnerships({ locale }: PartnershipsProps) {
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
                     >
-                        {content.cta[locale]}
+                        {content.ctaLabel}
                         <motion.span
                             className="inline-block ml-2"
                             animate={{ x: isHovered ? 5 : 0 }}
@@ -186,6 +198,7 @@ export function Partnerships({ locale }: PartnershipsProps) {
                     </Button>
                 </motion.div>
             </div>
+            )}
         </Section>
     );
 } 
