@@ -51,11 +51,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: 'website',
       images: [
         {
-          // Original Strapi (1200x630), pas un dérivé redimensionné.
+          // Original Strapi, pas un dérivé redimensionné ; dimensions du média (le repli fait 1200x630).
           url: getStrapiMediaUrl(defaultSeo?.ogImage) || '/brand/opengraph.jpg',
           type: 'image/jpeg',
-          width: 1200,
-          height: 630,
+          width: defaultSeo?.ogImage ? defaultSeo.ogImage.width ?? undefined : 1200,
+          height: defaultSeo?.ogImage ? defaultSeo.ogImage.height ?? undefined : 630,
         },
       ],
     },
