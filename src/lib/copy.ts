@@ -8,6 +8,7 @@ export const copy: Record<Locale, Record<string, string>> = {
     register: "S'inscrire",
     eventPast: 'Événement passé',
     participants: 'participants',
+    ourJourney: 'Notre Parcours',
   },
   en: {
     members: 'members',
@@ -16,5 +17,6 @@ export const copy: Record<Locale, Record<string, string>> = {
     register: 'Register',
     eventPast: 'Past event',
     participants: 'participants',
+    ourJourney: 'Our Journey',
   },
 }

@@ -24,7 +24,6 @@ export function generateStaticParams() {
     }));
 }
 
-export default async function AboutPage({ params }: Props) {
-    const { locale } = await params;
-    return <AboutPresentation locale={locale} />;
+export default function AboutPage() {
+    return <AboutPresentation />;
 } 
