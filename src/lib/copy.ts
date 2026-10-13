@@ -39,6 +39,8 @@ export const copy: Record<Locale, Record<string, string>> = {
     contactInformation: 'Coordonnées',
     joinTheClub: 'Rejoindre le club',
     applyNow: 'Candidater',
+    newsletterPlaceholder: 'Votre email',
+    newsletterButton: "S'inscrire",
   },
   en: {
     members: 'members',
@@ -78,5 +80,7 @@ export const copy: Record<Locale, Record<string, string>> = {
     contactInformation: 'Contact Information',
     joinTheClub: 'Join the Club',
     applyNow: 'Apply Now',
+    newsletterPlaceholder: 'Your email',
+    newsletterButton: 'Subscribe',
   },
 }

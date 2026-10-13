@@ -5,6 +5,7 @@ import { Navigation } from '@/components/navigation'
 import type { Locale } from '@/lib/content-types'
 import { getStrapiMediaUrl } from '@/lib/api'
 import { resolveLinks } from '@/lib/links'
+import { copy } from '@/lib/copy'
 import { SITE_URL, SEO_KEYWORDS } from '@/lib/site'
 import { loadSiteContent } from '@/lib/site-content'
 import { GoogleAnalytics } from '@/components/GoogleAnalytics'
@@ -82,7 +83,7 @@ export default async function LocaleLayout({ children, params }: Props) {
         <Suspense>
           <NewsletterProvider
             locale={locale}
-            newsletter={{ placeholder: site.newsletterPlaceholder ?? '', button: site.newsletterButton ?? '' }}
+            newsletter={{ placeholder: site.newsletterPlaceholder || copy[locale].newsletterPlaceholder, button: site.newsletterButton || copy[locale].newsletterButton }}
           >
             <div className="relative flex min-h-screen flex-col">
               <Navigation siteName={site.siteName} navigation={resolveLinks(site.navigation, slugs)} />
