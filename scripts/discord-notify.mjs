@@ -32,13 +32,13 @@ async function main() {
   if (OUTCOME === 'success' && SINCE) {
     try {
       const url = `${STRAPI_API_URL}/articles?locale=fr&fields[0]=title&fields[1]=slug&sort[0]=publishedAt:asc&pagination[pageSize]=20&filters[publishedAt][$gt]=${encodeURIComponent(SINCE)}`
-      articles = (await (await fetch(url)).json()).data ?? []
+      articles = (await (await fetch(url, { signal: AbortSignal.timeout(15000) })).json()).data ?? []
     } catch (err) {
       console.warn(`Articles non récupérés : ${err.message}`)
     }
   }
   const body = buildDeployMessage({ outcome: OUTCOME, trigger: TRIGGER, commitMessage: COMMIT_MESSAGE, runUrl: RUN_URL, siteUrl: SITE_URL, articles })
-  const res = await fetch(DISCORD_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  const res = await fetch(DISCORD_WEBHOOK_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal: AbortSignal.timeout(15000) })
   if (!res.ok) console.warn(`Discord a répondu ${res.status}`)
 }
 
