@@ -1,6 +1,6 @@
 import { type Metadata } from "next"
 import { redirect } from 'next/navigation'
-import { defaultLocale } from "@/config/site-config"
+import { defaultLocale } from "@/lib/site"
 
 export const metadata: Metadata = {
   title: 'Redirecting...',

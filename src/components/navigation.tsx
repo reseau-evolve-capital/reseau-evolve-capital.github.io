@@ -2,7 +2,8 @@
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { useRouter, usePathname } from 'next/navigation';
-import { locales, defaultLocale, type Locale } from "@/config/site-config"
+import { type Locale } from '@/lib/content-types'
+import { locales, defaultLocale } from '@/lib/site'
 import { useState } from "react"
 import Image from "next/image";
 

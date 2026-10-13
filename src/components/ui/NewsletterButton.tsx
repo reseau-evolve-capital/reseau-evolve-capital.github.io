@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { type Locale } from '@/config/site-config';
+import { type Locale } from '@/lib/content-types'
 import { useNewsletter } from '@/components/newsletter';
 
 interface NewsletterButtonProps {

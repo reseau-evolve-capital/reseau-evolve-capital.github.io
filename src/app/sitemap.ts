@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
-import { siteConfig, locales, recClubs } from '@/config/site-config';
+import { SITE_URL, locales } from '@/lib/site';
+import { loadSiteContent } from '@/lib/site-content';
 import { getAllArticles, getAllCategories } from '@/lib/api';
 
 type ChangeFrequency = 'always' | 'hourly' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'never';
@@ -9,37 +10,27 @@ export const dynamic = 'force-static';
 export const revalidate = 3600; // Revalidate the sitemap once per hour to pick up new blog content
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = siteConfig.url;
+  const baseUrl = SITE_URL;
+  const { pages, clubs } = await loadSiteContent();
 
-  // Define your static routes
-  const routes = [
-    '',
-    '/about',
-    '/clubs',
-    '/blog', // Add main blog page
-    //'/events',
-    //'/resources',
-    '/contact',
-    //'/join',
-    //'/partnerships'
-  ];
+  const pageUrl = (locale: string, slug: string) => `${baseUrl}/${locale}${slug === 'index' ? '' : `/${slug}`}`;
+  // Les pages legales n'ont jamais figure au sitemap : parite conservee
+  const slugs = [...new Set([...pages.fr, ...pages.en].map((p) => p.slug))].filter((s) => !s.startsWith('legal/'));
 
-  // Create sitemap entries for each locale and route combination
-  const routeEntries: MetadataRoute.Sitemap = routes.flatMap((route) =>
-    locales.map((locale) => ({
-      url: `${baseUrl}/${locale}${route}`,
+  // Pages Strapi (une entree par locale ou la page existe) + liste du blog
+  const routeEntries: MetadataRoute.Sitemap = [...slugs, 'blog'].flatMap((slug) => {
+    const existing = slug === 'blog' ? locales : locales.filter((l) => pages[l].some((p) => p.slug === slug));
+    const isHome = slug === 'index';
+    return existing.map((locale) => ({
+      url: pageUrl(locale, slug),
       lastModified: new Date(),
-      changeFrequency: (route === '' ? 'daily' : 'weekly') as ChangeFrequency,
-      priority: route === '' ? 1 : 0.8,
-      // Add language alternates for each URL
+      changeFrequency: (isHome ? 'daily' : 'weekly') as ChangeFrequency,
+      priority: isHome ? 1 : 0.8,
       alternates: {
-        languages: {
-          'fr': `${baseUrl}/fr${route}`,
-          'en': `${baseUrl}/en${route}`,
-        },
+        languages: Object.fromEntries(existing.map((l) => [l, pageUrl(l, slug)])),
       },
-    }))
-  );
+    }));
+  });
 
   // Fetch blog articles for each locale
   const frArticles = await getAllArticles('fr');
@@ -141,15 +132,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // You would typically fetch these from your data source
   const dynamicEntries: MetadataRoute.Sitemap = [
     // Example for clubs
-    ...recClubs.map((club) => ({
-      url: `${baseUrl}/fr/clubs/${club.id}`,
+    ...clubs.fr.map((club) => ({
+      url: `${baseUrl}/fr/clubs/${club.slug}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as ChangeFrequency,
       priority: 0.7,
       alternates: {
         languages: {
-          'fr': `${baseUrl}/fr/clubs/${club.id}`,
-          'en': `${baseUrl}/en/clubs/${club.id}`,
+          'fr': `${baseUrl}/fr/clubs/${club.slug}`,
+          'en': `${baseUrl}/en/clubs/${club.slug}`,
         },
       },
     })),

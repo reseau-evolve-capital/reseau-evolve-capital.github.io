@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FiTrendingDown, FiArrowLeft, FiDollarSign } from 'react-icons/fi';
-import { siteConfig } from '@/config/site-config';
+import { BUY_ME_A_COFFEE_URL } from '@/lib/site';
 
 const stockMessages = [
     "Oops! Looks like this page took a nosedive! 📉",
@@ -129,7 +129,7 @@ export default function NotFound() {
 
                             <div className="flex flex-col sm:flex-row gap-6 justify-center">
                                 <motion.a
-                                    href={siteConfig.author.social.buyMeACoffee}
+                                    href={BUY_ME_A_COFFEE_URL}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     initial={{ opacity: 0, y: 20 }}

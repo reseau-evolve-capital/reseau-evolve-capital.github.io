@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { type Locale } from '@/config/site-config';
+import { type Locale } from '@/lib/content-types'
 import { homeSectionIds } from '@/lib/navigation';
 import { scrollToElement } from '@/lib/scroll';
 

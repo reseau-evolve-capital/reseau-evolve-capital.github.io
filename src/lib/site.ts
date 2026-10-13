@@ -1,3 +1,5 @@
+import type { Locale } from './content-types'
+
 export const SITE_URL = 'https://www.reseauevolvecapital.com'
 
 export const SEO_KEYWORDS = [
@@ -28,3 +30,7 @@ export const SEO_KEYWORDS = [
   'cash',
   'group investment',
 ]
+
+export const locales: Locale[] = ['fr', 'en']
+export const defaultLocale: Locale = 'fr'
+export const BUY_ME_A_COFFEE_URL = 'https://www.buymeacoffee.com/lionel.z'

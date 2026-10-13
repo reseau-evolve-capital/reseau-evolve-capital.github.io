@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { siteConfig } from '@/config/site-config';
+import { SITE_URL } from '@/lib/site';
 
 // Add these exports for static generation
 export const dynamic = 'force-static';
@@ -12,7 +12,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/*', '/admin/*'],
     },
-    sitemap: `${siteConfig.url}/sitemap.xml`,
-    host: siteConfig.url,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 } 

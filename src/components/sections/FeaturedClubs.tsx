@@ -16,7 +16,6 @@ import { MapPin } from 'lucide-react';
 //import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import DynamicMap from './DynamicMap';
-//import { LocalizedText } from '@/config/site-config';
 
 // import dynamic from "next/dynamic";
 

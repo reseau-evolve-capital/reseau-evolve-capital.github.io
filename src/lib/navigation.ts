@@ -1,4 +1,4 @@
-import { type Locale } from "@/config/site-config";
+import { type Locale } from '@/lib/content-types'
 
 /**
  * Creates a path for anchor links that works with locale

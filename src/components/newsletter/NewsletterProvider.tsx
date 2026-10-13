@@ -3,7 +3,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { NewsletterPopup } from './NewsletterPopup';
 import { newsletterConfig } from '@/config/newsletter-config';
-import { type Locale } from '@/config/site-config';
+import { type Locale } from '@/lib/content-types'
 import { usePathname, useSearchParams } from 'next/navigation';
 import { NEWSLETTER_QUERY_PARAM } from '@/lib/newsletter';
 
