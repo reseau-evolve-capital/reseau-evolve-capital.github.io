@@ -6,13 +6,14 @@ import { X, Mail, ArrowRight, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import Image from 'next/image'
 import { type Locale } from '@/config/site-config'
-import { siteConfig } from '@/config/site-config'
 import confetti from 'canvas-confetti'
 import { subscribeToNewsletter, isValidEmail } from '@/lib/newsletter'
 import { analyticsEvents } from '@/lib/analytics'
 
 interface NewsletterPopupProps {
   locale: Locale
+  placeholder: string
+  button: string
   // Time in seconds before the popup appears
   delayTime?: number
   // If true, will show popup only once per session
@@ -23,6 +24,8 @@ interface NewsletterPopupProps {
 
 export function NewsletterPopup({
   locale,
+  placeholder,
+  button,
   delayTime = 10,
   showOncePerSession = true,
   onClose,
@@ -33,8 +36,6 @@ export function NewsletterPopup({
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [emailError, setEmailError] = useState('')
   const [animationStage, setAnimationStage] = useState(0)
-
-  const content = siteConfig.pageContent.home.footer.newsletter
 
   useEffect(() => {
     // Check if we've shown this popup already in this session
@@ -331,7 +332,7 @@ export function NewsletterPopup({
                             setEmail(e.target.value)
                             if (emailError) setEmailError('')
                           }}
-                          placeholder={content.placeholder[locale]}
+                          placeholder={placeholder}
                           className={`w-full pl-10 pr-4 py-2 rounded-lg border ${
                             emailError ? 'border-red-500' : 'border-neutral-300'
                           } focus:outline-none focus:ring-2 focus:ring-[#F3903F] focus:border-transparent`}
@@ -356,7 +357,7 @@ export function NewsletterPopup({
                           isLoading={isSubmitting}
                           disabled={isSubmitting}
                         >
-                          {content.button[locale]}
+                          {button}
                           {!isSubmitting && <ArrowRight className="w-4 h-4" />}
                         </Button>
                       </div>

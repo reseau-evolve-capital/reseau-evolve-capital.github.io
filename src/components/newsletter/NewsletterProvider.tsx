@@ -25,9 +25,10 @@ export const useNewsletter = () => {
 interface NewsletterProviderProps {
   children: React.ReactNode;
   locale: Locale;
+  newsletter: { placeholder: string; button: string };
 }
 
-export function NewsletterProvider({ children, locale }: NewsletterProviderProps) {
+export function NewsletterProvider({ children, locale, newsletter }: NewsletterProviderProps) {
   const [isPopupVisible, setIsPopupVisible] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const pathname = usePathname();
@@ -128,6 +129,8 @@ export function NewsletterProvider({ children, locale }: NewsletterProviderProps
       {isPopupVisible && (
         <NewsletterPopup
           locale={locale}
+          placeholder={newsletter.placeholder}
+          button={newsletter.button}
           delayTime={0} // No delay needed as we're managing this in the provider
           showOncePerSession={false} // We're handling this in the provider
           onClose={hidePopup}

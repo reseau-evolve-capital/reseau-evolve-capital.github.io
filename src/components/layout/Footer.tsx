@@ -2,43 +2,26 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { type Locale } from '@/config/site-config';
+import type { GlobalDoc, LinkGroupItem, Locale } from '@/lib/content-types';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight, ExternalLink } from 'lucide-react';
-import { siteConfig } from '@/config/site-config';
-import { AnchorLink } from '../ui/AnchorLink';
-import { homeSectionIds } from '@/lib/navigation';
 import { NewsletterButton } from "@/components/ui/NewsletterButton";
 
 interface FooterProps {
     locale: Locale;
+    global: GlobalDoc;
+    linkGroups: LinkGroupItem[];
 }
 
-// Map of footer link paths to home section IDs for anchor navigation
-const homeAnchorMap: Record<string, string> = {
-    '/clubs': homeSectionIds.clubs,
-    '/events': homeSectionIds.events,
-    '/resources': homeSectionIds.resources,
-    '/partnerships': homeSectionIds.partnerships,
-    '/membership/benefits': homeSectionIds.membership
-};
+const isExternal = (href: string) => /^https?:|^mailto:|^tel:/.test(href);
 
-export function Footer({ locale }: FooterProps) {
-    const content = siteConfig.pageContent.home.footer;
-
-
-
-    // Determines if a link should use anchor navigation or regular navigation
-    const isAnchorLink = (href: string): boolean => {
-        return Object.keys(homeAnchorMap).includes(href);
-    };
-
-    // Gets the section ID for a home page section, if applicable
-    const getSectionIdForLink = (href: string): string | undefined => {
-        if (isAnchorLink(href)) {
-            return homeAnchorMap[href];
-        }
-        return undefined;
-    };
+export function Footer({ locale, global, linkGroups }: FooterProps) {
+    const socialLinks = [
+        { Icon: Linkedin, href: global.linkedin },
+        { Icon: Twitter, href: global.twitter },
+        { Icon: Facebook, href: global.facebook },
+        { Icon: Instagram, href: global.instagram },
+        { Icon: Mail, href: `/${locale}/contact` }
+    ].filter((l): l is { Icon: typeof Mail; href: string } => Boolean(l.href));
 
     return (
         <footer className="relative bg-neutral-900 text-white overflow-hidden">
@@ -56,49 +39,37 @@ export function Footer({ locale }: FooterProps) {
                             height={40}
                             className="mb-6"
                         />
-                        <h3 className="text-xl font-heading mb-4">
-                            {content.newsletter.title[locale]}
-                        </h3>
-                        <p className="text-neutral-400 mb-6">
-                            {content.newsletter.description[locale]}
-                        </p>
+                        {global.newsletterTitle && (
+                            <h3 className="text-xl font-heading mb-4">
+                                {global.newsletterTitle}
+                            </h3>
+                        )}
+                        {global.newsletterDescription && (
+                            <p className="text-neutral-400 mb-6">
+                                {global.newsletterDescription}
+                            </p>
+                        )}
                         <NewsletterButton locale={locale} variant="hero" />
                     </div>
 
                     {/* Navigation Links */}
-                    {Object.entries(content.links).map(([key, section]) => (
-                        <div key={key}>
+                    {linkGroups.map((group) => (
+                        <div key={group.title}>
                             <h3 className="text-lg font-heading mb-6">
-                                {section.title[locale]}
+                                {group.title}
                             </h3>
                             <ul className="space-y-4">
-                                {section.items.map((item) => {
-                                    const sectionId = getSectionIdForLink(item.href);
-                                    
-                                    return (
-                                        <li key={item.href}>
-                                            {isAnchorLink(item.href) ? (
-                                                <AnchorLink
-                                                    href={`/${locale}`}
-                                                    sectionId={sectionId}
-                                                    locale={locale}
-                                                    className="text-neutral-400 hover:text-white transition-colors flex items-center group"
-                                                >
-                                                    <span>{item.label[locale]}</span>
-                                                    <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                                                </AnchorLink>
-                                            ) : (
-                                                <Link
-                                                    href={`/${locale}${item.href}`}
-                                                    className="text-neutral-400 hover:text-white transition-colors flex items-center group"
-                                                >
-                                                    <span>{item.label[locale]}</span>
-                                                    <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
-                                                </Link>
-                                            )}
-                                        </li>
-                                    );
-                                })}
+                                {group.links.map((item) => (
+                                    <li key={item.href}>
+                                        <Link
+                                            href={isExternal(item.href) ? item.href : `/${locale}${item.href}`}
+                                            className="text-neutral-400 hover:text-white transition-colors flex items-center group"
+                                        >
+                                            <span>{item.label}</span>
+                                            <ArrowRight className="w-4 h-4 ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                                        </Link>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
                     ))}
@@ -108,8 +79,12 @@ export function Footer({ locale }: FooterProps) {
                 <div className="border-t border-white/10 pt-8">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4">
                         <div className="flex flex-col md:flex-row items-center gap-2 text-neutral-400 text-sm">
-                            <p>{content.copyright[locale]}</p>
-                            <span className="hidden md:block">•</span>
+                            {global.copyright && (
+                                <>
+                                    <p>{global.copyright}</p>
+                                    <span className="hidden md:block">•</span>
+                                </>
+                            )}
                             <p>
                                 <span>{locale === 'fr' ? 'Réalisé par ' : 'Built by '}</span>
                                 <a 
@@ -142,17 +117,13 @@ export function Footer({ locale }: FooterProps) {
                             
                             {/* Social Media Links */}
                             <div className="flex items-center gap-4">
-                                <h3 className="text-sm font-medium">
-                                    {content.social.title[locale]}
-                                </h3>
+                                {global.socialTitle && (
+                                    <h3 className="text-sm font-medium">
+                                        {global.socialTitle}
+                                    </h3>
+                                )}
                                 <div className="flex gap-4">
-                                    {[
-                                        { Icon: Linkedin, href: siteConfig.links.linkedin },
-                                        { Icon: Twitter, href: siteConfig.links.twitter },
-                                        { Icon: Facebook, href: siteConfig.links.facebook },
-                                        { Icon: Instagram, href: siteConfig.links.instagram },
-                                        { Icon: Mail, href: `/${locale}/contact` }
-                                    ].map(({ Icon, href }) => (
+                                    {socialLinks.map(({ Icon, href }) => (
                                         <Link
                                             key={href}
                                             href={href}
