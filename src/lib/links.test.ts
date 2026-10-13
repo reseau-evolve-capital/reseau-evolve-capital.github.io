@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isExternal, localeHref, resolveLinks } from './links'
+import { isExternal, localeHref, resolveLinks, safeHref } from './links'
 
 const slugs = ['index', 'about', 'contact', 'legal/terms']
 
@@ -37,5 +37,16 @@ describe('localeHref', () => {
   })
   it('laisse un lien absolu tel quel', () => {
     expect(localeHref('en', 'https://helloasso.com/x')).toBe('https://helloasso.com/x')
+  })
+})
+
+describe('safeHref', () => {
+  it('garde http(s), mailto, tel et chemins internes', () => {
+    for (const href of ['https://linkedin.com/x', 'http://x.fr', 'mailto:a@b.fr', 'tel:+331', '/fr/contact']) expect(safeHref(href)).toBe(href)
+  })
+  it('ecarte javascript:, data:, URL sans schema, protocol-relative et vide', () => {
+    for (const href of ['javascript:alert(1)', 'JavaScript:alert(1)', 'data:text/html,x', 'linkedin.com/company/x', '//evil.fr', '/\\evil.fr', ' https://x.fr', '', null, undefined]) {
+      expect(safeHref(href)).toBeNull()
+    }
   })
 })

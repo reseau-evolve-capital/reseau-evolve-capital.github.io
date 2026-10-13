@@ -6,6 +6,7 @@ import { Section } from '@/components/ui/Section';
 import type { ClubDoc, Locale } from '@/lib/content-types';
 import { imageUrl } from '@/lib/media';
 import { copy } from '@/lib/copy';
+import { safeHref } from '@/lib/links';
 import { Linkedin, Twitter } from 'lucide-react';
 
 interface TeamSectionProps {
@@ -22,6 +23,8 @@ export function TeamSection({ club, locale }: TeamSectionProps) {
                 <div className="grid md:grid-cols-3 gap-8">
                     {club.executiveBoard.map((member, index) => {
                         const image = imageUrl(member.image);
+                        const linkedin = safeHref(member.linkedin);
+                        const twitter = safeHref(member.twitter);
                         return (
                             <motion.div
                                 key={`${member.name}-${index}`}
@@ -45,9 +48,9 @@ export function TeamSection({ club, locale }: TeamSectionProps) {
                                 {member.role && <p className="text-neutral-600 mb-4">{member.role}</p>}
                                 {member.bio && <p className="text-sm text-neutral-500 mb-4">{member.bio}</p>}
                                 <div className="flex justify-center gap-4">
-                                    {member.linkedin && (
+                                    {linkedin && (
                                         <a
-                                            href={member.linkedin}
+                                            href={linkedin}
                                             aria-label={`LinkedIn ${member.name}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
@@ -56,9 +59,9 @@ export function TeamSection({ club, locale }: TeamSectionProps) {
                                             <Linkedin className="w-5 h-5" />
                                         </a>
                                     )}
-                                    {member.twitter && (
+                                    {twitter && (
                                         <a
-                                            href={member.twitter}
+                                            href={twitter}
                                             aria-label={`Twitter ${member.name}`}
                                             target="_blank"
                                             rel="noopener noreferrer"

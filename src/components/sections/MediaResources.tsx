@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { MediaResourcesSection } from '@/lib/content-types';
 import { imageUrl } from '@/lib/media';
+import { safeHref } from '@/lib/links';
 import type { SectionProps } from './components';
 import Image from 'next/image';
 import { Play, Newspaper, Headphones, ArrowUpRight } from 'lucide-react';
@@ -212,7 +213,7 @@ export function MediaResources({ data: content, ctx }: SectionProps<MediaResourc
                         image={imageUrl(resource.image)}
                         duration={resource.duration}
                         date={resource.date}
-                        link={resource.link}
+                        link={safeHref(resource.link)}
                         featured={resource.featured}
                         index={index}
                     />

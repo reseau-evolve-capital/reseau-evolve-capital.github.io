@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GlobalDoc, LinkGroupItem, Locale } from '@/lib/content-types';
-import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight, ExternalLink } from 'lucide-react';
+import { Mail, ArrowRight, ExternalLink } from 'lucide-react';
 import { NewsletterButton } from "@/components/ui/NewsletterButton";
-import { isExternal } from "@/lib/links";
+import { getSocialLinks } from "@/components/ui/SocialLinks";
+import { localeHref, resolveLinks } from "@/lib/links";
 import { copy } from "@/lib/copy";
 
 export type FooterGlobal = Pick<GlobalDoc, 'linkedin' | 'twitter' | 'facebook' | 'instagram' | 'newsletterTitle' | 'newsletterDescription' | 'copyright' | 'socialTitle'>;
@@ -14,16 +15,22 @@ interface FooterProps {
     locale: Locale;
     global: FooterGlobal;
     linkGroups: LinkGroupItem[];
+    // Slugs publies dans la langue : les liens fixes vers des pages Strapi depubliees sont retires.
+    slugs: string[];
 }
 
-export function Footer({ locale, global, linkGroups }: FooterProps) {
+export function Footer({ locale, global, linkGroups, slugs }: FooterProps) {
+    const t = copy[locale];
+    const published = <T extends { href: string }>(links: T[]) =>
+        resolveLinks(links, slugs).map((link) => ({ ...link, href: localeHref(locale, link.href) }));
     const socialLinks = [
-        { Icon: Linkedin, href: global.linkedin, label: 'LinkedIn' },
-        { Icon: Twitter, href: global.twitter, label: 'Twitter' },
-        { Icon: Facebook, href: global.facebook, label: 'Facebook' },
-        { Icon: Instagram, href: global.instagram, label: 'Instagram' },
-        { Icon: Mail, href: `/${locale}/contact`, label: copy[locale].getInTouch }
-    ].filter((l): l is { Icon: typeof Mail; href: string; label: string } => Boolean(l.href));
+        ...getSocialLinks(global).map(({ Icon, href, label }) => ({ Icon, href, label })),
+        ...published([{ Icon: Mail, href: '/contact', label: t.getInTouch }]),
+    ];
+    const legalLinks = published([
+        { href: '/legal/privacy-policy', label: t.privacyPolicy },
+        { href: '/legal/terms', label: t.legalNotices },
+    ]);
 
     return (
         <footer className="relative bg-neutral-900 text-white overflow-hidden">
@@ -64,7 +71,7 @@ export function Footer({ locale, global, linkGroups }: FooterProps) {
                                 {group.links.map((item) => (
                                     <li key={item.href}>
                                         <Link
-                                            href={isExternal(item.href) ? item.href : `/${locale}${item.href}`}
+                                            href={localeHref(locale, item.href)}
                                             className="text-neutral-400 hover:text-white transition-colors flex items-center group"
                                         >
                                             <span>{item.label}</span>
@@ -88,7 +95,7 @@ export function Footer({ locale, global, linkGroups }: FooterProps) {
                                 </>
                             )}
                             <p>
-                                <span>{locale === 'fr' ? 'Réalisé par ' : 'Built by '}</span>
+                                <span>{t.builtBy}</span>
                                 <a 
                                     href="https://omniventus.com" 
                                     target="_blank" 
@@ -103,18 +110,15 @@ export function Footer({ locale, global, linkGroups }: FooterProps) {
                         <div className="flex flex-col md:flex-row items-center gap-4">
                             {/* Legal Links */}
                             <div className="flex gap-6 text-sm text-neutral-400">
-                                <Link 
-                                    href={`/${locale}/legal/privacy-policy`} 
-                                    className="hover:text-white transition-colors"
-                                >
-                                    {locale === 'fr' ? 'Politique de Confidentialité' : 'Privacy Policy'}
-                                </Link>
-                                <Link 
-                                    href={`/${locale}/legal/terms`} 
-                                    className="hover:text-white transition-colors"
-                                >
-                                    {locale === 'fr' ? 'Mentions Légales' : 'Legal Notices'}
-                                </Link>
+                                {legalLinks.map(({ href, label }) => (
+                                    <Link
+                                        key={href}
+                                        href={href}
+                                        className="hover:text-white transition-colors"
+                                    >
+                                        {label}
+                                    </Link>
+                                ))}
                             </div>
                             
                             {/* Social Media Links */}

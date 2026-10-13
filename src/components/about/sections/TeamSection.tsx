@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Section } from '@/components/ui/Section';
 import type { TeamSection as TeamSectionData } from '@/lib/content-types';
 import { imageUrl } from '@/lib/media';
+import { safeHref } from '@/lib/links';
 import type { SectionProps } from '@/components/sections/components';
 import { Linkedin, Twitter, Mail } from 'lucide-react';
 
@@ -31,6 +32,8 @@ export function TeamSection({ data: team }: SectionProps<TeamSectionData>) {
                 <div className="grid md:grid-cols-3 gap-8 mb-16">
                     {team.members.map((member, index) => {
                         const image = imageUrl(member.image);
+                        const linkedin = safeHref(member.linkedin);
+                        const twitter = safeHref(member.twitter);
                         return (
                             <motion.div
                                 key={`${member.name}-${index}`}
@@ -53,11 +56,11 @@ export function TeamSection({ data: team }: SectionProps<TeamSectionData>) {
                                 <h3 className="font-heading text-xl mb-1">{member.name}</h3>
                                 {member.role && <p className="text-neutral-600 mb-4">{member.role}</p>}
                                 {member.bio && <p className="text-sm text-neutral-500 mb-4">{member.bio}</p>}
-                                {(member.linkedin || member.twitter || member.email) && (
+                                {(linkedin || twitter || member.email) && (
                                     <div className="flex justify-center gap-4">
-                                        {member.linkedin && (
+                                        {linkedin && (
                                             <a
-                                                href={member.linkedin}
+                                                href={linkedin}
                                                 aria-label={`LinkedIn ${member.name}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
@@ -66,9 +69,9 @@ export function TeamSection({ data: team }: SectionProps<TeamSectionData>) {
                                                 <Linkedin className="w-5 h-5" />
                                             </a>
                                         )}
-                                        {member.twitter && (
+                                        {twitter && (
                                             <a
-                                                href={member.twitter}
+                                                href={twitter}
                                                 aria-label={`Twitter ${member.name}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"

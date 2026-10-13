@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { useRouter } from 'next/navigation';
 import type { EventsSection, Locale } from '@/lib/content-types';
 import { imageUrl } from '@/lib/media';
+import { safeHref } from '@/lib/links';
 import { copy } from '@/lib/copy';
 import type { SectionProps } from './components';
 import Image from 'next/image';
@@ -230,7 +231,7 @@ export function Events({ data: content, ctx }: SectionProps<EventsSection>) {
                         registeredCount={event.registeredCount}
                         isPast={Boolean(event.isPast)}
                         tags={event.tags.map(tag => tag.text)}
-                        link={event.link}
+                        link={safeHref(event.link)}
                         index={index}
                         locale={locale}
                     />

@@ -6,7 +6,7 @@ import type { Locale } from '@/lib/content-types'
 import { getStrapiMediaUrl } from '@/lib/api'
 import { resolveLinks } from '@/lib/links'
 import { copy } from '@/lib/copy'
-import { SITE_URL, SEO_KEYWORDS } from '@/lib/site'
+import { SITE_URL, SEO_KEYWORDS, locales } from '@/lib/site'
 import { loadSiteContent } from '@/lib/site-content'
 import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 import { ConsentBanner } from '@/components/ConsentBanner'
@@ -65,9 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function LocaleLayout({ children, params }: Props) {
   const { locale } = await params
 
-  // Add this to validate locale
-  const validLocales = ['fr', 'en']
-  if (!validLocales.includes(locale)) {
+  if (!locales.includes(locale)) {
     notFound()
   }
   const { global, pages } = await loadSiteContent()
@@ -88,7 +86,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <div className="relative flex min-h-screen flex-col">
               <Navigation siteName={site.siteName} navigation={resolveLinks(site.navigation, slugs)} />
               <main className="flex-1">{children}</main>
-              <Footer locale={locale} global={footerGlobal} linkGroups={linkGroups} />
+              <Footer locale={locale} global={footerGlobal} linkGroups={linkGroups} slugs={slugs} />
               <ScrollToTop />
             </div>
             {/* GA4 (flux vitrine) + Consent Mode v2 (default denied). No-op sans ID. */}

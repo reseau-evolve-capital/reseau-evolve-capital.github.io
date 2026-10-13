@@ -5,14 +5,16 @@ import { Section } from '@/components/ui/Section';
 import type { ContactInfoSection as ContactInfoSectionData } from '@/lib/content-types';
 import type { SectionProps } from '@/components/sections/components';
 import { copy } from '@/lib/copy';
-import { Mail, Phone, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
+import { Mail, Phone } from 'lucide-react';
+import { SocialLinks, getSocialLinks } from '@/components/ui/SocialLinks';
 
 export function ContactInfoSection({ ctx }: SectionProps<ContactInfoSectionData>) {
     const { locale } = ctx;
     const global = ctx.contact ?? {};
     const t = copy[locale];
     const hasInfo = Boolean(global.contactEmail || global.contactPhone);
-    const hasSocial = Boolean(global.linkedin || global.twitter || global.facebook || global.instagram);
+    const socials = getSocialLinks(global);
+    const hasSocial = socials.length > 0;
 
     if (!hasInfo && !hasSocial) return null;
 
@@ -77,50 +79,7 @@ export function ContactInfoSection({ ctx }: SectionProps<ContactInfoSectionData>
                             {t.socialText}
                         </p>
                         <div className="flex flex-wrap gap-6">
-                            {global.linkedin && (
-                                <a
-                                    href={global.linkedin}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 text-neutral-600 hover:text-[#0077b5] transition-colors"
-                                >
-                                    <Linkedin className="w-6 h-6" />
-                                    <span>LinkedIn</span>
-                                </a>
-                            )}
-                            {global.twitter && (
-                                <a
-                                    href={global.twitter}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 text-neutral-600 hover:text-[#1DA1F2] transition-colors"
-                                >
-                                    <Twitter className="w-6 h-6" />
-                                    <span>Twitter</span>
-                                </a>
-                            )}
-                            {global.facebook && (
-                                <a
-                                    href={global.facebook}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 text-neutral-600 hover:text-[#4267B2] transition-colors"
-                                >
-                                    <Facebook className="w-6 h-6" />
-                                    <span>Facebook</span>
-                                </a>
-                            )}
-                            {global.instagram && (
-                                <a
-                                    href={global.instagram}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 text-neutral-600 hover:text-[#E1306C] transition-colors"
-                                >
-                                    <Instagram className="w-6 h-6" />
-                                    <span>Instagram</span>
-                                </a>
-                            )}
+                            <SocialLinks links={socials} variant="labeled" />
                         </div>
                     </motion.div>
                     )}

@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useRouter, usePathname } from 'next/navigation';
 import { type Locale } from '@/lib/content-types'
 import { locales, defaultLocale } from '@/lib/site'
-import { isExternal } from '@/lib/links'
+import { localeHref } from '@/lib/links'
 import { useState } from "react"
 import Image from "next/image";
 
@@ -39,7 +39,7 @@ export const Navigation = ({ siteName, navigation }: NavigationProps) => {
     // Blog (liste, catégories) et clubs : remplacement du préfixe de langue, comme avant.
     const isPrefixRoute = ['blog', 'clubs'].includes(pathSegments[2] ?? '') && !isBlogArticlePage;
 
-    const navHref = (href: string) => isExternal(href) ? href : `/${currentLocale}${href === '/' ? '' : href}`;
+    const navHref = (href: string) => href === '/' ? `/${currentLocale}` : localeHref(currentLocale, href);
 
     const switchLocale = (newLocale: Locale) => {
         if (!isPrefixRoute) {

@@ -4,12 +4,13 @@ import { motion } from 'framer-motion';
 import { Section } from '@/components/ui/Section';
 import type { ContactIntroSection } from '@/lib/content-types';
 import type { SectionProps } from '@/components/sections/components';
-import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
+import { SocialLinks, getSocialLinks } from '@/components/ui/SocialLinks';
 
 export function ContactSection({ data: contact, ctx }: SectionProps<ContactIntroSection>) {
     const global = ctx.contact ?? {};
     const hasInfo = Boolean(global.contactEmail || global.contactPhone || global.contactAddress);
-    const hasSocial = Boolean(global.linkedin || global.twitter || global.facebook || global.instagram);
+    const socials = getSocialLinks(global);
 
     return (
         <Section className="bg-gradient-to-br from-[#231F20] to-black text-white">
@@ -67,57 +68,14 @@ export function ContactSection({ data: contact, ctx }: SectionProps<ContactIntro
                     )}
 
                     {/* Social Links */}
-                    {hasSocial && (
+                    {socials.length > 0 && (
                         <motion.div
                             initial={{ opacity: 0, x: 20 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             viewport={{ once: true }}
                             className="flex flex-wrap gap-6 justify-center md:justify-end items-center"
                         >
-                            {global.linkedin && (
-                                <a
-                                    href={global.linkedin}
-                                    aria-label="LinkedIn"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-neutral-300 hover:text-[#0077b5] transition-colors"
-                                >
-                                    <Linkedin className="w-6 h-6" />
-                                </a>
-                            )}
-                            {global.twitter && (
-                                <a
-                                    href={global.twitter}
-                                    aria-label="Twitter"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-neutral-300 hover:text-[#1DA1F2] transition-colors"
-                                >
-                                    <Twitter className="w-6 h-6" />
-                                </a>
-                            )}
-                            {global.facebook && (
-                                <a
-                                    href={global.facebook}
-                                    aria-label="Facebook"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-neutral-300 hover:text-[#4267B2] transition-colors"
-                                >
-                                    <Facebook className="w-6 h-6" />
-                                </a>
-                            )}
-                            {global.instagram && (
-                                <a
-                                    href={global.instagram}
-                                    aria-label="Instagram"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-neutral-300 hover:text-[#E1306C] transition-colors"
-                                >
-                                    <Instagram className="w-6 h-6" />
-                                </a>
-                            )}
+                            <SocialLinks links={socials} variant="icon" />
                         </motion.div>
                     )}
                 </div>
