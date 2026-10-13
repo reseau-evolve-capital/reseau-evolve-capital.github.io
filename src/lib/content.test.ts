@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ContentError, assertSiteContent, getClub, getPage } from './content'
+import { ContentError, assertSiteContent, getAllClubs, getAllPages, getClub, getPage } from './content'
 
 afterEach(() => vi.unstubAllGlobals())
 const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200 })
@@ -42,5 +42,17 @@ describe('getClub', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ data: [{ documentId: 'd', slug: 'c', name: 'C', members: null, performance: null, faq: null }] })))
     const club = await getClub('c', 'fr')
     expect(club).toMatchObject({ members: null, performance: [], faq: [] })
+  })
+})
+
+describe('listes completes (pages, clubs)', () => {
+  it('leve si Strapi annonce plus d’elements que recus', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => ok({ data: [{ slug: 'index' }], meta: { pagination: { total: 101 } } })))
+    await expect(getAllPages('fr')).rejects.toThrow(/tronques.*1 recus sur 101/)
+    await expect(getAllClubs('en')).rejects.toThrow(ContentError)
+  })
+  it('passe quand le total correspond', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ data: [{ slug: 'index' }], meta: { pagination: { total: 1 } } })))
+    await expect(getAllPages('fr')).resolves.toHaveLength(1)
   })
 })

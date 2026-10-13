@@ -4,6 +4,7 @@ import { getClub } from '@/lib/content';
 import type { Locale } from '@/lib/content-types';
 import { imageUrl } from '@/lib/media';
 import { loadSiteContent } from '@/lib/site-content';
+import { locales } from '@/lib/site';
 import { ClubPresentation } from '@/components/clubs/ClubPresentation';
 
 type Props = {
@@ -17,7 +18,7 @@ export const dynamicParams = false;
 
 export async function generateStaticParams() {
     const { clubs } = await loadSiteContent();
-    return (['fr', 'en'] as const).flatMap((locale) =>
+    return locales.flatMap((locale) =>
         clubs[locale].map((club) => ({ locale, clubId: club.slug })),
     );
 }

@@ -1,7 +1,7 @@
 import { assertSiteContent, getAllClubs, getAllPages, getGlobal } from './content'
 import type { ClubDoc, GlobalDoc, Locale, PageDoc } from './content-types'
+import { locales } from './site'
 
-const LOCALES: Locale[] = ['fr', 'en']
 type SiteContent = { pages: Record<Locale, PageDoc[]>; global: Record<Locale, GlobalDoc>; clubs: Record<Locale, ClubDoc[]> }
 
 let cache: Promise<SiteContent> | null = null
@@ -19,9 +19,9 @@ export function loadSiteContent(): Promise<SiteContent> {
 }
 
 export function getStaticPageParams(pages: Record<Locale, { slug: string }[]>) {
-  return LOCALES.flatMap((locale) => pages[locale].map((p) => ({ locale, slug: p.slug === 'index' ? [] : p.slug.split('/') })))
+  return locales.flatMap((locale) => pages[locale].map((p) => ({ locale, slug: p.slug === 'index' ? [] : p.slug.split('/') })))
 }
 
 export function pageExistsIn(pages: Record<Locale, { slug: string }[]>, slug: string): Locale[] {
-  return LOCALES.filter((l) => pages[l].some((p) => p.slug === slug))
+  return locales.filter((l) => pages[l].some((p) => p.slug === slug))
 }
