@@ -1,3 +1,6 @@
+import type { EditorialBloc } from './api'
+
+// Cles blocs.* limitees aux blocs que BlockRenderer sait afficher (erreur tsc sinon).
 export const SECTION_POPULATE = {
   'sections.home-hero': { populate: '*' },
   'sections.introduction': { populate: { stats: true } },
@@ -25,7 +28,7 @@ export const SECTION_POPULATE = {
   'blocs.citation': { populate: '*' },
   'blocs.le-chiffre': { populate: '*' },
   'blocs.separateur': { populate: '*' },
-} as const
+} as const satisfies Partial<Record<`sections.${string}` | EditorialBloc['__component'], unknown>>
 
 export const PAGE_POPULATE = { seo: { populate: ['ogImage'] }, sections: { on: SECTION_POPULATE } }
 

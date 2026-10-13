@@ -4,7 +4,7 @@ import { getStrapiMediaUrl } from '@/lib/api'
 import { getPage } from '@/lib/content'
 import type { Locale } from '@/lib/content-types'
 import { getStaticPageParams, loadSiteContent, pageExistsIn } from '@/lib/site-content'
-import { SectionRenderer } from '@/components/sections/SectionRenderer'
+import { SectionRenderer, anchorIdOf, renderableSections } from '@/components/sections/SectionRenderer'
 import { SectionNavigation } from '@/components/ui/SectionNavigation'
 
 type Props = { params: Promise<{ locale: Locale; slug?: string[] }> }
@@ -45,10 +45,11 @@ export default async function Page({ params }: Props) {
   const [{ global, clubs }, page] = await Promise.all([loadSiteContent(), getPage(key, locale)])
   if (!page) notFound()
   const isHome = key === 'index'
-  const sections = <SectionRenderer sections={page.sections} locale={locale} global={global[locale]} clubs={clubs[locale]} />
+  const items = renderableSections({ sections: page.sections, locale, global: global[locale], clubs: clubs[locale] })
+  const sections = <SectionRenderer items={items} locale={locale} />
   return isHome ? (
     <div className="flex flex-col min-h-screen">
-      <SectionNavigation locale={locale} />
+      <SectionNavigation locale={locale} anchorIds={items.flatMap(({ section }) => anchorIdOf(section) ?? [])} />
       {sections}
     </div>
   ) : (

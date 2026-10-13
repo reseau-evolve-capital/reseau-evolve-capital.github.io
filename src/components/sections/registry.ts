@@ -9,7 +9,10 @@ export const hasItems = (arr: unknown[] | null | undefined) => Array.isArray(arr
 
 type AnySection = SectionData & Record<string, unknown>
 
-const RULES: Record<string, (s: AnySection, ctx: RenderContext) => boolean> = {
+// Champs exiges par validateContactForm (lib/contact.ts) : sans eux le formulaire ne peut pas etre envoye.
+const CONTACT_REQUIRED_FIELDS = ['name', 'email', 'subject', 'message']
+
+export const RULES: Record<string, (s: AnySection, ctx: RenderContext) => boolean> = {
   'sections.home-hero': () => true,
   'sections.introduction': () => true,
   'sections.value-proposition': (s) => hasItems(s.benefits as unknown[]) || hasItems(s.testimonials as unknown[]),
@@ -26,7 +29,12 @@ const RULES: Record<string, (s: AnySection, ctx: RenderContext) => boolean> = {
   'sections.team': (s) => hasItems(s.members as unknown[]),
   'sections.join': () => true,
   'sections.contact-intro': () => true,
-  'sections.contact-form': (s) => hasItems(s.formFields as unknown[]),
+  'sections.contact-form': (s) => {
+    const names = ((s.formFields as { name: string }[] | null) ?? []).map((f) => f.name)
+    const missing = CONTACT_REQUIRED_FIELDS.filter((n) => !names.includes(n))
+    if (missing.length) console.warn(`[contenu] formulaire de contact masque, champs requis absents : ${missing.join(', ')}`)
+    return missing.length === 0
+  },
   'sections.contact-info': () => true,
   'sections.legal': (s) => hasItems(s.body as unknown[]),
 }
