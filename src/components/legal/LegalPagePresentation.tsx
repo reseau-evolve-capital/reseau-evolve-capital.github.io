@@ -30,7 +30,7 @@ export function LegalPagePresentation({ data, ctx }: SectionProps<LegalSection>)
                 <Calendar className="w-5 h-5 mr-2" />
                 <span>
                   {copy[locale].lastUpdated}
-                  {new Date(data.lastUpdated).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US')}
+                  {new Date(data.lastUpdated).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', { timeZone: 'UTC' })}
                 </span>
               </div>
             )}
