@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "rm -rf .next/cache/fetch-cache",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
