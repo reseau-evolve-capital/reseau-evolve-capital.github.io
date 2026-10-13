@@ -1,7 +1,10 @@
-import { type Metadata } from "next";
-import { notFound } from "next/navigation";
-import { recClubs, type Locale } from "@/config/site-config";
-import { ClubPresentation } from "@/components/clubs/ClubPresentation";
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { getClub } from '@/lib/content';
+import type { Locale } from '@/lib/content-types';
+import { imageUrl } from '@/lib/media';
+import { loadSiteContent } from '@/lib/site-content';
+import { ClubPresentation } from '@/components/clubs/ClubPresentation';
 
 type Props = {
     params: Promise<{
@@ -10,36 +13,39 @@ type Props = {
     }>;
 };
 
+export const dynamicParams = false;
+
+export async function generateStaticParams() {
+    const { clubs } = await loadSiteContent();
+    return (['fr', 'en'] as const).flatMap((locale) =>
+        clubs[locale].map((club) => ({ locale, clubId: club.slug })),
+    );
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const data = await params;
-    const club = recClubs.find((c) => c.id === data.clubId);
+    const { locale, clubId } = await params;
+    const club = await getClub(clubId, locale);
     if (!club) return {};
+    const image = imageUrl(club.image);
 
     return {
-        title: club.name[data.locale],
-        description: club.shortDescription[data.locale],
+        title: club.seo?.metaTitle ?? club.name,
+        description: club.seo?.metaDescription ?? club.shortDescription ?? undefined,
         openGraph: {
-            title: club.name[data.locale],
-            description: club.shortDescription[data.locale],
-            images: [{ url: club.image }],
+            title: club.name,
+            description: club.shortDescription ?? undefined,
+            images: image ? [{ url: image }] : [],
         },
     };
 }
 
-export async function generateStaticParams() {
-    return recClubs.flatMap((club) => [
-        { locale: 'fr', clubId: club.id },
-        { locale: 'en', clubId: club.id },
-    ]);
-}
-
 export default async function ClubPage({ params }: Props) {
-    const data = await params;
-    const club = recClubs.find((c) => c.id === data.clubId);
+    const { locale, clubId } = await params;
+    const club = await getClub(clubId, locale);
 
     if (!club) {
         notFound();
     }
 
-    return <ClubPresentation club={club} locale={data.locale} />;
-} 
+    return <ClubPresentation club={club} locale={locale} />;
+}

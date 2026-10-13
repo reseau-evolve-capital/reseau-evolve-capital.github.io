@@ -3,15 +3,21 @@
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { Section } from '@/components/ui/Section';
-import { type Club, type Locale } from '@/config/site-config';
-import { siteConfig } from '@/config/site-config';
+import type { ClubDoc, Locale } from '@/lib/content-types';
+import { imageUrl } from '@/lib/media';
+import { copy } from '@/lib/copy';
 
 interface GallerySectionProps {
-    club: Club;
+    club: ClubDoc;
     locale: Locale;
 }
 
 export function GallerySection({ club, locale }: GallerySectionProps) {
+    const items = club.gallery.flatMap((item) => {
+        const src = imageUrl(item.image);
+        return src ? [{ src, caption: item.caption, alt: item.caption ?? item.alt ?? club.name }] : [];
+    });
+    if (items.length === 0) return null;
     return (
         <Section className="bg-neutral-50">
             <div className="max-w-4xl mx-auto">
@@ -21,10 +27,10 @@ export function GallerySection({ club, locale }: GallerySectionProps) {
                     viewport={{ once: true }}
                     className="text-3xl font-heading text-center mb-12"
                 >
-                    {siteConfig.sectionTitles.gallery[locale]}
+                    {copy[locale].gallery}
                 </motion.h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {club.gallery.map((item, index) => (
+                    {items.map((item, index) => (
                         <motion.div
                             key={index}
                             initial={{ opacity: 0, scale: 0.9 }}
@@ -34,16 +40,18 @@ export function GallerySection({ club, locale }: GallerySectionProps) {
                             className="relative aspect-square rounded-xl overflow-hidden group"
                         >
                             <Image
-                                src={item.image}
-                                alt={item.caption[locale]}
+                                src={item.src}
+                                alt={item.alt}
                                 fill
                                 className="object-cover transition-transform duration-300 group-hover:scale-110"
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                                <div className="absolute bottom-0 left-0 right-0 p-4">
-                                    <p className="text-white text-sm">{item.caption[locale]}</p>
+                            {item.caption && (
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                    <div className="absolute bottom-0 left-0 right-0 p-4">
+                                        <p className="text-white text-sm">{item.caption}</p>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </motion.div>
                     ))}
                 </div>
