@@ -8,6 +8,7 @@ import type { JoinSection as JoinSectionData } from '@/lib/content-types'
 import type { SectionProps } from '@/components/sections/components'
 import { ArrowRight } from 'lucide-react'
 import { analyticsEvents } from '@/lib/analytics'
+import { localeHref } from '@/lib/links'
 
 export function JoinSection({ data: join, ctx }: SectionProps<JoinSectionData>) {
   const { locale } = ctx
@@ -62,7 +63,7 @@ export function JoinSection({ data: join, ctx }: SectionProps<JoinSectionData>) 
               className="group"
               onClick={() => analyticsEvents.navigation.ctaClick('about_join')}
             >
-              <a href={`/${locale}${join.ctaHref}`}>{join.ctaLabel}</a>
+              <a href={localeHref(locale, join.ctaHref)}>{join.ctaLabel}</a>
               <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
             </Button>
           </motion.div>

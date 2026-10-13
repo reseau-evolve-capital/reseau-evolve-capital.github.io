@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { analyticsEvents } from '@/lib/analytics'
 import type { HomeHeroSection } from '@/lib/content-types'
 import type { SectionProps } from './components'
+import { localeHref } from '@/lib/links'
 
 const customElements = [
   { image: '/companies/apple.svg', size: 65, delay: 0, speed: 25, initialPosition: { x: 15, y: 30 } },
@@ -51,7 +52,7 @@ export function HomeHero({ data: content, ctx }: SectionProps<HomeHeroSection>) 
                 className="text-lg"
                 onClick={() => analyticsEvents.navigation.ctaClick('hero_join')}
               >
-                <Link href={`/${locale}${content.ctaHref ?? '/contact'}`}>{content.ctaLabel}</Link>
+                <Link href={localeHref(locale, content.ctaHref ?? '/contact')}>{content.ctaLabel}</Link>
               </Button>
             </div>
           )}

@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter, usePathname } from 'next/navigation';
 import { type Locale } from '@/lib/content-types'
 import { locales, defaultLocale } from '@/lib/site'
+import { isExternal } from '@/lib/links'
 import { useState } from "react"
 import Image from "next/image";
 
@@ -11,8 +12,6 @@ type NavigationProps = {
     siteName: string;
     navigation: { label: string; href: string }[];
 };
-
-const isExternal = (href: string) => /^https?:|^mailto:|^tel:/.test(href);
 
 // hreflang posés par generateMetadata (alternates.languages) : pages Strapi et articles de blog.
 const readAlternateUrls = () => {

@@ -8,6 +8,7 @@ import type { AboutHeroSection } from '@/lib/content-types';
 import { imageUrl } from '@/lib/media';
 import type { SectionProps } from '@/components/sections/components';
 import Link from 'next/link';
+import { localeHref } from '@/lib/links';
 
 export function HeroSection({ data: hero, ctx }: SectionProps<AboutHeroSection>) {
     const { locale } = ctx;
@@ -54,7 +55,7 @@ export function HeroSection({ data: hero, ctx }: SectionProps<AboutHeroSection>)
                             size="lg"
                             className="group"
                         >
-                            <Link href={`/${locale}${hero.ctaHref ?? '/contact'}`}>
+                            <Link href={localeHref(locale, hero.ctaHref ?? '/contact')}>
                                 {hero.ctaLabel}
                             </Link>
                         </Button>

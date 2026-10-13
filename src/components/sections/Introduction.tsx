@@ -6,6 +6,7 @@ import { Button } from '../ui/Button';
 import { useRouter } from 'next/navigation';
 import type { IntroductionSection } from '@/lib/content-types';
 import type { SectionProps } from './components';
+import { localeHref } from '@/lib/links';
 
 function StatItem({ value, label, delay }: { value: string; label: string; delay: number }) {
     return (
@@ -75,7 +76,7 @@ export function Introduction({ data: content, ctx }: SectionProps<IntroductionSe
                     className="text-center"
                 >
                     <Button
-                        onClick={() => router.push(`/${locale}${content.ctaHref ?? '/about'}`)}
+                        onClick={() => router.push(localeHref(locale, content.ctaHref ?? '/about'))}
                         variant="outline"
                         size="lg"
                         className="group"

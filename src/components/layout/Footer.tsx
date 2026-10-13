@@ -5,6 +5,7 @@ import Image from 'next/image';
 import type { GlobalDoc, LinkGroupItem, Locale } from '@/lib/content-types';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight, ExternalLink } from 'lucide-react';
 import { NewsletterButton } from "@/components/ui/NewsletterButton";
+import { isExternal } from "@/lib/links";
 
 export type FooterGlobal = Pick<GlobalDoc, 'linkedin' | 'twitter' | 'facebook' | 'instagram' | 'newsletterTitle' | 'newsletterDescription' | 'copyright' | 'socialTitle'>;
 
@@ -13,8 +14,6 @@ interface FooterProps {
     global: FooterGlobal;
     linkGroups: LinkGroupItem[];
 }
-
-const isExternal = (href: string) => /^https?:|^mailto:|^tel:/.test(href);
 
 export function Footer({ locale, global, linkGroups }: FooterProps) {
     const socialLinks = [
