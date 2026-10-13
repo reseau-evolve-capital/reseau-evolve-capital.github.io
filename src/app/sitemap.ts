@@ -21,15 +21,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const routeEntries: MetadataRoute.Sitemap = [...slugs, 'blog'].flatMap((slug) => {
     const existing = slug === 'blog' ? locales : locales.filter((l) => pages[l].some((p) => p.slug === slug));
     const isHome = slug === 'index';
-    return existing.map((locale) => ({
-      url: pageUrl(locale, slug),
-      lastModified: new Date(),
-      changeFrequency: (isHome ? 'daily' : 'weekly') as ChangeFrequency,
-      priority: isHome ? 1 : 0.8,
-      alternates: {
-        languages: Object.fromEntries(existing.map((l) => [l, pageUrl(l, slug)])),
-      },
-    }));
+    return existing.map((locale) => {
+      const updatedAt = pages[locale].find((p) => p.slug === slug)?.updatedAt;
+      return {
+        url: pageUrl(locale, slug),
+        lastModified: updatedAt ? new Date(updatedAt) : new Date(),
+        changeFrequency: (isHome ? 'daily' : 'weekly') as ChangeFrequency,
+        priority: isHome ? 1 : 0.8,
+        alternates: {
+          languages: Object.fromEntries(existing.map((l) => [l, pageUrl(l, slug)])),
+        },
+      };
+    });
   });
 
   // Fetch blog articles for each locale
@@ -128,49 +131,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       })),
   ];
 
-  // Add dynamic routes for clubs, events, and resources
-  // You would typically fetch these from your data source
-  const dynamicEntries: MetadataRoute.Sitemap = [
-    // Example for clubs
-    ...clubs.fr.map((club) => ({
-      url: `${baseUrl}/fr/clubs/${club.slug}`,
+  // Clubs : union des slugs fr/en, une entree par club (URL de la premiere langue ou il existe),
+  // alternates limitees aux langues ou il existe.
+  const clubSlugs = [...new Set([...clubs.fr, ...clubs.en].map((c) => c.slug))];
+  const clubEntries: MetadataRoute.Sitemap = clubSlugs.map((slug) => {
+    const existing = locales.filter((l) => clubs[l].some((c) => c.slug === slug));
+    return {
+      url: `${baseUrl}/${existing[0]}/clubs/${slug}`,
       lastModified: new Date(),
       changeFrequency: 'weekly' as ChangeFrequency,
       priority: 0.7,
       alternates: {
-        languages: {
-          'fr': `${baseUrl}/fr/clubs/${club.slug}`,
-          'en': `${baseUrl}/en/clubs/${club.slug}`,
-        },
+        languages: Object.fromEntries(existing.map((l) => [l, `${baseUrl}/${l}/clubs/${slug}`])),
       },
-    })),
-    // Example for events
-    // ...siteConfig.pageContent.home.events.events.map((event) => ({
-    //   url: `${baseUrl}/fr/events/${event.id}`,
-    //   lastModified: new Date(),
-    //   changeFrequency: 'daily' as const,
-    //   priority: 0.9,
-    //   alternates: {
-    //     languages: {
-    //       'fr': `${baseUrl}/fr/events/${event.id}`,
-    //       'en': `${baseUrl}/en/events/${event.id}`,
-    //     },
-    //   },
-    // })),
-    // Example for resources
-    // ...siteConfig.pageContent.home.mediaResources.resources.map((resource) => ({
-    //   url: `${baseUrl}/fr/resources/${resource.type}/${resource.id}`,
-    //   lastModified: new Date(),
-    //   changeFrequency: 'monthly' as const,
-    //   priority: 0.6,
-    //   alternates: {
-    //     languages: {
-    //       'fr': `${baseUrl}/fr/resources/${resource.type}/${resource.id}`,
-    //       'en': `${baseUrl}/en/resources/${resource.type}/${resource.id}`,
-    //     },
-    //   },
-    // })),
-  ];
+    };
+  });
 
-  return [...routeEntries, ...blogArticleEntries, ...blogCategoryEntries, ...dynamicEntries];
+  return [...routeEntries, ...blogArticleEntries, ...blogCategoryEntries, ...clubEntries];
 } 

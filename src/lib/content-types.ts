@@ -310,6 +310,7 @@ export type PageDoc = {
   documentId: string
   slug: string
   title: string
+  updatedAt: string
   seo: Seo | null
   sections: SectionData[]
 }
