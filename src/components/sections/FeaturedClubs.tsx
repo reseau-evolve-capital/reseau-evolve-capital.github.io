@@ -5,7 +5,6 @@ import { Section } from '../ui/Section';
 import { Button } from '../ui/Button';
 import { useRouter } from 'next/navigation';
 import type { FeaturedClubsSection } from '@/lib/content-types';
-import { imageUrl } from '@/lib/media';
 import { copy } from '@/lib/copy';
 import type { Locale } from '@/lib/content-types';
 import type { SectionProps } from './components';
@@ -92,7 +91,7 @@ const ClubCard = ({ name, description, members, location, image, clubSlug, index
 export default function FeaturedClubs({ data: content, ctx }: SectionProps<FeaturedClubsSection>) {
     //const router = useRouter();
     const { locale } = ctx;
-    const clubs = ctx.clubs.filter((c) => c.featured);
+    const clubs = ctx.clubs ?? [];
     const [activeClub, setActiveClub] = useState<number | null>(null);
     // const [isMounted, setIsMounted] = useState(false);
 
@@ -151,7 +150,7 @@ export default function FeaturedClubs({ data: content, ctx }: SectionProps<Featu
                             description={club.description}
                             members={club.members}
                             location={club.location}
-                            image={imageUrl(club.image)}
+                            image={club.image}
                             clubSlug={club.slug}
                             index={index}
                             onHover={() => setActiveClub(index)}

@@ -26,7 +26,7 @@ const cases: [Locale, ContactFormData][] = [
 
 describe('ContactFormSection', () => {
   it.each(cases)('rend les memes name et value que la vitrine actuelle (%s)', (locale, data) => {
-    const ctx = { locale, clubs: [], global: {} as never, isHome: false }
+    const ctx = { locale }
     const html = renderToStaticMarkup(<ContactFormSection data={data} ctx={ctx} />)
     const names = [...html.matchAll(/<(?:input|select|textarea)[^>]*? name="([^"]+)"/g)].map((m) => m[1])
     expect(names).toEqual(['name', 'email', 'subject', 'message', 'newsletter'])

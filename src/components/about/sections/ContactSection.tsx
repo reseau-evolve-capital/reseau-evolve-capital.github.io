@@ -7,7 +7,7 @@ import type { SectionProps } from '@/components/sections/components';
 import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
 
 export function ContactSection({ data: contact, ctx }: SectionProps<ContactIntroSection>) {
-    const { global } = ctx;
+    const global = ctx.contact ?? {};
     const hasInfo = Boolean(global.contactEmail || global.contactPhone || global.contactAddress);
     const hasSocial = Boolean(global.linkedin || global.twitter || global.facebook || global.instagram);
 

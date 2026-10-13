@@ -5,7 +5,7 @@ import type { IntroductionSection } from '@/lib/content-types'
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 
-const ctx = { locale: 'fr', clubs: [], global: {} as never, isHome: true } as const
+const ctx = { locale: 'fr' } as const
 
 describe('Introduction', () => {
   it('rend le titre sans stats, description ni CTA quand ils sont vides', () => {

@@ -43,7 +43,7 @@ export default async function Page({ params }: Props) {
   const [{ global, clubs }, page] = await Promise.all([loadSiteContent(), getPage(key, locale)])
   if (!page) notFound()
   const isHome = key === 'index'
-  const sections = <SectionRenderer sections={page.sections} ctx={{ locale, global: global[locale], clubs: clubs[locale], isHome }} />
+  const sections = <SectionRenderer sections={page.sections} locale={locale} global={global[locale]} clubs={clubs[locale]} />
   return isHome ? (
     <div className="flex flex-col min-h-screen">
       <SectionNavigation locale={locale} />

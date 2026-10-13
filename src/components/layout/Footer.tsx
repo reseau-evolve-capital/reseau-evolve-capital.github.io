@@ -6,9 +6,11 @@ import type { GlobalDoc, LinkGroupItem, Locale } from '@/lib/content-types';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight, ExternalLink } from 'lucide-react';
 import { NewsletterButton } from "@/components/ui/NewsletterButton";
 
+export type FooterGlobal = Pick<GlobalDoc, 'linkedin' | 'twitter' | 'facebook' | 'instagram' | 'newsletterTitle' | 'newsletterDescription' | 'copyright' | 'socialTitle'>;
+
 interface FooterProps {
     locale: Locale;
-    global: GlobalDoc;
+    global: FooterGlobal;
     linkGroups: LinkGroupItem[];
 }
 

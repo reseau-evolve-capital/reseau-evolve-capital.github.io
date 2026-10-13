@@ -8,7 +8,8 @@ import { copy } from '@/lib/copy';
 import { Mail, Phone, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
 
 export function ContactInfoSection({ ctx }: SectionProps<ContactInfoSectionData>) {
-    const { global, locale } = ctx;
+    const { locale } = ctx;
+    const global = ctx.contact ?? {};
     const t = copy[locale];
     const hasInfo = Boolean(global.contactEmail || global.contactPhone);
     const hasSocial = Boolean(global.linkedin || global.twitter || global.facebook || global.instagram);

@@ -10,7 +10,7 @@ import { loadSiteContent } from '@/lib/site-content'
 import { GoogleAnalytics } from '@/components/GoogleAnalytics'
 import { ConsentBanner } from '@/components/ConsentBanner'
 import { BuildInfo } from '@/components/BuildInfo'
-import { Footer } from '@/components/layout/Footer'
+import { Footer, type FooterGlobal } from '@/components/layout/Footer'
 import { ScrollToTop } from '@/components/ui/ScrollToTop'
 import { NewsletterProvider } from '@/components/newsletter'
 import { notFound } from 'next/navigation'
@@ -72,6 +72,8 @@ export default async function LocaleLayout({ children, params }: Props) {
   const { global, pages } = await loadSiteContent()
   const site = global[locale]
   const slugs = pages[locale].map((p) => p.slug)
+  const { linkedin, twitter, facebook, instagram, newsletterTitle, newsletterDescription, copyright, socialTitle } = site
+  const footerGlobal: FooterGlobal = { linkedin, twitter, facebook, instagram, newsletterTitle, newsletterDescription, copyright, socialTitle }
   const linkGroups = site.footerLinkGroups.map((g) => ({ ...g, links: resolveLinks(g.links, slugs) })).filter((g) => g.links.length > 0)
 
   return (
@@ -85,7 +87,7 @@ export default async function LocaleLayout({ children, params }: Props) {
             <div className="relative flex min-h-screen flex-col">
               <Navigation siteName={site.siteName} navigation={resolveLinks(site.navigation, slugs)} />
               <main className="flex-1">{children}</main>
-              <Footer locale={locale} global={site} linkGroups={linkGroups} />
+              <Footer locale={locale} global={footerGlobal} linkGroups={linkGroups} />
               <ScrollToTop />
             </div>
             {/* GA4 (flux vitrine) + Consent Mode v2 (default denied). No-op sans ID. */}

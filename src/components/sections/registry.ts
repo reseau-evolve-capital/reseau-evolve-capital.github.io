@@ -1,6 +1,9 @@
 import type { ClubDoc, GlobalDoc, Locale, SectionData } from '@/lib/content-types'
 
-export type RenderContext = { locale: Locale; clubs: ClubDoc[]; global: GlobalDoc; isHome: boolean }
+// Seules les donnees utiles a une section entrent dans son payload RSC (sections client).
+export type FeaturedClub = Pick<ClubDoc, 'slug' | 'name' | 'description' | 'members' | 'location' | 'coordinates'> & { image: string | null }
+export type ContactInfo = Partial<Pick<GlobalDoc, 'contactEmail' | 'contactPhone' | 'contactAddress' | 'linkedin' | 'twitter' | 'facebook' | 'instagram'>>
+export type RenderContext = { locale: Locale; clubs?: FeaturedClub[]; contact?: ContactInfo }
 
 export const hasItems = (arr: unknown[] | null | undefined) => Array.isArray(arr) && arr.length > 0
 
@@ -10,7 +13,7 @@ const RULES: Record<string, (s: AnySection, ctx: RenderContext) => boolean> = {
   'sections.home-hero': () => true,
   'sections.introduction': () => true,
   'sections.value-proposition': (s) => hasItems(s.benefits as unknown[]) || hasItems(s.testimonials as unknown[]),
-  'sections.featured-clubs': (_s, ctx) => ctx.clubs.some((c) => c.featured),
+  'sections.featured-clubs': (_s, ctx) => hasItems(ctx.clubs),
   'sections.events': (s) => hasItems(s.events as unknown[]),
   'sections.media-resources': (s) => hasItems(s.resources as unknown[]),
   'sections.membership': (s) => hasItems(s.benefits as unknown[]) || hasItems(s.members as unknown[]) || hasItems(s.gallery as unknown[]),

@@ -1,25 +1,38 @@
-import type { SectionData } from '@/lib/content-types'
-import { isRenderable, type RenderContext } from './registry'
+import type { ClubDoc, GlobalDoc, Locale, SectionData } from '@/lib/content-types'
+import { isRenderable, type ContactInfo, type FeaturedClub, type RenderContext } from './registry'
 import { SECTION_COMPONENTS } from './components'
 import BlockRenderer from '@/components/editorial/BlockRenderer'
 import type { EditorialBloc } from '@/lib/api'
+import { imageUrl } from '@/lib/media'
 
-export function SectionRenderer({ sections, ctx }: { sections: SectionData[]; ctx: RenderContext }) {
+type Props = { sections: SectionData[]; locale: Locale; clubs: ClubDoc[]; global: GlobalDoc }
+
+export function SectionRenderer({ sections, locale, clubs, global }: Props) {
+  const featured: FeaturedClub[] = clubs
+    .filter((c) => c.featured)
+    .map((c) => ({ slug: c.slug, name: c.name, description: c.description, members: c.members, location: c.location, coordinates: c.coordinates, image: imageUrl(c.image) }))
+  const { contactEmail, contactPhone, contactAddress, linkedin, twitter, facebook, instagram } = global
+  const contact: ContactInfo = { contactEmail, contactPhone, contactAddress, linkedin, twitter, facebook, instagram }
+  const ctxFor = (component: string): RenderContext =>
+    component === 'sections.featured-clubs' ? { locale, clubs: featured }
+      : component === 'sections.contact-intro' || component === 'sections.contact-info' ? { locale, contact }
+        : { locale }
+
   return (
     <>
-      {sections.filter((s) => isRenderable(s, ctx)).map((section) => {
+      {sections.filter((s) => isRenderable(s, ctxFor(s.__component))).map((section) => {
         const key = `${section.__component}-${section.id}`
         if (section.__component.startsWith('blocs.')) {
           return (
             <div key={key} className="mx-auto max-w-3xl px-4">
-              <BlockRenderer corps={[section as EditorialBloc]} locale={ctx.locale} />
+              <BlockRenderer corps={[section as EditorialBloc]} locale={locale} />
             </div>
           )
         }
         const Component = SECTION_COMPONENTS[section.__component]
         if (!Component) return null
         const anchorId = 'anchorId' in section ? section.anchorId : null
-        const node = <Component data={section as never} ctx={ctx} />
+        const node = <Component data={section as never} ctx={ctxFor(section.__component)} />
         return anchorId ? <section key={key} id={anchorId}>{node}</section> : <div key={key}>{node}</div>
       })}
     </>

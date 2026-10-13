@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { ContactInfoSection } from './ContactInfoSection'
-import type { ContactInfoSection as ContactInfoData, GlobalDoc } from '@/lib/content-types'
+import type { ContactInfoSection as ContactInfoData } from '@/lib/content-types'
+import type { ContactInfo } from '@/components/sections/registry'
 
 const data: ContactInfoData = { __component: 'sections.contact-info', id: 1, anchorId: null }
-const ctx = (global: Partial<GlobalDoc>) => ({ locale: 'fr' as const, clubs: [], global: global as GlobalDoc, isHome: false })
+const ctx = (contact: ContactInfo) => ({ locale: 'fr' as const, contact })
 
 describe('ContactInfoSection', () => {
   it("ne rend pas l'adresse (commentee sur la vitrine actuelle)", () => {

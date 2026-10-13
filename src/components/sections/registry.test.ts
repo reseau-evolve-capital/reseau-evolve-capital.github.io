@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { hasItems, isRenderable } from './registry'
 
-const ctx = { locale: 'fr', clubs: [], global: {}, isHome: true } as never
+const ctx = { locale: 'fr' } as const
 
 describe('isRenderable', () => {
   it('section events vide -> non rendue', () => {

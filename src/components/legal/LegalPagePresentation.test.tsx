@@ -14,7 +14,7 @@ const data: LegalSection = {
 describe('LegalPagePresentation', () => {
   it('rend le corps en tableau de blocs avec les classes h2/p du legacy', () => {
     const html = renderToStaticMarkup(
-      <LegalPagePresentation data={data} ctx={{ locale: 'fr', clubs: [], global: {} as never, isHome: false }} />,
+      <LegalPagePresentation data={data} ctx={{ locale: 'fr' }} />,
     )
     expect(html).toContain('<h1')
     expect(html).toContain('Dernière mise à jour : 12/04/2025')
@@ -24,7 +24,7 @@ describe('LegalPagePresentation', () => {
 
   it('omet la date quand elle est vide', () => {
     const html = renderToStaticMarkup(
-      <LegalPagePresentation data={{ ...data, lastUpdated: null }} ctx={{ locale: 'en', clubs: [], global: {} as never, isHome: false }} />,
+      <LegalPagePresentation data={{ ...data, lastUpdated: null }} ctx={{ locale: 'en' }} />,
     )
     expect(html).not.toContain('Last updated')
   })
