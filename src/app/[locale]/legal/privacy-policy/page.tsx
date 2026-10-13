@@ -1,6 +1,8 @@
 import { type Metadata } from "next";
 import { type Locale, locales } from "@/config/site-config";
 import { LegalPagePresentation } from "@/components/legal/LegalPagePresentation";
+import { legacyLegalData } from "@/components/legal/legacyLegalData";
+import type { GlobalDoc } from "@/lib/content-types";
 
 type Props = {
     params: Promise<{
@@ -26,5 +28,6 @@ export function generateStaticParams() {
 
 export default async function PrivacyPolicyPage({ params }: Props) {
     const { locale } = await params;
-    return <LegalPagePresentation locale={locale} pageType="privacyPolicy" />;
+    const ctx = { locale, clubs: [], isHome: false, global: {} as GlobalDoc };
+    return <LegalPagePresentation data={legacyLegalData(locale, "privacyPolicy")} ctx={ctx} />;
 } 

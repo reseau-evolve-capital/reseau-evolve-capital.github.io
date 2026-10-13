@@ -15,6 +15,10 @@ import { StructureSection } from '@/components/about/sections/StructureSection'
 import { ApproachSection } from '@/components/about/sections/ApproachSection'
 import { TeamSection } from '@/components/about/sections/TeamSection'
 import { JoinSection } from '@/components/about/sections/JoinSection'
+import { ContactIntro } from './ContactIntro'
+import { ContactFormSection } from '@/components/contact/sections/ContactFormSection'
+import { ContactInfoSection } from '@/components/contact/sections/ContactInfoSection'
+import { LegalPagePresentation } from '@/components/legal/LegalPagePresentation'
 
 export type SectionProps<T> = { data: T; ctx: RenderContext }
 
@@ -35,4 +39,8 @@ export const SECTION_COMPONENTS = {
   'sections.approach': ApproachSection,
   'sections.team': TeamSection,
   'sections.join': JoinSection,
+  'sections.contact-intro': ContactIntro,
+  'sections.contact-form': ContactFormSection,
+  'sections.contact-info': ContactInfoSection,
+  'sections.legal': LegalPagePresentation,
 } as Record<string, ComponentType<SectionProps<never>>>

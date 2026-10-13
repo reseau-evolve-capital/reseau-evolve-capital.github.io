@@ -1,4 +1,4 @@
-import type { EditorialBloc, StrapiBlocksContent, StrapiMediaRef } from '@/lib/api'
+import type { EditorialBloc, StrapiBlocksContentArray, StrapiMediaRef } from '@/lib/api'
 
 export type Locale = 'fr' | 'en'
 export type Seo = { metaTitle: string | null; metaDescription: string | null; ogImage: StrapiMediaRef | null }
@@ -281,7 +281,7 @@ export type LegalSection = {
   anchorId: string | null
   title: string
   lastUpdated: string | null
-  body: StrapiBlocksContent
+  body: StrapiBlocksContentArray
 }
 
 export type SectionData =
