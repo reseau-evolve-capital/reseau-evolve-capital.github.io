@@ -13,9 +13,9 @@ interface StrategySectionProps {
 
 export function StrategySection({ club, locale }: StrategySectionProps) {
     const strategy = club.investmentStrategy;
-    if (!strategy) return null;
+    const showAmounts = strategy?.minimumInvestment != null || strategy?.monthlyContribution != null;
+    if (!strategy || (!strategy.focusAreas && !strategy.riskProfile && !strategy.decisionProcess && !showAmounts)) return null;
     const t = copy[locale];
-    const showAmounts = strategy.minimumInvestment != null || strategy.monthlyContribution != null;
     return (
         <Section>
             <div className="max-w-4xl mx-auto">

@@ -22,56 +22,56 @@ export function ContactSection({ club, locale }: ContactSectionProps) {
             <div className="max-w-4xl mx-auto">
                 <div className="grid md:grid-cols-2 gap-12">
                     {hasContact && contact && (
-                    <div>
-                        <h2 className="text-3xl font-heading mb-8">{t.contactInformation}</h2>
-                        <div className="space-y-6">
-                            {contact.email && (
-                            <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                className="flex items-center gap-4"
-                            >
-                                <Mail className="w-6 h-6 text-[#F3903F]" />
-                                <a
-                                    href={`mailto:${contact.email}`}
-                                    className="hover:text-[#F3903F] transition-colors"
-                                >
-                                    {contact.email}
-                                </a>
-                            </motion.div>
-                            )}
-                            {contact.phone && (
-                                <motion.div
-                                    initial={{ opacity: 0, x: -20 }}
-                                    whileInView={{ opacity: 1, x: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: 0.1 }}
-                                    className="flex items-center gap-4"
-                                >
-                                    <Phone className="w-6 h-6 text-[#F3903F]" />
-                                    <a
-                                        href={`tel:${contact.phone}`}
-                                        className="hover:text-[#F3903F] transition-colors"
+                        <div>
+                            <h2 className="text-3xl font-heading mb-8">{t.contactInformation}</h2>
+                            <div className="space-y-6">
+                                {contact.email && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        viewport={{ once: true }}
+                                        className="flex items-center gap-4"
                                     >
-                                        {contact.phone}
-                                    </a>
-                                </motion.div>
-                            )}
-                            {contact.address && (
-                            <motion.div
-                                initial={{ opacity: 0, x: -20 }}
-                                whileInView={{ opacity: 1, x: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: 0.2 }}
-                                className="flex items-center gap-4"
-                            >
-                                <Building className="w-6 h-6 text-[#F3903F]" />
-                                <span>{contact.address}</span>
-                            </motion.div>
-                            )}
+                                        <Mail className="w-6 h-6 text-[#F3903F]" />
+                                        <a
+                                            href={`mailto:${contact.email}`}
+                                            className="hover:text-[#F3903F] transition-colors"
+                                        >
+                                            {contact.email}
+                                        </a>
+                                    </motion.div>
+                                )}
+                                {contact.phone && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: 0.1 }}
+                                        className="flex items-center gap-4"
+                                    >
+                                        <Phone className="w-6 h-6 text-[#F3903F]" />
+                                        <a
+                                            href={`tel:${contact.phone}`}
+                                            className="hover:text-[#F3903F] transition-colors"
+                                        >
+                                            {contact.phone}
+                                        </a>
+                                    </motion.div>
+                                )}
+                                {contact.address && (
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        whileInView={{ opacity: 1, x: 0 }}
+                                        viewport={{ once: true }}
+                                        transition={{ delay: 0.2 }}
+                                        className="flex items-center gap-4"
+                                    >
+                                        <Building className="w-6 h-6 text-[#F3903F]" />
+                                        <span>{contact.address}</span>
+                                    </motion.div>
+                                )}
+                            </div>
                         </div>
-                    </div>
                     )}
                     <div>
                         <h2 className="text-3xl font-heading mb-8">{t.joinTheClub}</h2>
