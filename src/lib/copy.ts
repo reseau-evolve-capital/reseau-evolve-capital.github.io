@@ -41,6 +41,7 @@ export const copy: Record<Locale, Record<string, string>> = {
     applyNow: 'Candidater',
     newsletterPlaceholder: 'Votre email',
     newsletterButton: "S'inscrire",
+    showTestimonial: 'Afficher le témoignage',
   },
   en: {
     members: 'members',
@@ -82,5 +83,6 @@ export const copy: Record<Locale, Record<string, string>> = {
     applyNow: 'Apply Now',
     newsletterPlaceholder: 'Your email',
     newsletterButton: 'Subscribe',
+    showTestimonial: 'Show testimonial',
   },
 }

@@ -6,6 +6,7 @@ import { Section } from '../ui/Section';
 //import { useRouter } from 'next/navigation';
 import type { ValuePropositionSection } from '@/lib/content-types';
 import { imageUrl } from '@/lib/media';
+import { copy } from '@/lib/copy';
 import type { SectionProps } from './components';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
@@ -70,7 +71,7 @@ const Testimonial = ({ content, author, role, image, active }: TestimonialProps)
     </motion.div>
 );
 
-export function ValueProposition({ data: content }: SectionProps<ValuePropositionSection>) {
+export function ValueProposition({ data: content, ctx }: SectionProps<ValuePropositionSection>) {
     //const router = useRouter();
     const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
@@ -150,6 +151,8 @@ export function ValueProposition({ data: content }: SectionProps<ValuePropositio
                             <button
                                 key={index}
                                 onClick={() => setCurrentTestimonial(index)}
+                                aria-label={`${copy[ctx.locale].showTestimonial} ${index + 1}`}
+                                aria-current={currentTestimonial === index ? 'true' : undefined}
                                 className={`w-3 h-3 rounded-full transition-colors ${currentTestimonial === index
                                     ? 'bg-[#F3903F]'
                                     : 'bg-neutral-300'

@@ -6,6 +6,7 @@ import type { GlobalDoc, LinkGroupItem, Locale } from '@/lib/content-types';
 import { Facebook, Twitter, Linkedin, Instagram, Mail, ArrowRight, ExternalLink } from 'lucide-react';
 import { NewsletterButton } from "@/components/ui/NewsletterButton";
 import { isExternal } from "@/lib/links";
+import { copy } from "@/lib/copy";
 
 export type FooterGlobal = Pick<GlobalDoc, 'linkedin' | 'twitter' | 'facebook' | 'instagram' | 'newsletterTitle' | 'newsletterDescription' | 'copyright' | 'socialTitle'>;
 
@@ -17,12 +18,12 @@ interface FooterProps {
 
 export function Footer({ locale, global, linkGroups }: FooterProps) {
     const socialLinks = [
-        { Icon: Linkedin, href: global.linkedin },
-        { Icon: Twitter, href: global.twitter },
-        { Icon: Facebook, href: global.facebook },
-        { Icon: Instagram, href: global.instagram },
-        { Icon: Mail, href: `/${locale}/contact` }
-    ].filter((l): l is { Icon: typeof Mail; href: string } => Boolean(l.href));
+        { Icon: Linkedin, href: global.linkedin, label: 'LinkedIn' },
+        { Icon: Twitter, href: global.twitter, label: 'Twitter' },
+        { Icon: Facebook, href: global.facebook, label: 'Facebook' },
+        { Icon: Instagram, href: global.instagram, label: 'Instagram' },
+        { Icon: Mail, href: `/${locale}/contact`, label: copy[locale].getInTouch }
+    ].filter((l): l is { Icon: typeof Mail; href: string; label: string } => Boolean(l.href));
 
     return (
         <footer className="relative bg-neutral-900 text-white overflow-hidden">
@@ -124,10 +125,11 @@ export function Footer({ locale, global, linkGroups }: FooterProps) {
                                     </h3>
                                 )}
                                 <div className="flex gap-4">
-                                    {socialLinks.map(({ Icon, href }) => (
+                                    {socialLinks.map(({ Icon, href, label }) => (
                                         <Link
                                             key={href}
                                             href={href}
+                                            aria-label={label}
                                             target={href.startsWith('/') ? undefined : "_blank"}
                                             className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-[#F3903F] transition-colors"
                                             rel={href.startsWith('/') ? undefined : "noopener noreferrer"}

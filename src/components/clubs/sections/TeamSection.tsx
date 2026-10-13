@@ -48,6 +48,7 @@ export function TeamSection({ club, locale }: TeamSectionProps) {
                                     {member.linkedin && (
                                         <a
                                             href={member.linkedin}
+                                            aria-label={`LinkedIn ${member.name}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-neutral-400 hover:text-[#0077b5] transition-colors"
@@ -58,6 +59,7 @@ export function TeamSection({ club, locale }: TeamSectionProps) {
                                     {member.twitter && (
                                         <a
                                             href={member.twitter}
+                                            aria-label={`Twitter ${member.name}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="text-neutral-400 hover:text-[#1DA1F2] transition-colors"

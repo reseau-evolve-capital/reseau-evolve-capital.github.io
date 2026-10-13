@@ -58,6 +58,7 @@ export function TeamSection({ data: team }: SectionProps<TeamSectionData>) {
                                         {member.linkedin && (
                                             <a
                                                 href={member.linkedin}
+                                                aria-label={`LinkedIn ${member.name}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-neutral-400 hover:text-[#0077b5] transition-colors"
@@ -68,6 +69,7 @@ export function TeamSection({ data: team }: SectionProps<TeamSectionData>) {
                                         {member.twitter && (
                                             <a
                                                 href={member.twitter}
+                                                aria-label={`Twitter ${member.name}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="text-neutral-400 hover:text-[#1DA1F2] transition-colors"
@@ -78,6 +80,7 @@ export function TeamSection({ data: team }: SectionProps<TeamSectionData>) {
                                         {member.email && (
                                             <a
                                                 href={`mailto:${member.email}`}
+                                                aria-label={`Email ${member.name}`}
                                                 className="text-neutral-400 hover:text-[#F3903F] transition-colors"
                                             >
                                                 <Mail className="w-5 h-5" />

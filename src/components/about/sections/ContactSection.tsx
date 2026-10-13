@@ -77,6 +77,7 @@ export function ContactSection({ data: contact, ctx }: SectionProps<ContactIntro
                             {global.linkedin && (
                                 <a
                                     href={global.linkedin}
+                                    aria-label="LinkedIn"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-neutral-300 hover:text-[#0077b5] transition-colors"
@@ -87,6 +88,7 @@ export function ContactSection({ data: contact, ctx }: SectionProps<ContactIntro
                             {global.twitter && (
                                 <a
                                     href={global.twitter}
+                                    aria-label="Twitter"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-neutral-300 hover:text-[#1DA1F2] transition-colors"
@@ -97,6 +99,7 @@ export function ContactSection({ data: contact, ctx }: SectionProps<ContactIntro
                             {global.facebook && (
                                 <a
                                     href={global.facebook}
+                                    aria-label="Facebook"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-neutral-300 hover:text-[#4267B2] transition-colors"
@@ -107,6 +110,7 @@ export function ContactSection({ data: contact, ctx }: SectionProps<ContactIntro
                             {global.instagram && (
                                 <a
                                     href={global.instagram}
+                                    aria-label="Instagram"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-neutral-300 hover:text-[#E1306C] transition-colors"
