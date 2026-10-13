@@ -24,6 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
       pages: write
       id-token: write
 
@@ -34,6 +35,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Date du dernier déploiement réussi
+        id: since
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          since=$(gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/deploy-vitrine.yml/runs?status=success&per_page=1" --jq '.workflow_runs[0].run_started_at // ""' || echo "")
+          echo "value=${since}" >> "$GITHUB_OUTPUT"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -59,6 +68,22 @@ jobs:
             exit 1
           fi
           echo "OK — Strapi accessible, ${count} article(s) visible(s)."
+
+      - name: Vérifier les réglages et la page d'accueil
+        env:
+          STRAPI_API_URL: ${{ vars.NEXT_PUBLIC_STRAPI_API_URL || 'https://strapi.reseauevolvecapital.com/api' }}
+        run: |
+          set -euo pipefail
+          for locale in fr en; do
+            curl -fsS -g --max-time 30 "${STRAPI_API_URL}/global?locale=${locale}" | jq -e '.data.siteName' > /dev/null \
+              || { echo "::error::Réglages du site absents en ${locale} — déploiement annulé."; exit 1; }
+            n=$(curl -fsS -g --max-time 30 "${STRAPI_API_URL}/pages?locale=${locale}&filters[slug][\$eq]=index" | jq '.data | length')
+            [ "$n" -ge 1 ] || { echo "::error::Page d'accueil absente en ${locale} — déploiement annulé."; exit 1; }
+          done
+          echo "OK — réglages et accueil présents (fr, en)."
+
+      - name: Tests
+        run: pnpm test
 
       - name: Build vitrine
         env:
@@ -89,3 +114,28 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Notifier Discord (succès)
+        if: success()
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          OUTCOME: success
+          TRIGGER: ${{ github.event_name }}
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SITE_URL: https://reseauevolvecapital.com
+          STRAPI_API_URL: ${{ vars.NEXT_PUBLIC_STRAPI_API_URL || 'https://strapi.reseauevolvecapital.com/api' }}
+          SINCE: ${{ steps.since.outputs.value }}
+        run: node scripts/discord-notify.mjs
+
+      - name: Notifier Discord (échec)
+        if: failure()
+        continue-on-error: true
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          OUTCOME: failure
+          TRIGGER: ${{ github.event_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SITE_URL: https://reseauevolvecapital.com
+        run: node scripts/discord-notify.mjs
