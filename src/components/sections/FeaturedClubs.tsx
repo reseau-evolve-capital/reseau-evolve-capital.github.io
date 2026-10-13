@@ -149,7 +149,7 @@ export default function FeaturedClubs({ data: content, ctx }: SectionProps<Featu
                         <ClubCard
                             key={club.slug}
                             name={club.name}
-                            description={club.shortDescription}
+                            description={club.description}
                             members={club.members}
                             location={club.location}
                             image={imageUrl(club.image)}

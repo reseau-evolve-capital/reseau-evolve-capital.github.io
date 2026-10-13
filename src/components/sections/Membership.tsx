@@ -149,9 +149,10 @@ export function Membership({ data: content, ctx }: SectionProps<MembershipSectio
 
           {/* Image Collage */}
           <div className="relative grid grid-cols-2 gap-4">
-            {content.gallery.map((item, index) => {
-              const src = imageUrl(item.image)
-              if (!src) return null
+            {content.gallery
+              .map((item) => ({ item, src: imageUrl(item.image) }))
+              .filter((g): g is { item: typeof g.item; src: string } => g.src !== null)
+              .map(({ item, src }, index) => {
               return (
               <motion.div
                 key={`${src}-${index}`}
