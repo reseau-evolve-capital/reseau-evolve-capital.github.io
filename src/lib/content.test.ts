@@ -38,10 +38,12 @@ describe('getPage', () => {
 })
 
 describe('getClub', () => {
-  it('garde members (effectif) null et normalise les répétables du club', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ data: [{ documentId: 'd', slug: 'c', name: 'C', members: null, performance: null, faq: null }] })))
+  it('filtre sur featured=true, garde members (effectif) null et normalise les répétables du club', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(ok({ data: [{ documentId: 'd', slug: 'c', name: 'C', members: null, performance: null, faq: null }] }))
+    vi.stubGlobal('fetch', fetchSpy)
     const club = await getClub('c', 'fr')
     expect(club).toMatchObject({ members: null, performance: [], faq: [] })
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain('filters[featured][$eq]=true')
   })
 })
 

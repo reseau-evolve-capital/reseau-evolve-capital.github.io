@@ -52,12 +52,12 @@ export async function getPage(slug: string, locale: Locale): Promise<PageDoc | n
 }
 
 export async function getAllClubs(locale: Locale): Promise<ClubDoc[]> {
-  const res = await strapiGet<List<ClubDoc>>('/clubs', { locale, sort: ['order:asc'], populate: CLUB_POPULATE, pagination: { pageSize: 100 } })
+  const res = await strapiGet<List<ClubDoc>>('/clubs', { locale, filters: { featured: { $eq: true } }, sort: ['order:asc'], populate: CLUB_POPULATE, pagination: { pageSize: 100 } })
   return normalize(complete(res, `Clubs ${locale}`), CLUB_REPEATABLE_KEYS)
 }
 
 export async function getClub(slug: string, locale: Locale): Promise<ClubDoc | null> {
-  const res = await strapiGet<List<ClubDoc>>('/clubs', { locale, filters: { slug: { $eq: slug } }, populate: CLUB_POPULATE })
+  const res = await strapiGet<List<ClubDoc>>('/clubs', { locale, filters: { slug: { $eq: slug }, featured: { $eq: true } }, populate: CLUB_POPULATE })
   return res.data[0] ? normalize(res.data[0], CLUB_REPEATABLE_KEYS) : null
 }
 
