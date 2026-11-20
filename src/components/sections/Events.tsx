@@ -4,25 +4,29 @@ import { motion } from 'framer-motion';
 import { Section } from '../ui/Section';
 import { Button } from '../ui/Button';
 import { useRouter } from 'next/navigation';
-import { type Locale } from '@/config/site-config';
-import { pageContent } from '@/config/site-config';
+import type { EventsSection, Locale } from '@/lib/content-types';
+import { imageUrl } from '@/lib/media';
+import { safeHref } from '@/lib/links';
+import { copy } from '@/lib/copy';
+import type { SectionProps } from './components';
 import Image from 'next/image';
 import { Calendar, Clock, MapPin, Users, ExternalLink } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface EventCardProps {
     title: string;
-    description: string;
-    date: string;
-    time: string;
-    location: string;
-    image: string;
-    capacity: number;
-    registeredCount: number;
+    description: string | null;
+    date: string | null;
+    time: string | null;
+    location: string | null;
+    image: string | null;
+    capacity: number | null;
+    registeredCount: number | null;
     isPast: boolean;
     tags: string[];
-    link: string;
+    link: string | null;
     index: number;
+    locale: Locale;
 }
 
 const EventCard = ({
@@ -37,7 +41,8 @@ const EventCard = ({
     isPast,
     tags,
     link,
-    index
+    index,
+    locale
 }: EventCardProps) => {
     const [isHovered, setIsHovered] = useState(false);
     const [isClient, setIsClient] = useState(false);
@@ -48,7 +53,7 @@ const EventCard = ({
     }, []);
 
     const handleButtonClick = () => {
-        if (isClient && typeof window !== 'undefined') {
+        if (link && isClient && typeof window !== 'undefined') {
             window.open(link, '_blank');
         }
     };
@@ -66,15 +71,17 @@ const EventCard = ({
             onMouseLeave={() => setIsHovered(false)}
         >
             <div className="relative h-48">
-                <Image
-                    src={image}
-                    alt={title}
-                    fill
-                    className="object-cover transition-transform duration-300"
-                    style={{
-                        transform: isHovered ? 'scale(1.05)' : 'scale(1)'
-                    }}
-                />
+                {image && (
+                    <Image
+                        src={image}
+                        alt={title}
+                        fill
+                        className="object-cover transition-transform duration-300"
+                        style={{
+                            transform: isHovered ? 'scale(1.05)' : 'scale(1)'
+                        }}
+                    />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                 <div className="absolute top-4 left-4 flex gap-2">
                     {tags.map((tag) => (
@@ -90,72 +97,85 @@ const EventCard = ({
 
             <div className="p-6">
                 <h3 className="text-xl font-heading mb-3">{title}</h3>
-                <p className="text-neutral-600 mb-4">{description}</p>
+                {description && <p className="text-neutral-600 mb-4">{description}</p>}
 
                 <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-neutral-500">
-                        <Calendar className="w-4 h-4 mr-2" />
-                        {date}
-                    </div>
-                    <div className="flex items-center text-sm text-neutral-500">
-                        <Clock className="w-4 h-4 mr-2" />
-                        {time}
-                    </div>
-                    <div className="flex items-center text-sm text-neutral-500">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        {location}
-                    </div>
-                    <div className="flex items-center text-sm text-neutral-500">
-                        <Users className="w-4 h-4 mr-2" />
-                        {registeredCount} / {capacity} participants
-                    </div>
+                    {date && (
+                        <div className="flex items-center text-sm text-neutral-500">
+                            <Calendar className="w-4 h-4 mr-2" />
+                            {date}
+                        </div>
+                    )}
+                    {time && (
+                        <div className="flex items-center text-sm text-neutral-500">
+                            <Clock className="w-4 h-4 mr-2" />
+                            {time}
+                        </div>
+                    )}
+                    {location && (
+                        <div className="flex items-center text-sm text-neutral-500">
+                            <MapPin className="w-4 h-4 mr-2" />
+                            {location}
+                        </div>
+                    )}
+                    {capacity != null && capacity > 0 && (
+                        <div className="flex items-center text-sm text-neutral-500">
+                            <Users className="w-4 h-4 mr-2" />
+                            {registeredCount ?? 0} / {capacity} {copy[locale].participants}
+                        </div>
+                    )}
                 </div>
 
-                <div className="flex items-center justify-between">
-                    <div className="w-full bg-neutral-200 rounded-full h-2">
-                        <div
-                            className="bg-gradient-to-r from-[#FFF33B] to-[#F3903F] h-2 rounded-full transition-all"
-                            style={{
-                                width: `${(registeredCount / capacity) * 100}%`
-                            }}
-                        />
+                {capacity != null && capacity > 0 && (
+                    <div className="flex items-center justify-between">
+                        <div className="w-full bg-neutral-200 rounded-full h-2">
+                            <div
+                                className="bg-gradient-to-r from-[#FFF33B] to-[#F3903F] h-2 rounded-full transition-all"
+                                style={{
+                                    width: `${((registeredCount ?? 0) / capacity) * 100}%`
+                                }}
+                            />
+                        </div>
                     </div>
-                </div>
+                )}
 
-                <div className="mt-4 flex justify-end">
-                    <Button
-                        variant={isPast ? "ghost" : "default"}
-                        size="sm"
-                        onClick={handleButtonClick}
-                        className="group"
-                    >
-                        {isPast ? "Voir le résumé" : "S'inscrire"}
-                        <ExternalLink className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                </div>
+                {link && (
+                    <div className="mt-4 flex justify-end">
+                        <Button
+                            variant={isPast ? "ghost" : "default"}
+                            size="sm"
+                            onClick={handleButtonClick}
+                            className="group"
+                        >
+                            {isPast ? copy[locale].eventSummary : copy[locale].register}
+                            <ExternalLink className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {isPast && (
                 <div className="absolute top-2 right-2 px-3 py-1 bg-neutral-900/80 text-white rounded-full text-sm">
-                    Événement passé
+                    {copy[locale].eventPast}
                 </div>
             )}
         </motion.div>
     );
 };
 
-interface EventsProps {
-    locale: Locale;
-}
-
-export function Events({ locale }: EventsProps) {
+export function Events({ data: content, ctx }: SectionProps<EventsSection>) {
     const router = useRouter();
-    const content = pageContent.home.events;
+    const { locale } = ctx;
+    const filters = {
+        all: content.filterAll,
+        upcoming: content.filterUpcoming,
+        past: content.filterPast,
+    };
     const [filter, setFilter] = useState<'all' | 'upcoming' | 'past'>('all');
 
     const filteredEvents = content.events.filter((event) => {
         if (filter === 'all') return true;
-        return filter === 'upcoming' ? !event.isPast : event.isPast;
+        return filter === 'upcoming' ? !event.isPast : Boolean(event.isPast);
     });
 
     return (
@@ -167,29 +187,31 @@ export function Events({ locale }: EventsProps) {
                     viewport={{ once: true }}
                     className="text-3xl md:text-4xl font-heading mb-6"
                 >
-                    {content.title[locale]}
+                    {content.title}
                 </motion.h2>
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 }}
-                    className="text-lg text-neutral-600 max-w-2xl mx-auto"
-                >
-                    {content.description[locale]}
-                </motion.p>
+                {content.description && (
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
+                        className="text-lg text-neutral-600 max-w-2xl mx-auto"
+                    >
+                        {content.description}
+                    </motion.p>
+                )}
             </div>
 
             {/* Filter Buttons */}
             <div className="flex justify-center gap-4 mb-12">
-                {['all', 'upcoming', 'past'].map((f) => (
+                {(['all', 'upcoming', 'past'] as const).filter((f) => filters[f]).map((f) => (
                     <Button
                         key={f}
                         variant={filter === f ? 'default' : 'ghost'}
-                        onClick={() => setFilter(f as typeof filter)}
+                        onClick={() => setFilter(f)}
                         size="sm"
                     >
-                        {content.filters[f as 'all' | 'upcoming' | 'past'][locale]}
+                        {filters[f]}
                     </Button>
                 ))}
             </div>
@@ -198,32 +220,35 @@ export function Events({ locale }: EventsProps) {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
                 {filteredEvents.map((event, index) => (
                     <EventCard
-                        key={event.title[locale]}
-                        title={event.title[locale]}
-                        description={event.description[locale]}
-                        date={event.date[locale]}
-                        time={event.time[locale]}
-                        location={event.location[locale]}
-                        image={event.image}
+                        key={`${event.title}-${index}`}
+                        title={event.title}
+                        description={event.description}
+                        date={event.date}
+                        time={event.time}
+                        location={event.location}
+                        image={imageUrl(event.image)}
                         capacity={event.capacity}
                         registeredCount={event.registeredCount}
-                        isPast={event.isPast}
-                        tags={event.tags.map(tag => tag[locale])}
-                        link={event.link}
+                        isPast={Boolean(event.isPast)}
+                        tags={event.tags.map(tag => tag.text)}
+                        link={safeHref(event.link)}
                         index={index}
+                        locale={locale}
                     />
                 ))}
             </div>
 
             {/* CTA Section */}
-            <div className="text-center">
-                <Button
-                    onClick={() => router.push(`/${locale}/#events`)}
-                    size="lg"
-                >
-                    {content.cta[locale]}
-                </Button>
-            </div>
+            {content.ctaLabel && (
+                <div className="text-center">
+                    <Button
+                        onClick={() => router.push(`/${locale}/#events`)}
+                        size="lg"
+                    >
+                        {content.ctaLabel}
+                    </Button>
+                </div>
+            )}
         </Section>
     );
 } 

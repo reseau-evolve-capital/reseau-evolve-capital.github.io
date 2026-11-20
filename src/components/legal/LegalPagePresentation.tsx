@@ -1,20 +1,15 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { BlocksRenderer, type BlocksContent } from '@strapi/blocks-react-renderer';
 import { Section } from '@/components/ui/Section';
-import { type Locale } from '@/config/site-config';
-import { legalConfig } from '@/config/legal-config';
+import type { LegalSection } from '@/lib/content-types';
+import type { SectionProps } from '@/components/sections/components';
+import { copy } from '@/lib/copy';
 import { Calendar } from 'lucide-react';
 
-interface LegalPagePresentationProps {
-  locale: Locale;
-  pageType: 'privacyPolicy' | 'termsOfService';
-}
-
-export function LegalPagePresentation({ locale, pageType }: LegalPagePresentationProps) {
-  const legalPage = legalConfig[pageType];
-  
-  if (!legalPage) return null;
+export function LegalPagePresentation({ data, ctx }: SectionProps<LegalSection>) {
+  const { locale } = ctx;
 
   return (
     <div className="min-h-screen">
@@ -28,17 +23,17 @@ export function LegalPagePresentation({ locale, pageType }: LegalPagePresentatio
             className="text-center"
           >
             <h1 className="text-4xl md:text-6xl font-heading mb-6">
-              {legalPage.title[locale]}
+              {data.title}
             </h1>
-            <div className="flex items-center justify-center text-neutral-300">
-              <Calendar className="w-5 h-5 mr-2" />
-              <span>
-                {locale === 'fr' 
-                  ? `Dernière mise à jour : ${new Date(legalPage.lastUpdated).toLocaleDateString('fr-FR')}`
-                  : `Last updated: ${new Date(legalPage.lastUpdated).toLocaleDateString('en-US')}`
-                }
-              </span>
-            </div>
+            {data.lastUpdated && (
+              <div className="flex items-center justify-center text-neutral-300">
+                <Calendar className="w-5 h-5 mr-2" />
+                <span>
+                  {copy[locale].lastUpdated}
+                  {new Date(data.lastUpdated).toLocaleDateString(locale === 'fr' ? 'fr-FR' : 'en-US', { timeZone: 'UTC' })}
+                </span>
+              </div>
+            )}
           </motion.div>
         </div>
       </Section>
@@ -47,33 +42,25 @@ export function LegalPagePresentation({ locale, pageType }: LegalPagePresentatio
       <Section className="bg-white py-16">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-xl shadow-sm border border-neutral-100 p-8">
-            {/* Display each section */}
-            {legalPage.sections.map((section, sectionIndex) => (
-              <motion.div
-                key={sectionIndex}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: sectionIndex * 0.1 }}
-                className="mb-12 last:mb-0"
-              >
-                <h2 className="text-2xl font-heading mb-4 text-[#231F20] border-b border-neutral-200 pb-2">
-                  {section.title[locale]}
-                </h2>
-                <div className="space-y-4">
-                  {section.content.map((paragraph, paraIndex) => (
-                    <p 
-                      key={paraIndex} 
-                      className="text-neutral-700"
-                      dangerouslySetInnerHTML={{ __html: paragraph[locale] }}
-                    />
-                  ))}
-                </div>
-              </motion.div>
-            ))}
+            {Array.isArray(data.body) && data.body.length > 0 && (
+              <BlocksRenderer
+                content={data.body as unknown as BlocksContent}
+                blocks={{
+                  heading: ({ children, level }) =>
+                    level === 2 ? (
+                      <h2 className="text-2xl font-heading mb-4 mt-12 first:mt-0 text-[#231F20] border-b border-neutral-200 pb-2">
+                        {children}
+                      </h2>
+                    ) : (
+                      <h3 className="text-xl font-heading mb-3 mt-8 text-[#231F20]">{children}</h3>
+                    ),
+                  paragraph: ({ children }) => <p className="text-neutral-700 mb-4 last:mb-0">{children}</p>,
+                }}
+              />
+            )}
           </div>
         </div>
       </Section>
     </div>
   );
-} 
+}

@@ -2,15 +2,18 @@
 
 import { motion } from 'framer-motion';
 import { Section } from '@/components/ui/Section';
-import { type Club, type Locale } from '@/config/site-config';
-import { siteConfig } from '@/config/site-config';
+import type { ClubDoc, Locale } from '@/lib/content-types';
+import { copy } from '@/lib/copy';
 
 interface StorySectionProps {
-    club: Club;
+    club: ClubDoc;
     locale: Locale;
 }
 
 export function StorySection({ club, locale }: StorySectionProps) {
+    const { story } = club;
+    if (!story || (!story.origins && story.milestones.length === 0 && !story.futureVision)) return null;
+    const t = copy[locale];
     return (
         <Section className="bg-neutral-50">
             <div className="max-w-4xl mx-auto">
@@ -20,38 +23,40 @@ export function StorySection({ club, locale }: StorySectionProps) {
                     viewport={{ once: true }}
                     className="text-3xl font-heading text-center mb-12"
                 >
-                    {siteConfig.sectionTitles.story.title[locale]}
+                    {t.storyTitle}
                 </motion.h2>
                 <motion.div className="grid md:grid-cols-3 gap-8">
-                    <div className="space-y-4">
-                        <h3 className="text-2xl font-heading">
-                            {siteConfig.sectionTitles.story.origins[locale]}
-                        </h3>
-                        <p className="text-neutral-600">{club.story.origins[locale]}</p>
-                    </div>
-                    <div className="space-y-4">
-                        <h3 className="text-2xl font-heading">
-                            {siteConfig.sectionTitles.story.milestones[locale]}
-                        </h3>
-                        <div className="space-y-3">
-                            {Array.isArray(club.story.milestones) ? (
-                                club.story.milestones.map((milestone, index) => (
-                                    <div key={index} className="flex gap-4">
-                                        <div className="font-bold text-orange-500 min-w-16">{milestone.title[locale]}</div>
-                                        <p className="text-neutral-600">{milestone.content[locale]}</p>
-                                    </div>
-                                ))
-                            ) : (
-                                <p className="text-neutral-600">{club.story.milestones[locale]}</p>
-                            )}
+                    {story.origins && (
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-heading">
+                                {t.storyOrigins}
+                            </h3>
+                            <p className="text-neutral-600">{story.origins}</p>
                         </div>
-                    </div>
-                    <div className="space-y-4">
-                        <h3 className="text-2xl font-heading">
-                            {siteConfig.sectionTitles.story.vision[locale]}
-                        </h3>
-                        <p className="text-neutral-600">{club.story.futureVision[locale]}</p>
-                    </div>
+                    )}
+                    {story.milestones.length > 0 && (
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-heading">
+                                {t.storyMilestones}
+                            </h3>
+                            <div className="space-y-3">
+                                {story.milestones.map((milestone, index) => (
+                                    <div key={index} className="flex gap-4">
+                                        <div className="font-bold text-orange-500 min-w-16">{milestone.title}</div>
+                                        {milestone.content && <p className="text-neutral-600">{milestone.content}</p>}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    {story.futureVision && (
+                        <div className="space-y-4">
+                            <h3 className="text-2xl font-heading">
+                                {t.storyVision}
+                            </h3>
+                            <p className="text-neutral-600">{story.futureVision}</p>
+                        </div>
+                    )}
                 </motion.div>
             </div>
         </Section>

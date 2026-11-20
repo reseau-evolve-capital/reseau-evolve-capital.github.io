@@ -19,39 +19,3 @@ export const scrollToElement = (elementId: string, offset: number = 80): void =>
   });
 };
 
-/**
- * Handles click events for anchor links with smooth scrolling
- * @param e The click event
- * @param href The href attribute of the anchor
- * @returns boolean indicating if the event was handled
- */
-export const handleAnchorClick = (e: React.MouseEvent, href: string): boolean => {
-  if (href.startsWith('#')) {
-    e.preventDefault();
-    const elementId = href.substring(1);
-    scrollToElement(elementId);
-    // Update URL without full page reload
-    window.history.pushState({}, '', href);
-    return true;
-  }
-  
-  if (href.includes('#') && (href.startsWith('/') || href.startsWith('.'))) {
-    const hashIndex = href.indexOf('#');
-    if (hashIndex !== -1) {
-      const elementId = href.substring(hashIndex + 1);
-      // Only handle if we're already on the right page
-      const pagePath = href.substring(0, hashIndex);
-      const currentPath = window.location.pathname;
-      
-      if (pagePath === '' || pagePath === '/' || currentPath.endsWith(pagePath)) {
-        e.preventDefault();
-        scrollToElement(elementId);
-        // Update URL without full page reload
-        window.history.pushState({}, '', href);
-        return true;
-      }
-    }
-  }
-  
-  return false;
-}; 

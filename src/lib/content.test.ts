@@ -1,0 +1,60 @@
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ContentError, assertSiteContent, getAllClubs, getAllPages, getClub, getPage } from './content'
+
+afterEach(() => vi.unstubAllGlobals())
+const ok = (body: unknown) => new Response(JSON.stringify(body), { status: 200 })
+const g = { siteName: 'REC' } as never
+
+describe('assertSiteContent', () => {
+  it('passe quand accueil et réglages existent dans chaque locale', () => {
+    expect(() => assertSiteContent({ pages: { fr: [{ slug: 'index' }], en: [{ slug: 'index' }] }, global: { fr: g, en: g } })).not.toThrow()
+  })
+  it('lève si l’accueil manque dans une locale', () => {
+    expect(() => assertSiteContent({ pages: { fr: [{ slug: 'index' }], en: [{ slug: 'about' }] }, global: { fr: g, en: g } })).toThrow(/accueil.*en/)
+  })
+  it('lève si les réglages manquent', () => {
+    expect(() => assertSiteContent({ pages: { fr: [{ slug: 'index' }], en: [{ slug: 'index' }] }, global: { fr: g, en: null } })).toThrow(ContentError)
+  })
+  it('lève sur un slug en double', () => {
+    expect(() => assertSiteContent({ pages: { fr: [{ slug: 'index' }, { slug: 'a' }, { slug: 'a' }], en: [{ slug: 'index' }] }, global: { fr: g, en: g } })).toThrow(/double.*a/)
+  })
+})
+
+describe('getPage', () => {
+  it('renvoie null si la page n’existe pas', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ data: [] })))
+    await expect(getPage('nope', 'fr')).resolves.toBeNull()
+  })
+  it('normalise les répétables null en tableaux vides', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ data: [{ documentId: 'd', slug: 'index', title: 'A', seo: null, sections: [{ __component: 'sections.introduction', id: 1, title: 'T', stats: null }] }] })))
+    const page = await getPage('index', 'fr')
+    expect(page?.sections[0]).toMatchObject({ stats: [] })
+  })
+  it('normalise formFields et options du formulaire de contact', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ data: [{ documentId: 'd', slug: 'contact', title: 'C', seo: null, sections: [{ __component: 'sections.contact-form', id: 1, title: 'T', formFields: [{ name: 'a', options: null }] }] }] })))
+    const page = await getPage('contact', 'fr')
+    expect(page?.sections[0]).toMatchObject({ formFields: [{ name: 'a', options: [] }] })
+  })
+})
+
+describe('getClub', () => {
+  it('filtre sur featured=true, garde members (effectif) null et normalise les répétables du club', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(ok({ data: [{ documentId: 'd', slug: 'c', name: 'C', members: null, performance: null, faq: null }] }))
+    vi.stubGlobal('fetch', fetchSpy)
+    const club = await getClub('c', 'fr')
+    expect(club).toMatchObject({ members: null, performance: [], faq: [] })
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain('filters[featured][$eq]=true')
+  })
+})
+
+describe('listes completes (pages, clubs)', () => {
+  it('leve si Strapi annonce plus d’elements que recus', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => ok({ data: [{ slug: 'index' }], meta: { pagination: { total: 101 } } })))
+    await expect(getAllPages('fr')).rejects.toThrow(/tronques.*1 recus sur 101/)
+    await expect(getAllClubs('en')).rejects.toThrow(ContentError)
+  })
+  it('passe quand le total correspond', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(ok({ data: [{ slug: 'index' }], meta: { pagination: { total: 1 } } })))
+    await expect(getAllPages('fr')).resolves.toHaveLength(1)
+  })
+})

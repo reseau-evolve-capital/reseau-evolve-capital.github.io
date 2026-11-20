@@ -5,16 +5,12 @@ import { motion } from 'framer-motion'
 import { Section } from '@/components/ui/Section'
 import { Button } from '@/components/ui/Button'
 import { Input, Textarea, Select, Checkbox } from '@/components/ui/FormElements'
-import { type Locale } from '@/config/site-config'
-import { formConfig } from '@/config/form'
-import { type LocalizedText } from '@/config/site-config'
+import type { ContactFormSection as ContactFormSectionData } from '@/lib/content-types'
+import type { SectionProps } from '@/components/sections/components'
+import { copy } from '@/lib/copy'
 import Image from 'next/image'
 import { submitContactForm, validateContactForm, type ContactFormData } from '@/lib/contact'
 import { analyticsEvents } from '@/lib/analytics'
-
-interface ContactFormSectionProps {
-  locale: Locale
-}
 
 type FormValues = {
   name: string
@@ -26,8 +22,9 @@ type FormValues = {
 
 type FormErrors = Partial<Record<keyof FormValues, string>>
 
-export function ContactFormSection({ locale }: ContactFormSectionProps) {
-  const { form } = formConfig
+export function ContactFormSection({ data, ctx }: SectionProps<ContactFormSectionData>) {
+  const { locale } = ctx
+  const t = copy[locale]
   const [formValues, setFormValues] = useState<FormValues>({
     name: '',
     email: '',
@@ -99,18 +96,11 @@ export function ContactFormSection({ locale }: ContactFormSectionProps) {
       analyticsEvents.contact.error('network')
       setFormErrors({
         ...formErrors,
-        message:
-          locale === 'fr'
-            ? 'Une erreur est survenue. Veuillez réessayer.'
-            : 'An error occurred. Please try again.',
+        message: t.formError,
       })
     } finally {
       setIsSubmitting(false)
     }
-  }
-
-  const getLocalizedLabel = (field: { label: LocalizedText }): string => {
-    return field.label[locale]
   }
 
   return (
@@ -124,7 +114,7 @@ export function ContactFormSection({ locale }: ContactFormSectionProps) {
             viewport={{ once: true }}
             className="bg-white text-neutral-800 rounded-xl p-8 shadow-xl"
           >
-            <h2 className="text-2xl font-heading mb-6 text-center">{form.title[locale]}</h2>
+            <h2 className="text-2xl font-heading mb-6 text-center">{data.title}</h2>
 
             {isSubmitted ? (
               <motion.div
@@ -149,81 +139,73 @@ export function ContactFormSection({ locale }: ContactFormSectionProps) {
                   </svg>
                 </div>
                 <h3 className="text-xl font-heading mb-2">
-                  {locale === 'fr' ? 'Message Envoyé !' : 'Message Sent!'}
+                  {t.formSuccessTitle}
                 </h3>
                 <p className="text-neutral-600 mb-6">
-                  {locale === 'fr'
-                    ? 'Merci pour votre message. Nous vous répondrons dans les plus brefs délais.'
-                    : 'Thank you for your message. We will respond as soon as possible.'}
+                  {t.formSuccessText}
                 </p>
                 <Button onClick={() => setIsSubmitted(false)} type="button">
-                  {locale === 'fr' ? 'Envoyer un autre message' : 'Send another message'}
+                  {t.sendAnother}
                 </Button>
               </motion.div>
             ) : (
               <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-                {form.fields.map((field, index) => {
-                  const fieldName = field.label.en
-                    .toLowerCase()
-                    .replace(/\s+/g, '') as keyof FormValues
+                {data.formFields.map((field) => {
+                  const fieldName = field.name as keyof FormValues
+                  const error = formErrors[fieldName]
 
                   switch (field.type) {
                     case 'text':
                       return (
                         <Input
-                          key={index}
-                          name={fieldName === 'name' ? 'name' : String(fieldName)}
-                          label={getLocalizedLabel(field)}
-                          placeholder={getLocalizedLabel(field)}
-                          value={String(formValues[fieldName as keyof FormValues] || '')}
+                          key={field.name}
+                          name={field.name}
+                          label={field.label}
+                          placeholder={field.label}
+                          value={String(formValues[fieldName] || '')}
                           onChange={handleInputChange}
-                          required={field.required}
-                          error={formErrors[fieldName as keyof FormValues]}
+                          required={Boolean(field.required)}
+                          error={error}
                         />
                       )
                     case 'email':
                       return (
                         <Input
-                          key={index}
+                          key={field.name}
                           type="email"
-                          name="email"
-                          label={getLocalizedLabel(field)}
-                          placeholder={getLocalizedLabel(field)}
-                          value={formValues.email}
+                          name={field.name}
+                          label={field.label}
+                          placeholder={field.label}
+                          value={String(formValues[fieldName] || '')}
                           onChange={handleInputChange}
-                          required={field.required}
-                          error={formErrors.email}
+                          required={Boolean(field.required)}
+                          error={error}
                         />
                       )
                     case 'textarea':
                       return (
                         <Textarea
-                          key={index}
-                          name="message"
-                          label={getLocalizedLabel(field)}
-                          placeholder={getLocalizedLabel(field)}
-                          value={formValues.message}
+                          key={field.name}
+                          name={field.name}
+                          label={field.label}
+                          placeholder={field.label}
+                          value={String(formValues[fieldName] || '')}
                           onChange={handleInputChange}
-                          required={field.required}
-                          error={formErrors.message}
+                          required={Boolean(field.required)}
+                          error={error}
                         />
                       )
                     case 'select':
                       return (
                         <Select
-                          key={index}
-                          name="subject"
-                          label={getLocalizedLabel(field)}
-                          value={formValues.subject}
-                          onChange={(value) => handleSelectChange('subject', value)}
-                          options={
-                            field.options?.map((option) => ({
-                              value: option.en.toLowerCase().replace(/\s+/g, '-'),
-                              label: option[locale],
-                            })) || []
-                          }
-                          required={field.required}
-                          error={formErrors.subject}
+                          key={field.name}
+                          name={field.name}
+                          label={field.label}
+                          value={String(formValues[fieldName] || '')}
+                          onChange={(value) => handleSelectChange(field.name, value)}
+                          options={field.options.map((option) => ({ value: option.value, label: option.label }))}
+                          required={Boolean(field.required)}
+                          error={error}
                         />
                       )
                     default:
@@ -237,11 +219,7 @@ export function ContactFormSection({ locale }: ContactFormSectionProps) {
                   name="newsletter"
                   checked={formValues.newsletter}
                   onChange={handleCheckboxChange}
-                  label={
-                    locale === 'fr'
-                      ? 'Je souhaite recevoir la newsletter pour suivre les actualités du Réseau Evolve Capital'
-                      : 'I would like to receive the newsletter to follow Réseau Evolve Capital news'
-                  }
+                  label={t.newsletterOptIn}
                 />
 
                 <div className="pt-4">
@@ -251,7 +229,7 @@ export function ContactFormSection({ locale }: ContactFormSectionProps) {
                     isLoading={isSubmitting}
                     disabled={isSubmitting}
                   >
-                    {form.submitButton[locale]}
+                    {data.submitLabel}
                   </Button>
                 </div>
               </form>
@@ -269,21 +247,17 @@ export function ContactFormSection({ locale }: ContactFormSectionProps) {
               <div className="relative h-[400px] w-full">
                 <Image
                   src="/images/contact-illustration.svg"
-                  alt={locale === 'fr' ? 'Illustration de contact' : 'Contact illustration'}
+                  alt={t.contactIllustrationAlt}
                   fill
                   className="object-contain"
                 />
               </div>
               <div className="mt-6 text-center">
                 <h3 className="text-xl font-heading mb-2">
-                  {locale === 'fr'
-                    ? "Rejoignez Notre Communauté d'Investisseurs"
-                    : 'Join Our Investor Community'}
+                  {t.communityTitle}
                 </h3>
                 <p className="text-neutral-300">
-                  {locale === 'fr'
-                    ? "Découvrez comment notre approche collective peut transformer votre parcours d'investissement."
-                    : 'Discover how our collective approach can transform your investment journey.'}
+                  {t.communityText}
                 </p>
               </div>
             </div>

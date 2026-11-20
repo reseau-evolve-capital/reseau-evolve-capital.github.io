@@ -2,16 +2,10 @@
 
 import { motion } from 'framer-motion';
 import { Section } from '@/components/ui/Section';
-import { type Locale } from '@/config/site-config';
-import { aboutUsContent } from '@/config/about-us-config';
+import type { ContactIntroSection } from '@/lib/content-types';
+import type { SectionProps } from '@/components/sections/components';
 
-interface ContactHeroProps {
-    locale: Locale;
-}
-
-export function ContactHero({ locale }: ContactHeroProps) {
-    const { contact } = aboutUsContent;
-
+export function ContactHero({ data }: SectionProps<ContactIntroSection>) {
     return (
         <Section className="bg-gradient-to-br from-[#231F20] to-black text-white pt-32 pb-20">
             <div className="max-w-4xl mx-auto">
@@ -22,13 +16,15 @@ export function ContactHero({ locale }: ContactHeroProps) {
                     className="text-center"
                 >
                     <h1 className="text-4xl md:text-6xl font-heading mb-6">
-                        {contact.title[locale]}
+                        {data.title}
                     </h1>
-                    <p className="text-xl text-neutral-300 max-w-2xl mx-auto">
-                        {contact.content[locale]}
-                    </p>
+                    {data.content && (
+                        <p className="text-xl text-neutral-300 max-w-2xl mx-auto">
+                            {data.content}
+                        </p>
+                    )}
                 </motion.div>
             </div>
         </Section>
     );
-} 
+}

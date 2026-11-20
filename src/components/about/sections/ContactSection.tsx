@@ -2,16 +2,15 @@
 
 import { motion } from 'framer-motion';
 import { Section } from '@/components/ui/Section';
-import { type Locale } from '@/config/site-config';
-import { aboutUsContent } from '@/config/about-us-config';
-import { Mail, Phone, MapPin, Linkedin, Twitter, Facebook, Instagram } from 'lucide-react';
+import type { ContactIntroSection } from '@/lib/content-types';
+import type { SectionProps } from '@/components/sections/components';
+import { Mail, Phone, MapPin } from 'lucide-react';
+import { SocialLinks, getSocialLinks } from '@/components/ui/SocialLinks';
 
-interface ContactSectionProps {
-    locale: Locale;
-}
-
-export function ContactSection({ locale }: ContactSectionProps) {
-    const { contact } = aboutUsContent;
+export function ContactSection({ data: contact, ctx }: SectionProps<ContactIntroSection>) {
+    const global = ctx.contact ?? {};
+    const hasInfo = Boolean(global.contactEmail || global.contactPhone || global.contactAddress);
+    const socials = getSocialLinks(global);
 
     return (
         <Section className="bg-gradient-to-br from-[#231F20] to-black text-white">
@@ -23,93 +22,64 @@ export function ContactSection({ locale }: ContactSectionProps) {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl md:text-4xl font-heading mb-4">
-                        {contact.title[locale]}
+                        {contact.title}
                     </h2>
-                    <p className="text-xl text-neutral-300">
-                        {contact.content[locale]}
-                    </p>
+                    {contact.content && (
+                        <p className="text-xl text-neutral-300">
+                            {contact.content}
+                        </p>
+                    )}
                 </motion.div>
 
                 <div className="grid md:grid-cols-2 gap-12">
                     {/* Contact Info */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        className="space-y-6"
-                    >
-                        <a
-                            href={`mailto:${contact.email}`}
-                            className="flex items-center gap-4 text-neutral-300 hover:text-[#F3903F] transition-colors"
+                    {hasInfo && (
+                        <motion.div
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="space-y-6"
                         >
-                            <Mail className="w-6 h-6" />
-                            {contact.email}
-                        </a>
-                        {contact.phone && (
-                            <a
-                                href={`tel:${contact.phone}`}
-                                className="flex items-center gap-4 text-neutral-300 hover:text-[#F3903F] transition-colors"
-                            >
-                                <Phone className="w-6 h-6" />
-                                {contact.phone}
-                            </a>
-                        )}
-                        <div className="flex items-center gap-4 text-neutral-300">
-                            <MapPin className="w-6 h-6 flex-shrink-0" />
-                            {contact.address[locale]}
-                        </div>
-                    </motion.div>
+                            {global.contactEmail && (
+                                <a
+                                    href={`mailto:${global.contactEmail}`}
+                                    className="flex items-center gap-4 text-neutral-300 hover:text-[#F3903F] transition-colors"
+                                >
+                                    <Mail className="w-6 h-6" />
+                                    {global.contactEmail}
+                                </a>
+                            )}
+                            {global.contactPhone && (
+                                <a
+                                    href={`tel:${global.contactPhone}`}
+                                    className="flex items-center gap-4 text-neutral-300 hover:text-[#F3903F] transition-colors"
+                                >
+                                    <Phone className="w-6 h-6" />
+                                    {global.contactPhone}
+                                </a>
+                            )}
+                            {global.contactAddress && (
+                                <div className="flex items-center gap-4 text-neutral-300">
+                                    <MapPin className="w-6 h-6 flex-shrink-0" />
+                                    {global.contactAddress}
+                                </div>
+                            )}
+                        </motion.div>
+                    )}
 
                     {/* Social Links */}
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        whileInView={{ opacity: 1, x: 0 }}
-                        viewport={{ once: true }}
-                        className="flex flex-wrap gap-6 justify-center md:justify-end items-center"
-                    >
-                        {contact.social.linkedin && (
-                            <a
-                                href={contact.social.linkedin}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-neutral-300 hover:text-[#0077b5] transition-colors"
-                            >
-                                <Linkedin className="w-6 h-6" />
-                            </a>
-                        )}
-                        {contact.social.twitter && (
-                            <a
-                                href={contact.social.twitter}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-neutral-300 hover:text-[#1DA1F2] transition-colors"
-                            >
-                                <Twitter className="w-6 h-6" />
-                            </a>
-                        )}
-                        {contact.social.facebook && (
-                            <a
-                                href={contact.social.facebook}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-neutral-300 hover:text-[#4267B2] transition-colors"
-                            >
-                                <Facebook className="w-6 h-6" />
-                            </a>
-                        )}
-                        {contact.social.instagram && (
-                            <a
-                                href={contact.social.instagram}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-neutral-300 hover:text-[#E1306C] transition-colors"
-                            >
-                                <Instagram className="w-6 h-6" />
-                            </a>
-                        )}
-                    </motion.div>
+                    {socials.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="flex flex-wrap gap-6 justify-center md:justify-end items-center"
+                        >
+                            <SocialLinks links={socials} variant="icon" />
+                        </motion.div>
+                    )}
                 </div>
             </div>
         </Section>
     );
-} 
+}

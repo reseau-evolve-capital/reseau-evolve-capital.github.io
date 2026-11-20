@@ -2,7 +2,7 @@ import { Metadata } from 'next'
 import { getAllArticles, getAllCategories } from '@/lib/api'
 import BlogCard from '@/components/blog/BlogCard'
 import CategoryList from '@/components/blog/CategoryList'
-import { locales } from '@/config/site-config'
+import { locales } from '@/lib/site'
 
 interface BlogPageProps {
   params: Promise<{

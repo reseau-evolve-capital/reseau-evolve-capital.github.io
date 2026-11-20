@@ -3,12 +3,14 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { type Locale } from '@/config/site-config';
+import { type Locale } from '@/lib/content-types'
 import { homeSectionIds } from '@/lib/navigation';
 import { scrollToElement } from '@/lib/scroll';
 
 interface SectionNavigationProps {
   locale: Locale;
+  // Ancres effectivement rendues sur la page : seules ces entrees sont proposees.
+  anchorIds: string[];
 }
 
 interface SectionLink {
@@ -17,7 +19,7 @@ interface SectionLink {
   labelEn: string;
 }
 
-export function SectionNavigation({ locale }: SectionNavigationProps) {
+export function SectionNavigation({ locale, anchorIds }: SectionNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -31,7 +33,7 @@ export function SectionNavigation({ locale }: SectionNavigationProps) {
     { id: homeSectionIds.resources, labelFr: 'Ressources', labelEn: 'Resources' },
     { id: homeSectionIds.membership, labelFr: 'Adhésion', labelEn: 'Membership' },
     { id: homeSectionIds.partnerships, labelFr: 'Partenariats', labelEn: 'Partnerships' }
-  ], []);
+  ].filter((link) => anchorIds.includes(link.id)), [anchorIds]);
 
   useEffect(() => {
     const handleScroll = () => {

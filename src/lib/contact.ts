@@ -1,4 +1,4 @@
-import { type Locale } from '@/config/site-config';
+import { type Locale } from '@/lib/content-types'
 
 // The URL of the deployed Google Apps Script for contact form
 const CONTACT_API_URL = process.env.NEXT_PUBLIC_CONTACT_FORM_URL || '';

@@ -1,6 +1,6 @@
 'use client';
 
-import { type Club, type Locale } from '@/config/site-config';
+import type { ClubDoc, Locale } from '@/lib/content-types';
 import {
     HeroSection,
     StorySection,
@@ -12,7 +12,7 @@ import {
 } from './sections';
 
 interface ClubPresentationProps {
-    club: Club;
+    club: ClubDoc;
     locale: Locale;
 }
 

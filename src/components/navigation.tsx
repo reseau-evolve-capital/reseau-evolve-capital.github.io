@@ -2,81 +2,52 @@
 import { motion } from "framer-motion"
 import Link from "next/link"
 import { useRouter, usePathname } from 'next/navigation';
-import { siteConfig, locales, defaultLocale, type Locale } from "@/config/site-config"
-import { useState, useEffect } from "react"
+import { type Locale } from '@/lib/content-types'
+import { locales, defaultLocale } from '@/lib/site'
+import { localeHref } from '@/lib/links'
+import { useState } from "react"
 import Image from "next/image";
 
-//improve navigation links when on article page because just changing locale in url will not work. slug can be different in other locales
-export const Navigation = () => {
+type NavigationProps = {
+    siteName: string;
+    navigation: { label: string; href: string }[];
+};
+
+// hreflang posés par generateMetadata (alternates.languages) : pages Strapi et articles de blog.
+const readAlternateUrls = () => {
+    const urls: Partial<Record<Locale, string>> = {};
+    document.querySelectorAll('link[rel="alternate"][hreflang]').forEach((link) => {
+        const hrefLang = link.getAttribute('hreflang');
+        const href = link.getAttribute('href');
+        if (hrefLang && href && locales.includes(hrefLang as Locale)) {
+            urls[hrefLang as Locale] = href.startsWith('http') ? new URL(href).pathname : href;
+        }
+    });
+    return urls;
+};
+
+export const Navigation = ({ siteName, navigation }: NavigationProps) => {
     const router = useRouter();
     const pathname = usePathname();
     const [isOpen, setIsOpen] = useState(false)
-    const [alternateUrls, setAlternateUrls] = useState<Record<Locale, string>>({} as Record<Locale, string>);
 
     const toggleMenu = () => setIsOpen(!isOpen)
 
-    // Function to get the current locale from the pathname
-    const getCurrentLocale = () => {
-        const pathSegments = pathname.split('/');
-        return locales.includes(pathSegments[1] as Locale) ? pathSegments[1] as Locale : defaultLocale;
-    }
+    const pathSegments = pathname.split('/');
+    const currentLocale = locales.includes(pathSegments[1] as Locale) ? pathSegments[1] as Locale : defaultLocale;
+    const isBlogArticlePage = pathSegments.length >= 4 && pathSegments[2] === 'blog' && pathSegments[3]?.length > 0;
+    // Blog (liste, catégories) et clubs : remplacement du préfixe de langue, comme avant.
+    const isPrefixRoute = ['blog', 'clubs'].includes(pathSegments[2] ?? '') && !isBlogArticlePage;
 
-    const currentLocale = getCurrentLocale();
+    const navHref = (href: string) => href === '/' ? `/${currentLocale}` : localeHref(currentLocale, href);
 
-    // Check if we're on a blog article page
-    const isBlogArticlePage = () => {
-        const pathSegments = pathname.split('/');
-        return pathSegments.length >= 4 && pathSegments[2] === 'blog' && pathSegments[3]?.length > 0;
-    }
-
-    // Extract blog slug and documentId from meta tags
-    useEffect(() => {
-        const fetchAlternateUrls = () => {
-            // Get alternate URLs from link rel="alternate" meta tags if available
-            const alternateLinks = document.querySelectorAll('link[rel="alternate"][hreflang]');
-            
-            const urls: Record<Locale, string> = {} as Record<Locale, string>;
-            
-            alternateLinks.forEach((link) => {
-                const hrefLang = link.getAttribute('hreflang');
-                const href = link.getAttribute('href');
-                
-                if (hrefLang && href && locales.includes(hrefLang as Locale)) {
-                    urls[hrefLang as Locale] = href;
-                }
-            });
-            
-            if (Object.keys(urls).length > 0) {
-                setAlternateUrls(urls);
-            }
-        };
-
-        // Only run in the browser
-        if (typeof window !== 'undefined') {
-            fetchAlternateUrls();
+    const switchLocale = (newLocale: Locale) => {
+        if (!isPrefixRoute) {
+            const alternateUrls = readAlternateUrls();
+            if (alternateUrls[newLocale]) return router.push(alternateUrls[newLocale]);
+            // Page Strapi absente dans l'autre langue : accueil de cette langue.
+            if (!isBlogArticlePage && Object.keys(alternateUrls).length > 0) return router.push(`/${newLocale}/`);
         }
-    }, [pathname]);
-
-    // Function to switch locale
-    const switchLocale = async (newLocale: Locale) => {
-        // If on a blog article page, use the alternate URL if available
-        if (isBlogArticlePage() && alternateUrls[newLocale]) {
-            // If we have a full URL, extract the path part
-            let targetPath = alternateUrls[newLocale];
-            if (targetPath.startsWith('http')) {
-                try {
-                    const url = new URL(targetPath);
-                    targetPath = url.pathname;
-                } catch (error) {
-                    console.error('Invalid URL in alternate link:', targetPath, error);
-                }
-            }
-            
-            router.push(targetPath);
-            return;
-        }
-        
-        // Default locale switching for non-blog pages or when alternates aren't available
         const pathWithoutLocale = pathname.replace(/^\/[^\/]+/, '');
         router.push(`/${newLocale}${pathWithoutLocale || '/'}`);
     }
@@ -92,18 +63,18 @@ export const Navigation = () => {
                 <Link href={`/${currentLocale}`} className="flex items-center space-x-2">
                     <Image src="/brand/logo.png" alt="REC Logo" width={32} height={32} className="h-8 w-auto" />
                     <span className="font-heading text-xl font-bold">
-                        {siteConfig.name[currentLocale]}
+                        {siteName}
                     </span>
                 </Link>
 
                 <nav className="hidden md:flex items-center space-x-6">
-                    {siteConfig.mainNav.map((item) => (
+                    {navigation.map((item) => (
                         <Link
                             key={item.href}
-                            href={`/${currentLocale}${item.href}`}
+                            href={navHref(item.href)}
                             className="text-sm font-medium text-neutral-700 hover:text-neutral-900 transition-colors"
                         >
-                            {item.title[currentLocale]}
+                            {item.label}
                         </Link>
                     ))}
                     <div className="flex space-x-2">
@@ -152,14 +123,14 @@ export const Navigation = () => {
                     exit={{ opacity: 0, y: -20 }}
                 >
                     <div className="px-2 pt-2 pb-3 space-y-1">
-                        {siteConfig.mainNav.map((item) => (
+                        {navigation.map((item) => (
                             <Link
                                 key={item.href}
-                                href={`/${currentLocale}${item.href}`}
+                                href={navHref(item.href)}
                                 className="block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:text-neutral-900 hover:bg-neutral-50"
                                 onClick={() => setIsOpen(false)}
                             >
-                                {item.title[currentLocale]}
+                                {item.label}
                             </Link>
                         ))}
                     </div>

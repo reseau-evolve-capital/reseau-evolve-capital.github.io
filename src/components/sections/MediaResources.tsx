@@ -4,8 +4,10 @@ import { motion } from 'framer-motion';
 import { Section } from '../ui/Section';
 import { Button } from '../ui/Button';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { type Locale } from '@/config/site-config';
-import { pageContent } from '@/config/site-config';
+import type { MediaResourcesSection } from '@/lib/content-types';
+import { imageUrl } from '@/lib/media';
+import { safeHref } from '@/lib/links';
+import type { SectionProps } from './components';
 import Image from 'next/image';
 import { Play, Newspaper, Headphones, ArrowUpRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -13,12 +15,12 @@ import { useState, useEffect } from 'react';
 interface ResourceCardProps {
     type: 'article' | 'video' | 'podcast';
     title: string;
-    description: string;
-    image: string;
-    duration?: string;
-    date: string;
-    link: string;
-    featured?: boolean;
+    description: string | null;
+    image: string | null;
+    duration?: string | null;
+    date: string | null;
+    link: string | null;
+    featured?: boolean | null;
     index: number;
 }
 
@@ -53,15 +55,17 @@ const ResourceCard = ({
             onMouseLeave={() => setIsHovered(false)}
         >
             <div className={`relative ${featured ? 'h-80' : 'h-48'}`}>
-                <Image
-                    src={image}
-                    alt={title}
-                    fill
-                    className="object-cover transition-transform duration-300"
-                    style={{
-                        transform: isHovered ? 'scale(1.05)' : 'scale(1)'
-                    }}
-                />
+                {image && (
+                    <Image
+                        src={image}
+                        alt={title}
+                        fill
+                        className="object-cover transition-transform duration-300"
+                        style={{
+                            transform: isHovered ? 'scale(1.05)' : 'scale(1)'
+                        }}
+                    />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
                 {/* Type Badge */}
@@ -84,7 +88,7 @@ const ResourceCard = ({
                         <h3 className={`font-heading mb-2 ${featured ? 'text-2xl' : 'text-xl'}`}>
                             {title}
                         </h3>
-                        <p className="text-neutral-600 mb-4 line-clamp-2">{description}</p>
+                        {description && <p className="text-neutral-600 mb-4 line-clamp-2">{description}</p>}
                     </div>
                     <motion.div
                         initial={false}
@@ -95,30 +99,36 @@ const ResourceCard = ({
                     </motion.div>
                 </div>
 
-                <div className="text-sm text-neutral-500">
-                    {date}
-                </div>
+                {date && (
+                    <div className="text-sm text-neutral-500">
+                        {date}
+                    </div>
+                )}
             </div>
 
-            <a
-                href={link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="absolute inset-0"
-                aria-label={title}
-            />
+            {link && (
+                <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="absolute inset-0"
+                    aria-label={title}
+                />
+            )}
         </motion.div>
     );
 };
 
-interface MediaResourcesProps {
-    locale: Locale;
-}
-
-export function MediaResources({ locale }: MediaResourcesProps) {
+export function MediaResources({ data: content, ctx }: SectionProps<MediaResourcesSection>) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const content = pageContent.home.mediaResources;
+    const { locale } = ctx;
+    const filters = {
+        all: content.filterAll,
+        article: content.filterArticle,
+        video: content.filterVideo,
+        podcast: content.filterPodcast,
+    };
     
     // Get the activeResource from URL query params or default to 'all'
     const defaultActiveType = (() => {
@@ -162,30 +172,32 @@ export function MediaResources({ locale }: MediaResourcesProps) {
                     viewport={{ once: true }}
                     className="text-3xl md:text-4xl font-heading mb-6"
                 >
-                    {content.title[locale]}
+                    {content.title}
                 </motion.h2>
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 }}
-                    className="text-lg text-neutral-600 max-w-2xl mx-auto"
-                >
-                    {content.description[locale]}
-                </motion.p>
+                {content.description && (
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
+                        className="text-lg text-neutral-600 max-w-2xl mx-auto"
+                    >
+                        {content.description}
+                    </motion.p>
+                )}
             </div>
 
             {/* Filter Buttons */}
             <div className="flex justify-center gap-4 mb-12">
-                {['all', 'article', 'video', 'podcast'].map((type) => (
+                {(['all', 'article', 'video', 'podcast'] as const).filter((type) => filters[type]).map((type) => (
                     <Button
                         key={type}
                         variant={activeType === type ? 'default' : 'ghost'}
-                        onClick={() => handleTypeChange(type as typeof activeType)}
+                        onClick={() => handleTypeChange(type)}
                         size="sm"
                         className="capitalize"
                     >
-                        {content.filters[type as 'all' | 'article' | 'video' | 'podcast'][locale]}
+                        {filters[type]}
                     </Button>
                 ))}
             </div>
@@ -194,14 +206,14 @@ export function MediaResources({ locale }: MediaResourcesProps) {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
                 {filteredResources.map((resource, index) => (
                     <ResourceCard
-                        key={resource.title[locale]}
+                        key={`${resource.title}-${index}`}
                         type={resource.type}
-                        title={resource.title[locale]}
-                        description={resource.description[locale]}
-                        image={resource.image}
-                        duration={resource.duration?.[locale]}
-                        date={resource.date[locale]}
-                        link={resource.link}
+                        title={resource.title}
+                        description={resource.description}
+                        image={imageUrl(resource.image)}
+                        duration={resource.duration}
+                        date={resource.date}
+                        link={safeHref(resource.link)}
                         featured={resource.featured}
                         index={index}
                     />
@@ -209,14 +221,16 @@ export function MediaResources({ locale }: MediaResourcesProps) {
             </div>
 
             {/* CTA Section */}
-            <div className="text-center">
-                <Button
-                    onClick={() => router.push(`/${locale}/#resources`)}
-                    size="lg"
-                >
-                    {content.cta[locale]}
-                </Button>
-            </div>
+            {content.ctaLabel && (
+                <div className="text-center">
+                    <Button
+                        onClick={() => router.push(`/${locale}/#resources`)}
+                        size="lg"
+                    >
+                        {content.ctaLabel}
+                    </Button>
+                </div>
+            )}
         </Section>
     );
 } 
